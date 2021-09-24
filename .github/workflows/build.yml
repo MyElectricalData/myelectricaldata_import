@@ -52,7 +52,7 @@ jobs:
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: true
-          branch: master
+          branch: ${{ steps.extract_branch.outputs.branch }}
           delete-branch: false
           title: '[Docker] build master'
           body: |
@@ -62,8 +62,7 @@ jobs:
 
             [1]: https://github.com/peter-evans/create-pull-request
           labels: |
-            report
-            automated pr
+            automated_pullrequest
           assignees: m4dm4rtig4n
           reviewers: m4dm4rtig4n
           team-reviewers: |
