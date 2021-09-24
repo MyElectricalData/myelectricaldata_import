@@ -33,16 +33,8 @@ jobs:
         id: vars
         run: echo ::set-output name=version::$(cat VERSION)
 
-#      - name: Check Tag
-#        id: check-tag
-#        run: |
-#          if [[ ${{ steps.vars.outputs.version }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-#              echo ::set-output name=match::true
-#          fi
-
       - name: Build and push
         uses: docker/build-push-action@v2
-#        if: steps.check-tag.outputs.match != 'true'
         if: !endsWith(steps.vars.outputs.version, '-dev')
         with:
           context: .
