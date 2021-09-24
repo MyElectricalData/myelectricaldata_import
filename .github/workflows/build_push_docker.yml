@@ -26,12 +26,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  build-docker:
-    name: Generate Docker Image
-    needs: install
-    runs-on: [ ubuntu-latest ]
-    steps:
-
       - name: Extract branch name
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
