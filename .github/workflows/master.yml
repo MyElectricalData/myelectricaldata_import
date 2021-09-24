@@ -1,4 +1,4 @@
-name: ci
+name: Push latest
 
 on:
   push:
@@ -35,29 +35,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: true
-          tags: m4dm4rtig4n/enedisgateway2mqtt:${{ steps.extract_branch.outputs.branch }}
-
-      - name: Create Pull Request to Master
-        id: cpr
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          commit-message: update
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          signoff: true
-          base: master
-          branch: ${{ steps.extract_branch.outputs.branch }}
-          delete-branch: false
-          title: '[Docker] Automated PR to push/build enedisgateway:latest'
-          body: |
-            Automated PR to push/build enedisgateway:latest
-          labels: |
-            automated_pullrequest
-          assignees: m4dm4rtig4n
-          reviewers: m4dm4rtig4n
-          team-reviewers: |
-            owners
-            maintainers
-#          milestone: 1
-          draft: false
+          tags: m4dm4rtig4n/enedisgateway2mqtt:master
