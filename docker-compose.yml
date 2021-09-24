@@ -2,6 +2,7 @@ version: "3.9"
 services:
   enedisgateway2mqtt:
     image: m4dm4rtig4n/enedisgateway2mqtt:latest
+    restart: unless_stopped
     environment:
       ACCESS_TOKEN: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
       PDL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
