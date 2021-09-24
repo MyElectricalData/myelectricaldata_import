@@ -15,9 +15,9 @@ jobs:
       - uses: mr-smithers-excellent/docker-build-push@v5
         name: Build & push Docker image
         with:
-          image: m4dm4rtig4n/enedisgateway2mqtt
+          image: enedisgateway2mqtt
           tags: v0.2, latest
-          registry: docker.io
+          registry: m4dm4rtig4n
           dockerfile: Dockerfile
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
