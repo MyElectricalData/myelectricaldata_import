@@ -68,7 +68,7 @@ CYCLE=86400
 YEARS=1                        
 BASE_PRICE=1               
 
-docker run -it \
+docker run -it -restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
     -e PDL="$PDL" \
     -e MQTT_HOST="$MQTT_HOST" \
