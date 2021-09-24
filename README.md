@@ -103,3 +103,18 @@ services:
       YEARS: 1
       BASE_PRICE: 0.1445
 ```
+
+## Roadmap
+
+- Add **DJU18**
+
+## Change log:
+
+### [0.2] - 2021-09-25
+
+- Helm chart
+- Home Assistant auto-discovery
+
+### [0.1] - 2021-09-24
+
+- First Release

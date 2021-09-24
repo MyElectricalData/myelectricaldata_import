@@ -1,0 +1,25 @@
+apiVersion: v2
+appVersion: 3.0.3
+description: Enedis Gateway MQTT
+name: enedisgateway2mqtt
+version: 1.0.0
+kubeVersion: ">=1.16.0-0"
+keywords:
+- enedis
+- enedisgateway
+- mqtt
+- home-assistant
+- energy
+home: https://github.com/m4dm4rtig4n/enedisgateway2mqtt
+icon: https://upload.wikimedia.org/wikipedia/fr/7/77/Logo_enedis_header.png
+sources:
+- https://github.com/m4dm4rtig4n/enedisgateway2mqtt
+- https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt
+- https://enedisgateway.tech
+maintainers:
+- name: m4dm4rtig4n
+  email: m4dm4rtig4n@gmail.com
+dependencies:
+- name: common
+  repository: https://library-charts.k8s-at-home.com
+  version: 4.0.1

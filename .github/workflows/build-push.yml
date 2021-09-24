@@ -33,12 +33,31 @@ jobs:
         id: vars
         run: echo ::set-output name=version::$(cat VERSION)
 
+#      - name: Check Tag
+#        id: check-tag
+#        run: |
+#          if [[ ${{ steps.vars.outputs.version }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+#              echo ::set-output name=match::true
+#          fi
+
       - name: Build and push
         uses: docker/build-push-action@v2
+#        if: steps.check-tag.outputs.match != 'true'
+        if: !endsWith(steps.vars.outputs.version, '-dev')
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:latest
+            m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        if: endsWith(steps.vars.outputs.version, '-dev')
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
+          push: true
+          tags: |
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}

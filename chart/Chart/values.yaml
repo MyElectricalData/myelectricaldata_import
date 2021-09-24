@@ -1,0 +1,83 @@
+#
+# IMPORTANT NOTE
+#
+# This chart inherits from our common library chart. You can check the default values/options here:
+# https://github.com/k8s-at-home/library-charts/tree/main/charts/stable/common/values.yaml
+#
+#
+
+image:
+  repository: m4dm4rtig4n/enedisgateway2mqtt
+  pullPolicy: Always
+  tag: "0.1"
+
+strategy:
+  type: Recreate
+
+env:
+  ACCESS_TOKEN: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  PDL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  MQTT_HOST: ""
+#  MQTT_PORT: "1883"
+#  MQTT_PREFIX: "enedis_gateway"
+#  MQTT_CLIENT_ID: "enedis_gateway"
+#  MQTT_USERNAME: 'enedis_gateway_username'
+#  MQTT_PASSWORD: 'enedis_gateway_password'
+#  CYCLE: 86400
+#  YEARS: 1
+#  BASE_PRICE: 0.1445
+
+args: []
+  # - "--debug"
+
+service:
+  main:
+    enabled: false
+
+ingress:
+  main:
+    enabled: false
+
+probes:
+  liveness:
+    enabled: false
+    # custom: true
+    # spec:
+    #   failureThreshold: 5
+    #   httpGet:
+    #     path: /health
+    #     port: http
+    #     httpHeaders:
+    #       - name: Accept
+    #         value: text/plain
+    #   initialDelaySeconds: 30
+    #   periodSeconds: 10
+    #   timeoutSeconds: 10
+  readiness:
+    enabled: false
+    # custom: true
+    # spec:
+    #   failureThreshold: 5
+    #   httpGet:
+    #     path: /health
+    #     port: http
+    #     httpHeaders:
+    #       - name: Accept
+    #         value: text/plain
+    #   initialDelaySeconds: 30
+    #   periodSeconds: 10
+    #   timeoutSeconds: 10
+  startup:
+    enabled: false
+    # custom: true
+    # spec:
+    #   failureThreshold: 5
+    #   httpGet:
+    #     path: /health
+    #     port: http
+    #     httpHeaders:
+    #       - name: Accept
+    #         value: text/plain
+    #   initialDelaySeconds: 30
+    #   periodSeconds: 10
+    #   timeoutSeconds: 10
