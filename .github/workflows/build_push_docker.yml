@@ -6,8 +6,9 @@ on:
       - 'master'
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
+  install:
+    name: Install Dependencies
+    runs-on: [ ubuntu-latest ]
     steps:
       - name: Extract branch name
         shell: bash
@@ -29,6 +30,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+  build-docker:
+    name: Generate Docker Image
+    needs: install
+    runs-on: [ ubuntu-latest ]
+    steps:
+
       - name: Get version
         id: vars
         run: echo ::set-output name=version::$(cat VERSION)
@@ -47,18 +54,17 @@ jobs:
         if: steps.check-tag.outputs.dev != 'false'
         with:
           context: .
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:latest
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
-
       - name: Build and push
         uses: docker/build-push-action@v2
         if: steps.check-tag.outputs.dev != 'true'
         with:
           context: .
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
