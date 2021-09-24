@@ -37,15 +37,12 @@ jobs:
           push: true
           tags: m4dm4rtig4n/enedisgateway2mqtt:${{ steps.extract_branch.outputs.branch }}
 
-      - name: Make changes to pull request
-        run: date +%s > report.txt
-
       - name: Create Pull Request to Master
         id: cpr
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GH_TOKEN }}
-          commit-message: Update report
+          commit-message: update
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: true
