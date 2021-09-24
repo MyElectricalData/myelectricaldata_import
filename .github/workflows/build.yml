@@ -43,7 +43,7 @@ jobs:
       - name: Make changes to pull request
         run: date +%s > report.txt
 
-      - name: Create Pull Request
+      - name: Create Pull Request to Master
         id: cpr
         uses: peter-evans/create-pull-request@v3
         with:
@@ -52,6 +52,7 @@ jobs:
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: true
+          base: master
           branch: ${{ steps.extract_branch.outputs.branch }}
           delete-branch: false
           title: '[Docker] build master'
