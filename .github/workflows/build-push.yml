@@ -33,9 +33,18 @@ jobs:
         id: vars
         run: echo ::set-output name=version::$(cat VERSION)
 
+      - name: Check Tag
+        id: check-tag
+        run: |
+          if [[ ${{ steps.vars.outputs.version }} =~ .*\-.*$ ]]; then
+              echo ::set-output name=dev::true
+          else
+            echo "::set-output name=dev::false"
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: !endsWith(steps.vars.outputs.version, '-dev')
+        if: steps.check-tag.outputs.match != 'false'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -46,7 +55,7 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: endsWith(steps.vars.outputs.version, '-dev')
+        if: steps.check-tag.outputs.match != 'true'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
