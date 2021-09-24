@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  enedisgateway2mqtt:
+    image: m4dm4rtig4n/enedisgateway2mqtt:latest
+    environment:
+      ACCESS_TOKEN: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+      PDL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+      MQTT_HOST: ""
+      MQTT_PORT: "1883"
+      MQTT_PREFIX: "enedis_gateway"
+      MQTT_CLIENT_ID: "enedis_gateway"
+      MQTT_USERNAME: 'enedis_gateway_username'
+      MQTT_PASSWORD: 'enedis_gateway_password'
+      CYCLE: 86400
+      YEARS: 1
+      BASE_PRICE: 0.1445
