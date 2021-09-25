@@ -57,9 +57,13 @@ if "CYCLE" in os.environ:
 else:
     cycle = 86400
 if "RETAIN" in os.environ:
-    retain = int(os.environ['RETAIN'])
+    retain = bool(os.environ['RETAIN'])
 else:
     retain = True
+if "QOS" in os.environ:
+    qos = int(os.environ['QOS'])
+else:
+    qos = 0
 if "BASE_PRICE" in os.environ:
     base_price = float(os.environ['BASE_PRICE'])
 else:
@@ -116,7 +120,7 @@ def connect_mqtt():
 
 def publish(client, topic, msg, current_prefix=prefix):
     msg_count = 0
-    result = client.publish(f'{current_prefix}/{topic}', str(msg), qos=0, retain=retain)
+    result = client.publish(f'{current_prefix}/{topic}', str(msg), qos=qos, retain=retain)
     status = result[0]
     if status == 0:
         log(f"  => Send `{msg}` to topic `{current_prefix}/{topic}`")
