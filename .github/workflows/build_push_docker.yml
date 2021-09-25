@@ -3,7 +3,9 @@ name: Push latest
 on:
   push:
     branches:
-      - 'master'
+      - '*'
+      - '**'
+      - '*/*'
 
 jobs:
   install:
