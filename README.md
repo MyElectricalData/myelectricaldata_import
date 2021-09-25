@@ -114,6 +114,8 @@ services:
 
 - Helm chart
 - Home Assistant auto-discovery
+- Add Retain & QoS (MQTT)
+- Add Timestamp in log
 
 ### [0.1] - 2021-09-24
 

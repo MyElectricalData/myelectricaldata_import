@@ -7,7 +7,7 @@ on:
 
 jobs:
   install:
-    name: Install Dependencies
+    name: Build & Deploy in docker.io
     runs-on: [ ubuntu-latest ]
     steps:
 

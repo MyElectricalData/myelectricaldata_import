@@ -5,19 +5,23 @@ import json
 from paho.mqtt import client as mqtt_client
 import random
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil.relativedelta import *
+
+def log(msg):
+    now = datetime.now()
+    print(f"{now} : {msg}")
 
 url = "https://enedisgateway.tech/api"
 
 if not "ACCESS_TOKEN" in os.environ:
-    print("Environement variable 'ACCESS_TOKEN' is mandatory")
+    log("Environement variable 'ACCESS_TOKEN' is mandatory")
     quit()
 if not "PDL" in os.environ:
-    print("Environement variable 'PDL' is mandatory")
+    log("Environement variable 'PDL' is mandatory")
     quit()
 if not "MQTT_HOST" in os.environ:
-    print("Environement variable 'MQTT_HOST' is mandatory")
+    log("Environement variable 'MQTT_HOST' is mandatory")
     quit()
 
 accessToken = os.environ['ACCESS_TOKEN']
@@ -25,7 +29,7 @@ pdl = os.environ['PDL']
 broker = os.environ['MQTT_HOST']
 
 if broker == "":
-    print("Environement variable 'MQTT_HOST' can't be empty")
+    log("Environement variable 'MQTT_HOST' can't be empty")
     quit()
 
 if "MQTT_PORT" in os.environ:
@@ -52,10 +56,22 @@ if "CYCLE" in os.environ:
     cycle = int(os.environ['CYCLE'])
 else:
     cycle = 86400
+if "RETAIN" in os.environ:
+    retain = int(os.environ['RETAIN'])
+else:
+    retain = True
 if "BASE_PRICE" in os.environ:
     base_price = float(os.environ['BASE_PRICE'])
 else:
     base_price = False
+if "HA_AUTODISCOVERY" in os.environ:
+    ha_autodiscovery = os.environ['HA_AUTODISCOVERY']
+else:
+    ha_autodiscovery = False
+if "HA_AUTODISCOVERY_PREFIX" in os.environ:
+    ha_autodiscovery_prefix = os.environ['HA_AUTODISCOVERY_PREFIX']
+else:
+    ha_autodiscovery_prefix = "homeassistant"
 
 # ! GENERATE 1 API CALL !
 if "YEARS" in os.environ:
@@ -81,12 +97,13 @@ headers = {
     'Authorization': accessToken
 }
 
+
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
-            print("Connected to MQTT Broker!")
+            log("Connected to MQTT Broker!")
         else:
-            print("Failed to connect, return code %d\n", rc)
+            log("Failed to connect, return code %d\n", rc)
 
     # Set Connecting Client ID
     client = mqtt_client.Client(client_id)
@@ -97,14 +114,14 @@ def connect_mqtt():
     return client
 
 
-def publish(client, topic, msg):
+def publish(client, topic, msg, current_prefix=prefix):
     msg_count = 0
-    result = client.publish(f'{prefix}/{topic}', msg)
+    result = client.publish(f'{current_prefix}/{topic}', str(msg), qos=0, retain=retain)
     status = result[0]
     if status == 0:
-        print(f"  => Send `{msg}` to topic `{prefix}/{topic}`")
+        log(f"  => Send `{msg}` to topic `{current_prefix}/{topic}`")
     else:
-        print(f"  => Failed to send message to topic {prefix}/{topic}")
+        log(f"  => Failed to send message to topic {current_prefix}/{topic}")
     msg_count += 1
 
 def getContract(client):
@@ -128,12 +145,12 @@ def getContract(client):
                 if contracts_key == "subscribed_power":
                     publish(client, f"{pdl}/subscribed_power", str(contracts_data.split()[0]))
                 if contracts_key == "offpeak_hours":
-                    offpeak_hours = contracts_data[contracts_data.find("(")+1:contracts_data.find(")")].split(';')
+                    offpeak_hours = contracts_data[contracts_data.find("(") + 1:contracts_data.find(")")].split(';')
                     index = 0
                     for oh in offpeak_hours:
                         publish(client, f"{pdl}/offpeak_hours/{index}/start", str(oh.split('-')[0]))
                         publish(client, f"{pdl}/offpeak_hours/{index}/stop", str(oh.split('-')[1]))
-                        index = index+1
+                        index = index + 1
                     publish(client, f"{pdl}/offpeak_hours", str(contracts_data))
     else:
         retour = {
@@ -141,6 +158,7 @@ def getContract(client):
             "errorMsg": contract
         }
     return retour
+
 
 def getAddresses(client):
     data = {
@@ -154,9 +172,11 @@ def getAddresses(client):
         for usage_point_key, usage_point_data in usage_points['usage_point'].items():
             if isinstance(usage_point_data, dict):
                 for usage_point_data_key, usage_point_data_data in usage_point_data.items():
-                    publish(client, f"{pdl}/details/usage_points/usage_point/{usage_point_key}/{usage_point_data_key}", str(usage_point_data_data))
+                    publish(client, f"{pdl}/details/usage_points/usage_point/{usage_point_key}/{usage_point_data_key}",
+                            str(usage_point_data_data))
             else:
                 publish(client, f"{pdl}/details/usage_points/usage_point/{usage_point_key}", str(usage_point_data))
+
 
 def calcVariation(client, queue, data, lastData):
     if "thisWeek" in data:
@@ -176,6 +196,28 @@ def calcVariation(client, queue, data, lastData):
         publish(client, f"{pdl}/consumption/{queue}/variationYear", str(round(pourcentYear, 2)))
     return data
 
+
+def ha_autodiscovery(client, type="Sensor", name=None, value=None, unit_of_meas=None, device_class=None,
+                     state_class=None):
+
+    name = name.replace("-", "_")
+
+    config = {
+        "name": f"{name}",
+        "stat_t": f"{ha_autodiscovery_prefix}/{type}/enedisgateway_{name}/state",
+        # "json_attr_t": f"{ha_autodiscovery_prefix}/{type}/enedisgateway_{name}/attributes",
+    }
+    if unit_of_meas is not None:
+        config['unit_of_meas'] = str(unit_of_meas)
+    if device_class is not None:
+        config['device_class'] = str(device_class)
+    if state_class is not None:
+        config['state_class'] = str(state_class)
+
+    publish(client, f"{type}/enedisgateway_{name}/config", json.dumps(config), ha_autodiscovery_prefix)
+    publish(client, f"{type}/enedisgateway_{name}/state", str(value), ha_autodiscovery_prefix)
+
+
 def dailyConsumption(client, last_activation_date):
     my_date = datetime.now()
 
@@ -190,15 +232,19 @@ def dailyConsumption(client, last_activation_date):
     data = dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date)
     for key, value in data.items():
         publish(client, f"{pdl}/consumption/current_year/{key}", str(value))
+        ha_autodiscovery(client, "sensor", f"consumption_current_year_{key}", str(value), "W", "energy",
+                         "total_increasing")
         if base_price != False:
             if isinstance(value, int):
-                publish(client, f"{pdl}/price/current_year/{key}", round(int(value) / 1000 * base_price, 2))
+                roundValue = round(int(value) / 1000 * base_price, 2)
+                publish(client, f"{pdl}/price/current_year/{key}", roundValue)
+                ha_autodiscovery(client, "sensor", f"price_current_year_{key}", roundValue, "€", 'monetary')
         lastData = data
 
     current_year = 1
     while current_year <= years:
         if years >= current_year:
-            print(f"Year => {current_year}")
+            log(f"Year => {current_year}")
             dateEnded = dateBegin
             dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
             dateBegin = dateEndedDelta + relativedelta(years=-1)
@@ -211,16 +257,22 @@ def dailyConsumption(client, last_activation_date):
             else:
                 publish(client, f"{pdl}/consumption/year-{current_year}/error", str(0))
                 for key, value in data.items():
+                    publish(client, f"{pdl}/consumption/year-{current_year}/{key}", str(value))
+                    ha_autodiscovery(client, "sensor", f"consumption_year_{current_year}_{key}", str(value), "W",
+                                     "energy", "total_increasing")
                     if base_price != False:
                         if isinstance(value, int):
-                            publish(client, f"{pdl}/price/year-{current_year}/{key}", round(int(value) / 1000 * base_price, 2))
-                    publish(client, f"{pdl}/consumption/year-{current_year}/{key}", str(value))
+                            roundValue = round(int(value) / 1000 * base_price, 2)
+                            publish(client, f"{pdl}/price/year-{current_year}/{key}", roundValue)
+                            ha_autodiscovery(client, "sensor", f"price_year_{current_year}_{key}", roundValue, "€",
+                                             'monetary')
             if current_year == 1:
                 queue = "current_year"
             else:
-                queue = f"year-{current_year-1}"
+                queue = f"year-{current_year - 1}"
             lastData = calcVariation(client, queue, data, lastData)
             current_year = current_year + 1
+
 
 def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
     response = {}
@@ -316,24 +368,26 @@ def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
 
     return response
 
+
 def run():
     client = connect_mqtt()
     client.loop_start()
     while True:
-        print("Get contract :")
+        log("Get contract :")
         last_activation_date = getContract(client)
         if "error" in last_activation_date:
             publish(client, f"error", str(1))
-            for key,data in last_activation_date["errorMsg"].items():
+            for key, data in last_activation_date["errorMsg"].items():
                 publish(client, f"errorMsg/{key}", str(data))
         else:
             publish(client, f"error", str(0))
             if addresses == True:
-                print("Get Addresses :")
+                log("Get Addresses :")
                 getAddresses(client)
-            print("Get Consumption :")
+            log("Get Consumption :")
             dailyConsumption(client, last_activation_date)
         time.sleep(cycle)
+
 
 if __name__ == '__main__':
     run()
