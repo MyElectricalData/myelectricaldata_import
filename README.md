@@ -38,6 +38,10 @@ If you reach this limit, you will be banned for 24 hours!
 | MQTT_CLIENT_ID | Mosquitto Client ID | enedis_gateway |
 | MQTT_USERNAME | Mosquitto Username (leave empty if no user) |  |
 | MQTT_PASSWORD | Mosquitto Password (leave empty if no user) |  |
+| RETAIN | Retain data in MQTT | False |
+| QOS | Quality Of Service MQTT | 0 |
+| HA_AUTODISCOVERY | Enable auto-discovery | false |
+| HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
 | BASE_PRICE | Price of kWh in base plan | False |
 | CYCLE | Data refresh cycle (3600s minimum) | 3600 |
 | YEARS | Allows you to define up to how many years you want import | 1 |
