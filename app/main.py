@@ -57,9 +57,13 @@ if "CYCLE" in os.environ:
 else:
     cycle = 86400
 if "RETAIN" in os.environ:
-    retain = int(os.environ['RETAIN'])
+    retain = bool(os.environ['RETAIN'])
 else:
     retain = True
+if "QOS" in os.environ:
+    qos = int(os.environ['QOS'])
+else:
+    qos = 0
 if "BASE_PRICE" in os.environ:
     base_price = float(os.environ['BASE_PRICE'])
 else:
@@ -116,7 +120,7 @@ def connect_mqtt():
 
 def publish(client, topic, msg, current_prefix=prefix):
     msg_count = 0
-    result = client.publish(f'{current_prefix}/{topic}', str(msg), qos=0, retain=retain)
+    result = client.publish(f'{current_prefix}/{topic}', str(msg), qos=qos, retain=retain)
     status = result[0]
     if status == 0:
         log(f"  => Send `{msg}` to topic `{current_prefix}/{topic}`")
@@ -232,13 +236,13 @@ def dailyConsumption(client, last_activation_date):
     data = dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date)
     for key, value in data.items():
         publish(client, f"{pdl}/consumption/current_year/{key}", str(value))
-        ha_autodiscovery(client, "sensor", f"consumption_current_year_{key}", str(value), "W", "energy",
+        ha_autodiscovery(client, "sensor", f"{pdl}_consumption_current_year_{key}", str(value), "W", "energy",
                          "total_increasing")
         if base_price != False:
             if isinstance(value, int):
                 roundValue = round(int(value) / 1000 * base_price, 2)
                 publish(client, f"{pdl}/price/current_year/{key}", roundValue)
-                ha_autodiscovery(client, "sensor", f"price_current_year_{key}", roundValue, "€", 'monetary')
+                ha_autodiscovery(client, "sensor", f"{pdl}_price_current_year_{key}", roundValue, "€", 'monetary')
         lastData = data
 
     current_year = 1
@@ -258,13 +262,13 @@ def dailyConsumption(client, last_activation_date):
                 publish(client, f"{pdl}/consumption/year-{current_year}/error", str(0))
                 for key, value in data.items():
                     publish(client, f"{pdl}/consumption/year-{current_year}/{key}", str(value))
-                    ha_autodiscovery(client, "sensor", f"consumption_year_{current_year}_{key}", str(value), "W",
+                    ha_autodiscovery(client, "sensor", f"{pdl}_consumption_year_{current_year}_{key}", str(value), "W",
                                      "energy", "total_increasing")
                     if base_price != False:
                         if isinstance(value, int):
                             roundValue = round(int(value) / 1000 * base_price, 2)
                             publish(client, f"{pdl}/price/year-{current_year}/{key}", roundValue)
-                            ha_autodiscovery(client, "sensor", f"price_year_{current_year}_{key}", roundValue, "€",
+                            ha_autodiscovery(client, "sensor", f"{pdl}_price_year_{current_year}_{key}", roundValue, "€",
                                              'monetary')
             if current_year == 1:
                 queue = "current_year"
@@ -303,7 +307,6 @@ def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
             date = interval_reading['date']
             value = interval_reading['value']
             mesures[date] = value
-        # mesure = sorted(mesures, reverse=True)
         list_date = list(reversed(sorted(mesures.keys())))
 
         dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')

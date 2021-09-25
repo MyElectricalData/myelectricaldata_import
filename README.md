@@ -38,6 +38,10 @@ If you reach this limit, you will be banned for 24 hours!
 | MQTT_CLIENT_ID | Mosquitto Client ID | enedis_gateway |
 | MQTT_USERNAME | Mosquitto Username (leave empty if no user) |  |
 | MQTT_PASSWORD | Mosquitto Password (leave empty if no user) |  |
+| RETAIN | Retain data in MQTT | False |
+| QOS | Quality Of Service MQTT | 0 |
+| HA_AUTODISCOVERY | Enable auto-discovery | false |
+| HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
 | BASE_PRICE | Price of kWh in base plan | False |
 | CYCLE | Data refresh cycle (3600s minimum) | 3600 |
 | YEARS | Allows you to define up to how many years you want import | 1 |
@@ -64,6 +68,10 @@ MQTT_PREFIX="enedis_gateway"
 MQTT_CLIENT_ID="enedis_gateway" 
 MQTT_USERNAME='enedis_gateway_username'
 MQTT_PASSWORD='enedis_gateway_password'
+RETAIN='False'
+QOS='0'
+HA_AUTODISCOVERY='False'
+HA_AUTODISCOVERY_PREFIX='homeassistant'
 CYCLE=86400
 YEARS=1                        
 BASE_PRICE=1               
@@ -77,6 +85,10 @@ docker run -it -restart=unless-stopped \
     -e MQTT_CLIENT_ID="$MQTT_CLIENT_ID" \
     -e MQTT_USERNAME="$MQTT_USERNAME" \
     -e MQTT_PASSWORD="$MQTT_PASSWORD" \
+    -e RETAIN="$RETAIN" \
+    -e QOS="$QOS" \
+    -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
+    -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
     -e CYCLE="$CYCLE" \
     -e YEARS=$YEARS \
     -e BASE_PRICE="$BASE_PRICE" \
@@ -99,6 +111,10 @@ services:
       MQTT_CLIENT_ID: "enedis_gateway"
       MQTT_USERNAME: 'enedis_gateway_username'
       MQTT_PASSWORD: 'enedis_gateway_password'
+      RETAIN: 'False'
+      QOS: '0'
+      HA_AUTODISCOVERY: 'False'
+      HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
       YEARS: 1
       BASE_PRICE: 0.1445
