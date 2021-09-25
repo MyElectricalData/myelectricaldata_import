@@ -68,6 +68,10 @@ MQTT_PREFIX="enedis_gateway"
 MQTT_CLIENT_ID="enedis_gateway" 
 MQTT_USERNAME='enedis_gateway_username'
 MQTT_PASSWORD='enedis_gateway_password'
+RETAIN='False'
+QOS='0'
+HA_AUTODISCOVERY='False'
+HA_AUTODISCOVERY_PREFIX='homeassistant'
 CYCLE=86400
 YEARS=1                        
 BASE_PRICE=1               
@@ -81,6 +85,10 @@ docker run -it -restart=unless-stopped \
     -e MQTT_CLIENT_ID="$MQTT_CLIENT_ID" \
     -e MQTT_USERNAME="$MQTT_USERNAME" \
     -e MQTT_PASSWORD="$MQTT_PASSWORD" \
+    -e RETAIN="$RETAIN" \
+    -e QOS="$QOS" \
+    -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
+    -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
     -e CYCLE="$CYCLE" \
     -e YEARS=$YEARS \
     -e BASE_PRICE="$BASE_PRICE" \
@@ -103,6 +111,10 @@ services:
       MQTT_CLIENT_ID: "enedis_gateway"
       MQTT_USERNAME: 'enedis_gateway_username'
       MQTT_PASSWORD: 'enedis_gateway_password'
+      RETAIN: 'False'
+      QOS: '0'
+      HA_AUTODISCOVERY: 'False'
+      HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
       YEARS: 1
       BASE_PRICE: 0.1445
