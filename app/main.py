@@ -69,7 +69,7 @@ if "BASE_PRICE" in os.environ:
 else:
     base_price = False
 if "HA_AUTODISCOVERY" in os.environ:
-    ha_autodiscovery = os.environ['HA_AUTODISCOVERY']
+    ha_autodiscovery = bool(os.environ['HA_AUTODISCOVERY'])
 else:
     ha_autodiscovery = False
 if "HA_AUTODISCOVERY_PREFIX" in os.environ:
@@ -101,6 +101,9 @@ headers = {
     'Authorization': accessToken
 }
 
+ha_discovery = {
+    pdl: {}
+}
 
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
@@ -148,6 +151,11 @@ def getContract(client):
                     publish(client, f"{pdl}/activation_date", str(contracts_data))
                 if contracts_key == "subscribed_power":
                     publish(client, f"{pdl}/subscribed_power", str(contracts_data.split()[0]))
+                    ha_discovery[pdl].update({
+                        "subscribed_power":  {
+                            'value': str(contracts_data.split()[0])
+                        }
+                    })
                 if contracts_key == "offpeak_hours":
                     offpeak_hours = contracts_data[contracts_data.find("(") + 1:contracts_data.find(")")].split(';')
                     index = 0
@@ -156,6 +164,11 @@ def getContract(client):
                         publish(client, f"{pdl}/offpeak_hours/{index}/stop", str(oh.split('-')[1]))
                         index = index + 1
                     publish(client, f"{pdl}/offpeak_hours", str(contracts_data))
+                    ha_discovery[pdl].update({
+                        "offpeak_hours":  {
+                            'value': str(contracts_data)
+                        }
+                    })
     else:
         retour = {
             "error": True,
@@ -200,28 +213,6 @@ def calcVariation(client, queue, data, lastData):
         publish(client, f"{pdl}/consumption/{queue}/variationYear", str(round(pourcentYear, 2)))
     return data
 
-
-def ha_autodiscovery(client, type="Sensor", name=None, value=None, unit_of_meas=None, device_class=None,
-                     state_class=None):
-
-    name = name.replace("-", "_")
-
-    config = {
-        "name": f"{name}",
-        "stat_t": f"{ha_autodiscovery_prefix}/{type}/enedisgateway_{name}/state",
-        # "json_attr_t": f"{ha_autodiscovery_prefix}/{type}/enedisgateway_{name}/attributes",
-    }
-    if unit_of_meas is not None:
-        config['unit_of_meas'] = str(unit_of_meas)
-    if device_class is not None:
-        config['device_class'] = str(device_class)
-    if state_class is not None:
-        config['state_class'] = str(state_class)
-
-    publish(client, f"{type}/enedisgateway_{name}/config", json.dumps(config), ha_autodiscovery_prefix)
-    publish(client, f"{type}/enedisgateway_{name}/state", str(value), ha_autodiscovery_prefix)
-
-
 def dailyConsumption(client, last_activation_date):
     my_date = datetime.now()
 
@@ -236,13 +227,29 @@ def dailyConsumption(client, last_activation_date):
     data = dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date)
     for key, value in data.items():
         publish(client, f"{pdl}/consumption/current_year/{key}", str(value))
-        ha_autodiscovery(client, "sensor", f"{pdl}_consumption_current_year_{key}", str(value), "W", "energy",
-                         "total_increasing")
+        if key != "dateBegin" and key != "dateEnded":
+            ha_discovery[pdl].update({
+                f"consumption_{key.replace('-','_')}": {
+                    "value": str(value),
+                    "unit_of_meas": "W",
+                    "device_class": "energy",
+                    "state_class": "total_increasing",
+                    "attributes": {}
+                }
+            })
         if base_price != False:
             if isinstance(value, int):
                 roundValue = round(int(value) / 1000 * base_price, 2)
                 publish(client, f"{pdl}/price/current_year/{key}", roundValue)
-                ha_autodiscovery(client, "sensor", f"{pdl}_price_current_year_{key}", roundValue, "€", 'monetary')
+                if key != "dateBegin" and key != "dateEnded":
+                    ha_discovery[pdl].update({
+                        f"price_{key.replace('-', '_')}": {
+                            "value": str(roundValue),
+                            "unit_of_meas": "€",
+                            "device_class": "monetary",
+                            "attributes": {}
+                        }
+                    })
         lastData = data
 
     current_year = 1
@@ -262,21 +269,31 @@ def dailyConsumption(client, last_activation_date):
                 publish(client, f"{pdl}/consumption/year-{current_year}/error", str(0))
                 for key, value in data.items():
                     publish(client, f"{pdl}/consumption/year-{current_year}/{key}", str(value))
-                    ha_autodiscovery(client, "sensor", f"{pdl}_consumption_year_{current_year}_{key}", str(value), "W",
-                                     "energy", "total_increasing")
+                    if key != "dateBegin" and key != "dateEnded":
+                        if f"consumption_{key.replace('-', '_')}" in ha_discovery[pdl]:
+                            # CALC VARIATION
+                            if key in lastData:
+                                variation = (lastData[key] - value) / value * 100
+                                if not f"variation_year_{current_year}" in \
+                                       ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'].keys():
+                                    ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'][
+                                        f"variation_year_{current_year}"] = str(round(variation, 2))
+                            # SET HISTORY ATTRIBUTES
+                            if not f"history_year_{current_year}" in ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'].keys():
+                                ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}"] = str(value)
                     if base_price != False:
                         if isinstance(value, int):
                             roundValue = round(int(value) / 1000 * base_price, 2)
                             publish(client, f"{pdl}/price/year-{current_year}/{key}", roundValue)
-                            ha_autodiscovery(client, "sensor", f"{pdl}_price_year_{current_year}_{key}", roundValue, "€",
-                                             'monetary')
+                            if f"price_{key.replace('-', '_')}" in ha_discovery[pdl]:
+                                if not f"history_year_{current_year}" in ha_discovery[pdl][f"price_{key.replace('-', '_')}"]['attributes'].keys():
+                                    ha_discovery[pdl][f"price_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}"] = str(roundValue)
             if current_year == 1:
                 queue = "current_year"
             else:
                 queue = f"year-{current_year - 1}"
             lastData = calcVariation(client, queue, data, lastData)
             current_year = current_year + 1
-
 
 def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
     response = {}
@@ -371,6 +388,27 @@ def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
 
     return response
 
+def haAutodiscovery(client, type="Sensor", pdl=pdl, name=None, value=None, attributes=None, unit_of_meas=None, device_class=None,
+                     state_class=None):
+
+    name = name.replace("-", "_")
+
+    config = {
+        "name": f"enedisgateway_{pdl}_{name}",
+        "stat_t": f"{ha_autodiscovery_prefix}/{type}/enedisgateway_{pdl}_{name}/state",
+        "json_attr_t": f"{ha_autodiscovery_prefix}/{type}/enedisgateway_{pdl}_{name}/attributes",
+    }
+    if unit_of_meas is not None:
+        config['unit_of_meas'] = str(unit_of_meas)
+    if device_class is not None:
+        config['device_class'] = str(device_class)
+    if state_class is not None:
+        config['state_class'] = str(state_class)
+
+    publish(client, f"{type}/enedisgateway_{pdl}_{name}/config", json.dumps(config), ha_autodiscovery_prefix)
+    if attributes is not None:
+        publish(client, f"{type}/enedisgateway_{pdl}_{name}/attributes", json.dumps(attributes), ha_autodiscovery_prefix)
+    publish(client, f"{type}/enedisgateway_{pdl}_{name}/state", str(value), ha_autodiscovery_prefix)
 
 def run():
     client = connect_mqtt()
@@ -389,6 +427,31 @@ def run():
                 getAddresses(client)
             log("Get Consumption :")
             dailyConsumption(client, last_activation_date)
+
+            print(ha_autodiscovery)
+            if ha_autodiscovery == True:
+                for pdl, data in ha_discovery.items():
+                    for name, sensor_data in data.items():
+                        if "attributes" in sensor_data:
+                            attributes = sensor_data['attributes']
+                        else:
+                            attributes = None
+                        if "unit_of_meas" in sensor_data:
+                            unit_of_meas = sensor_data['unit_of_meas']
+                        else:
+                            unit_of_meas = None
+                        if "device_class" in sensor_data:
+                            device_class = sensor_data['device_class']
+                        else:
+                            device_class = None
+                        if "state_class" in sensor_data:
+                            state_class = sensor_data['state_class']
+                        else:
+                            state_class = None
+                        print(name)
+                        haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                                        attributes=attributes, unit_of_meas=unit_of_meas,
+                                        device_class=device_class, state_class=state_class)
         time.sleep(cycle)
 
 

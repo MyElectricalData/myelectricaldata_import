@@ -126,6 +126,11 @@ services:
 
 ## Change log:
 
+### [0.3] - 2021-09-26
+
+- Rework ha discovery to reduce items
+- Fix ha_autodiscovery always enable
+
 ### [0.2] - 2021-09-25
 
 - Helm chart
