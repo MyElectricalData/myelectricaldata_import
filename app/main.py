@@ -7,6 +7,8 @@ import random
 import time
 from datetime import datetime, timedelta, date
 from dateutil.relativedelta import *
+from distutils.util import strtobool
+import sqlite3
 
 def log(msg):
     now = datetime.now()
@@ -54,24 +56,26 @@ else:
     password: ""
 if "CYCLE" in os.environ:
     cycle = int(os.environ['CYCLE'])
+    if cycle < 3600:
+        cycle = 3600
 else:
-    cycle = '86400'
+    cycle = 86400
 if "RETAIN" in os.environ:
-    retain = str(os.environ['RETAIN'])
+    retain = bool(strtobool(os.environ['RETAIN']))
 else:
-    retain = '0'
+    retain = False
 if "QOS" in os.environ:
     qos = int(os.environ['QOS'])
 else:
-    qos = '0'
+    qos = 0
 if "BASE_PRICE" in os.environ:
     base_price = float(os.environ['BASE_PRICE'])
 else:
-    base_price = '0'
+    base_price = 0
 if "HA_AUTODISCOVERY" in os.environ:
-    ha_autodiscovery = str(os.environ['HA_AUTODISCOVERY'])
+    ha_autodiscovery = bool(strtobool(os.environ['HA_AUTODISCOVERY']))
 else:
-    ha_autodiscovery = '0'
+    ha_autodiscovery = False
 if "HA_AUTODISCOVERY_PREFIX" in os.environ:
     ha_autodiscovery_prefix = str(os.environ['HA_AUTODISCOVERY_PREFIX'])
 else:
@@ -85,9 +89,9 @@ else:
 
 # ! GENERATE 1 API CALL !
 if "ADDRESSES" in os.environ:
-    addresses = int(os.environ['ADDRESSES'])
+    addresses = bool(strtobool(os.environ['ADDRESSES']))
 else:
-    addresses = 1
+    addresses = True
 
 # Fix min cycle
 if cycle < 3600:
@@ -105,6 +109,23 @@ ha_discovery = {
     pdl: {}
 }
 
+api_no_result = []
+
+# SQLlite
+if not os.path.exists('/data'):
+  os.mkdir('/data')
+
+if not os.path.exists('/data/enedisgateway.db'):
+    con = sqlite3.connect('/data/enedisgateway.db')
+    cur = con.cursor()
+    cur.execute('''CREATE TABLE consumption_daily
+                   (date text, value real)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date 
+                    ON consumption_daily (date)''')
+else:
+    con = sqlite3.connect('/data/enedisgateway.db')
+    cur = con.cursor()
+
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -120,15 +141,14 @@ def connect_mqtt():
     client.connect(broker, port)
     return client
 
-
 def publish(client, topic, msg, current_prefix=prefix):
     msg_count = 0
     result = client.publish(f'{current_prefix}/{topic}', str(msg), qos=qos, retain=int(retain))
     status = result[0]
     if status == 0:
-        log(f"  => Send `{msg}` to topic `{current_prefix}/{topic}`")
+        log(f" - Send `{msg}` to topic `{current_prefix}/{topic}`")
     else:
-        log(f"  => Failed to send message to topic {current_prefix}/{topic}")
+        log(f" - Failed to send message to topic {current_prefix}/{topic}")
     msg_count += 1
 
 def getContract(client):
@@ -210,7 +230,7 @@ def dailyConsumption(client, last_activation_date):
         publish(client, f"{pdl}/consumption/current_year/{key}", str(value))
         if key != "dateBegin" and key != "dateEnded":
             ha_discovery[pdl].update({
-                f"{key.replace('-','_')}": {
+                f"consumption_{key.replace('-','_')}": {
                     "value": str(value),
                     "unit_of_meas": "W",
                     "device_class": "energy",
@@ -218,13 +238,13 @@ def dailyConsumption(client, last_activation_date):
                     "attributes": {}
                 }
             })
-        if base_price != '0':
+        if base_price != 0:
             if isinstance(value, int):
                 roundValue = round(int(value) / 1000 * base_price, 2)
                 publish(client, f"{pdl}/price/current_year/{key}", roundValue)
                 if key != "dateBegin" and key != "dateEnded":
-                    if not f"price" in ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'].keys():
-                        ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'][f"price"] = str(roundValue)
+                    if not f"price" in ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'].keys():
+                        ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'][f"price"] = str(roundValue)
         lastData = data
 
     current_year = 1
@@ -233,6 +253,8 @@ def dailyConsumption(client, last_activation_date):
             log(f"Year => {current_year}")
             dateEnded = dateBegin
             dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
+            # dateEnded = dateEndedDelta + relativedelta(days=-1)
+            # dateEnded = dateEnded.strftime('%Y-%m-%d')
             dateBegin = dateEndedDelta + relativedelta(years=-1)
             dateBegin = dateBegin.strftime('%Y-%m-%d')
             data = dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date)
@@ -245,23 +267,44 @@ def dailyConsumption(client, last_activation_date):
                 for key, value in data.items():
                     publish(client, f"{pdl}/consumption/year-{current_year}/{key}", str(value))
                     if key != "dateBegin" and key != "dateEnded":
-                        if f"{key.replace('-', '_')}" in ha_discovery[pdl]:
+                        if f"consumption_{key.replace('-', '_')}" in ha_discovery[pdl]:
                             # CALC VARIATION
                             if key in lastData:
                                 variation = (lastData[key] - value) / value * 100
-                                if not f"variation_year_{current_year}" in ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'].keys():
-                                    ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'][f"variation_year_{current_year}"] = str(round(variation, 2))
+                                if not f"variation_year_{current_year}" in ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'].keys():
+                                    ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'][f"variation_year_{current_year}"] = str(round(variation, 2))
                             # SET HISTORY ATTRIBUTES
-                            if not f"history_year_{current_year}" in ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'].keys():
-                                ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}"] = str(value)
-                    if base_price != '0':
+                            if not f"history_year_{current_year}" in ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'].keys():
+                                ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}"] = str(value)
+                    if base_price != 0:
                         if isinstance(value, int):
                             roundValue = round(int(value) / 1000 * base_price, 2)
                             publish(client, f"{pdl}/price/year-{current_year}/{key}", roundValue)
-                            # if f"price_{key.replace('-', '_')}" in ha_discovery[pdl]:
-                            if not f"price_year_{current_year}" in ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'].keys():
-                                ha_discovery[pdl][f"{key.replace('-', '_')}"]['attributes'][f"price_year_{current_year}"] = str(roundValue)
+                            # if f"price_consumption_{key.replace('-', '_')}" in ha_discovery[pdl]:
+                            if not f"price_year_{current_year}" in ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'].keys():
+                                ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'][f"price_year_{current_year}"] = str(roundValue)
             current_year = current_year + 1
+
+def checkHistoryConsumptionDaily(dateBegin, dateEnded):
+    dateBegin = datetime.strptime(dateBegin, '%Y-%m-%d')
+    dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
+    delta = dateEnded - dateBegin
+    result = {
+        "status": True,
+        "date": [],
+        "count": 0
+    }
+    for i in range(delta.days + 1):
+        checkDate = dateBegin + timedelta(days=i)
+        checkDate = checkDate.strftime('%Y-%m-%d')
+        query = f"SELECT * FROM consumption_daily WHERE date = '{checkDate}'"
+        cur.execute(query)
+        if cur.fetchone() == None:
+            api_no_result.append(checkDate)
+            result["date"].append(checkDate)
+            result["status"] = False
+            result["count"] = result["count"] + 1
+    return result
 
 def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
     response = {}
@@ -283,14 +326,22 @@ def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
     }
 
     try:
+        current_data = checkHistoryConsumptionDaily(dateBegin, dateEnded)
+        if current_data['status'] == True:
+            log(f"All data loading beetween {dateBegin} / {dateEnded}")
+            log(f" => Skip API Call")
+        else:
+            log(f"{current_data['count']} lost date :")
+            for lost_data in current_data['date']:
+                log(f" => {lost_data}")
+        pprint(json.dumps(data))
         daily_consumption = requests.request("POST", url=f"{url}", headers=headers, data=json.dumps(data)).json()
-
         meter_reading = daily_consumption['meter_reading']
-
         mesures = {}
         for interval_reading in meter_reading["interval_reading"]:
             date = interval_reading['date']
             value = interval_reading['value']
+            cur.execute(f"INSERT OR REPLACE INTO consumption_daily VALUES ('{interval_reading['date']}','{interval_reading['value']}')")
             mesures[date] = value
         list_date = list(reversed(sorted(mesures.keys())))
 
@@ -390,14 +441,13 @@ def run():
                 publish(client, f"errorMsg/{key}", str(data))
         else:
             publish(client, f"error", str(0))
-            if addresses == '1':
+            if addresses == True:
                 log("Get Addresses :")
                 getAddresses(client)
             log("Get Consumption :")
             dailyConsumption(client, last_activation_date)
 
-            print(ha_autodiscovery)
-            if ha_autodiscovery == '1':
+            if ha_autodiscovery == True:
                 for pdl, data in ha_discovery.items():
                     for name, sensor_data in data.items():
                         if "attributes" in sensor_data:
@@ -416,10 +466,12 @@ def run():
                             state_class = sensor_data['state_class']
                         else:
                             state_class = None
-                        print(name)
+
                         haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                         attributes=attributes, unit_of_meas=unit_of_meas,
                                         device_class=device_class, state_class=state_class)
+
+        con.commit()
         time.sleep(cycle)
 
 

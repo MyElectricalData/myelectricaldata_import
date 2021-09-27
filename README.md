@@ -136,7 +136,6 @@ services:
 
 - Rework ha discovery to reduce items
 - Fix ha_autodiscovery always enable
-- Switch true/false parameters to 1/0
 
 ### [0.2] - 2021-09-25
 
