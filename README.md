@@ -68,15 +68,15 @@ MQTT_PREFIX="enedis_gateway"
 MQTT_CLIENT_ID="enedis_gateway" 
 MQTT_USERNAME='enedis_gateway_username'
 MQTT_PASSWORD='enedis_gateway_password'
-RETAIN='False'
-QOS='0'
-HA_AUTODISCOVERY='False'
+RETAIN=0
+QOS=0
+HA_AUTODISCOVERY=0
 HA_AUTODISCOVERY_PREFIX='homeassistant'
 CYCLE=86400
 YEARS=1                        
 BASE_PRICE=1               
 
-docker run -it -restart=unless-stopped \
+docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
     -e PDL="$PDL" \
     -e MQTT_HOST="$MQTT_HOST" \
@@ -111,9 +111,9 @@ services:
       MQTT_CLIENT_ID: "enedis_gateway"
       MQTT_USERNAME: 'enedis_gateway_username'
       MQTT_PASSWORD: 'enedis_gateway_password'
-      RETAIN: 'False'
-      QOS: '0'
-      HA_AUTODISCOVERY: 'False'
+      RETAIN: 0
+      QOS: 0
+      HA_AUTODISCOVERY: 0
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
       YEARS: 1
@@ -132,6 +132,7 @@ services:
 
 - Rework ha discovery to reduce items
 - Fix ha_autodiscovery always enable
+- Switch true/false parameters to 1/0
 
 ### [0.2] - 2021-09-25
 
