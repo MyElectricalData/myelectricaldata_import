@@ -51,6 +51,8 @@ If you reach this limit, you will be banned for 24 hours!
 
 The HC / HP calculations require a lot of API calls and the limit will be reached very quickly
 
+> Need database => Roadmap
+
 **WARNING :**
 
 **The following options generate additional API calls, be careful not to exceed the call limit per day!**
@@ -125,6 +127,8 @@ services:
 - Add **DJU18**
 - Add database to store data and reduce number of API Call. 
 - Add HC/HP (wait database)
+- Get Production
+- Create Home Assistant OS Addons
 
 ## Change log:
 
