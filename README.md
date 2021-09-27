@@ -123,10 +123,12 @@ services:
 ## Roadmap
 
 - Add **DJU18**
+- Add database to store data and reduce number of API Call. 
+- Add HC/HP (wait database)
 
 ## Change log:
 
-### [0.3] - 2021-09-26
+### [0.3] - 2021-09-27
 
 - Rework ha discovery to reduce items
 - Fix ha_autodiscovery always enable
