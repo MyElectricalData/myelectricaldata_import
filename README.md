@@ -26,6 +26,8 @@ Enedis Gateway limit to 50 call per day / per pdl.
 
 If you reach this limit, you will be banned for 24 hours!
 
+See chapter [persistance](#persistance), to reduce API call number.
+
 ## Environment variable
 
 | Variable  | Information | Mandatory/Default |
@@ -38,9 +40,11 @@ If you reach this limit, you will be banned for 24 hours!
 | MQTT_CLIENT_ID | Mosquitto Client ID | enedis_gateway |
 | MQTT_USERNAME | Mosquitto Username (leave empty if no user) |  |
 | MQTT_PASSWORD | Mosquitto Password (leave empty if no user) |  |
-| RETAIN | Retain data in MQTT | 0 |
+| RETAIN | Retain data in MQTT | False |
 | QOS | Quality Of Service MQTT | 0 |
-| HA_AUTODISCOVERY | Enable auto-discovery | 0 |
+| GET_CONSUMPTION | Enable API call to get your consumption | True |
+| GET_PRODUCTION | Enable API call to get your production | False |
+| HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
 | BASE_PRICE | Price of kWh in base plan | 0 |
 | CYCLE | Data refresh cycle (3600s minimum) | 3600 |
@@ -56,8 +60,14 @@ The HC / HP calculations require a lot of API calls and the limit will be reache
 **WARNING :**
 
 **The following options generate additional API calls, be careful not to exceed the call limit per day!**
-- YEAR (One per years)
+- GET_CONSUMPTION (One per YEARS)
+- GET_PRODUCTION (One per YEARS)
 - ADDRESSES
+
+## Persistance
+
+Since v0.3, Enedis Gateway use SQLite database to store all data and reduce API call number.
+Don't forget to mount /data to keep database persistance !!
 
 ## Usage :
 
@@ -70,13 +80,15 @@ MQTT_PREFIX="enedis_gateway"
 MQTT_CLIENT_ID="enedis_gateway" 
 MQTT_USERNAME='enedis_gateway_username'
 MQTT_PASSWORD='enedis_gateway_password'
-RETAIN=0
+RETAIN="True"
 QOS=0
-HA_AUTODISCOVERY=0
+GET_CONSUMPTION="True"
+GET_PRODUCTION="False"
+HA_AUTODISCOVERY="False"
 HA_AUTODISCOVERY_PREFIX='homeassistant'
 CYCLE=86400
 YEARS=1                        
-BASE_PRICE=1               
+BASE_PRICE=0               
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -89,11 +101,14 @@ docker run -it --restart=unless-stopped \
     -e MQTT_PASSWORD="$MQTT_PASSWORD" \
     -e RETAIN="$RETAIN" \
     -e QOS="$QOS" \
+    -e GET_CONSUMPTION="$GET_CONSUMPTION" \
+    -e GET_PRODUCTION="$GET_PRODUCTION" \
     -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
     -e CYCLE="$CYCLE" \
     -e YEARS=$YEARS \
     -e BASE_PRICE="$BASE_PRICE" \
+    -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
 
@@ -104,6 +119,8 @@ services:
   enedisgateway2mqtt:
     image: m4dm4rtig4n/enedisgateway2mqtt:latest
     restart: unless_stopped
+    volumes:
+        - mydata:/data
     environment:
       ACCESS_TOKEN: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
       PDL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
@@ -113,22 +130,25 @@ services:
       MQTT_CLIENT_ID: "enedis_gateway"
       MQTT_USERNAME: 'enedis_gateway_username'
       MQTT_PASSWORD: 'enedis_gateway_password'
-      RETAIN: 0
+      RETAIN: True
       QOS: 0
-      HA_AUTODISCOVERY: 0
+      GET_CONSUMPTION: True
+      GET_PRODUCTION: False
+      HA_AUTODISCOVERY: False
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
       YEARS: 1
       BASE_PRICE: 0.1445
+volumes:
+  mydata:      
 ```
 
 ## Roadmap
 
 - Add **DJU18**
-- Add database to store data and reduce number of API Call. 
-- Add HC/HP (wait database)
-- Get Production
+- Add HC/HP
 - Create Home Assistant OS Addons
+- Add Postgres/MariaDB connector
 
 ## Change log:
 
@@ -136,6 +156,8 @@ services:
 
 - Rework ha discovery to reduce items
 - Fix ha_autodiscovery always enable
+- Get Production
+- Add SQLite database to store data and reduce number of API Call.
 
 ### [0.2] - 2021-09-25
 
