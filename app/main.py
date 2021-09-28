@@ -111,21 +111,6 @@ ha_discovery = {
 
 api_no_result = []
 
-# SQLlite
-if not os.path.exists('/data'):
-  os.mkdir('/data')
-
-if not os.path.exists('/data/enedisgateway.db'):
-    con = sqlite3.connect('/data/enedisgateway.db')
-    cur = con.cursor()
-    cur.execute('''CREATE TABLE consumption_daily
-                   (date text, value real)''')
-    cur.execute('''CREATE UNIQUE INDEX idx_date 
-                    ON consumption_daily (date)''')
-else:
-    con = sqlite3.connect('/data/enedisgateway.db')
-    cur = con.cursor()
-
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -214,7 +199,7 @@ def getAddresses(client):
             else:
                 publish(client, f"{pdl}/details/usage_points/usage_point/{usage_point_key}", str(usage_point_data))
 
-def dailyConsumption(client, last_activation_date):
+def dailyConsumption(cur, client, last_activation_date):
     my_date = datetime.now()
 
     # Check activation data
@@ -225,7 +210,7 @@ def dailyConsumption(client, last_activation_date):
     dateBegin = lastYears.strftime('%Y-%m-%d')
     dateEnded = my_date.strftime('%Y-%m-%d')
 
-    data = dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date)
+    data = dailyConsumptionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
     for key, value in data.items():
         publish(client, f"{pdl}/consumption/current_year/{key}", str(value))
         if key != "dateBegin" and key != "dateEnded":
@@ -257,7 +242,7 @@ def dailyConsumption(client, last_activation_date):
             # dateEnded = dateEnded.strftime('%Y-%m-%d')
             dateBegin = dateEndedDelta + relativedelta(years=-1)
             dateBegin = dateBegin.strftime('%Y-%m-%d')
-            data = dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date)
+            data = dailyConsumptionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
             if "error_code" in data:
                 publish(client, f"{pdl}/consumption/year-{current_year}/error", str(1))
                 for key, value in data.items():
@@ -285,7 +270,7 @@ def dailyConsumption(client, last_activation_date):
                                 ha_discovery[pdl][f"consumption_{key.replace('-', '_')}"]['attributes'][f"price_year_{current_year}"] = str(roundValue)
             current_year = current_year + 1
 
-def checkHistoryConsumptionDaily(dateBegin, dateEnded):
+def checkHistoryConsumptionDaily(cur, dateBegin, dateEnded):
     dateBegin = datetime.strptime(dateBegin, '%Y-%m-%d')
     dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
     delta = dateEnded - dateBegin
@@ -299,14 +284,25 @@ def checkHistoryConsumptionDaily(dateBegin, dateEnded):
         checkDate = checkDate.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE date = '{checkDate}'"
         cur.execute(query)
-        if cur.fetchone() == None:
+        if cur.fetchone() is not None:
+            print(query)
+            pprint(cur.fetchall())
+            if cur.fetchall() != []:
+                query_result = cur.fetchall()[0]
+                value = query_result[1]
+                fail_count = query_result[2]
+                if value == 0:
+                    fail_count = fail_count + 1
+                    cur.execute(f"INSERT OR REPLACE INTO consumption_daily VALUES ('{checkDate}',0,{fail_count})")
+        if cur.fetchone() is None or cur.fetchall() != []:
             api_no_result.append(checkDate)
             result["date"].append(checkDate)
             result["status"] = False
             result["count"] = result["count"] + 1
+            cur.execute(f"INSERT OR REPLACE INTO consumption_daily VALUES ('{checkDate}',0,0)")
     return result
 
-def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
+def dailyConsumptionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date):
     response = {}
 
     lastYears = datetime.strptime(dateEnded, '%Y-%m-%d')
@@ -326,14 +322,14 @@ def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
     }
 
     try:
-        current_data = checkHistoryConsumptionDaily(dateBegin, dateEnded)
+        current_data = checkHistoryConsumptionDaily(cur, dateBegin, dateEnded)
         if current_data['status'] == True:
             log(f"All data loading beetween {dateBegin} / {dateEnded}")
             log(f" => Skip API Call")
         else:
             log(f"{current_data['count']} lost date :")
             for lost_data in current_data['date']:
-                log(f" => {lost_data}")
+                log(f" - {lost_data}")
         pprint(json.dumps(data))
         daily_consumption = requests.request("POST", url=f"{url}", headers=headers, data=json.dumps(data)).json()
         meter_reading = daily_consumption['meter_reading']
@@ -341,7 +337,7 @@ def dailyConsumptionBeetwen(pdl, dateBegin, dateEnded, last_activation_date):
         for interval_reading in meter_reading["interval_reading"]:
             date = interval_reading['date']
             value = interval_reading['value']
-            cur.execute(f"INSERT OR REPLACE INTO consumption_daily VALUES ('{interval_reading['date']}','{interval_reading['value']}')")
+            cur.execute(f"INSERT OR REPLACE INTO consumption_daily VALUES ('{interval_reading['date']}','{interval_reading['value']}',0)")
             mesures[date] = value
         list_date = list(reversed(sorted(mesures.keys())))
 
@@ -433,6 +429,22 @@ def run():
     client = connect_mqtt()
     client.loop_start()
     while True:
+
+        # SQLlite
+        if not os.path.exists('/data'):
+            os.mkdir('/data')
+
+        if not os.path.exists('/data/enedisgateway.db'):
+            con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
+            cur = con.cursor()
+            cur.execute('''CREATE TABLE consumption_daily
+                           (date TEXT, value REAL, fail INTEGER)''')
+            cur.execute('''CREATE UNIQUE INDEX idx_date 
+                            ON consumption_daily (date)''')
+        else:
+            con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
+            cur = con.cursor()
+
         log("Get contract :")
         last_activation_date = getContract(client)
         if "error" in last_activation_date:
@@ -445,7 +457,7 @@ def run():
                 log("Get Addresses :")
                 getAddresses(client)
             log("Get Consumption :")
-            dailyConsumption(client, last_activation_date)
+            dailyConsumption(cur, client, last_activation_date)
 
             if ha_autodiscovery == True:
                 for pdl, data in ha_discovery.items():
@@ -471,7 +483,13 @@ def run():
                                         attributes=attributes, unit_of_meas=unit_of_meas,
                                         device_class=device_class, state_class=state_class)
 
+        query = f"SELECT * FROM consumption_daily"
+        rows = con.execute(query)
+        for row in rows:
+            print(row)
+
         con.commit()
+        con.close()
         time.sleep(cycle)
 
 
