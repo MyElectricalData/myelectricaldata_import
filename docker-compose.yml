@@ -3,6 +3,8 @@ services:
   enedisgateway2mqtt:
     image: m4dm4rtig4n/enedisgateway2mqtt:latest
     restart: unless_stopped
+    volumes:
+        - mydata:/data
     environment:
       ACCESS_TOKEN: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
       PDL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
@@ -12,6 +14,14 @@ services:
       MQTT_CLIENT_ID: "enedis_gateway"
       MQTT_USERNAME: 'enedis_gateway_username'
       MQTT_PASSWORD: 'enedis_gateway_password'
+      RETAIN: True
+      QOS: 0
+      GET_CONSUMPTION: True
+      GET_PRODUCTION: False
+      HA_AUTODISCOVERY: False
+      HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
       YEARS: 1
       BASE_PRICE: 0.1445
+volumes:
+  mydata:
