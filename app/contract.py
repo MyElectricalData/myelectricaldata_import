@@ -30,6 +30,7 @@ def getContract(client):
                 f.publish(client, f"{pdl}/details/usage_points/contracts/{contracts_key}", str(contracts_data))
                 if contracts_key == "last_activation_date":
                     f.publish(client, f"{pdl}/activation_date", str(contracts_data))
+                    last_activation_date = contracts_data
                 if contracts_key == "subscribed_power":
                     f.publish(client, f"{pdl}/subscribed_power", str(contracts_data.split()[0]))
                     ha_discovery[pdl].update({
@@ -52,7 +53,7 @@ def getContract(client):
                     })
         retour = {
             "ha_discovery": ha_discovery,
-            "last_activation_date": contracts_data
+            "last_activation_date": last_activation_date
         }
     else:
         retour = {

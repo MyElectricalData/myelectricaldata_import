@@ -85,8 +85,8 @@ def dailyConsumption(cur, client, last_activation_date):
             current_year = current_year + 1
     return ha_discovery
 
-
 def checkHistoryConsumptionDaily(cur, dateBegin, dateEnded):
+    pdl = main.pdl
     dateBegin = datetime.strptime(dateBegin, '%Y-%m-%d')
     dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
     delta = dateEnded - dateBegin
@@ -98,7 +98,7 @@ def checkHistoryConsumptionDaily(cur, dateBegin, dateEnded):
     for i in range(delta.days + 1):
         checkDate = dateBegin + timedelta(days=i)
         checkDate = checkDate.strftime('%Y-%m-%d')
-        query = f"SELECT * FROM consumption_daily WHERE pdl = '{main.pdl}' AND date = '{checkDate}'"
+        query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date = '{checkDate}'"
         cur.execute(query)
         if cur.fetchone() is None:
             main.api_no_result.append(checkDate)
@@ -127,24 +127,37 @@ def dailyConsumptionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date
     }
 
     try:
+        new_date = []
         current_data = checkHistoryConsumptionDaily(cur, dateBegin, dateEnded)
         if current_data['status'] == True:
             f.log(f"All data loading beetween {dateBegin} / {dateEnded}")
             f.log(f" => Skip API Call")
         else:
-            f.log(f"{current_data['count']} lost date beetween {dateBegin} / {dateEnded} :")
-            for lost_data in current_data['date']:
-                f.log(f" - {lost_data}")
+            f.log(f"Data is missing between {dateBegin} / {dateEnded}")
 
             daily_consumption = requests.request("POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data)).json()
             meter_reading = daily_consumption['meter_reading']
             mesures = {}
+            f.log("Import data :")
+            log_import = []
             for interval_reading in meter_reading["interval_reading"]:
                 date = interval_reading['date']
                 value = interval_reading['value']
                 cur.execute(f"INSERT OR REPLACE INTO consumption_daily VALUES ('{pdl}','{interval_reading['date']}','{interval_reading['value']}')")
+                new_date.append(interval_reading['date'])
                 mesures[date] = value
             list_date = list(reversed(sorted(mesures.keys())))
+
+            f.splitLog(new_date)
+
+            not_found_data = []
+            for current_date in current_data['date']:
+                if not current_date in new_date:
+                    not_found_data.append(current_date)
+
+            if not_found_data != []:
+                f.log("Data not found :")
+                f.splitLog(not_found_data)
 
             dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
 
