@@ -66,3 +66,12 @@ jobs:
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
+
+      - name: Discord notification
+        if: steps.check-tag.outputs.dev == 'false'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: {color: 3447003, author: { name: client.user.username, icon_url: client.user.displayAvatarURL() }, title: "EnedisGateway2MQTT new version available => ${{ steps.vars.outputs.version }}", url: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt", fields: [{ name: "Github", value: "https://github.com/m4dm4rtig4n/enedisgateway2mqtt"}, {name: "Docker.io", value: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt"}], timestamp: new Date(), footer: {icon_url: client.user.displayAvatarURL(), text: "© m4dm4rtig4n"}}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: 'EnedisGateway2MQTT : New version available ${{ steps.vars.outputs.version }}'
