@@ -171,13 +171,15 @@ def run():
         f.log("####################################################################################")
         f.log("Get contract :")
         contract = cont.getContract(client)
-        last_activation_date = contract['last_activation_date']
         if "error" in contract:
             f.publish(client, f"error", str(1))
             for key, data in contract["errorMsg"].items():
                 f.publish(client, f"errorMsg/{key}", str(data))
         else:
             f.publish(client, f"error", str(0))
+
+            if "last_activation_date" in contract:
+                last_activation_date = contract['last_activation_date']
 
             if addresses == True:
                 f.log("####################################################################################")
