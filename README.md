@@ -14,7 +14,11 @@ Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt
 
 EnedisGateway2MQTT use [Enedis Gateway](https://enedisgateway.tech/) API to send data in your MQTT Broker.
 
-To generate ACCESS_TOKEN :
+
+### Generate ACCESS_TOKEN
+
+#### 1st Step - Enedis Website
+
 - Go to [Enedis Website](https://mon-compte.enedis.fr/alex-gdc/identity/manageexternalaccount)
 - Log or create account
 - Link your Linky
@@ -23,6 +27,17 @@ To generate ACCESS_TOKEN :
 **Sometimes it takes several days for Enedis to activate the collection.**
 
 **Activation is only valid for 1 year.**
+
+#### 2sde Step - Enedis Gateway
+
+- Go to [Enedis Gateway](https://enedisgateway.tech/) and clic on "*Faire la demande de consentement*"
+- Approuve your concentment
+- At the end, your are redirect to [Enedis Gateway](https://enedisgateway.tech/) and you can found your access_token
+and curl test command.
+
+**WARNING, The enedis website has some issues with chrome / chromium based browsers.
+The easiest way is to use Firefox in the consent process** 
+
 
 ## Enedis Gateway limit
 
