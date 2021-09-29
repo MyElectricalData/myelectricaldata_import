@@ -1,6 +1,10 @@
 # EnedisGateway2MQTT
 
-## Links
+## IMPORTANT !
+**The tool is still under development.
+It is possible that various functions disappear or be modified**
+
+# Links
 
 Github Repository : https://github.com/m4dm4rtig4n/enedisgateway2mqtt
 

@@ -20,16 +20,37 @@ def connect_mqtt():
     client.connect(main.broker, main.port)
     return client
 
-def publish(client, topic, msg, current_prefix="enedis_gateway"):
+def publish(client, topic, msg):
+    prefix = main.prefix
     msg_count = 0
-    result = client.publish(f'{current_prefix}/{topic}', str(msg), qos=main.qos, retain=int(main.retain))
+    result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=int(main.retain))
     status = result[0]
     if status == 0:
-        log(f" MQTT Send : {current_prefix}/{topic} => {msg}")
+        log(f" MQTT Send : {prefix}/{topic} => {msg}")
     else:
-        log(f" - Failed to send message to topic {current_prefix}/{topic}")
+        log(f" - Failed to send message to topic {prefix}/{topic}")
     msg_count += 1
 
 def log(msg):
     now = datetime.now()
     print(f"{now} : {msg}")
+
+def splitLog(msg):
+    format_log = ""
+    i = 1
+    nb_col = 12
+    msg_length = len(msg)
+    cur_length = 1
+    for log_msg in msg:
+        format_log += f" | {log_msg}"
+        if i == nb_col:
+            i = 1
+            format_log += f" |"
+            log(format_log)
+            format_log = ""
+        elif cur_length == msg_length:
+            format_log += f" |"
+            log(format_log)
+        else:
+            i = i + 1
+        cur_length = cur_length + 1
