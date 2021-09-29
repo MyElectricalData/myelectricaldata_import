@@ -171,7 +171,11 @@ volumes:
 
 ## Change log:
 
-### [0.3] - 2021-09-27
+### [0.3.1] - 2021-09-29
+
+- Fix error when API call limit is reached.
+
+### [0.3] - 2021-09-28
 
 - Rework ha discovery to reduce items
 - Fix ha_autodiscovery always enable
