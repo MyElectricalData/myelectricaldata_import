@@ -11,15 +11,13 @@ f = import_module("function")
 addr = import_module("addresses")
 cont = import_module("contract")
 day = import_module("daily")
-c = import_module("daily_consumption")
-p = import_module("daily_production")
 ha = import_module("home_assistant")
 
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 url = "https://enedisgateway.tech/api"
 
-fail_count = 5
+fail_count = 7
 
 ########################################################################################################################
 # CHECK MANDATORY PARAMETERS
@@ -120,16 +118,6 @@ else:
     production_base = 0
 
 ########################################################################################################################
-# YEARS
-# ! GENERATE 1 API CALL !
-if "YEARS" in os.environ:
-    years = int(os.environ['YEARS'])
-    if years >= 3:
-        years = 3
-else:
-    years = 1
-
-########################################################################################################################
 # ADDRESSES
 # ! GENERATE 1 API CALL !
 if "ADDRESSES" in os.environ:
@@ -148,6 +136,19 @@ else:
 
 api_no_result = []
 
+def init_database(cur):
+    f.log("Initialise database")
+    # CONSUMPTION
+    cur.execute('''CREATE TABLE consumption_daily
+                   (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
+                    ON consumption_daily (date)''')
+    # PRODUCTION
+    cur.execute('''CREATE TABLE production_daily
+                   (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_production 
+                    ON production_daily (date)''')
+
 def run():
     try:
         client = f.connect_mqtt()
@@ -161,27 +162,38 @@ def run():
 
     while True:
 
+        f.log("####################################################################################")
+        f.log("Check database")
         # SQLlite
         if not os.path.exists('/data'):
             os.mkdir('/data')
 
         if not os.path.exists('/data/enedisgateway.db'):
-            f.log("Init SQLite Database")
+            f.log(" => Init SQLite Database")
             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
             cur = con.cursor()
-            # CONSUMPTION
-            cur.execute('''CREATE TABLE consumption_daily
-                           (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
-            cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
-                            ON consumption_daily (date)''')
-            # PRODUCTION
-            cur.execute('''CREATE TABLE production_daily
-                           (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
-            cur.execute('''CREATE UNIQUE INDEX idx_date_production 
-                            ON production_daily (date)''')
+            init_database(cur)
+
         else:
+            f.log(" => Connect to SQLite Database")
             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
             cur = con.cursor()
+
+            # Check database structure
+            try:
+                cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES ('0','1970-01-01','0','0')")
+                cur.execute("INSERT OR REPLACE INTO production_daily VALUES ('0','1970-01-01','0','0')")
+                cur.execute("DELETE FROM consumption_daily WHERE pdl = 0")
+                cur.execute("DELETE FROM production_daily WHERE pdl = 0")
+            except:
+                f.log('<!> Database structure is invalid <!>')
+                f.log("Reset database")
+                con.close()
+                os.remove("/data/enedisgateway.db")
+                f.log(" => Reconnect")
+                con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
+                cur = con.cursor()
+                init_database(cur)
 
         f.log("####################################################################################")
         f.log("Get contract :")

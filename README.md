@@ -45,7 +45,17 @@ Enedis Gateway limit to 50 call per day / per pdl.
 
 If you reach this limit, you will be banned for 24 hours!
 
+**API call number by parameters :**
+
+| Parameters  | Call number |
+|:---------------|:---------------:|
+| GET_CONSUMPTION | 3 |
+| GET_PRODUCTION | 3 |
+| ADDRESSES | 1 |
+
 See chapter [persistance](#persistance), to reduce API call number.
+
+
 
 ## Environment variable
 
@@ -67,7 +77,6 @@ See chapter [persistance](#persistance), to reduce API call number.
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
 | BASE_PRICE | Price of kWh in base plan | 0 |
 | CYCLE | Data refresh cycle (3600s minimum) | 3600 |
-| YEARS | Allows you to define up to how many years you want import | 1 |
 | ADDRESSES | Get all addresses information | False |
 
 *Why is there no calculation for the HC / HP ?*
@@ -75,13 +84,6 @@ See chapter [persistance](#persistance), to reduce API call number.
 The HC / HP calculations require a lot of API calls and the limit will be reached very quickly
 
 > Need database => Roadmap
-
-**WARNING :**
-
-**The following options generate additional API calls, be careful not to exceed the call limit per day!**
-- GET_CONSUMPTION (One per YEARS)
-- GET_PRODUCTION (One per YEARS)
-- ADDRESSES
 
 ## Persistance
 
@@ -105,8 +107,7 @@ GET_CONSUMPTION="True"
 GET_PRODUCTION="False"
 HA_AUTODISCOVERY="False"
 HA_AUTODISCOVERY_PREFIX='homeassistant'
-CYCLE=86400
-YEARS=1                        
+CYCLE=86400                 
 BASE_PRICE=0               
 
 docker run -it --restart=unless-stopped \
@@ -125,7 +126,6 @@ docker run -it --restart=unless-stopped \
     -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
     -e CYCLE="$CYCLE" \
-    -e YEARS=$YEARS \
     -e BASE_PRICE="$BASE_PRICE" \
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
@@ -156,7 +156,6 @@ services:
       HA_AUTODISCOVERY: False
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
-      YEARS: 1
       BASE_PRICE: 0.1445
 volumes:
   mydata:      
@@ -168,14 +167,19 @@ volumes:
 - Add HC/HP
 - Create Home Assistant OS Addons
 - Add Postgres/MariaDB connector*
-- Add option export W or kWh 
 
 ## Change log:
 
-### [0.4.0] - XXXX-XX-XX
+### [0.4.0] - 2021-10-05
 
-- Switch locale to fr_FR.UTF8 (french data format)
-- 
+- Switch locale to fr_FR.UTF8 (french date format)
+- Switch ha_discovery state in kW by default (W before)
+- Add Database structure check + reset if broken
+- Optimise caching
+- Change MQTT structure per days
+- I remove the "years" parameter and automatically set the max value (36 month)
+- Fix "max days" to get data
+- Fixes various bugs 
 
 ### [0.3.2] - 2021-09-29
 
