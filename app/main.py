@@ -156,10 +156,6 @@ def run():
     except:
         f.log("MQTT : Connection failed")
 
-    # client = f.connect_mqtt()
-    # f.subscribe(client,topic)
-    # client.loop_forever()
-
     while True:
 
         f.log("####################################################################################")

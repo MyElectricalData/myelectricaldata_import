@@ -178,7 +178,7 @@ volumes:
 - Optimise caching
 - Change MQTT structure per days
 - I remove the "years" parameter and automatically set the max value (36 month)
-- Fix "max days" to get data
+- Switch image docker to python-slim to reduce image size (900mo => 150mo)
 - Fixes various bugs 
 
 ### [0.3.2] - 2021-09-29
