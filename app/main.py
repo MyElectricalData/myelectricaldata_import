@@ -3,16 +3,23 @@ import time
 from dateutil.relativedelta import *
 from distutils.util import strtobool
 import sqlite3
+import locale
+from pprint import pprint
 
 from importlib import import_module
 f = import_module("function")
 addr = import_module("addresses")
 cont = import_module("contract")
+day = import_module("daily")
 c = import_module("daily_consumption")
 p = import_module("daily_production")
 ha = import_module("home_assistant")
 
+locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+
 url = "https://enedisgateway.tech/api"
+
+fail_count = 5
 
 ########################################################################################################################
 # CHECK MANDATORY PARAMETERS
@@ -144,6 +151,11 @@ api_no_result = []
 def run():
     client = f.connect_mqtt()
     client.loop_start()
+
+    # client = f.connect_mqtt()
+    # f.subscribe(client,topic)
+    # client.loop_forever()
+
     while True:
 
         # SQLlite
@@ -156,12 +168,12 @@ def run():
             cur = con.cursor()
             # CONSUMPTION
             cur.execute('''CREATE TABLE consumption_daily
-                           (pdl TEXT, date TEXT, value REAL)''')
+                           (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
             cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
                             ON consumption_daily (date)''')
             # PRODUCTION
             cur.execute('''CREATE TABLE production_daily
-                           (pdl TEXT, date TEXT, value REAL)''')
+                           (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
             cur.execute('''CREATE UNIQUE INDEX idx_date_production 
                             ON production_daily (date)''')
         else:
@@ -178,8 +190,12 @@ def run():
         else:
             f.publish(client, f"error", str(0))
 
-            if "last_activation_date" in contract:
-                last_activation_date = contract['last_activation_date']
+            for pdl, contract_data in contract.items():
+                for key, data in contract_data.items():
+                    if key == "last_activation_date":
+                        last_activation_date = data
+                    if ha_autodiscovery == True:
+                        ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=key, value=data)
 
             if addresses == True:
                 f.log("####################################################################################")
@@ -189,7 +205,8 @@ def run():
             if get_consumption == True:
                 f.log("####################################################################################")
                 f.log("Get Consumption :")
-                ha_discovery_consumption = c.dailyConsumption(cur, client, last_activation_date)
+                # ha_discovery_consumption = c.dailyConsumption(cur, client, last_activation_date)
+                ha_discovery_consumption = day.getDaily(cur, client, "consumption", last_activation_date)
                 if ha_autodiscovery == True:
                     f.log("####################################################################################")
                     f.log("Home Assistant auto-discovery (Consumption) :")
@@ -218,7 +235,8 @@ def run():
             if get_production == True:
                 f.log("####################################################################################")
                 f.log("Get production :")
-                ha_discovery_production = p.dailyProduction(cur, client, last_activation_date)
+                # ha_discovery_production = p.dailyProduction(cur, client, last_activation_date)
+                ha_discovery_production = day.getDaily(cur, client, "production", last_activation_date)
                 if ha_autodiscovery == True:
                     f.log("####################################################################################")
                     f.log("Home Assistant auto-discovery (Production) :")
@@ -244,10 +262,23 @@ def run():
                                             attributes=attributes, unit_of_meas=unit_of_meas,
                                             device_class=device_class, state_class=state_class)
 
-        # query = f"SELECT * FROM consumption_daily ORDER BY date"
-        # rows = con.execute(query)
-        # for row in rows:
-        #     print(row)
+            query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
+            rows = con.execute(query)
+            if rows.fetchone() is not None:
+                f.log("####################################################################################")
+                f.log(f"Consumption data not found on enedis (after {fail_count} retry) :")
+                # pprint(rows.fetchall())
+                for row in rows:
+                    f.log(f"{row[0]} => {row[1]}")
+
+            query = f"SELECT * FROM production_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
+            rows = con.execute(query)
+            if rows.fetchone() is not None:
+                f.log("####################################################################################")
+                f.log(f"Production data not found on enedis (after {fail_count} retry) :")
+                # pprint(rows.fetchall())
+                for row in rows:
+                    f.log(f"{row[0]} => {row[1]}")
 
         con.commit()
         con.close()

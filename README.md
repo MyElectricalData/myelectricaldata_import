@@ -171,6 +171,11 @@ volumes:
 
 ## Change log:
 
+### [0.4.0] - XXXX-XX-XX
+
+- Switch locale to fr_FR.UTF8 (french data format)
+- 
+
 ### [0.3.2] - 2021-09-29
 
 - Fix HA Discovery error.

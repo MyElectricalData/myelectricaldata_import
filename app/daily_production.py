@@ -2,13 +2,13 @@ import requests
 import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import *
+from pprint import pprint
 
 from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
 def dailyProduction(cur, client, last_activation_date):
-    my_date = datetime.now()
     pdl = main.pdl
     production_base = main.production_base
 
@@ -22,29 +22,55 @@ def dailyProduction(cur, client, last_activation_date):
 
     lastYears = datetime.now() + relativedelta(years=-1)
     dateBegin = lastYears.strftime('%Y-%m-%d')
-    dateEnded = my_date.strftime('%Y-%m-%d')
+    dateEnded = datetime.now() + relativedelta(days=-1)
+    dateEnded = dateEnded.strftime('%Y-%m-%d')
 
-    data = dailyProductionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
-    for key, value in data.items():
-        f.publish(client, f"{pdl}/production/current_year/{key}", str(value))
-        if key != "dateBegin" and key != "dateEnded":
-            ha_discovery[pdl].update({
-                f"production_{key.replace('-','_')}": {
-                    "value": str(value),
-                    "unit_of_meas": "W",
-                    "device_class": "energy",
-                    "state_class": "total_increasing",
-                    "attributes": {}
-                }
-            })
-        if production_base != 0:
-            if isinstance(value, int):
-                roundValue = round(int(value) / 1000 * production_base, 2)
-                f.publish(client, f"{pdl}/production_price/current_year/{key}", roundValue)
-                if key != "dateBegin" and key != "dateEnded":
-                    if not f"price" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
-                        ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"price"] = str(roundValue)
-        lastData = data
+    data = dailyConsumptionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
+    if "error_code" in data:
+        f.publish(client, f"{pdl}/consumption/current_year/error", str(1))
+        for key, value in data.items():
+            f.publish(client, f"{pdl}/consumption/current_year/errorMsg/{key}", str(value))
+    else:
+        for key, value in data.items():
+            if key != "dateBegin" and key != "dateEnded":
+                current_value = int(value["value"])
+                current_date = value["date"]
+                current_date = datetime.strptime(current_date, '%Y-%m-%d')
+                day = current_date.strftime('%A')
+                ha_discovery[pdl].update({
+                    f"production_{key.replace('-','_')}": {
+                        "value": str(current_value),
+                        "unit_of_meas": "W",
+                        "device_class": "energy",
+                        "state_class": "total_increasing",
+                        "attributes": {}
+                    }
+                })
+                if not "kw" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                    ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes']["kw"] = round(int(current_value) / 1000, 2)
+                if not "day" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                    ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes']["day"] = day.capitalize()
+                if not "date" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                    ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes']["date"] = value["date"]
+                today = datetime.now()
+                today = today.strftime('%A')
+                if day == today:
+                    today = True
+                else:
+                    today = False
+                if not "today" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                    ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes']["today"] = today
+            else:
+                f.publish(client, f"{pdl}/consumption/current_year/{key}", str(value))
+
+            if production_base != 0:
+                if isinstance(current_value, int):
+                    roundValue = round(int(current_value) / 1000 * production_base, 2)
+                    f.publish(client, f"{pdl}/production_price/current_year/{key}", roundValue)
+                    if key != "dateBegin" and key != "dateEnded":
+                        if not f"price" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                            ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"price"] = str(roundValue)
+            lastData = data
 
     current_year = 1
     while current_year <= main.years:
@@ -52,8 +78,6 @@ def dailyProduction(cur, client, last_activation_date):
             f.log(f"Year => {current_year}")
             dateEnded = dateBegin
             dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
-            # dateEnded = dateEndedDelta + relativedelta(days=-1)
-            # dateEnded = dateEnded.strftime('%Y-%m-%d')
             dateBegin = dateEndedDelta + relativedelta(years=-1)
             dateBegin = dateBegin.strftime('%Y-%m-%d')
             data = dailyProductionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
@@ -64,22 +88,42 @@ def dailyProduction(cur, client, last_activation_date):
             else:
                 f.publish(client, f"{pdl}/production/year-{current_year}/error", str(0))
                 for key, value in data.items():
-                    f.publish(client, f"{pdl}/production/year-{current_year}/{key}", str(value))
                     if key != "dateBegin" and key != "dateEnded":
+                        current_value = int(value["value"])
+                        current_date = value["date"]
+                        current_date = datetime.strptime(current_date, '%Y-%m-%d')
+                        day = current_date.strftime('%A')
                         if f"production_{key.replace('-', '_')}" in ha_discovery[pdl]:
                             # CALC VARIATION
                             if key in lastData:
-                                variation = (lastData[key] - value) / value * 100
+                                if current_value != 0:
+                                    variation = (lastData[key]["value"] - current_value) / current_value * 100
+                                    variation = int(variation)
+                                    if variation > 0:
+                                        variation = f"+{variation}"
+                                else:
+                                    variation = 999
+                                if current_year == 1:
+                                    queue = "diff"
+                                else:
+                                    queue = f"history_year_{current_year - 1}_diff"
                                 if not f"variation_year_{current_year}" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
-                                    ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"variation_year_{current_year}"] = str(round(variation, 2))
+                                    ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][queue] = str(variation)
                             # SET HISTORY ATTRIBUTES
                             if not f"history_year_{current_year}" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
-                                ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}"] = str(value)
+                                ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}"] = str(current_value)
+                            if not f"history_year_{current_year}_kw" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                                ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}_kw"] = round(int(current_value) / 1000, 2)
+                            if not f"history_year_{current_year}_day" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                                ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}_day"] = day.capitalize()
+                            if not f"history_year_{current_year}_date" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
+                                ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"history_year_{current_year}_date"] = value["date"]
+                    else:
+                        f.publish(client, f"{pdl}/consumption/year-{current_year}/{key}", str(value))
                     if production_base != 0:
-                        if isinstance(value, int):
-                            roundValue = round(int(value) / 1000 * production_base, 2)
-                            f.publish(client, f"{pdl}/production_price/year-{current_year}/{key}", roundValue)
-                            # if f"price_production_{key.replace('-', '_')}" in ha_discovery[pdl]:
+                        if isinstance(current_value, int):
+                            roundValue = round(int(current_value) / 1000 * production_base, 2)
+                            f.publish(client, f"{pdl}/production_price/year-{current_year}/{key}", roundValue)                            
                             if not f"price_year_{current_year}" in ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'].keys():
                                 ha_discovery[pdl][f"production_{key.replace('-', '_')}"]['attributes'][f"price_year_{current_year}"] = str(roundValue)
             current_year = current_year + 1
@@ -91,20 +135,44 @@ def checkHistoryProductionDaily(cur, dateBegin, dateEnded):
     dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
     delta = dateEnded - dateBegin
     result = {
-        "status": True,
-        "date": [],
+        "missing_data": False,
+        "date": {},
         "count": 0
     }
     for i in range(delta.days + 1):
         checkDate = dateBegin + timedelta(days=i)
         checkDate = checkDate.strftime('%Y-%m-%d')
-        query = f"SELECT * FROM production_daily WHERE pdl = '{main.pdl}' AND date = '{checkDate}'"
+        query = f"SELECT * FROM production_daily WHERE pdl = '{pdl}' AND date = '{checkDate}'"
         cur.execute(query)
-        if cur.fetchone() is None:
-            main.api_no_result.append(checkDate)
-            result["date"].append(checkDate)
-            result["status"] = False
+        query_result = cur.fetchone()
+        if query_result is None:
+            result["date"][checkDate] = {
+                "status": False,
+                "fail": 0,
+                "value": 0
+            }
+            result["missing_data"] = True
             result["count"] = result["count"] + 1
+        elif query_result[3] >= main.fail_count:
+            result["date"][checkDate] = {
+                "status": True,
+                "fail": query_result[3],
+                "value": query_result[2]
+            }
+        elif query_result[2] == 0:
+            result["date"][checkDate] = {
+                "status": False,
+                "fail": query_result[3],
+                "value": query_result[2]
+            }
+            result["missing_data"] = True
+            result["count"] = result["count"] + 1
+        else:
+            result["date"][checkDate] = {
+                "status": True,
+                "fail": 0,
+                "value": query_result[2]
+            }
     return result
 
 def dailyProductionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date):
@@ -134,12 +202,10 @@ def dailyProductionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
             f.log(f" => Skip API Call")
         else:
             f.log(f"Data is missing between {dateBegin} / {dateEnded}")
-
             daily_production = requests.request("POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data)).json()
             meter_reading = daily_production['meter_reading']
             mesures = {}
             f.log("Import data :")
-            log_import = []
             for interval_reading in meter_reading["interval_reading"]:
                 date = interval_reading['date']
                 value = interval_reading['value']
@@ -151,9 +217,13 @@ def dailyProductionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
             f.splitLog(new_date)
 
             not_found_data = []
-            for current_date in current_data['date']:
-                if not current_date in new_date:
-                    not_found_data.append(current_date)
+            for date, date_data in current_data['date'].items():
+                if not date in new_date:
+                    not_found_data.append(date)
+                    if date_data['fail'] == 0 and date_data['value'] == 0:
+                        cur.execute(f"INSERT OR REPLACE INTO production_daily VALUES ('{pdl}','{date}','0','1')")
+                    else:
+                        cur.execute(f"UPDATE production_daily SET fail = {date_data['fail']+1} WHERE pdl = '{pdl}' and date = '{date}'")
 
             if not_found_data != []:
                 f.log("Data not found :")
@@ -186,22 +256,44 @@ def dailyProductionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
             for date in list_date:
                 value = int(mesures[date])
                 current_date = datetime.strptime(date, '%Y-%m-%d')
+                day = current_date.strftime('%A')
 
                 # WEEK DAYS
                 if current_date == j1:
-                    response['j-1'] = value
+                    response[day] = {
+                        "value": value,
+                        "date": date
+                    }
                 if current_date == j2:
-                    response['j-2'] = value
+                    response[day] = {
+                        "value": value,
+                        "date": date
+                    }
                 if current_date == j3:
-                    response['j-3'] = value
+                    response[day] = {
+                        "value": value,
+                        "date": date
+                    }
                 if current_date == j4:
-                    response['j-4'] = value
+                    response[day] = {
+                        "value": value,
+                        "date": date
+                    }
                 if current_date == j5:
-                    response['j-5'] = value
+                    response[day] = {
+                        "value": value,
+                        "date": date
+                    }
                 if current_date == j6:
-                    response['j-6'] = value
+                    response[day] = {
+                        "value": value,
+                        "date": date
+                    }
                 if current_date == j7:
-                    response['j-7'] = value
+                    response[day] = {
+                        "value": value,
+                        "date": date
+                    }
                 # LAST WEEK
                 if current_date >= dateWeek:
                     energyWeek = int(energyWeek) + int(value)
@@ -212,11 +304,23 @@ def dailyProductionBeetwen(cur, pdl, dateBegin, dateEnded, last_activation_date)
                 if current_date >= dateYears:
                     energyYears = int(energyYears) + int(value)
 
-            response['thisWeek'] = energyWeek
-            response['thisMonth'] = energyMonths
-            response['thisYear'] = energyYears
-    except:
+            response['thisWeek'] = {
+                "value": energyWeek,
+                "date": date
+            }
+            response['thisMonth'] = {
+                "value": energyMonths,
+                "date": date
+            }
+            response['thisYear'] = {
+                "value": energyYears,
+                "date": date
+            }
+    except Exception as e:
+        f.log("=====> ERROR : Exception <======")
+        f.log(e)
         for error_key, error_msg in daily_production.items():
             response[error_key] = error_msg
+            f.log(f"==> {error_key} => {error_msg}")
 
     return response
