@@ -167,7 +167,8 @@ volumes:
 - Add **DJU18**
 - Add HC/HP
 - Create Home Assistant OS Addons
-- Add Postgres/MariaDB connector
+- Add Postgres/MariaDB connector*
+- Add option export W or kWh 
 
 ## Change log:
 

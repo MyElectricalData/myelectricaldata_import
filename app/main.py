@@ -149,8 +149,11 @@ else:
 api_no_result = []
 
 def run():
-    client = f.connect_mqtt()
-    client.loop_start()
+    try:
+        client = f.connect_mqtt()
+        client.loop_start()
+    except:
+        f.log("MQTT : Connection failed")
 
     # client = f.connect_mqtt()
     # f.subscribe(client,topic)

@@ -33,12 +33,15 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
         for key, value in data.items():
             f.publish(client, f"{pdl}/{mode}/current_year/errorMsg/{key}", str(value))
     else:
+        f.publish(client, f"{pdl}/{mode}/current_year/error", str(0))
         for key, value in data.items():
+
             if key != "dateBegin" and key != "dateEnded":
                 current_value = int(value["value"])
                 current_date = value["date"]
                 current_date = datetime.strptime(current_date, '%Y-%m-%d')
                 day = current_date.strftime('%A')
+                f.publish(client, f"{pdl}/{mode}/current_year/{key}", str(current_value))
                 ha_discovery[pdl].update({
                     f"{mode}_{key.replace('-', '_')}": {
                         "value": str(current_value),
@@ -100,6 +103,7 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
                             current_date = value["date"]
                             current_date = datetime.strptime(current_date, '%Y-%m-%d')
                             day = current_date.strftime('%A')
+                            f.publish(client, f"{pdl}/{mode}/year-{current_year}/{key}", str(current_value))
                             if f"{mode}_{key.replace('-', '_')}" in ha_discovery[pdl]:
                                 # CALC VARIATION
                                 if key in lastData:
@@ -283,37 +287,37 @@ def dailyBeetwen(cur, pdl, mode, dateBegin, dateEnded, last_activation_date):
 
                 # WEEK DAYS
                 if current_date == j1:
-                    response[day] = {
+                    response[f"week/{day}"] = {
                         "value": value,
                         "date": date
                     }
                 if current_date == j2:
-                    response[day] = {
+                    response[f"week/{day}"] = {
                         "value": value,
                         "date": date
                     }
                 if current_date == j3:
-                    response[day] = {
+                    response[f"week/{day}"] = {
                         "value": value,
                         "date": date
                     }
                 if current_date == j4:
-                    response[day] = {
+                    response[f"week/{day}"] = {
                         "value": value,
                         "date": date
                     }
                 if current_date == j5:
-                    response[day] = {
+                    response[f"week/{day}"] = {
                         "value": value,
                         "date": date
                     }
                 if current_date == j6:
-                    response[day] = {
+                    response[f"week/{day}"] = {
                         "value": value,
                         "date": date
                     }
                 if current_date == j7:
-                    response[day] = {
+                    response[f"week/{day}"] = {
                         "value": value,
                         "date": date
                     }

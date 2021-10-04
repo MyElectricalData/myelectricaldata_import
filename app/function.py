@@ -11,7 +11,8 @@ def connect_mqtt():
         if rc == 0:
             log("Connected to MQTT Broker!")
         else:
-            log("Failed to connect, return code %d\n", rc)
+            log(f"Failed to connect, return code {rc}\n")
+            quit()
 
     # Set Connecting Client ID
     client = mqtt_client.Client(main.client_id)
