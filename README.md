@@ -171,6 +171,10 @@ volumes:
 
 ## Change log:
 
+### [0.3.2] - 2021-09-29
+
+- Fix HA Discovery error.
+
 ### [0.3.1] - 2021-09-29
 
 - Fix error when API call limit is reached.

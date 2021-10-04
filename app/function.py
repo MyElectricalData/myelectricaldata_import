@@ -2,10 +2,11 @@ from paho.mqtt import client as mqtt_client
 from datetime import datetime
 
 from importlib import import_module
+
 main = import_module("main")
 
-def connect_mqtt():
 
+def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             log("Connected to MQTT Broker!")
@@ -20,8 +21,8 @@ def connect_mqtt():
     client.connect(main.broker, main.port)
     return client
 
-def publish(client, topic, msg):
-    prefix = main.prefix
+
+def publish(client, topic, msg, prefix=main.prefix):
     msg_count = 0
     result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=int(main.retain))
     status = result[0]
@@ -31,9 +32,11 @@ def publish(client, topic, msg):
         log(f" - Failed to send message to topic {prefix}/{topic}")
     msg_count += 1
 
+
 def log(msg):
     now = datetime.now()
     print(f"{now} : {msg}")
+
 
 def splitLog(msg):
     format_log = ""
