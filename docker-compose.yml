@@ -2,7 +2,7 @@ version: "3.9"
 services:
   enedisgateway2mqtt:
     image: m4dm4rtig4n/enedisgateway2mqtt:latest
-    restart: unless_stopped
+    restart: unless-stopped
     volumes:
         - mydata:/data
     environment:
@@ -14,11 +14,11 @@ services:
       MQTT_CLIENT_ID: "enedis_gateway"
       MQTT_USERNAME: 'enedis_gateway_username'
       MQTT_PASSWORD: 'enedis_gateway_password'
-      RETAIN: True
+      RETAIN: "True"
       QOS: 0
-      GET_CONSUMPTION: True
-      GET_PRODUCTION: False
-      HA_AUTODISCOVERY: False
+      GET_CONSUMPTION: "True"
+      GET_PRODUCTION: "False"
+      HA_AUTODISCOVERY: "False"
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
       YEARS: 1
