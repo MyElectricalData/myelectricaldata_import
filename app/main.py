@@ -138,6 +138,16 @@ api_no_result = []
 
 def init_database(cur):
     f.log("Initialise database")
+    # ADDRESSES
+    cur.execute('''CREATE TABLE addresses
+                   (pdl TEXT, json TEXT)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
+                    ON addresses (pdl)''')
+    # CONTRACT
+    cur.execute('''CREATE TABLE contracts
+                   (pdl TEXT, json TEXT)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
+                    ON contracts (pdl)''')
     # CONSUMPTION
     cur.execute('''CREATE TABLE consumption_daily
                    (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
@@ -177,8 +187,12 @@ def run():
 
             # Check database structure
             try:
+                cur.execute("INSERT OR REPLACE INTO addresses VALUES ('0','0')")
+                cur.execute("INSERT OR REPLACE INTO contracts VALUES ('0','0')")
                 cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES ('0','1970-01-01','0','0')")
                 cur.execute("INSERT OR REPLACE INTO production_daily VALUES ('0','1970-01-01','0','0')")
+                cur.execute("DELETE FROM addresses WHERE pdl = 0")
+                cur.execute("DELETE FROM contracts WHERE pdl = 0")
                 cur.execute("DELETE FROM consumption_daily WHERE pdl = 0")
                 cur.execute("DELETE FROM production_daily WHERE pdl = 0")
             except:
@@ -211,7 +225,7 @@ def run():
             if addresses == True:
                 f.log("####################################################################################")
                 f.log("Get Addresses :")
-                addr.getAddresses(client)
+                addr.getAddresses(client, cur)
 
             if get_consumption == True:
                 f.log("####################################################################################")
