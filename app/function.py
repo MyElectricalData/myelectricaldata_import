@@ -11,7 +11,8 @@ def connect_mqtt():
         if rc == 0:
             log("Connected to MQTT Broker!")
         else:
-            log("Failed to connect, return code %d\n", rc)
+            log(f"Failed to connect, return code {rc}\n")
+            quit()
 
     # Set Connecting Client ID
     client = mqtt_client.Client(main.client_id)
@@ -24,7 +25,7 @@ def connect_mqtt():
 
 def publish(client, topic, msg, prefix=main.prefix):
     msg_count = 0
-    result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=int(main.retain))
+    result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=main.retain)
     status = result[0]
     if status == 0:
         log(f" MQTT Send : {prefix}/{topic} => {msg}")
@@ -32,6 +33,14 @@ def publish(client, topic, msg, prefix=main.prefix):
         log(f" - Failed to send message to topic {prefix}/{topic}")
     msg_count += 1
 
+
+def subscribe(client, topic, prefix=main.prefix):
+    def on_message(client, userdata, msg):
+        print(f" MQTT Received : `{prefix}/{topic}` => `{msg.payload.decode()}`")
+
+    sub_topic = f"{prefix}/{topic}"
+    client.subscribe(client, sub_topic)
+    client.on_message = on_message
 
 def log(msg):
     now = datetime.now()

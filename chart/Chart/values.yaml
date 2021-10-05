@@ -9,7 +9,7 @@
 image:
   repository: m4dm4rtig4n/enedisgateway2mqtt
   pullPolicy: Always
-  tag: "0.1"
+  tag: 0.3.1
 
 strategy:
   type: Recreate
@@ -81,3 +81,10 @@ probes:
     #   initialDelaySeconds: 30
     #   periodSeconds: 10
     #   timeoutSeconds: 10
+
+persistence:
+  data:
+    enabled: true
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 1Gi

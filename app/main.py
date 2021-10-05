@@ -3,16 +3,21 @@ import time
 from dateutil.relativedelta import *
 from distutils.util import strtobool
 import sqlite3
+import locale
+from pprint import pprint
 
 from importlib import import_module
 f = import_module("function")
 addr = import_module("addresses")
 cont = import_module("contract")
-c = import_module("daily_consumption")
-p = import_module("daily_production")
+day = import_module("daily")
 ha = import_module("home_assistant")
 
+locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+
 url = "https://enedisgateway.tech/api"
+
+fail_count = 7
 
 ########################################################################################################################
 # CHECK MANDATORY PARAMETERS
@@ -113,16 +118,6 @@ else:
     production_base = 0
 
 ########################################################################################################################
-# YEARS
-# ! GENERATE 1 API CALL !
-if "YEARS" in os.environ:
-    years = int(os.environ['YEARS'])
-    if years >= 3:
-        years = 3
-else:
-    years = 1
-
-########################################################################################################################
 # ADDRESSES
 # ! GENERATE 1 API CALL !
 if "ADDRESSES" in os.environ:
@@ -141,32 +136,74 @@ else:
 
 api_no_result = []
 
+def init_database(cur):
+    f.log("Initialise database")
+    # ADDRESSES
+    cur.execute('''CREATE TABLE addresses
+                   (pdl TEXT, json TEXT)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
+                    ON addresses (pdl)''')
+    # CONTRACT
+    cur.execute('''CREATE TABLE contracts
+                   (pdl TEXT, json TEXT)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
+                    ON contracts (pdl)''')
+    # CONSUMPTION
+    cur.execute('''CREATE TABLE consumption_daily
+                   (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
+                    ON consumption_daily (date)''')
+    # PRODUCTION
+    cur.execute('''CREATE TABLE production_daily
+                   (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_production 
+                    ON production_daily (date)''')
+
 def run():
-    client = f.connect_mqtt()
-    client.loop_start()
+    try:
+        client = f.connect_mqtt()
+        client.loop_start()
+    except:
+        f.log("MQTT : Connection failed")
+
     while True:
 
+        f.log("####################################################################################")
+        f.log("Check database")
         # SQLlite
         if not os.path.exists('/data'):
             os.mkdir('/data')
 
         if not os.path.exists('/data/enedisgateway.db'):
-            f.log("Init SQLite Database")
+            f.log(" => Init SQLite Database")
             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
             cur = con.cursor()
-            # CONSUMPTION
-            cur.execute('''CREATE TABLE consumption_daily
-                           (pdl TEXT, date TEXT, value REAL)''')
-            cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
-                            ON consumption_daily (date)''')
-            # PRODUCTION
-            cur.execute('''CREATE TABLE production_daily
-                           (pdl TEXT, date TEXT, value REAL)''')
-            cur.execute('''CREATE UNIQUE INDEX idx_date_production 
-                            ON production_daily (date)''')
+            init_database(cur)
+
         else:
+            f.log(" => Connect to SQLite Database")
             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
             cur = con.cursor()
+
+            # Check database structure
+            try:
+                cur.execute("INSERT OR REPLACE INTO addresses VALUES ('0','0')")
+                cur.execute("INSERT OR REPLACE INTO contracts VALUES ('0','0')")
+                cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES ('0','1970-01-01','0','0')")
+                cur.execute("INSERT OR REPLACE INTO production_daily VALUES ('0','1970-01-01','0','0')")
+                cur.execute("DELETE FROM addresses WHERE pdl = 0")
+                cur.execute("DELETE FROM contracts WHERE pdl = 0")
+                cur.execute("DELETE FROM consumption_daily WHERE pdl = 0")
+                cur.execute("DELETE FROM production_daily WHERE pdl = 0")
+            except:
+                f.log('<!> Database structure is invalid <!>')
+                f.log("Reset database")
+                con.close()
+                os.remove("/data/enedisgateway.db")
+                f.log(" => Reconnect")
+                con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
+                cur = con.cursor()
+                init_database(cur)
 
         f.log("####################################################################################")
         f.log("Get contract :")
@@ -178,18 +215,23 @@ def run():
         else:
             f.publish(client, f"error", str(0))
 
-            if "last_activation_date" in contract:
-                last_activation_date = contract['last_activation_date']
+            for pdl, contract_data in contract.items():
+                for key, data in contract_data.items():
+                    if key == "last_activation_date":
+                        last_activation_date = data
+                    if ha_autodiscovery == True:
+                        ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=key, value=data)
 
             if addresses == True:
                 f.log("####################################################################################")
                 f.log("Get Addresses :")
-                addr.getAddresses(client)
+                addr.getAddresses(client, cur)
 
             if get_consumption == True:
                 f.log("####################################################################################")
                 f.log("Get Consumption :")
-                ha_discovery_consumption = c.dailyConsumption(cur, client, last_activation_date)
+                # ha_discovery_consumption = c.dailyConsumption(cur, client, last_activation_date)
+                ha_discovery_consumption = day.getDaily(cur, client, "consumption", last_activation_date)
                 if ha_autodiscovery == True:
                     f.log("####################################################################################")
                     f.log("Home Assistant auto-discovery (Consumption) :")
@@ -218,7 +260,8 @@ def run():
             if get_production == True:
                 f.log("####################################################################################")
                 f.log("Get production :")
-                ha_discovery_production = p.dailyProduction(cur, client, last_activation_date)
+                # ha_discovery_production = p.dailyProduction(cur, client, last_activation_date)
+                ha_discovery_production = day.getDaily(cur, client, "production", last_activation_date)
                 if ha_autodiscovery == True:
                     f.log("####################################################################################")
                     f.log("Home Assistant auto-discovery (Production) :")
@@ -244,10 +287,23 @@ def run():
                                             attributes=attributes, unit_of_meas=unit_of_meas,
                                             device_class=device_class, state_class=state_class)
 
-        # query = f"SELECT * FROM consumption_daily ORDER BY date"
-        # rows = con.execute(query)
-        # for row in rows:
-        #     print(row)
+            query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
+            rows = con.execute(query)
+            if rows.fetchone() is not None:
+                f.log("####################################################################################")
+                f.log(f"Consumption data not found on enedis (after {fail_count} retry) :")
+                # pprint(rows.fetchall())
+                for row in rows:
+                    f.log(f"{row[0]} => {row[1]}")
+
+            query = f"SELECT * FROM production_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
+            rows = con.execute(query)
+            if rows.fetchone() is not None:
+                f.log("####################################################################################")
+                f.log(f"Production data not found on enedis (after {fail_count} retry) :")
+                # pprint(rows.fetchall())
+                for row in rows:
+                    f.log(f"{row[0]} => {row[1]}")
 
         con.commit()
         con.close()
