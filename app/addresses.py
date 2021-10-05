@@ -21,13 +21,17 @@ def getAddresses(client, cur):
     query = f"SELECT * FROM addresses WHERE pdl = '{pdl}'"
     cur.execute(query)
     query_result = cur.fetchone()
+    pprint(query_result)
     if query_result is None:
+        print("QUERY")
         addresses = requests.request("POST", url=f"{url}", headers=headers, data=json.dumps(data)).json()
         addresses_b64 = str(addresses)
-        addresses_b64 = addresses_b64.encode('ascii')
         addresses_b64 = base64.b64encode(addresses_b64)
-        cur.execute(f"INSERT OR REPLACE INTO addresses VALUES ('{pdl}','{addresses_b64}')")
+        query = f"INSERT OR REPLACE INTO addresses VALUES ('{pdl}',\"{addresses_b64}\")"
+        pprint(query)
+        cur.execute(query)
     else:
+        print("Cached")
         addresses = json.loads(query_result[1])
 
     pprint(addresses)
