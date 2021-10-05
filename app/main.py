@@ -98,13 +98,13 @@ if "CONSUMPTION_PRICE_BASE" in os.environ:
 else:
     consumption_base_price = 0
 if "CONSUMPTION_PRICE_HC" in os.environ:
-    consumption_base_price = float(os.environ['CONSUMPTION_PRICE_HC'])
+    consumption_base_price_hc = float(os.environ['CONSUMPTION_PRICE_HC'])
 else:
-    consumption_base_price = 0
+    consumption_base_price_hc = 0
 if "CONSUMPTION_PRICE_HP" in os.environ:
-    consumption_base_price = float(os.environ['CONSUMPTION_PRICE_HP'])
+    consumption_base_price_hp = float(os.environ['CONSUMPTION_PRICE_HP'])
 else:
-    consumption_base_price = 0
+    consumption_base_price_hp = 0
 
 ########################################################################################################################
 # PRODUCTION

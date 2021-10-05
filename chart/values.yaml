@@ -25,7 +25,7 @@ env:
 #  MQTT_PASSWORD: 'enedis_gateway_password'
 #  CYCLE: 86400
 #  YEARS: 1
-#  BASE_PRICE: 0.1445
+#  CONSUMPTION_PRICE_BASE: 0.1445
 
 args: []
   # - "--debug"

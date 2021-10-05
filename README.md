@@ -75,7 +75,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | GET_PRODUCTION | Enable API call to get your production | False |
 | HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
-| BASE_PRICE | Price of kWh in base plan | 0 |
+| CONSUMPTION_PRICE_BASE | Price of kWh in base plan | 0 |
 | CYCLE | Data refresh cycle (3600s minimum) | 3600 |
 | ADDRESSES | Get all addresses information | False |
 
@@ -108,7 +108,7 @@ GET_PRODUCTION="False"
 HA_AUTODISCOVERY="False"
 HA_AUTODISCOVERY_PREFIX='homeassistant'
 CYCLE=86400                 
-BASE_PRICE=0               
+CONSUMPTION_PRICE_BASE=0               
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -126,7 +126,7 @@ docker run -it --restart=unless-stopped \
     -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
     -e CYCLE="$CYCLE" \
-    -e BASE_PRICE="$BASE_PRICE" \
+    -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE" \
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -156,7 +156,7 @@ services:
       HA_AUTODISCOVERY: "False"
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
-      BASE_PRICE: 0.1445
+      CONSUMPTION_PRICE_BASE: 0.1445
 volumes:
   mydata:      
 ```
