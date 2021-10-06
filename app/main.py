@@ -130,10 +130,17 @@ else:
 # CYCLE
 if "CYCLE" in os.environ:
     cycle = int(os.environ['CYCLE'])
-    if cycle < 3600:
-        cycle = 3600
+    if cycle < 43200:
+        cycle = 43200
 else:
-    cycle = 86400
+    cycle = 43200
+
+########################################################################################################################
+# FORCE_REFRESH
+if "FORCE_REFRESH" in os.environ:
+    force_refresh = bool(strtobool(os.environ['FORCE_REFRESH']))
+else:
+    force_refresh = True
 
 api_no_result = []
 
@@ -198,7 +205,7 @@ def run():
 
             # Check database structure
             try:
-                cur.execute("INSERT OR REPLACE INTO addresses VALUES (?,?)", [0, 0, 0])
+                cur.execute("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
                 cur.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
                 cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
                 cur.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
@@ -218,7 +225,7 @@ def run():
 
         f.log("####################################################################################")
         f.log("Get contract :")
-        contract = cont.getContract(client)
+        contract = cont.getContract(client, con, cur)
         if "error" in contract:
             f.publish(client, f"error", str(1))
             for key, data in contract["errorMsg"].items():

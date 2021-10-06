@@ -26,7 +26,6 @@ def getAddresses(client, con, cur):
         "usage_point_id": str(pdl),
     }
 
-    # cur.execute(f"DELETE FROM addresses WHERE pdl = '{pdl}'")
     query = f"SELECT * FROM addresses WHERE pdl = '{pdl}'"
     cur.execute(query)
     query_result = cur.fetchone()
@@ -35,12 +34,16 @@ def getAddresses(client, con, cur):
         addresses = queryApi(url, headers, data)
     else:
         count = query_result[2]
-        if count > main.force_refresh_count:
+        if count >= main.force_refresh_count:
             f.log(" => Query API (Refresh Cache)")
-            addresses = queryApi(url, headers, data, count)
+            addresses = queryApi(url, headers, data, 0)
         else:
-            f.log(f" => Query Cache (refresh in {count} try)")
+            f.log(f" => Query Cache (refresh in {main.force_refresh_count-count} try)")
             addresses = json.loads(query_result[1])
+            new_count = count + 1
+            query = f"INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
+            cur.execute(query, [pdl, json.dumps(addresses), new_count])
+            con.commit()
 
     if not "customer" in addresses:
         f.publish(client, f"{pdl}/consumption/current_year/error", str(1))
