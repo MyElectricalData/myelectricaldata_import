@@ -56,7 +56,6 @@ If you reach this limit, you will be banned for 24 hours!
 See chapter [persistance](#persistance), to reduce API call number.
 
 
-
 ## Environment variable
 
 | Variable  | Information | Mandatory/Default |
@@ -76,19 +75,40 @@ See chapter [persistance](#persistance), to reduce API call number.
 | HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
 | BASE_PRICE | Price of kWh in base plan | 0 |
-| CYCLE | Data refresh cycle (3600s minimum) | 3600 |
+| CYCLE | Data refresh cycle (12h minimum) | 43200 |
 | ADDRESSES | Get all addresses information | False |
+| FORCE_REFRESH | Force refresh all data (wipe all cached data) | False |
 
 *Why is there no calculation for the HC / HP ?*
 
-The HC / HP calculations require a lot of API calls and the limit will be reached very quickly
+The HC / HP calculations require a lot of API calls and the limit will be reached very quickly.
+> This feature will add soon.
 
-> Need database => Roadmap
-
-## Persistance
+## Cache
 
 Since v0.3, Enedis Gateway use SQLite database to store all data and reduce API call number.
 Don't forget to mount /data to keep database persistance !!
+
+### Lifecycle
+
+| Data type | Information | Refresh after |
+|:---------------:|:---------------|:-----:|
+| contracts  | All contract informations | 7 run |
+| addresses  | All contact details | 7 run |
+| consumption  | Daily consumption  | never |
+| production  | Daily production | never |
+
+If you want force refresh all data you can set environment variable "**FORCE_REFRESH**" to "**True**".
+
+**WARNING, This parameters wipe all data (addresses, contracts, consumption, production) and generate lot of API Call (don't forget [Enedis Gateway limit](#Enedis Gateway limit))**
+
+> It doesn't forget that it takes several days to recover consumption/production in detail mode.
+
+### Blacklist
+
+Sometimes there are holes in the Enedis consumption records. So I set up a blacklist system for certain dates.
+
+If date does not return information after 7 try (7 x CYCLE), I blacklist this date and will no longer generate an API call
 
 ## Usage :
 
@@ -169,6 +189,10 @@ volumes:
 - Add Postgres/MariaDB connector*
 
 ## Change log:
+
+### [0.4.1] - 2021-10-06
+
+- Cache addresses & contracts data.
 
 ### [0.4.0] - 2021-10-05
 

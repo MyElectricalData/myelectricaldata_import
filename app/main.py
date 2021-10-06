@@ -18,6 +18,7 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 url = "https://enedisgateway.tech/api"
 
 fail_count = 7
+force_refresh_count = 7
 
 ########################################################################################################################
 # CHECK MANDATORY PARAMETERS
@@ -129,33 +130,50 @@ else:
 # CYCLE
 if "CYCLE" in os.environ:
     cycle = int(os.environ['CYCLE'])
-    if cycle < 3600:
-        cycle = 3600
+    if cycle < 43200:
+        cycle = 43200
 else:
-    cycle = 86400
+    cycle = 43200
+
+########################################################################################################################
+# FORCE_REFRESH
+if "FORCE_REFRESH" in os.environ:
+    force_refresh = bool(strtobool(os.environ['FORCE_REFRESH']))
+else:
+    force_refresh = True
 
 api_no_result = []
 
 def init_database(cur):
     f.log("Initialise database")
     # ADDRESSES
-    cur.execute('''CREATE TABLE addresses
-                   (pdl TEXT, json TEXT)''')
+    cur.execute('''CREATE TABLE addresses (
+                        pdl TEXT PRIMARY KEY,
+                        json json NOT NULL, 
+                        count INTEGER)''')
     cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
                     ON addresses (pdl)''')
     # CONTRACT
-    cur.execute('''CREATE TABLE contracts
-                   (pdl TEXT, json TEXT)''')
+    cur.execute('''CREATE TABLE contracts (
+                        pdl TEXT PRIMARY KEY,
+                        json json NOT NULL, 
+                        count INTEGER)''')
     cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
                     ON contracts (pdl)''')
     # CONSUMPTION
-    cur.execute('''CREATE TABLE consumption_daily
-                   (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
+    cur.execute('''CREATE TABLE consumption_daily (
+                        pdl TEXT PRIMARY KEY, 
+                        date TEXT NOT NULL, 
+                        value REAL NOT NULL, 
+                        fail INTEGER)''')
     cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
                     ON consumption_daily (date)''')
     # PRODUCTION
-    cur.execute('''CREATE TABLE production_daily
-                   (pdl TEXT, date TEXT, value REAL, fail INTEGER)''')
+    cur.execute('''CREATE TABLE production_daily (
+                        pdl TEXT PRIMARY KEY, 
+                        date TEXT NOT NULL, 
+                        value REAL NOT NULL, 
+                        fail INTEGER)''')
     cur.execute('''CREATE UNIQUE INDEX idx_date_production 
                     ON production_daily (date)''')
 
@@ -187,10 +205,10 @@ def run():
 
             # Check database structure
             try:
-                cur.execute("INSERT OR REPLACE INTO addresses VALUES ('0','0')")
-                cur.execute("INSERT OR REPLACE INTO contracts VALUES ('0','0')")
-                cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES ('0','1970-01-01','0','0')")
-                cur.execute("INSERT OR REPLACE INTO production_daily VALUES ('0','1970-01-01','0','0')")
+                cur.execute("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
+                cur.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
+                cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
+                cur.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
                 cur.execute("DELETE FROM addresses WHERE pdl = 0")
                 cur.execute("DELETE FROM contracts WHERE pdl = 0")
                 cur.execute("DELETE FROM consumption_daily WHERE pdl = 0")
@@ -207,7 +225,7 @@ def run():
 
         f.log("####################################################################################")
         f.log("Get contract :")
-        contract = cont.getContract(client)
+        contract = cont.getContract(client, con, cur)
         if "error" in contract:
             f.publish(client, f"error", str(1))
             for key, data in contract["errorMsg"].items():
@@ -225,7 +243,7 @@ def run():
             if addresses == True:
                 f.log("####################################################################################")
                 f.log("Get Addresses :")
-                addr.getAddresses(client, cur)
+                addr.getAddresses(client, con, cur)
 
             if get_consumption == True:
                 f.log("####################################################################################")
