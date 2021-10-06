@@ -11,6 +11,7 @@ f = import_module("function")
 addr = import_module("addresses")
 cont = import_module("contract")
 day = import_module("daily")
+detail = import_module("detail")
 ha = import_module("home_assistant")
 
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -144,40 +145,61 @@ else:
 
 api_no_result = []
 
-def init_database(cur):
-    f.log("Initialise database")
-    # ADDRESSES
-    cur.execute('''CREATE TABLE addresses (
-                        pdl TEXT PRIMARY KEY,
-                        json json NOT NULL, 
-                        count INTEGER)''')
-    cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
-                    ON addresses (pdl)''')
-    # CONTRACT
-    cur.execute('''CREATE TABLE contracts (
-                        pdl TEXT PRIMARY KEY,
-                        json json NOT NULL, 
-                        count INTEGER)''')
-    cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
-                    ON contracts (pdl)''')
-    # CONSUMPTION
-    cur.execute('''CREATE TABLE consumption_daily (
-                        pdl TEXT PRIMARY KEY, 
-                        date TEXT NOT NULL, 
-                        value REAL NOT NULL, 
-                        fail INTEGER)''')
-    cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
-                    ON consumption_daily (date)''')
-    # PRODUCTION
-    cur.execute('''CREATE TABLE production_daily (
-                        pdl TEXT PRIMARY KEY, 
-                        date TEXT NOT NULL, 
-                        value REAL NOT NULL, 
-                        fail INTEGER)''')
-    cur.execute('''CREATE UNIQUE INDEX idx_date_production 
-                    ON production_daily (date)''')
-
 def run():
+
+    def init_database(cur):
+        f.log("Initialise database")
+
+        ## ADDRESSES
+        cur.execute('''CREATE TABLE addresses (
+                            pdl TEXT PRIMARY KEY,
+                            json json NOT NULL, 
+                            count INTEGER)''')
+        cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
+                        ON addresses (pdl)''')
+        ## CONTRACT
+        cur.execute('''CREATE TABLE contracts (
+                            pdl TEXT PRIMARY KEY,
+                            json json NOT NULL, 
+                            count INTEGER)''')
+        cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
+                        ON contracts (pdl)''')
+        ## CONSUMPTION
+        # DAILY
+        cur.execute('''CREATE TABLE consumption_daily (
+                            pdl TEXT PRIMARY KEY, 
+                            date TEXT NOT NULL, 
+                            value REAL NOT NULL, 
+                            fail INTEGER)''')
+        cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
+                        ON consumption_daily (date)''')
+
+        # DETAIL
+        cur.execute('''CREATE TABLE consumption_detail (
+                            pdl TEXT PRIMARY KEY, 
+                            date TEXT NOT NULL, 
+                            value REAL NOT NULL, 
+                            fail INTEGER)''')
+        cur.execute('''CREATE UNIQUE INDEX idx_date_consumption_detail
+                        ON consumption_detail (date)''')
+        ## PRODUCTION
+        # DAILY
+        cur.execute('''CREATE TABLE production_daily (
+                            pdl TEXT PRIMARY KEY, 
+                            date TEXT NOT NULL, 
+                            value REAL NOT NULL, 
+                            fail INTEGER)''')
+        cur.execute('''CREATE UNIQUE INDEX idx_date_production 
+                        ON production_daily (date)''')
+        # DETAIL
+        cur.execute('''CREATE TABLE production_detail (
+                            pdl TEXT PRIMARY KEY, 
+                            date TEXT NOT NULL, 
+                            value REAL NOT NULL, 
+                            fail INTEGER)''')
+        cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
+                        ON production_detail (date)''')
+
     try:
         client = f.connect_mqtt()
         client.loop_start()
@@ -186,12 +208,17 @@ def run():
 
     while True:
 
-        f.log("####################################################################################")
-        f.log("Check database")
         # SQLlite
         if not os.path.exists('/data'):
             os.mkdir('/data')
 
+        if force_refresh == True:
+            f.log("####################################################################################")
+            f.log("Reset Cache")
+            os.remove("/data/enedisgateway.db")
+
+        f.log("####################################################################################")
+        f.log("Check database")
         if not os.path.exists('/data/enedisgateway.db'):
             f.log(" => Init SQLite Database")
             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
@@ -208,11 +235,15 @@ def run():
                 cur.execute("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
                 cur.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
                 cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
+                cur.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
                 cur.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
+                cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
                 cur.execute("DELETE FROM addresses WHERE pdl = 0")
                 cur.execute("DELETE FROM contracts WHERE pdl = 0")
                 cur.execute("DELETE FROM consumption_daily WHERE pdl = 0")
+                cur.execute("DELETE FROM consumption_detail WHERE pdl = 0")
                 cur.execute("DELETE FROM production_daily WHERE pdl = 0")
+                cur.execute("DELETE FROM production_detail WHERE pdl = 0")
             except:
                 f.log('<!> Database structure is invalid <!>')
                 f.log("Reset database")
