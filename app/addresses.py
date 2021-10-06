@@ -41,7 +41,7 @@ def getAddresses(client, con, cur):
         else:
             f.log(f" => Query Cache (refresh in {count} try)")
             addresses = json.loads(query_result[1])
-    quit()
+
     if not "customer" in addresses:
         f.publish(client, f"{pdl}/consumption/current_year/error", str(1))
         for key, value in addresses.items():
