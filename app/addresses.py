@@ -8,7 +8,15 @@ from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
-def getAddresses(client, cur):
+def getAddresses(client, con, cur):
+
+    def queryApi(url, headers, data, count=0):
+        addresses = requests.request("POST", url=f"{url}", headers=headers, data=json.dumps(data)).json()
+        query = f"INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
+        cur.execute(query, [pdl, json.dumps(addresses), count])
+        con.commit()
+        return addresses
+
     pdl = main.pdl
     url = main.url
     headers = main.headers
@@ -18,25 +26,22 @@ def getAddresses(client, cur):
         "usage_point_id": str(pdl),
     }
 
+    # cur.execute(f"DELETE FROM addresses WHERE pdl = '{pdl}'")
     query = f"SELECT * FROM addresses WHERE pdl = '{pdl}'"
     cur.execute(query)
     query_result = cur.fetchone()
-    pprint(query_result)
     if query_result is None:
-        print("QUERY")
-        addresses = requests.request("POST", url=f"{url}", headers=headers, data=json.dumps(data)).json()
-        addresses_b64 = str(addresses)
-        addresses_b64 = base64.b64encode(addresses_b64)
-        query = f"INSERT OR REPLACE INTO addresses VALUES ('{pdl}',\"{addresses_b64}\")"
-        pprint(query)
-        cur.execute(query)
+        f.log(" => Query API")
+        addresses = queryApi(url, headers, data)
     else:
-        print("Cached")
-        addresses = json.loads(query_result[1])
-
-    pprint(addresses)
+        count = query_result[2]
+        if count > main.force_refresh_count:
+            f.log(" => Query API (Refresh Cache)")
+            addresses = queryApi(url, headers, data, count)
+        else:
+            f.log(f" => Query Cache (refresh in {count} try)")
+            addresses = json.loads(query_result[1])
     quit()
-
     if not "customer" in addresses:
         f.publish(client, f"{pdl}/consumption/current_year/error", str(1))
         for key, value in addresses.items():
