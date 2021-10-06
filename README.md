@@ -184,11 +184,14 @@ volumes:
 ## Roadmap
 
 - Add **DJU18**
-- Add HC/HP
 - Create Home Assistant OS Addons
 - Add Postgres/MariaDB connector*
 
 ## Change log:
+
+### [0.5.0] - 2021-10-XX
+
+- Add HC/HP
 
 ### [0.4.1] - 2021-10-06
 
