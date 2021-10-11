@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from pprint import pprint
 import re
-from scipy import integrate
 
 from importlib import import_module
 
