@@ -1,5 +1,9 @@
+import requests
 from paho.mqtt import client as mqtt_client
 from datetime import datetime
+import json
+from pprint import pprint
+import main
 
 from importlib import import_module
 
@@ -42,6 +46,9 @@ def subscribe(client, topic, prefix=main.prefix):
     client.subscribe(client, sub_topic)
     client.on_message = on_message
 
+def logLine():
+    log("####################################################################################")
+
 def log(msg):
     now = datetime.now()
     print(f"{now} : {msg}")
@@ -66,3 +73,27 @@ def splitLog(msg):
         else:
             i = i + 1
         cur_length = cur_length + 1
+
+def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
+    config_query = f"SELECT * FROM config WHERE key = 'config'"
+    cur.execute(config_query)
+    query_result = cur.fetchall()
+    query_result = json.loads(query_result[0][1])
+    # pprint(query_result)
+    if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
+        if query_result["call_number"] > query_result["max_call"]:
+            return {
+                "error_code": 1,
+                "errorMsg": f"API Call number per day is reached ({query_result['max_call']}), please wait until tomorrow to load the rest of data"
+            }
+        else:
+            query_result["call_number"] = int(query_result["call_number"]) + 1
+            query_result["day"] = datetime.now().strftime('%Y-%m-%d')
+            query = f"UPDATE config SET key = 'config', value = '{json.dumps(query_result)}' WHERE key = 'config'"
+            cur.execute(query)
+            con.commit()
+
+    else:
+        query_result["call_number"] = 0
+    retour = requests.request(type, url=f"{url}", headers=headers, data=data).json()
+    return retour

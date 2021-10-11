@@ -1,10 +1,12 @@
 import os
 import time
 from dateutil.relativedelta import *
+from datetime import datetime
 from distutils.util import strtobool
 import sqlite3
 import locale
 from pprint import pprint
+import json
 
 from importlib import import_module
 f = import_module("function")
@@ -19,7 +21,6 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 url = "https://enedisgateway.tech/api"
 
 fail_count = 7
-force_refresh_count = 7
 
 ########################################################################################################################
 # CHECK MANDATORY PARAMETERS
@@ -96,17 +97,17 @@ if "GET_CONSUMPTION" in os.environ:
 else:
     get_consumption = True
 if "CONSUMPTION_PRICE_BASE" in os.environ:
-    consumption_base_price = float(os.environ['CONSUMPTION_PRICE_BASE'])
+    consumption_price_base = float(os.environ['CONSUMPTION_PRICE_BASE'])
 else:
-    consumption_base_price = 0
+    consumption_price_base = 0
 if "CONSUMPTION_PRICE_HC" in os.environ:
-    consumption_base_price = float(os.environ['CONSUMPTION_PRICE_HC'])
+    consumption_price_hc = float(os.environ['CONSUMPTION_PRICE_HC'])
 else:
-    consumption_base_price = 0
+    consumption_price_hc = 0
 if "CONSUMPTION_PRICE_HP" in os.environ:
-    consumption_base_price = float(os.environ['CONSUMPTION_PRICE_HP'])
+    consumption_price_hp = float(os.environ['CONSUMPTION_PRICE_HP'])
 else:
-    consumption_base_price = 0
+    consumption_price_hp = 0
 
 ########################################################################################################################
 # PRODUCTION
@@ -120,8 +121,14 @@ else:
     production_base = 0
 
 ########################################################################################################################
+# HC/HP
+if "OFFPEAK_HOURS" in os.environ:
+    offpeak_hours = str(os.environ['OFFPEAK_HOURS'])
+else:
+    offpeak_hours = None
+
+########################################################################################################################
 # ADDRESSES
-# ! GENERATE 1 API CALL !
 if "ADDRESSES" in os.environ:
     addresses = bool(strtobool(os.environ['ADDRESSES']))
 else:
@@ -131,74 +138,100 @@ else:
 # CYCLE
 if "CYCLE" in os.environ:
     cycle = int(os.environ['CYCLE'])
-    if cycle < 43200:
-        cycle = 43200
+    if cycle < 3600:
+        cycle = 3600
 else:
-    cycle = 43200
+    cycle = 3600
 
 ########################################################################################################################
-# FORCE_REFRESH
-if "FORCE_REFRESH" in os.environ:
-    force_refresh = bool(strtobool(os.environ['FORCE_REFRESH']))
+# REFRESH_CONTRACT
+if "REFRESH_CONTRACT" in os.environ:
+    refresh_contract = bool(strtobool(os.environ['REFRESH_CONTRACT']))
 else:
-    force_refresh = True
+    refresh_contract = False
+
+########################################################################################################################
+# REFRESH_ADDRESSES
+if "REFRESH_ADDRESSES" in os.environ:
+    refresh_addresses = bool(strtobool(os.environ['REFRESH_ADDRESSES']))
+else:
+    refresh_addresses = False
+
+########################################################################################################################
+# WIPE_CACHE
+if "WIPE_CACHE" in os.environ:
+    wipe_cache = bool(strtobool(os.environ['WIPE_CACHE']))
+else:
+    wipe_cache = False
 
 api_no_result = []
 
+
+def init_database(cur):
+    f.log("Initialise database")
+
+    ## CONFIG
+    cur.execute('''CREATE TABLE config (
+                        key TEXT PRIMARY KEY,
+                        value json NOT NULL)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_config_key
+                    ON config (key)''')
+
+    ## ADDRESSES
+    cur.execute('''CREATE TABLE addresses (
+                        pdl TEXT PRIMARY KEY,
+                        json json NOT NULL, 
+                        count INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
+                    ON addresses (pdl)''')
+
+    ## CONTRACT
+    cur.execute('''CREATE TABLE contracts (
+                        pdl TEXT PRIMARY KEY,
+                        json json NOT NULL, 
+                        count INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
+                    ON contracts (pdl)''')
+    ## CONSUMPTION
+    # DAILY
+    cur.execute('''CREATE TABLE consumption_daily (
+                        pdl TEXT NOT NULL, 
+                        date TEXT NOT NULL, 
+                        value INTEGER NOT NULL, 
+                        fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
+                    ON consumption_daily (date)''')
+
+    # DETAIL
+    cur.execute('''CREATE TABLE consumption_detail (
+                        pdl TEXT NOT NULL, 
+                        date TEXT NOT NULL, 
+                        value INTEGER NOT NULL, 
+                        interval INTEGER NOT NULL, 
+                        measure_type TEXT NOT NULL, 
+                        fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_consumption_detail
+                    ON consumption_detail (date)''')
+    ## PRODUCTION
+    # DAILY
+    cur.execute('''CREATE TABLE production_daily (
+                        pdl TEXT NOT NULL, 
+                        date TEXT NOT NULL, 
+                        value INTEGER NOT NULL, 
+                        fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_production 
+                    ON production_daily (date)''')
+    # DETAIL
+    cur.execute('''CREATE TABLE production_detail (
+                        pdl TEXT NOT NULL, 
+                        date TEXT NOT NULL, 
+                        value INTEGER NOT NULL, 
+                        interval INTEGER NOT NULL,                        
+                        fail INTEGER)''')
+    cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
+                    ON production_detail (date)''')
+
 def run():
-
-    def init_database(cur):
-        f.log("Initialise database")
-
-        ## ADDRESSES
-        cur.execute('''CREATE TABLE addresses (
-                            pdl TEXT PRIMARY KEY,
-                            json json NOT NULL, 
-                            count INTEGER)''')
-        cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
-                        ON addresses (pdl)''')
-        ## CONTRACT
-        cur.execute('''CREATE TABLE contracts (
-                            pdl TEXT PRIMARY KEY,
-                            json json NOT NULL, 
-                            count INTEGER)''')
-        cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
-                        ON contracts (pdl)''')
-        ## CONSUMPTION
-        # DAILY
-        cur.execute('''CREATE TABLE consumption_daily (
-                            pdl TEXT PRIMARY KEY, 
-                            date TEXT NOT NULL, 
-                            value REAL NOT NULL, 
-                            fail INTEGER)''')
-        cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
-                        ON consumption_daily (date)''')
-
-        # DETAIL
-        cur.execute('''CREATE TABLE consumption_detail (
-                            pdl TEXT PRIMARY KEY, 
-                            date TEXT NOT NULL, 
-                            value REAL NOT NULL, 
-                            fail INTEGER)''')
-        cur.execute('''CREATE UNIQUE INDEX idx_date_consumption_detail
-                        ON consumption_detail (date)''')
-        ## PRODUCTION
-        # DAILY
-        cur.execute('''CREATE TABLE production_daily (
-                            pdl TEXT PRIMARY KEY, 
-                            date TEXT NOT NULL, 
-                            value REAL NOT NULL, 
-                            fail INTEGER)''')
-        cur.execute('''CREATE UNIQUE INDEX idx_date_production 
-                        ON production_daily (date)''')
-        # DETAIL
-        cur.execute('''CREATE TABLE production_detail (
-                            pdl TEXT PRIMARY KEY, 
-                            date TEXT NOT NULL, 
-                            value REAL NOT NULL, 
-                            fail INTEGER)''')
-        cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
-                        ON production_detail (date)''')
 
     try:
         client = f.connect_mqtt()
@@ -212,18 +245,28 @@ def run():
         if not os.path.exists('/data'):
             os.mkdir('/data')
 
-        if force_refresh == True:
-            f.log("####################################################################################")
-            f.log("Reset Cache")
-            os.remove("/data/enedisgateway.db")
+        if wipe_cache == True:
+            if os.path.exists('/data/enedisgateway.db'):
+                f.logLine()
+                f.log("Reset Cache")
+                os.remove("/data/enedisgateway.db")
 
-        f.log("####################################################################################")
         f.log("Check database")
         if not os.path.exists('/data/enedisgateway.db'):
             f.log(" => Init SQLite Database")
             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
             cur = con.cursor()
             init_database(cur)
+
+            ## Default Configure
+            config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
+            config = {
+                "day": datetime.now().strftime('%Y-%m-%d'),
+                "call_number": 0,
+                "max_call": 10
+            }
+            cur.execute(config_query, ["config", json.dumps(config)])
+            con.commit()
 
         else:
             f.log(" => Connect to SQLite Database")
@@ -232,19 +275,23 @@ def run():
 
             # Check database structure
             try:
+                cur.execute("INSERT OR REPLACE INTO config VALUES (?,?)", [0, 0])
                 cur.execute("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
                 cur.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
                 cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-                cur.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
+                cur.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)", [0, '1970-01-01', 0, 0, "", 0])
                 cur.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-                cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
+                cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?)", [0, '1970-01-01', 0, 0, 0])
+                cur.execute("DELETE FROM config WHERE key = 0")
                 cur.execute("DELETE FROM addresses WHERE pdl = 0")
                 cur.execute("DELETE FROM contracts WHERE pdl = 0")
                 cur.execute("DELETE FROM consumption_daily WHERE pdl = 0")
                 cur.execute("DELETE FROM consumption_detail WHERE pdl = 0")
                 cur.execute("DELETE FROM production_daily WHERE pdl = 0")
                 cur.execute("DELETE FROM production_detail WHERE pdl = 0")
-            except:
+            except Exception as e:
+                f.log("=====> ERROR : Exception <======")
+                f.log(e)
                 f.log('<!> Database structure is invalid <!>')
                 f.log("Reset database")
                 con.close()
@@ -254,10 +301,11 @@ def run():
                 cur = con.cursor()
                 init_database(cur)
 
-        f.log("####################################################################################")
+        f.logLine()
         f.log("Get contract :")
         contract = cont.getContract(client, con, cur)
-        if "error" in contract:
+        pprint(contract)
+        if "error_code" in contract:
             f.publish(client, f"error", str(1))
             for key, data in contract["errorMsg"].items():
                 f.publish(client, f"errorMsg/{key}", str(data))
@@ -268,21 +316,26 @@ def run():
                 for key, data in contract_data.items():
                     if key == "last_activation_date":
                         last_activation_date = data
+                    if key == "offpeak_hours":
+                        offpeak_hours = data
                     if ha_autodiscovery == True:
                         ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=key, value=data)
 
             if addresses == True:
-                f.log("####################################################################################")
+                f.logLine()
                 f.log("Get Addresses :")
                 addr.getAddresses(client, con, cur)
 
+            # cur.execute('delete from consumption_detail where date = "2021-10-07 23:30:00";')
+            # con.commit()
+
             if get_consumption == True:
-                f.log("####################################################################################")
+                f.logLine()
                 f.log("Get Consumption :")
-                # ha_discovery_consumption = c.dailyConsumption(cur, client, last_activation_date)
-                ha_discovery_consumption = day.getDaily(cur, client, "consumption", last_activation_date)
+                ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
+                pprint(ha_discovery_consumption)
                 if ha_autodiscovery == True:
-                    f.log("####################################################################################")
+                    f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption) :")
                     for pdl, data in ha_discovery_consumption.items():
                         for name, sensor_data in data.items():
@@ -302,17 +355,45 @@ def run():
                                 state_class = sensor_data['state_class']
                             else:
                                 state_class = None
-                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
-                                               attributes=attributes, unit_of_meas=unit_of_meas,
-                                               device_class=device_class, state_class=state_class)
+                            if "value" in sensor_data:
+                                ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                                                   attributes=attributes, unit_of_meas=unit_of_meas,
+                                                   device_class=device_class, state_class=state_class)
+                f.logLine()
+                f.log("Get Consumption Detail:")
+                ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
+                if ha_autodiscovery == True:
+                    f.logLine()
+                    f.log("Home Assistant auto-discovery (Consumption Detail) :")
+                    for pdl, data in ha_discovery_consumption.items():
+                        for name, sensor_data in data.items():
+                            if "attributes" in sensor_data:
+                                attributes = sensor_data['attributes']
+                            else:
+                                attributes = None
+                            if "unit_of_meas" in sensor_data:
+                                unit_of_meas = sensor_data['unit_of_meas']
+                            else:
+                                unit_of_meas = None
+                            if "device_class" in sensor_data:
+                                device_class = sensor_data['device_class']
+                            else:
+                                device_class = None
+                            if "state_class" in sensor_data:
+                                state_class = sensor_data['state_class']
+                            else:
+                                state_class = None
+                            if "value" in sensor_data:
+                                ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                                                   attributes=attributes, unit_of_meas=unit_of_meas,
+                                                   device_class=device_class, state_class=state_class)
 
             if get_production == True:
-                f.log("####################################################################################")
+                f.logLine()
                 f.log("Get production :")
-                # ha_discovery_production = p.dailyProduction(cur, client, last_activation_date)
-                ha_discovery_production = day.getDaily(cur, client, "production", last_activation_date)
+                ha_discovery_production = day.getDaily(cur, con, client, "production", last_activation_date)
                 if ha_autodiscovery == True:
-                    f.log("####################################################################################")
+                    f.logLine()
                     f.log("Home Assistant auto-discovery (Production) :")
                     for pdl, data in ha_discovery_production.items():
                         for name, sensor_data in data.items():
@@ -336,10 +417,40 @@ def run():
                                             attributes=attributes, unit_of_meas=unit_of_meas,
                                             device_class=device_class, state_class=state_class)
 
+                f.logLine()
+                f.log("Get production Detail:")
+                ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)
+                if ha_autodiscovery == True:
+                    f.logLine()
+                    f.log("Home Assistant auto-discovery (Production Detail) :")
+                    for pdl, data in ha_discovery_consumption.items():
+                        for name, sensor_data in data.items():
+                            if "attributes" in sensor_data:
+                                attributes = sensor_data['attributes']
+                            else:
+                                attributes = None
+                            if "unit_of_meas" in sensor_data:
+                                unit_of_meas = sensor_data['unit_of_meas']
+                            else:
+                                unit_of_meas = None
+                            if "device_class" in sensor_data:
+                                device_class = sensor_data['device_class']
+                            else:
+                                device_class = None
+                            if "state_class" in sensor_data:
+                                state_class = sensor_data['state_class']
+                            else:
+                                state_class = None
+                            if "value" in sensor_data:
+                                ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                                                   attributes=attributes, unit_of_meas=unit_of_meas,
+                                                   device_class=device_class, state_class=state_class)
+
+
             query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
             if rows.fetchone() is not None:
-                f.log("####################################################################################")
+                f.logLine()
                 f.log(f"Consumption data not found on enedis (after {fail_count} retry) :")
                 # pprint(rows.fetchall())
                 for row in rows:
@@ -348,7 +459,7 @@ def run():
             query = f"SELECT * FROM production_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
             if rows.fetchone() is not None:
-                f.log("####################################################################################")
+                f.logLine()
                 f.log(f"Production data not found on enedis (after {fail_count} retry) :")
                 # pprint(rows.fetchall())
                 for row in rows:

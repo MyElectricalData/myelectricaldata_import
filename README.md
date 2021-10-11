@@ -74,35 +74,34 @@ See chapter [persistance](#persistance), to reduce API call number.
 | GET_PRODUCTION | Enable API call to get your production | False |
 | HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
-| BASE_PRICE | Price of kWh in base plan | 0 |
-| CYCLE | Data refresh cycle (12h minimum) | 43200 |
+| CONSUMPTION_PRICE_BASE | Price of kWh in base plan | 0 |
+| CONSUMPTION_PRICE_HC | Price of HC kWh | 0 |
+| CONSUMPTION_PRICE_HP | Price of HP kWh | 0 |
+| CYCLE | Data refresh cycle (1h minimum) | 3600 |
 | ADDRESSES | Get all addresses information | False |
-| FORCE_REFRESH | Force refresh all data (wipe all cached data) | False |
-
-*Why is there no calculation for the HC / HP ?*
-
-The HC / HP calculations require a lot of API calls and the limit will be reached very quickly.
-> This feature will add soon.
+| REFRESH_CONTRACT | Refresh contract data | False | 
+| REFRESH_ADDRESSES | Refresh addresses data | False |  
+| WIPE_CACHE | Force refresh all data (wipe all cached data)  | False |   
 
 ## Cache
 
 Since v0.3, Enedis Gateway use SQLite database to store all data and reduce API call number.
-Don't forget to mount /data to keep database persistance !!
+> **Don't forget to mount /data to keep database persistance !!**
 
-### Lifecycle
+If you change your contract, plan it is necessary to do a reset "**REFRESH_CONTRACT**" to "**True**"
 
-| Data type | Information | Refresh after |
-|:---------------:|:---------------|:-----:|
-| contracts  | All contract informations | 7 run |
-| addresses  | All contact details | 7 run |
-| consumption  | Daily consumption  | never |
-| production  | Daily production | never |
+if you move, it is necessary to make a "**REFRESH_ADDRESSES**" to "**True**"
 
-If you want force refresh all data you can set environment variable "**FORCE_REFRESH**" to "**True**".
+If you want force refresh all data you can set environment variable "**WIPE_CACHE**" to "**True**".
 
 **WARNING, This parameters wipe all data (addresses, contracts, consumption, production) and generate lot of API Call (don't forget [Enedis Gateway limit](#Enedis Gateway limit))**
 
 > It doesn't forget that it takes several days to recover consumption/production in detail mode.
+
+## Consumption BASE vs HP/HC
+
+Even if you are on a basic plan (and not HP / HC), it is interesting to enter the prices of each plan.
+The tool will do calculation for you and tell you which plan is the most advantageous for you based on your consumption.
 
 ### Blacklist
 
@@ -127,8 +126,13 @@ GET_CONSUMPTION="True"
 GET_PRODUCTION="False"
 HA_AUTODISCOVERY="False"
 HA_AUTODISCOVERY_PREFIX='homeassistant'
-CYCLE=86400                 
-BASE_PRICE=0               
+CYCLE=3600                 
+CONSUMPTION_PRICE_BASE=0
+CONSUMPTION_PRICE_HC=0
+CONSUMPTION_PRICE_HP=0 
+REFRESH_CONTRACT="False" 
+REFRESH_ADDRESSES="False"  
+WIPE_CACHE="False"              
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -145,8 +149,13 @@ docker run -it --restart=unless-stopped \
     -e GET_PRODUCTION="$GET_PRODUCTION" \
     -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
-    -e CYCLE="$CYCLE" \
-    -e BASE_PRICE="$BASE_PRICE" \
+    -e CYCLE="$CYCLE" \                 
+    -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE"
+    -e CONSUMPTION_PRICE_HC="CONSUMPTION_PRICE_HC"
+    -e CONSUMPTION_PRICE_HP="CONSUMPTION_PRICE_HP"
+    -e REFRESH_CONTRACT="REFRESH_CONTRACT"
+    -e REFRESH_ADDRESSES="REFRESH_ADDRESSES"
+    -e WIPE_CACHE="WIPE_CACHE"  
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -176,7 +185,12 @@ services:
       HA_AUTODISCOVERY: "False"
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
-      BASE_PRICE: 0.1445
+      CONSUMPTION_PRICE_BASE: 0
+      CONSUMPTION_PRICE_HC: 0
+      CONSUMPTION_PRICE_HP: 0 
+      REFRESH_CONTRACT: "False" 
+      REFRESH_ADDRESSES: "False"  
+      WIPE_CACHE: "False"   
 volumes:
   mydata:      
 ```
@@ -185,13 +199,15 @@ volumes:
 
 - Add **DJU18**
 - Create Home Assistant OS Addons
-- Add Postgres/MariaDB connector*
+- Add Postgres/MariaDB connector
 
 ## Change log:
 
 ### [0.5.0] - 2021-10-XX
 
 - Add HC/HP
+- Rework database structure (all cached data are reset)
+- Add new params to reset all cache.
 
 ### [0.4.1] - 2021-10-06
 
