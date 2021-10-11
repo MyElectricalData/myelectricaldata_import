@@ -83,7 +83,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
         if query_result["call_number"] > query_result["max_call"]:
             return {
-                "error_code": 1,
+                "error_code": 2,
                 "errorMsg": f"API Call number per day is reached ({query_result['max_call']}), please wait until tomorrow to load the rest of data"
             }
         else:

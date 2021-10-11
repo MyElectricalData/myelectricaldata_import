@@ -31,6 +31,7 @@ def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
     data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
+    pprint(data)
     if "error_code" in data:
         f.publish(client, f"{pdl}/{mode}/current_year/error", str(1))
         for key, value in data.items():
@@ -225,6 +226,12 @@ def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date
                     f.log("Data not found :")
                     f.splitLog(not_found_data)
 
+            elif daily['error_code'] == 2:
+                f.log(f"Fetch data error detected beetween {dateBegin} / {dateEnded}")
+                f.log(f" => Load data from cache")
+                for date, data in current_data['date'].items():
+                    mesures[date] = data['value']
+
         list_date = list(reversed(sorted(mesures.keys())))
 
         dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
@@ -301,15 +308,15 @@ def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date
             if current_date >= dateYears:
                 energyYears = int(energyYears) + int(value)
 
-        response['thisWeek'] = {
+        response['this_week'] = {
             "value": energyWeek,
             "date": date
         }
-        response['thisMonth'] = {
+        response['this_month'] = {
             "value": energyMonths,
             "date": date
         }
-        response['thisYear'] = {
+        response['this_year'] = {
             "value": energyYears,
             "date": date
         }
