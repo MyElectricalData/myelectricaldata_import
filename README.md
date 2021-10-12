@@ -82,6 +82,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | REFRESH_CONTRACT | Refresh contract data | False | 
 | REFRESH_ADDRESSES | Refresh addresses data | False |  
 | WIPE_CACHE | Force refresh all data (wipe all cached data)  | False |   
+| DEBUG | Display debug information  | False |   
 
 ## Cache
 
@@ -133,6 +134,7 @@ CONSUMPTION_PRICE_HP=0
 REFRESH_CONTRACT="False" 
 REFRESH_ADDRESSES="False"  
 WIPE_CACHE="False"              
+DEBUG="False"              
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -151,11 +153,12 @@ docker run -it --restart=unless-stopped \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
     -e CYCLE="$CYCLE" \                 
     -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE"
-    -e CONSUMPTION_PRICE_HC="CONSUMPTION_PRICE_HC"
-    -e CONSUMPTION_PRICE_HP="CONSUMPTION_PRICE_HP"
-    -e REFRESH_CONTRACT="REFRESH_CONTRACT"
-    -e REFRESH_ADDRESSES="REFRESH_ADDRESSES"
-    -e WIPE_CACHE="WIPE_CACHE"  
+    -e CONSUMPTION_PRICE_HC="$CONSUMPTION_PRICE_HC"
+    -e CONSUMPTION_PRICE_HP="$CONSUMPTION_PRICE_HP"
+    -e REFRESH_CONTRACT="$REFRESH_CONTRACT"
+    -e REFRESH_ADDRESSES="$REFRESH_ADDRESSES"
+    -e WIPE_CACHE="$WIPE_CACHE"  
+    -e DEBUG="$DEBUG"  
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -191,6 +194,7 @@ services:
       REFRESH_CONTRACT: "False" 
       REFRESH_ADDRESSES: "False"  
       WIPE_CACHE: "False"   
+      DEBUG: "False"   
 volumes:
   mydata:      
 ```

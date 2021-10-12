@@ -12,9 +12,10 @@ def getContract(client, con, cur):
 
     def queryApi(url, headers, data, count=0):
         contract = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
-        query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
-        cur.execute(query, [pdl, json.dumps(contract), count])
-        con.commit()
+        if not "error_code" in contract:
+            query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
+            cur.execute(query, [pdl, json.dumps(contract), count])
+            con.commit()
         return contract
 
     pdl = main.pdl
@@ -47,13 +48,20 @@ def getContract(client, con, cur):
             cur.execute(query, [pdl, json.dumps(contract), 0])
             con.commit()
 
+    # pprint(contract)
     if 'error_code' in contract:
-        f.log(contract['errorMsg'])
+        f.log(contract['description'])
         ha_discovery = {
-            "error": True,
-            "errorMsg": contract['errorMsg']
+            "error_code": True,
+            "detail": {
+                "message": contract['description']
+            }
         }
+        f.publish(client, f"{pdl}/contract/error", str(1))
+        for key, value in contract.items():
+            f.publish(client, f"{pdl}/contract/errorMsg/{key}", str(value))
     else:
+        f.publish(client, f"{pdl}/contract/error", str(0))
         if "customer" in contract:
             customer = contract["customer"]
             f.publish(client, f"{pdl}/customer_id", str(customer["customer_id"]))
@@ -93,7 +101,9 @@ def getContract(client, con, cur):
                         f.publish(client, f"{pdl}/offpeak_hours", str(offpeak_hours))
         else:
             ha_discovery = {
-                "error": True,
-                "errorMsg": contract
+                "error_code": True,
+                "detail": {
+                    "message": contract
+                }
             }
     return ha_discovery

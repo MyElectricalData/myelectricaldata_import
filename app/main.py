@@ -164,6 +164,13 @@ if "WIPE_CACHE" in os.environ:
 else:
     wipe_cache = False
 
+########################################################################################################################
+# DEBUG
+if "DEBUG" in os.environ:
+    debug = bool(strtobool(os.environ['DEBUG']))
+else:
+    debug = False
+
 api_no_result = []
 
 
@@ -263,7 +270,7 @@ def run():
             config = {
                 "day": datetime.now().strftime('%Y-%m-%d'),
                 "call_number": 0,
-                "max_call": 10
+                "max_call": 60
             }
             cur.execute(config_query, ["config", json.dumps(config)])
             con.commit()
@@ -275,6 +282,19 @@ def run():
 
             # Check database structure
             try:
+
+                list_tables = ["config", "addresses", "contracts", "consumption_daily", "consumption_detail", "production_daily", "production_detail"]
+
+                query = f"SELECT name FROM sqlite_master WHERE type='table';"
+                cur.execute(query)
+                query_result = cur.fetchall()
+                tables = []
+                for table in query_result:
+                    tables.append(str(table).replace("('", "").replace("',)", ''))
+                for tab in list_tables:
+                    if not tab in tables:
+                        f.log(f"Table {tab} is missing")
+                        raise
                 cur.execute("INSERT OR REPLACE INTO config VALUES (?,?)", [0, 0])
                 cur.execute("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
                 cur.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
@@ -301,14 +321,16 @@ def run():
                 cur = con.cursor()
                 init_database(cur)
 
+
         f.logLine()
         f.log("Get contract :")
         contract = cont.getContract(client, con, cur)
-        pprint(contract)
+        f.log(contract,"debug")
         if "error_code" in contract:
             f.publish(client, f"error", str(1))
-            for key, data in contract["errorMsg"].items():
+            for key, data in contract["detail"].items():
                 f.publish(client, f"errorMsg/{key}", str(data))
+            f.log("-- Stop import --")
         else:
             f.publish(client, f"error", str(0))
 
@@ -324,16 +346,19 @@ def run():
             if addresses == True:
                 f.logLine()
                 f.log("Get Addresses :")
-                addr.getAddresses(client, con, cur)
-
-            # cur.execute('delete from consumption_detail where date = "2021-10-07 23:30:00";')
-            # con.commit()
+                addresse = addr.getAddresses(client, con, cur)
+                if "error_code" in addresse:
+                    f.publish(client, f"addresses/error", str(1))
+                    for key, data in addresse["detail"].items():
+                        f.publish(client, f"addresses/errorMsg/{key}", str(data))
+                else:
+                    f.publish(client, f"addresses/error", str(0))
 
             if get_consumption == True:
                 f.logLine()
                 f.log("Get Consumption :")
                 ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
-                pprint(ha_discovery_consumption)
+                # pprint(ha_discovery_consumption)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption) :")

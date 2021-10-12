@@ -237,6 +237,7 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
             f.log(f" => Load data from API")
 
             detail = f.apiRequest(cur, con, type="POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data))
+
             if not "error_code" in detail:
                 meter_reading = detail['meter_reading']
                 f.log("Import data :")
@@ -268,7 +269,10 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
 
             elif detail['error_code'] == 2:
                 f.log(f"Fetch data error detected beetween {dateBegin} / {dateEnded}")
-                f.log(f" => Load data from cache")
+                f.log(f" => {detail['description']}")
+            else:
+                f.log(f"API return error beetween {dateBegin} / {dateEnded}")
+                f.log(f" => {detail['description']}")
 
         con.commit()
     except Exception as e:

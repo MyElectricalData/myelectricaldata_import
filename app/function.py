@@ -32,7 +32,7 @@ def publish(client, topic, msg, prefix=main.prefix):
     result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=main.retain)
     status = result[0]
     if status == 0:
-        log(f" MQTT Send : {prefix}/{topic} => {msg}")
+        log(f" MQTT Send : {prefix}/{topic} => {msg}","debug")
     else:
         log(f" - Failed to send message to topic {prefix}/{topic}")
     msg_count += 1
@@ -49,10 +49,17 @@ def subscribe(client, topic, prefix=main.prefix):
 def logLine():
     log("####################################################################################")
 
-def log(msg):
+def log(msg, level="INFO "):
+    global debug
     now = datetime.now()
-    print(f"{now} : {msg}")
-
+    level = level.upper()
+    display = False
+    if main.debug == True and level == "DEBUG":
+        display = True
+    if level == "INFO ":
+        display = True
+    if display == True:
+        print(f"{now} - {level} : {msg}")
 
 def splitLog(msg):
     format_log = ""
@@ -79,12 +86,12 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     cur.execute(config_query)
     query_result = cur.fetchall()
     query_result = json.loads(query_result[0][1])
-    # pprint(query_result)
+    log(f"call_number : {query_result['call_number']}", "debug")
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
         if query_result["call_number"] > query_result["max_call"]:
             return {
                 "error_code": 2,
-                "errorMsg": f"API Call number per day is reached ({query_result['max_call']}), please wait until tomorrow to load the rest of data"
+                "description": f"API Call number per day is reached ({query_result['max_call']}), please wait until tomorrow to load the rest of data"
             }
         else:
             query_result["call_number"] = int(query_result["call_number"]) + 1
