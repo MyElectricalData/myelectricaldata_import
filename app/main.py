@@ -96,6 +96,10 @@ if "GET_CONSUMPTION" in os.environ:
     get_consumption = bool(strtobool(os.environ['GET_CONSUMPTION']))
 else:
     get_consumption = True
+if "GET_CONSUMPTION_DETAIL" in os.environ:
+    get_consumption_detail = bool(strtobool(os.environ['GET_CONSUMPTION_DETAIL']))
+else:
+    get_consumption_detail = True
 if "CONSUMPTION_PRICE_BASE" in os.environ:
     consumption_price_base = float(os.environ['CONSUMPTION_PRICE_BASE'])
 else:
@@ -115,10 +119,14 @@ if "GET_PRODUCTION" in os.environ:
     get_production = bool(strtobool(os.environ['GET_PRODUCTION']))
 else:
     get_production = False
-if "PRODUCTION_PRICE" in os.environ:
-    production_base = float(os.environ['PRODUCTION_PRICE'])
+if "GET_PRODUCTION_DETAIL" in os.environ:
+    get_production_detail = bool(strtobool(os.environ['GET_PRODUCTION_DETAIL']))
 else:
-    production_base = 0
+    get_production_detail = False
+# if "PRODUCTION_PRICE" in os.environ:
+#     production_price = float(os.environ['PRODUCTION_PRICE'])
+# else:
+#     production_price = 0
 
 ########################################################################################################################
 # HC/HP
@@ -270,7 +278,7 @@ def run():
             config = {
                 "day": datetime.now().strftime('%Y-%m-%d'),
                 "call_number": 0,
-                "max_call": 60
+                "max_call": 15
             }
             cur.execute(config_query, ["config", json.dumps(config)])
             con.commit()
@@ -384,7 +392,9 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
-                f.logLine()
+            f.logLine()
+
+            if get_consumption_detail == True:
                 f.log("Get Consumption Detail:")
                 ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
@@ -412,6 +422,8 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
+
+            f.logLine()
 
             if get_production == True:
                 f.logLine()
@@ -441,7 +453,9 @@ def run():
                             ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                             attributes=attributes, unit_of_meas=unit_of_meas,
                                             device_class=device_class, state_class=state_class)
+            f.logLine()
 
+            if get_production_detail == True:
                 f.logLine()
                 f.log("Get production Detail:")
                 ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)

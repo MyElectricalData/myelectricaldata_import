@@ -39,6 +39,12 @@ and curl test command.
 The easiest way is to use Firefox in the consent process** 
 
 
+## EnedisGateway2MQTT limit
+
+In order to avoid saturation of Enedis Gateway services, the number of API calls is limited to 15 per day.
+Most of the information will be collected during the first launch.
+You will just need a few days to report all "detailed" consumption over 2 years (about 1 week)
+
 ## Enedis Gateway limit
 
 Enedis Gateway limit to 50 call per day / per pdl.
@@ -50,8 +56,11 @@ If you reach this limit, you will be banned for 24 hours!
 | Parameters  | Call number |
 |:---------------|:---------------:|
 | GET_CONSUMPTION | 3 |
+| GET_CONSUMPTION_DETAIL | 105 |
 | GET_PRODUCTION | 3 |
+| GET_PRODUCTION_DETAIL | 105 |
 | ADDRESSES | 1 |
+| CONTRACT | 1 |
 
 See chapter [persistance](#persistance), to reduce API call number.
 
@@ -71,7 +80,9 @@ See chapter [persistance](#persistance), to reduce API call number.
 | RETAIN | Retain data in MQTT | False |
 | QOS | Quality Of Service MQTT | 0 |
 | GET_CONSUMPTION | Enable API call to get your consumption | True |
+| GET_CONSUMPTION_DETAIL | Enable API call to get your consumption in detail mode | True |
 | GET_PRODUCTION | Enable API call to get your production | False |
+| GET_PRODUCTION_DETAIL | Enable API call to get your production in detail mode | False |
 | HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
 | CONSUMPTION_PRICE_BASE | Price of kWh in base plan | 0 |
