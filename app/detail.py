@@ -15,6 +15,7 @@ date_format = "%Y-%m-%d %H:%M:%S"
 
 def getDetail(cur, con, client, mode="consumption", last_activation_date=datetime.now(), offpeak_hours=None,
               measure_total=None):
+
     max_days = 730
     max_days_per_demand = 7
     max_days_date = datetime.now() + relativedelta(days=-max_days)
@@ -48,10 +49,12 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
         dateBegin = dateEndedDelta + relativedelta(weeks=-1)
         dateBegin = dateBegin.strftime('%Y-%m-%d')
         current_week = 1
-        while max_days_date <= datetime.strptime(dateEnded, '%Y-%m-%d') and not "error_code" in data:
+        finish = False
+        while max_days_date <= datetime.strptime(dateEnded, '%Y-%m-%d') and not "error_code" in data and finish == False:
             f.log(f"Load {dateBegin} => {dateEnded}")
             if last_activation_date > datetime.strptime(dateEnded, '%Y-%m-%d'):
                 f.log(" - Skip (activation date > dateEnded)")
+                finish = True
             else:
                 data = detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date,
                                      max_days_per_demand, offpeak_hours)
@@ -100,68 +103,69 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
             })
 
         value_wh = value * (interval / 60)
+        result[year][month]["measure_total"] += int(value)
+        result[year][month]["measure_total_wh"] += int(value_wh)
+
         if measure_type == "HP":
             result[year][month]["measure_hp"] += int(value)
-            result[year][month]["measure_total"] += int(value)
             result[year][month]["measure_hp_wh"] += int(value_wh)
-            result[year][month]["measure_total_wh"] += int(value_wh)
+            result[year][month]["measure_ration_hp"] = round(
+                100 * result[year][month]["measure_hp"] / result[year][month]["measure_total"], 2)
         if measure_type == "HC":
             result[year][month]["measure_hc"] += int(value)
-            result[year][month]["measure_total"] += int(value)
             result[year][month]["measure_hc_wh"] += int(value_wh)
-            result[year][month]["measure_total_wh"] += int(value_wh)
+            result[year][month]["measure_ration_hc"] = round(
+                100 * result[year][month]["measure_hc"] / result[year][month]["measure_total"], 2)
 
-
-        result[year][month]["measure_ration_hp"] = round(100 * result[year][month]["measure_hp"] / result[year][month]["measure_total"], 2)
-        result[year][month]["measure_ration_hc"] = round(100 * result[year][month]["measure_hc"] / result[year][month]["measure_total"], 2)
 
         if price_base != 0:
             result[year][month]["measure_base_euro"] = result[year][month]["measure_total_wh"] / 1000 * price_base
 
-        if price_hc != 0 and price_hp != 0:
-            result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
-            result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
-            result[year][month]["measure_hphc_euro"] = result[year][month]["measure_hp_euro"] + result[year][month]["measure_hc_euro"]
+        if offpeak_hours != None:
+            if price_hc != 0 and price_hp != 0:
+                result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
+                result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
+                result[year][month]["measure_hphc_euro"] = result[year][month]["measure_hp_euro"] + result[year][month]["measure_hc_euro"]
 
+            if price_base != 0 and price_hc != 0 and price_hp != 0 and measure_type != "BASE":
+                result[year][month]["base_vs_offpeak"] = 100 - (
+                        100 * result[year][month]["measure_base_euro"] / (result[year][month]["measure_hphc_euro"]))
 
-            result[year][month]["base_vs_offpeak"] = 100 - (
-                    100 * result[year][month]["measure_base_euro"] / (result[year][month]["measure_hphc_euro"]))
+                base_vs_offpeak += result[year][month]["base_vs_offpeak"]
 
-            base_vs_offpeak += result[year][month]["base_vs_offpeak"]
+                if result[year][month]["base_vs_offpeak"] > 0:
+                    result[year][month]["best_plan"] = f"BASE"
+                    result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+                else:
+                    result[year][month]["best_plan"] = f"HC/HP"
+                    result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
 
-            if result[year][month]["base_vs_offpeak"] > 0:
-                result[year][month]["best_plan"] = f"BASE"
-                result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-            else:
-                result[year][month]["best_plan"] = f"HC/HP"
-                result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-
-    if base_vs_offpeak > 0:
-        best_plan = f"BASE"
-        best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-    else:
-        best_plan = f"HC/HP"
-        best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-
-    f.logLine()
+    if offpeak_hours != None and price_base != 0 and price_hc != 0 and price_hp != 0:
+        if base_vs_offpeak > 0:
+            best_plan = f"BASE"
+            best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+        else:
+            best_plan = f"HC/HP"
+            best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
 
     year = dateObject.strftime('%Y')
     month = dateObject.strftime('%m')
-    for plan in ["hc", "hp"]:
-        ha_discovery[pdl].update({
-            f"{mode}_detail_this_month_{plan}": {
-                "value": result[year][month][f"measure_{plan}_wh"],
-                "unit_of_meas": "kW",
-                "device_class": "energy",
-                "state_class": "total_increasing",
-                "attributes": {}
-            }
-        })
-        ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["ratio"] = result[year][month][f"measure_ration_{plan}"]
-        ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["W"] = result[year][month][f"measure_{plan}"]
+    if offpeak_hours != None:
+        for plan in ["hc", "hp"]:
+            ha_discovery[pdl].update({
+                f"{mode}_detail_this_month_{plan}": {
+                    "value": result[year][month][f"measure_{plan}_wh"],
+                    "unit_of_meas": "kW",
+                    "device_class": "energy",
+                    "state_class": "total_increasing",
+                    "attributes": {}
+                }
+            })
+            ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["ratio"] = result[year][month][f"measure_ration_{plan}"]
+            ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["W"] = result[year][month][f"measure_{plan}"]
 
-        if price_hc != 0 and price_hp != 0:
-            ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"][f"measure_{plan}_euro"] = result[year][month][f"measure_{plan}_euro"]
+            if price_hc != 0 and price_hp != 0:
+                ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"][f"measure_{plan}_euro"] = result[year][month][f"measure_{plan}_euro"]
 
     ha_discovery[pdl].update({
         f"{mode}_detail_this_month_base": {
@@ -176,21 +180,22 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
     if price_base != 0:
         ha_discovery[pdl][f"{mode}_detail_this_month_base"]["attributes"][f"measure_base_euro"] = result[year][month][f"measure_base_euro"]
 
-    if price_base != 0 and price_hc != 0 and price_hp != 0:
-        ha_discovery[pdl].update({
-            f"{mode}_detail_this_month_compare": {
-                "value": result[year][month][f"best_plan"],
-                "attributes": {}
-            }
-        })
-        ha_discovery[pdl][f"{mode}_detail_this_month_compare"]["attributes"]["best_plan_percent"] = result[year][month][f"best_plan_percent"]
-        ha_discovery[pdl].update({
-            f"{mode}_detail_this_year_compare": {
-                "value": best_plan,
-                "attributes": {}
-            }
-        })
-        ha_discovery[pdl][f"{mode}_detail_this_year_compare"]["attributes"]["best_plan_percent"] = best_plan_percent
+    if offpeak_hours != None:
+        if price_base != 0 and price_hc != 0 and price_hp != 0:
+            ha_discovery[pdl].update({
+                f"{mode}_detail_this_month_compare": {
+                    "value": result[year][month][f"best_plan"],
+                    "attributes": {}
+                }
+            })
+            ha_discovery[pdl][f"{mode}_detail_this_month_compare"]["attributes"]["best_plan_percent"] = result[year][month][f"best_plan_percent"]
+            ha_discovery[pdl].update({
+                f"{mode}_detail_this_year_compare": {
+                    "value": best_plan,
+                    "attributes": {}
+                }
+            })
+            ha_discovery[pdl][f"{mode}_detail_this_year_compare"]["attributes"]["best_plan_percent"] = best_plan_percent
 
     for year, value in result.items():
         for month, subvalue in value.items():
@@ -201,6 +206,7 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
 
 
 def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand, offpeak_hours):
+
     response = {}
 
     def is_between(time, time_range):
@@ -237,7 +243,6 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
             f.log(f" => Load data from API")
 
             detail = f.apiRequest(cur, con, type="POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data))
-
             if not "error_code" in detail:
                 meter_reading = detail['meter_reading']
                 f.log("Import data :")
@@ -246,22 +251,25 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
                     date = interval_reading['date']
                     interval_length = re.findall(r'\d+', interval_reading['interval_length'])[0]
                     value = int(interval_reading['value'])
-                    measure_type = "HP"
                     dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
                     dateHourMinute = dateObject.strftime('%H:%M')
-                    for offpeak_hour in offpeak_hours:
-                        offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
-                        # FORMAT HOUR WITH 2 DIGIT
-                        offpeak_begin = datetime.strptime(offpeak_begin, '%H:%M')
-                        offpeak_begin = datetime.strftime(offpeak_begin, '%H:%M')
-                        offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
-                        # FORMAT HOUR WITH 2 DIGIT
-                        offpeak_stop = datetime.strptime(offpeak_stop, '%H:%M')
-                        offpeak_stop = datetime.strftime(offpeak_stop, '%H:%M')
-                        result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
-                        if result == True:
-                            measure_type = "HC"
-                        new_date.append(date)
+                    if offpeak_hours != None:
+                        measure_type = "HP"
+                        for offpeak_hour in offpeak_hours:
+                            offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
+                            # FORMAT HOUR WITH 2 DIGIT
+                            offpeak_begin = datetime.strptime(offpeak_begin, '%H:%M')
+                            offpeak_begin = datetime.strftime(offpeak_begin, '%H:%M')
+                            offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
+                            # FORMAT HOUR WITH 2 DIGIT
+                            offpeak_stop = datetime.strptime(offpeak_stop, '%H:%M')
+                            offpeak_stop = datetime.strftime(offpeak_stop, '%H:%M')
+                            result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
+                            if result == True:
+                                measure_type = "HC"
+                            new_date.append(date)
+                    else:
+                        measure_type = "BASE"
                     query = f"INSERT OR REPLACE INTO {mode}_detail VALUES ('{pdl}','{date}',{value},{interval_length},'{measure_type}', 0)"
                     cur.execute(query)
                 con.commit()

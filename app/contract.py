@@ -48,7 +48,6 @@ def getContract(client, con, cur):
             cur.execute(query, [pdl, json.dumps(contract), 0])
             con.commit()
 
-    # pprint(contract)
     if 'error_code' in contract:
         f.log(contract['description'])
         ha_discovery = {

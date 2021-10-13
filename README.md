@@ -85,6 +85,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | GET_PRODUCTION_DETAIL | Enable API call to get your production in detail mode | False |
 | HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
+| OFFPEAK_HOURS | Force HP/HC format : "HHhMM-HHhMM;HHhMM-HHhMM;..." | "" |
 | CONSUMPTION_PRICE_BASE | Price of kWh in base plan | 0 |
 | CONSUMPTION_PRICE_HC | Price of HC kWh | 0 |
 | CONSUMPTION_PRICE_HP | Price of HP kWh | 0 |
@@ -139,6 +140,7 @@ GET_PRODUCTION="False"
 HA_AUTODISCOVERY="False"
 HA_AUTODISCOVERY_PREFIX='homeassistant'
 CYCLE=3600                 
+OFFPEAK_HOURS=""
 CONSUMPTION_PRICE_BASE=0
 CONSUMPTION_PRICE_HC=0
 CONSUMPTION_PRICE_HP=0 
@@ -162,14 +164,15 @@ docker run -it --restart=unless-stopped \
     -e GET_PRODUCTION="$GET_PRODUCTION" \
     -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
-    -e CYCLE="$CYCLE" \                 
-    -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE"
-    -e CONSUMPTION_PRICE_HC="$CONSUMPTION_PRICE_HC"
-    -e CONSUMPTION_PRICE_HP="$CONSUMPTION_PRICE_HP"
-    -e REFRESH_CONTRACT="$REFRESH_CONTRACT"
-    -e REFRESH_ADDRESSES="$REFRESH_ADDRESSES"
-    -e WIPE_CACHE="$WIPE_CACHE"  
-    -e DEBUG="$DEBUG"  
+    -e CYCLE="$CYCLE" \          
+    -e OFFPEAK_HOURS="$OFFPEAK_HOURS" \       
+    -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE" \
+    -e CONSUMPTION_PRICE_HC="$CONSUMPTION_PRICE_HC" \
+    -e CONSUMPTION_PRICE_HP="$CONSUMPTION_PRICE_HP" \
+    -e REFRESH_CONTRACT="$REFRESH_CONTRACT" \
+    -e REFRESH_ADDRESSES="$REFRESH_ADDRESSES" \
+    -e WIPE_CACHE="$WIPE_CACHE" \
+    -e DEBUG="$DEBUG" \
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -199,6 +202,7 @@ services:
       HA_AUTODISCOVERY: "False"
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
       CYCLE: 86400
+      OFFPEAK_HOURS: ""
       CONSUMPTION_PRICE_BASE: 0
       CONSUMPTION_PRICE_HC: 0
       CONSUMPTION_PRICE_HP: 0 

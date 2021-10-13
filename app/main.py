@@ -248,6 +248,7 @@ def init_database(cur):
 
 def run():
 
+    global offpeak_hours
     try:
         client = f.connect_mqtt()
         client.loop_start()
@@ -392,7 +393,7 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
-            f.logLine()
+            # f.logLine()
 
             if get_consumption_detail == True:
                 f.log("Get Consumption Detail:")
@@ -423,7 +424,7 @@ def run():
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
 
-            f.logLine()
+            # f.logLine()
 
             if get_production == True:
                 f.logLine()
@@ -453,7 +454,7 @@ def run():
                             ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                             attributes=attributes, unit_of_meas=unit_of_meas,
                                             device_class=device_class, state_class=state_class)
-            f.logLine()
+            # f.logLine()
 
             if get_production_detail == True:
                 f.logLine()

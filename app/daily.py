@@ -31,7 +31,6 @@ def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
     data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
-    pprint(data)
     if "error_code" in data:
         f.publish(client, f"{pdl}/{mode}/current_year/error", str(1))
         for key, value in data.items():
