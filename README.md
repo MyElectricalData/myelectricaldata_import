@@ -222,7 +222,7 @@ volumes:
 
 ## Change log:
 
-### [0.5.0] - 2021-10-XX
+### [0.5.0] - 2021-10-13
 
 - Add HC/HP
 - Rework database structure (all cached data are reset)
