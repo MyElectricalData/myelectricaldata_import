@@ -274,23 +274,24 @@ def run():
             cur = con.cursor()
             init_database(cur)
 
-            ## Default Configure
-            config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
-            config = {
-                "day": datetime.now().strftime('%Y-%m-%d'),
-                "call_number": 0,
-                "max_call": 15
-            }
-            cur.execute(config_query, ["config", json.dumps(config)])
-            con.commit()
-
         else:
             f.log(" => Connect to SQLite Database")
             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
             cur = con.cursor()
 
+
             # Check database structure
             try:
+
+                ## Default Config
+                config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
+                config = {
+                    "day": datetime.now().strftime('%Y-%m-%d'),
+                    "call_number": 0,
+                    "max_call": 15
+                }
+                cur.execute(config_query, ["config", json.dumps(config)])
+                con.commit()
 
                 list_tables = ["config", "addresses", "contracts", "consumption_daily", "consumption_detail", "production_daily", "production_detail"]
 
@@ -329,7 +330,6 @@ def run():
                 con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
                 cur = con.cursor()
                 init_database(cur)
-
 
         f.logLine()
         f.log("Get contract :")
