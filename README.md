@@ -96,6 +96,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | WIPE_CACHE | Force refresh all data (wipe all cached data)  | False |   
 | DEBUG | Display debug information  | False |   
 | CARD_MYENEDIS | Create HA sensor for Linky Card with auto-discovery  | False |   
+| CURRENT_PLAN | Choose you plan "BASE" or "HP/HC"  | BASE |   
 
 ## Cache
 
@@ -152,6 +153,7 @@ REFRESH_ADDRESSES="False"
 WIPE_CACHE="False"              
 DEBUG="False"              
 CARD_MYENEDIS="False"              
+CURRENT_PLAN="BASE"              
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -180,6 +182,7 @@ docker run -it --restart=unless-stopped \
     -e WIPE_CACHE="$WIPE_CACHE" \
     -e DEBUG="$DEBUG" \
     -e CARD_MYENEDIS="$CARD_MYENEDIS" \
+    -e CURRENT_PLAN="$CURRENT_PLAN" \
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -218,6 +221,7 @@ services:
       WIPE_CACHE: "False"   
       DEBUG: "False"   
       CARD_MYENEDIS: "False"   
+      CURRENT_PLAN: "BASE"   
     logging:
       options:
         max-size: "10m"
