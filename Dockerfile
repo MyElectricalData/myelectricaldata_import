@@ -12,6 +12,7 @@ ENV LANG fr_FR.UTF-8
 ENV LC_ALL fr_FR.UTF-8
 
 RUN mkdir -p /data
+RUN pip install --upgrade pip
 RUN pip install -r /app/requirement.txt
 
 CMD ["python", "-u", "/app/main.py"]
