@@ -10,11 +10,11 @@ main = import_module("main")
 f = import_module("function")
 
 
-def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now()):
+def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime.now()):
     max_days = 1095
     max_days_date = datetime.now() + relativedelta(days=-max_days)
     pdl = main.pdl
-    base_price = main.consumption_base_price
+    base_price = main.consumption_price_base
 
     ha_discovery = {
         pdl: {}
@@ -30,7 +30,7 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
     dateEnded = datetime.now()
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
-    data = dailyBeetwen(cur, pdl, mode, dateBegin, dateEnded, last_activation_date)
+    data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
     if "error_code" in data:
         f.publish(client, f"{pdl}/{mode}/current_year/error", str(1))
         for key, value in data.items():
@@ -38,7 +38,6 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
     else:
         f.publish(client, f"{pdl}/{mode}/current_year/error", str(0))
         for key, value in data.items():
-
             if key != "dateBegin" and key != "dateEnded":
                 current_value = int(value["value"])
                 current_date = value["date"]
@@ -48,7 +47,7 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
                 ha_discovery[pdl].update({
                     f"{mode}_{key.replace('-', '_')}": {
                         "value": round(int(current_value) / 1000, 2),
-                        "unit_of_meas": "kW",
+                        "unit_of_meas": "kWh",
                         "device_class": "energy",
                         "state_class": "total_increasing",
                         "attributes": {}
@@ -71,14 +70,15 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
             else:
                 f.publish(client, f"{pdl}/{mode}/current_year/{key}", str(value))
 
-            if base_price != 0:
-                if isinstance(current_value, int):
-                    roundValue = round(int(current_value) / 1000 * base_price, 2)
-                    f.publish(client, f"{pdl}/{mode}_price/current_year/{key}", roundValue)
-                    if key != "dateBegin" and key != "dateEnded":
-                        if not f"price" in ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'].keys():
-                            ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'][f"price"] = str(
-                                roundValue)
+            if "current_value" in locals():
+                if base_price != 0 and 'current_value' in locals():
+                    if isinstance(current_value, int):
+                        roundValue = round(int(current_value) / 1000 * base_price, 2)
+                        f.publish(client, f"{pdl}/{mode}_price/current_year/{key}", roundValue)
+                        if key != "dateBegin" and key != "dateEnded":
+                            if not f"price" in ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'].keys():
+                                ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'][f"price"] = str(
+                                    roundValue)
             lastData = data
     current_year = 1
 
@@ -91,7 +91,7 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
         if last_activation_date > datetime.strptime(dateEnded, '%Y-%m-%d'):
             f.log(" - Skip (activation date > dateEnded)")
         else:
-            data = dailyBeetwen(cur, pdl, mode, dateBegin, dateEnded, last_activation_date)
+            data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
             if "error_code" in data:
                 f.publish(client, f"{pdl}/{mode}/year-{current_year}/error", str(1))
                 for key, value in data.items():
@@ -140,16 +140,22 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
                                    ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'].keys():
                                 ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'][
                                     f"history_year_{current_year}_date"] = value["date"]
+
+                        if "current_value" in locals():
+                            if base_price != 0:
+                                if isinstance(current_value, int):
+                                    roundValue = round(int(current_value) / 1000 * base_price, 2)
+                                    f.publish(client, f"{pdl}/{mode}_price/year-{current_year}/{key}", roundValue)
+                                    if not f"{mode}_{key.replace('-', '_')}" in ha_discovery[pdl].keys():
+                                        ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"] = {
+                                            "attributes": {}
+                                        }
+                                    if not f"price_year_{current_year}" in ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'].keys():
+                                        ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'][
+                                            f"price_year_{current_year}"] = str(roundValue)
                     else:
                         f.publish(client, f"{pdl}/{mode}/year-{current_year}/{key}", str(value))
-                    if base_price != 0:
-                        if isinstance(current_value, int):
-                            roundValue = round(int(current_value) / 1000 * base_price, 2)
-                            f.publish(client, f"{pdl}/{mode}_price/year-{current_year}/{key}", roundValue)
-                            if not f"price_year_{current_year}" in ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"][
-                                'attributes'].keys():
-                                ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'][
-                                    f"price_year_{current_year}"] = str(roundValue)
+
         dateEnded = dateBegin
         dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
         dateBegin = dateEndedDelta + relativedelta(years=-1)
@@ -160,54 +166,7 @@ def getDaily(cur, client, mode="consumption", last_activation_date=datetime.now(
     return ha_discovery
 
 
-def checkHistoryDaily(cur, mode, dateBegin, dateEnded):
-    pdl = main.pdl
-    dateBegin = datetime.strptime(dateBegin, '%Y-%m-%d')
-    dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
-    delta = dateEnded - dateBegin
-    result = {
-        "missing_data": False,
-        "date": {},
-        "count": 0
-    }
-    for i in range(delta.days + 1):
-        checkDate = dateBegin + timedelta(days=i)
-        checkDate = checkDate.strftime('%Y-%m-%d')
-        query = f"SELECT * FROM {mode}_daily WHERE pdl = '{pdl}' AND date = '{checkDate}'"
-        cur.execute(query)
-        query_result = cur.fetchone()
-        if query_result is None:
-            result["date"][checkDate] = {
-                "status": False,
-                "fail": 0,
-                "value": 0
-            }
-            result["missing_data"] = True
-            result["count"] = result["count"] + 1
-        elif query_result[3] >= main.fail_count:
-            result["date"][checkDate] = {
-                "status": True,
-                "fail": query_result[3],
-                "value": query_result[2]
-            }
-        elif query_result[2] == 0:
-            result["date"][checkDate] = {
-                "status": False,
-                "fail": query_result[3],
-                "value": query_result[2]
-            }
-            result["missing_data"] = True
-            result["count"] = result["count"] + 1
-        else:
-            result["date"][checkDate] = {
-                "status": True,
-                "fail": 0,
-                "value": query_result[2]
-            }
-    return result
-
-
-def dailyBeetwen(cur, pdl, mode, dateBegin, dateEnded, last_activation_date):
+def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date):
     response = {}
 
     lastYears = datetime.strptime(dateEnded, '%Y-%m-%d')
@@ -238,32 +197,39 @@ def dailyBeetwen(cur, pdl, mode, dateBegin, dateEnded, last_activation_date):
         else:
             f.log(f"Data is missing between {dateBegin} / {dateEnded}")
             f.log(f" => Load data from API")
-            daily = requests.request("POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data)).json()
-            meter_reading = daily['meter_reading']
-            f.log("Import data :")
-            for interval_reading in meter_reading["interval_reading"]:
-                date = interval_reading['date']
-                value = interval_reading['value']
-                cur.execute(
-                    f"INSERT OR REPLACE INTO {mode}_daily VALUES ('{pdl}','{interval_reading['date']}','{interval_reading['value']}','0')")
-                new_date.append(interval_reading['date'])
-                mesures[date] = value
+            daily = f.apiRequest(cur, con, type="POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data))
+            if not "error_code" in daily:
+                meter_reading = daily['meter_reading']
+                f.log("Import data :")
+                for interval_reading in meter_reading["interval_reading"]:
+                    date = interval_reading['date']
+                    value = interval_reading['value']
+                    cur.execute(
+                        f"INSERT OR REPLACE INTO {mode}_daily VALUES ('{pdl}','{interval_reading['date']}','{interval_reading['value']}','0')")
+                    new_date.append(interval_reading['date'])
+                    mesures[date] = value
 
-            f.splitLog(new_date)
+                f.splitLog(new_date)
 
-            not_found_data = []
-            for date, date_data in current_data['date'].items():
-                if not date in new_date:
-                    not_found_data.append(date)
-                    if date_data['fail'] == 0 and date_data['value'] == 0:
-                        cur.execute(f"INSERT OR REPLACE INTO {mode}_daily VALUES ('{pdl}','{date}','0','1')")
-                    else:
-                        cur.execute(
-                            f"UPDATE {mode}_daily SET fail = {date_data['fail'] + 1} WHERE pdl = '{pdl}' and date = '{date}'")
+                not_found_data = []
+                for date, date_data in current_data['date'].items():
+                    if not date in new_date:
+                        not_found_data.append(date)
+                        if date_data['fail'] == 0 and date_data['value'] == 0:
+                            cur.execute(f"INSERT OR REPLACE INTO {mode}_daily VALUES ('{pdl}','{date}','0','1')")
+                        else:
+                            cur.execute(
+                                f"UPDATE {mode}_daily SET fail = {date_data['fail'] + 1} WHERE pdl = '{pdl}' and date = '{date}'")
 
-            if not_found_data != []:
-                f.log("Data not found :")
-                f.splitLog(not_found_data)
+                if not_found_data != []:
+                    f.log("Data not found :")
+                    f.splitLog(not_found_data)
+
+            elif daily['error_code'] == 2:
+                f.log(f"Fetch data error detected beetween {dateBegin} / {dateEnded}")
+                f.log(f" => Load data from cache")
+                for date, data in current_data['date'].items():
+                    mesures[date] = data['value']
 
         list_date = list(reversed(sorted(mesures.keys())))
 
@@ -341,15 +307,15 @@ def dailyBeetwen(cur, pdl, mode, dateBegin, dateEnded, last_activation_date):
             if current_date >= dateYears:
                 energyYears = int(energyYears) + int(value)
 
-        response['thisWeek'] = {
+        response['this_week'] = {
             "value": energyWeek,
             "date": date
         }
-        response['thisMonth'] = {
+        response['this_month'] = {
             "value": energyMonths,
             "date": date
         }
-        response['thisYear'] = {
+        response['this_year'] = {
             "value": energyYears,
             "date": date
         }
@@ -361,3 +327,50 @@ def dailyBeetwen(cur, pdl, mode, dateBegin, dateEnded, last_activation_date):
             f.log(f"==> {error_key} => {error_msg}")
 
     return response
+
+
+def checkHistoryDaily(cur, mode, dateBegin, dateEnded):
+    pdl = main.pdl
+    dateBegin = datetime.strptime(dateBegin, '%Y-%m-%d')
+    dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
+    delta = dateEnded - dateBegin
+    result = {
+        "missing_data": False,
+        "date": {},
+        "count": 0
+    }
+    for i in range(delta.days + 1):
+        checkDate = dateBegin + timedelta(days=i)
+        checkDate = checkDate.strftime('%Y-%m-%d')
+        query = f"SELECT * FROM {mode}_daily WHERE pdl = '{pdl}' AND date = '{checkDate}'"
+        cur.execute(query)
+        query_result = cur.fetchone()
+        if query_result is None:
+            result["date"][checkDate] = {
+                "status": False,
+                "fail": 0,
+                "value": 0
+            }
+            result["missing_data"] = True
+            result["count"] = result["count"] + 1
+        elif query_result[3] >= main.fail_count:
+            result["date"][checkDate] = {
+                "status": True,
+                "fail": query_result[3],
+                "value": query_result[2]
+            }
+        elif query_result[2] == 0:
+            result["date"][checkDate] = {
+                "status": False,
+                "fail": query_result[3],
+                "value": query_result[2]
+            }
+            result["missing_data"] = True
+            result["count"] = result["count"] + 1
+        else:
+            result["date"][checkDate] = {
+                "status": True,
+                "fail": 0,
+                "value": query_result[2]
+            }
+    return result
