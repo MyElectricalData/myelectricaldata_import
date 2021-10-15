@@ -19,13 +19,10 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
     def forceRound(x, n):
         import decimal
-        import numpy as np
-        return np.around(x, n).astype('float64')
-
-        # d = decimal.Decimal(repr(x))
-        # targetdigit = decimal.Decimal("1e%d" % -n)
-        # chopped = d.quantize(targetdigit, decimal.ROUND_DOWN)
-        # return float(chopped.astype('float64'))
+        d = decimal.Decimal(repr(x))
+        targetdigit = decimal.Decimal("1e%d" % -n)
+        chopped = d.quantize(targetdigit, decimal.ROUND_DOWN)
+        return float(chopped)
 
     price = {
         "BASE": main.consumption_price_base,
