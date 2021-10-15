@@ -15,6 +15,7 @@ cont = import_module("contract")
 day = import_module("daily")
 detail = import_module("detail")
 ha = import_module("home_assistant")
+myenedis = import_module("myenedis")
 
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
@@ -179,6 +180,20 @@ if "DEBUG" in os.environ:
 else:
     debug = False
 
+########################################################################################################################
+# CURRENT_PLAN
+if "CURRENT_PLAN" in os.environ:
+    current_plan = str(os.environ['CURRENT_PLAN'])
+else:
+    current_plan = "BASE"
+
+########################################################################################################################
+# CARD MYENEDIS
+if "CARD_MYENEDIS" in os.environ:
+    card_myenedis = bool(strtobool(os.environ['CARD_MYENEDIS']))
+else:
+    card_myenedis = False
+
 api_no_result = []
 
 
@@ -246,6 +261,16 @@ def init_database(cur):
     cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
                     ON production_detail (date)''')
 
+
+    ## Default Config
+    config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
+    config = {
+        "day": datetime.now().strftime('%Y-%m-%d'),
+        "call_number": 0,
+        "max_call": 15
+    }
+    cur.execute(config_query, ["config", json.dumps(config)])
+
 def run():
 
     global offpeak_hours
@@ -283,14 +308,8 @@ def run():
             # Check database structure
             try:
 
-                ## Default Config
                 config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
-                config = {
-                    "day": datetime.now().strftime('%Y-%m-%d'),
-                    "call_number": 0,
-                    "max_call": 15
-                }
-                cur.execute(config_query, ["config", json.dumps(config)])
+                cur.execute(config_query, ["lastUpdate", datetime.now()])
                 con.commit()
 
                 list_tables = ["config", "addresses", "contracts", "consumption_daily", "consumption_detail", "production_daily", "production_detail"]
@@ -486,6 +505,33 @@ def run():
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
 
+            if card_myenedis == True:
+                f.logLine()
+                f.log("Generate Sensor for myEnedis card")
+                my_enedis_data = myenedis.myEnedis(cur, con, client, last_activation_date, offpeak_hours)
+                for pdl, data in my_enedis_data.items():
+                    for name, sensor_data in data.items():
+                        if "attributes" in sensor_data:
+                            attributes = sensor_data['attributes']
+                        else:
+                            attributes = None
+                        if "unit_of_meas" in sensor_data:
+                            unit_of_meas = sensor_data['unit_of_meas']
+                        else:
+                            unit_of_meas = None
+                        if "device_class" in sensor_data:
+                            device_class = sensor_data['device_class']
+                        else:
+                            device_class = None
+                        if "state_class" in sensor_data:
+                            state_class = sensor_data['state_class']
+                        else:
+                            state_class = None
+                        if "value" in sensor_data:
+                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                                               value=sensor_data['value'],
+                                               attributes=attributes, unit_of_meas=unit_of_meas,
+                                               device_class=device_class, state_class=state_class)
 
             query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
