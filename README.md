@@ -234,7 +234,8 @@ volumes:
 
 - Add **DJU18**
 - Create Home Assistant OS Addons
-- Add Postgres/MariaDB connector
+- Add Postgres/MariaDB Connector
+- Add InfluxDB Connector
 
 ## Change log:
 
