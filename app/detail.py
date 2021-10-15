@@ -77,68 +77,69 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
 
     result = {}
     base_vs_offpeak = 0
-
     for data in query_result:
         date = data[1]
         value = data[2]
         interval = data[3]
         measure_type = data[4]
 
-        dateObject = datetime.strptime(date, date_format)
-        year = dateObject.strftime('%Y')
-        month = dateObject.strftime('%m')
+        if value != 0:
 
-        if not year in result:
-            result[year] =  {}
-        if not month in result[year]:
-            result[year].update({
-                month: {
-                    "measure_hp": 0,
-                    "measure_hp_wh": 0,
-                    "measure_hc": 0,
-                    "measure_hc_wh": 0,
-                    "measure_total": 0,
-                    "measure_total_wh": 0
-                }
-            })
+            dateObject = datetime.strptime(date, date_format)
+            year = dateObject.strftime('%Y')
+            month = dateObject.strftime('%m')
 
-        value_wh = value * (interval / 60)
-        result[year][month]["measure_total"] += int(value)
-        result[year][month]["measure_total_wh"] += int(value_wh)
+            if not year in result:
+                result[year] =  {}
+            if not month in result[year]:
+                result[year].update({
+                    month: {
+                        "measure_hp": 0,
+                        "measure_hp_wh": 0,
+                        "measure_hc": 0,
+                        "measure_hc_wh": 0,
+                        "measure_total": 0,
+                        "measure_total_wh": 0
+                    }
+                })
 
-        if measure_type == "HP":
-            result[year][month]["measure_hp"] += int(value)
-            result[year][month]["measure_hp_wh"] += int(value_wh)
-            result[year][month]["measure_ration_hp"] = round(
-                100 * result[year][month]["measure_hp"] / result[year][month]["measure_total"], 2)
-        if measure_type == "HC":
-            result[year][month]["measure_hc"] += int(value)
-            result[year][month]["measure_hc_wh"] += int(value_wh)
-            result[year][month]["measure_ration_hc"] = round(
-                100 * result[year][month]["measure_hc"] / result[year][month]["measure_total"], 2)
+            value_wh = value * (interval / 60)
+            result[year][month]["measure_total"] += int(value)
+            result[year][month]["measure_total_wh"] += int(value_wh)
+
+            if measure_type == "HP":
+                result[year][month]["measure_hp"] += int(value)
+                result[year][month]["measure_hp_wh"] += int(value_wh)
+                result[year][month]["measure_ration_hp"] = round(
+                    100 * result[year][month]["measure_hp"] / result[year][month]["measure_total"], 2)
+            if measure_type == "HC":
+                result[year][month]["measure_hc"] += int(value)
+                result[year][month]["measure_hc_wh"] += int(value_wh)
+                result[year][month]["measure_ration_hc"] = round(
+                    100 * result[year][month]["measure_hc"] / result[year][month]["measure_total"], 2)
 
 
-        if price_base != 0:
-            result[year][month]["measure_base_euro"] = result[year][month]["measure_total_wh"] / 1000 * price_base
+            if price_base != 0:
+                result[year][month]["measure_base_euro"] = result[year][month]["measure_total_wh"] / 1000 * price_base
 
-        if offpeak_hours != None:
-            if price_hc != 0 and price_hp != 0:
-                result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
-                result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
-                result[year][month]["measure_hphc_euro"] = result[year][month]["measure_hp_euro"] + result[year][month]["measure_hc_euro"]
+            if offpeak_hours != None:
+                if price_hc != 0 and price_hp != 0:
+                    result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
+                    result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
+                    result[year][month]["measure_hphc_euro"] = result[year][month]["measure_hp_euro"] + result[year][month]["measure_hc_euro"]
 
-            if price_base != 0 and price_hc != 0 and price_hp != 0 and measure_type != "BASE":
-                result[year][month]["base_vs_offpeak"] = 100 - (
-                        100 * result[year][month]["measure_base_euro"] / (result[year][month]["measure_hphc_euro"]))
+                if price_base != 0 and price_hc != 0 and price_hp != 0 and measure_type != "BASE":
+                    result[year][month]["base_vs_offpeak"] = 100 - (
+                            100 * result[year][month]["measure_base_euro"] / (result[year][month]["measure_hphc_euro"]))
 
-                base_vs_offpeak += result[year][month]["base_vs_offpeak"]
+                    base_vs_offpeak += result[year][month]["base_vs_offpeak"]
 
-                if result[year][month]["base_vs_offpeak"] > 0:
-                    result[year][month]["best_plan"] = f"BASE"
-                    result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-                else:
-                    result[year][month]["best_plan"] = f"HC/HP"
-                    result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+                    if result[year][month]["base_vs_offpeak"] > 0:
+                        result[year][month]["best_plan"] = f"BASE"
+                        result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+                    else:
+                        result[year][month]["best_plan"] = f"HC/HP"
+                        result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
 
     if offpeak_hours != None and price_base != 0 and price_hc != 0 and price_hp != 0:
         if base_vs_offpeak > 0:

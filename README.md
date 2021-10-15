@@ -95,6 +95,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | REFRESH_ADDRESSES | Refresh addresses data | False |  
 | WIPE_CACHE | Force refresh all data (wipe all cached data)  | False |   
 | DEBUG | Display debug information  | False |   
+| CARD_MYENEDIS | Create HA sensor for Linky Card with auto-discovery  | False |   
 
 ## Cache
 
@@ -136,7 +137,9 @@ MQTT_PASSWORD='enedis_gateway_password'
 RETAIN="True"
 QOS=0
 GET_CONSUMPTION="True"
+GET_CONSUMPTION_DETAIL="True"
 GET_PRODUCTION="False"
+GET_PRODUCTION_DETAIL="False"
 HA_AUTODISCOVERY="False"
 HA_AUTODISCOVERY_PREFIX='homeassistant'
 CYCLE=3600                 
@@ -148,6 +151,7 @@ REFRESH_CONTRACT="False"
 REFRESH_ADDRESSES="False"  
 WIPE_CACHE="False"              
 DEBUG="False"              
+CARD_MYENEDIS="False"              
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -161,11 +165,13 @@ docker run -it --restart=unless-stopped \
     -e RETAIN="$RETAIN" \
     -e QOS="$QOS" \
     -e GET_CONSUMPTION="$GET_CONSUMPTION" \
+    -e GET_CONSUMPTION_DETAIL="$GET_CONSUMPTION_DETAIL" \
     -e GET_PRODUCTION="$GET_PRODUCTION" \
+    -e GET_PRODUCTION_DETAIL="$GET_PRODUCTION_DETAIL" \
     -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
-    -e CYCLE="$CYCLE" \          
-    -e OFFPEAK_HOURS="$OFFPEAK_HOURS" \       
+    -e CYCLE="$CYCLE" \
+    -e OFFPEAK_HOURS="$OFFPEAK_HOURS" \
     -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE" \
     -e CONSUMPTION_PRICE_HC="$CONSUMPTION_PRICE_HC" \
     -e CONSUMPTION_PRICE_HP="$CONSUMPTION_PRICE_HP" \
@@ -173,6 +179,7 @@ docker run -it --restart=unless-stopped \
     -e REFRESH_ADDRESSES="$REFRESH_ADDRESSES" \
     -e WIPE_CACHE="$WIPE_CACHE" \
     -e DEBUG="$DEBUG" \
+    -e CARD_MYENEDIS="$CARD_MYENEDIS" \
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -210,6 +217,11 @@ services:
       REFRESH_ADDRESSES: "False"  
       WIPE_CACHE: "False"   
       DEBUG: "False"   
+      CARD_MYENEDIS: "False"   
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 volumes:
   mydata:      
 ```
@@ -221,6 +233,10 @@ volumes:
 - Add Postgres/MariaDB connector
 
 ## Change log:
+
+### [0.5.1] - 2021-10-15
+
+- Create HA sensor for Linky Card with auto-discovery 
 
 ### [0.5.0] - 2021-10-13
 

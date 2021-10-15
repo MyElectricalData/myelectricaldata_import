@@ -82,6 +82,9 @@ def getContract(client, con, cur):
                     if contracts_key == "subscribed_power":
                         f.publish(client, f"{pdl}/subscribed_power", str(contracts_data.split()[0]))
                         ha_discovery[pdl]["subscribed_power"] = str(contracts_data.split()[0])
+                        config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
+                        cur.execute(config_query, [f"{pdl}_subscribed_power", f"{str(contracts_data)}"])
+                        con.commit()
 
                     offpeak_hours = []
                     if main.offpeak_hours != None:
@@ -98,6 +101,19 @@ def getContract(client, con, cur):
                             f.publish(client, f"{pdl}/offpeak_hours/{index}/stop", str(oh.split('-')[1]))
                             index += 1
                         f.publish(client, f"{pdl}/offpeak_hours", str(offpeak_hours))
+                        offpeak_hours_store = ""
+                        offpeak_hours_len = len(offpeak_hours)
+                        i = 1
+                        for hours in offpeak_hours:
+                            offpeak_hours_store += f"{hours}"
+                            if i < offpeak_hours_len:
+                                offpeak_hours_store += ";"
+                            i += 1
+
+                        config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
+                        cur.execute(config_query, [f"{pdl}_offpeak_hours", f"HC ({str(offpeak_hours_store)})"])
+                        con.commit()
+
         else:
             ha_discovery = {
                 "error_code": True,
