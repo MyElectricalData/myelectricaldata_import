@@ -181,6 +181,13 @@ else:
     debug = False
 
 ########################################################################################################################
+# CURRENT_PLAN
+if "CURRENT_PLAN" in os.environ:
+    current_plan = str(os.environ['CURRENT_PLAN'])
+else:
+    current_plan = "BASE"
+
+########################################################################################################################
 # CARD MYENEDIS
 if "CARD_MYENEDIS" in os.environ:
     card_myenedis = bool(strtobool(os.environ['CARD_MYENEDIS']))

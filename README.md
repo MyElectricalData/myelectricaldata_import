@@ -234,6 +234,11 @@ volumes:
 
 ## Change log:
 
+### [0.5.2] - 2021-10-15
+
+- Fix myenedis bug
+- Add param to choose current plan
+
 ### [0.5.1] - 2021-10-15
 
 - Create HA sensor for Linky Card with auto-discovery 
