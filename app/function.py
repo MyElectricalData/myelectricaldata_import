@@ -58,6 +58,8 @@ def log(msg, level="INFO "):
         display = True
     if level == "INFO ":
         display = True
+    if level == "ERROR":
+        display = True
     if display == True:
         print(f"{now} - {level} : {msg}")
 
@@ -88,6 +90,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     query_result = json.loads(query_result[0][1])
     log(f"call_number : {query_result['call_number']}", "debug")
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
+        pprint(f'{query_result["call_number"]} > {query_result["max_call"]}')
         if query_result["call_number"] > query_result["max_call"]:
             return {
                 "error_code": 2,
@@ -103,4 +106,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     else:
         query_result["call_number"] = 0
     retour = requests.request(type, url=f"{url}", headers=headers, data=data).json()
+    if main.debug == True:
+        pprint(f"API Return :")
+        pprint(retour)
     return retour
