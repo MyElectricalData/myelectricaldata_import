@@ -7,6 +7,8 @@ import sqlite3
 import locale
 from pprint import pprint
 import json
+import influxdb_client
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 from importlib import import_module
 f = import_module("function")
@@ -21,7 +23,7 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 url = "https://enedisgateway.tech/api"
 
-fail_count = 7
+fail_count = 24
 
 ########################################################################################################################
 # CHECK MANDATORY PARAMETERS
@@ -194,11 +196,42 @@ if "CARD_MYENEDIS" in os.environ:
 else:
     card_myenedis = False
 
+########################################################################################################################
+# INFLUXDB_ENABLE
+if "INFLUXDB_ENABLE" in os.environ:
+    influxdb_enable = bool(strtobool(os.environ['INFLUXDB_ENABLE']))
+else:
+    influxdb_enable = False
+########################################################################################################################
+# INFLUXDB_HOST
+if "INFLUXDB_HOST" in os.environ:
+    influxdb_host = str(os.environ['INFLUXDB_HOST'])
+else:
+    influxdb_host = ""
+########################################################################################################################
+# INFLUXDB_BUCKET
+if "INFLUXDB_BUCKET" in os.environ:
+    influxdb_bucket = str(os.environ['INFLUXDB_BUCKET'])
+else:
+    influxdb_bucket = ""
+########################################################################################################################
+# INFLUXDB_ORG
+if "INFLUXDB_ORG" in os.environ:
+    influxdb_org = str(os.environ['INFLUXDB_ORG'])
+else:
+    influxdb_org = ""
+########################################################################################################################
+# INFLUXDB_TOKEN
+if "INFLUXDB_TOKEN" in os.environ:
+    influxdb_token = bool(os.environ['INFLUXDB_TOKEN'])
+else:
+    influxdb_token = ""
+
 api_no_result = []
 
 
 def init_database(cur):
-    f.log("Initialise database")
+    log("Initialise database")
 
     ## CONFIG
     cur.execute('''CREATE TABLE config (
@@ -274,11 +307,22 @@ def init_database(cur):
 def run():
 
     global offpeak_hours
+
     try:
-        client = f.connect_mqtt()
+        client = connect_mqtt()
         client.loop_start()
     except:
-        f.log("MQTT : Connection failed")
+        log("MQTT : Connection failed")
+
+    if influxdb_enable == True:
+        influxclient = influxdb_client.InfluxDBClient(
+            url=influxdb_host,
+            token=influxdb_token,
+            org=influxdb_org
+        )
+        write_api = influxclient.write_api(write_options=SYNCHRONOUS)
+        p = influxdb_client.Point("my_measurement").tag("location", "Prague").field("_time", datetime.now()).field("temperature", 25.3)
+        write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
 
     while True:
 

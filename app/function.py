@@ -5,10 +5,9 @@ import json
 from pprint import pprint
 import main
 
+
 from importlib import import_module
-
 main = import_module("main")
-
 
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
@@ -54,14 +53,20 @@ def log(msg, level="INFO "):
     now = datetime.now()
     level = level.upper()
     display = False
-    if main.debug == True and level == "DEBUG":
+    critical = False
+    if debug == True and level == "DEBUG":
         display = True
     if level == "INFO ":
         display = True
     if level == "ERROR":
         display = True
+    if level == "CRITICAL":
+        display = True
+        critical = True
     if display == True:
         print(f"{now} - {level} : {msg}")
+    if critical == True:
+        quit()
 
 def splitLog(msg):
     format_log = ""
@@ -90,7 +95,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     query_result = json.loads(query_result[0][1])
     log(f"call_number : {query_result['call_number']}", "debug")
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
-        pprint(f'{query_result["call_number"]} > {query_result["max_call"]}')
+        # pprint(f'{query_result["call_number"]} > {query_result["max_call"]}')
         if query_result["call_number"] > query_result["max_call"]:
             return {
                 "error_code": 2,

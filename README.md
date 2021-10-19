@@ -85,7 +85,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | GET_PRODUCTION_DETAIL | Enable API call to get your production in detail mode | False |
 | HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
-| OFFPEAK_HOURS | Force HP/HC format : "HHhMM-HHhMM;HHhMM-HHhMM;..." | "" |
+| OFFPEAK_HOURS | Force HP/HC format : "HHhMM-HHhMM;HHhMM-HHhMM;...". It's optionnal, by default I load this info automatically when I get contracts | "" |
 | CONSUMPTION_PRICE_BASE | Price of kWh in base plan | 0 |
 | CONSUMPTION_PRICE_HC | Price of HC kWh | 0 |
 | CONSUMPTION_PRICE_HP | Price of HP kWh | 0 |
