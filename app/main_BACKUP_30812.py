@@ -23,7 +23,23 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 url = "https://enedisgateway.tech/api"
 
+<<<<<<< HEAD
+fail_count = 15
+
+########################################################################################################################
+# CHECK MANDATORY PARAMETERS
+if not "ACCESS_TOKEN" in os.environ:
+    f.log("Environement variable 'ACCESS_TOKEN' is mandatory")
+    quit()
+if not "PDL" in os.environ:
+    f.log("Environement variable 'PDL' is mandatory")
+    quit()
+if not "MQTT_HOST" in os.environ:
+    f.log("Environement variable 'MQTT_HOST' is mandatory")
+    quit()
+=======
 fail_count = 24
+>>>>>>> 860b43019088b08866eec9709a617ea22b667504
 
 ########################################################################################################################
 # AUTHENTIFICATION
@@ -184,6 +200,37 @@ if "CARD_MYENEDIS" in os.environ:
 else:
     card_myenedis = False
 
+########################################################################################################################
+# INFLUXDB_ENABLE
+if "INFLUXDB_ENABLE" in os.environ:
+    influxdb_enable = bool(strtobool(os.environ['INFLUXDB_ENABLE']))
+else:
+    influxdb_enable = False
+########################################################################################################################
+# INFLUXDB_HOST
+if "INFLUXDB_HOST" in os.environ:
+    influxdb_host = str(os.environ['INFLUXDB_HOST'])
+else:
+    influxdb_host = ""
+########################################################################################################################
+# INFLUXDB_BUCKET
+if "INFLUXDB_BUCKET" in os.environ:
+    influxdb_bucket = str(os.environ['INFLUXDB_BUCKET'])
+else:
+    influxdb_bucket = ""
+########################################################################################################################
+# INFLUXDB_ORG
+if "INFLUXDB_ORG" in os.environ:
+    influxdb_org = str(os.environ['INFLUXDB_ORG'])
+else:
+    influxdb_org = ""
+########################################################################################################################
+# INFLUXDB_TOKEN
+if "INFLUXDB_TOKEN" in os.environ:
+    influxdb_token = bool(os.environ['INFLUXDB_TOKEN'])
+else:
+    influxdb_token = ""
+
 api_no_result = []
 
 
@@ -261,14 +308,31 @@ def init_database(cur):
     }
     cur.execute(config_query, ["config", json.dumps(config)])
 
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': accessToken
+}
+
+try:
+    client = connect_mqtt()
+    client.loop_start()
+except:
+    f.log("MQTT : Connection failed")
+
+if influxdb_enable == True:
+    influxclient = influxdb_client.InfluxDBClient(
+        url=influxdb_host,
+        token=influxdb_token,
+        org=influxdb_org
+    )
+    write_api = influxclient.write_api(write_options=SYNCHRONOUS)
+    p = influxdb_client.Point("my_measurement").tag("location", "Prague").field("_time", datetime.now()).field(
+        "temperature", 25.3)
+    write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
+
 def run():
 
     global offpeak_hours
-    try:
-        client = f.connect_mqtt()
-        client.loop_start()
-    except:
-        f.log("MQTT : Connection failed")
 
     while True:
 

@@ -7,8 +7,6 @@ import sqlite3
 import locale
 from pprint import pprint
 import json
-import influxdb_client
-from influxdb_client.client.write_api import SYNCHRONOUS
 
 from importlib import import_module
 f = import_module("function")
@@ -23,25 +21,37 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 url = "https://enedisgateway.tech/api"
 
-fail_count = 24
+fail_count = 15
+
+########################################################################################################################
+# CHECK MANDATORY PARAMETERS
+if not "ACCESS_TOKEN" in os.environ:
+    f.log("Environement variable 'ACCESS_TOKEN' is mandatory")
+    quit()
+if not "PDL" in os.environ:
+    f.log("Environement variable 'PDL' is mandatory")
+    quit()
+if not "MQTT_HOST" in os.environ:
+    f.log("Environement variable 'MQTT_HOST' is mandatory")
+    quit()
 
 ########################################################################################################################
 # AUTHENTIFICATION
-if "ACCESS_TOKEN" in os.environ:
-    accessToken = os.environ['ACCESS_TOKEN']
-else:
-    accessToken = ""
-if "PDL" in os.environ:
-    pdl = os.environ['PDL']
-else:
-    pdl = ""
+accessToken = os.environ['ACCESS_TOKEN']
+pdl = os.environ['PDL']
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': accessToken
+}
 
 ########################################################################################################################
 # MQTT
-if "MQTT_HOST" in os.environ:
-    broker = os.environ['MQTT_HOST']
-else:
-    broker = ""
+broker = os.environ['MQTT_HOST']
+
+if broker == "":
+    f.log("Environement variable 'MQTT_HOST' can't be empty")
+    quit()
+
 if "MQTT_PORT" in os.environ:
     port = int(os.environ['MQTT_PORT'])
 else:
@@ -342,7 +352,7 @@ def run():
 
         f.logLine()
         f.log("Get contract :")
-        contract = cont.getContract()
+        contract = cont.getContract(client, con, cur)
         f.log(contract,"debug")
         if "error_code" in contract:
             f.publish(client, f"error", str(1))
@@ -545,18 +555,6 @@ def run():
         con.close()
         time.sleep(cycle)
 
+
 if __name__ == '__main__':
-
-    if accessToken == "":
-        f.log("Environement variable 'ACCESS_TOKEN' is mandatory", "CRITICAL")
-    if pdl == "":
-        f.log("Environement variable 'PDL' is mandatory", "CRITICAL")
-    if broker == "":
-        f.log("Environement variable 'MQTT_HOST' is mandatory", "CRITICAL")
-    if broker == "":
-        f.log("Environement variable 'MQTT_HOST' can't be empty")
-
-
-
-
     run()

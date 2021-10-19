@@ -32,7 +32,7 @@ def publish(client, topic, msg, prefix=main.prefix):
     result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=main.retain)
     status = result[0]
     if status == 0:
-        log(f" MQTT Send : {prefix}/{topic} => {msg}","debug")
+        log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
     else:
         log(f" - Failed to send message to topic {prefix}/{topic}")
     msg_count += 1
@@ -46,20 +46,30 @@ def subscribe(client, topic, prefix=main.prefix):
     client.subscribe(client, sub_topic)
     client.on_message = on_message
 
+
 def logLine():
     log("####################################################################################")
 
+
 def log(msg, level="INFO "):
-    global debug
     now = datetime.now()
     level = level.upper()
     display = False
+    critical = False
     if main.debug == True and level == "DEBUG":
         display = True
     if level == "INFO ":
         display = True
-    if display == True:
+    if level == "ERROR":
+        display = True
+    if level == "CRITICAL":
+        display = True
+        critical = True
+    if display:
         print(f"{now} - {level} : {msg}")
+    if critical:
+        quit()
+
 
 def splitLog(msg):
     format_log = ""
@@ -81,6 +91,7 @@ def splitLog(msg):
             i = i + 1
         cur_length = cur_length + 1
 
+
 def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     config_query = f"SELECT * FROM config WHERE key = 'config'"
     cur.execute(config_query)
@@ -88,6 +99,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     query_result = json.loads(query_result[0][1])
     log(f"call_number : {query_result['call_number']}", "debug")
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
+        # pprint(f'{query_result["call_number"]} > {query_result["max_call"]}')
         if query_result["call_number"] > query_result["max_call"]:
             return {
                 "error_code": 2,
@@ -103,4 +115,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     else:
         query_result["call_number"] = 0
     retour = requests.request(type, url=f"{url}", headers=headers, data=data).json()
+    if main.debug == True:
+        pprint(f"API Return :")
+        pprint(retour)
     return retour

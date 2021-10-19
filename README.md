@@ -85,7 +85,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | GET_PRODUCTION_DETAIL | Enable API call to get your production in detail mode | False |
 | HA_AUTODISCOVERY | Enable auto-discovery | False |
 | HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
-| OFFPEAK_HOURS | Force HP/HC format : "HHhMM-HHhMM;HHhMM-HHhMM;..." | "" |
+| OFFPEAK_HOURS | Force HP/HC format : "HHhMM-HHhMM;HHhMM-HHhMM;...". It's optionnal, by default I load this info automatically when I get contracts | "" |
 | CONSUMPTION_PRICE_BASE | Price of kWh in base plan | 0 |
 | CONSUMPTION_PRICE_HC | Price of HC kWh | 0 |
 | CONSUMPTION_PRICE_HP | Price of HP kWh | 0 |
@@ -96,6 +96,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | WIPE_CACHE | Force refresh all data (wipe all cached data)  | False |   
 | DEBUG | Display debug information  | False |   
 | CARD_MYENEDIS | Create HA sensor for Linky Card with auto-discovery  | False |   
+| CURRENT_PLAN | Choose you plan "BASE" or "HP/HC"  | BASE |   
 
 ## Cache
 
@@ -152,6 +153,7 @@ REFRESH_ADDRESSES="False"
 WIPE_CACHE="False"              
 DEBUG="False"              
 CARD_MYENEDIS="False"              
+CURRENT_PLAN="BASE"              
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -180,6 +182,7 @@ docker run -it --restart=unless-stopped \
     -e WIPE_CACHE="$WIPE_CACHE" \
     -e DEBUG="$DEBUG" \
     -e CARD_MYENEDIS="$CARD_MYENEDIS" \
+    -e CURRENT_PLAN="$CURRENT_PLAN" \
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -218,6 +221,7 @@ services:
       WIPE_CACHE: "False"   
       DEBUG: "False"   
       CARD_MYENEDIS: "False"   
+      CURRENT_PLAN: "BASE"   
     logging:
       options:
         max-size: "10m"
@@ -230,18 +234,15 @@ volumes:
 
 - Add **DJU18**
 - Create Home Assistant OS Addons
-- Add Postgres/MariaDB connector
+- Add Postgres/MariaDB Connector
+- Add InfluxDB Connector
 
 ## Change log:
 
-### [0.5.2] - 2021-10-15
-
-- Fix myenedis bug
-- Add param to choose current plan
-
 ### [0.5.1] - 2021-10-15
 
-- Create HA sensor for Linky Card with auto-discovery 
+- Create HA sensor for Linky Card with auto-discovery
+- Add param to choose current plan
 
 ### [0.5.0] - 2021-10-13
 

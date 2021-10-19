@@ -19,13 +19,10 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
     def forceRound(x, n):
         import decimal
-        import numpy as np
-        return np.around(x, n).astype('float64')
-
-        # d = decimal.Decimal(repr(x))
-        # targetdigit = decimal.Decimal("1e%d" % -n)
-        # chopped = d.quantize(targetdigit, decimal.ROUND_DOWN)
-        # return float(chopped.astype('float64'))
+        d = decimal.Decimal(repr(x))
+        targetdigit = decimal.Decimal("1e%d" % -n)
+        chopped = d.quantize(targetdigit, decimal.ROUND_DOWN)
+        return float(chopped)
 
     price = {
         "BASE": main.consumption_price_base,
@@ -287,7 +284,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                         attributes[f'day_{day}_{measure_type}'] = -1
                         attributes[f'dailyweek_cost{measure_type}'].append(-1)
                         attributes[f'dailyweek_{measure_type}'].append(-1)
-                    attributes["dailyweek_cost"][day-1] = -1
+                        attributes["dailyweek_cost"][day-1] = -1
                 else:
                     value_wh_total = 0
                     dailyweek_cost = 0
@@ -305,10 +302,13 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                             dailyweek_cost += float(value_wh / 1000 * price[f"BASE"])
                         else:
                             dailyweek_cost += float(value_wh / 1000 * price[f"{measure_type}"])
+
+                    attributes["dailyweek_cost"][day-1] += forceRound(dailyweek_cost, 2)
+
                     if measure_type != "BASE":
                         attributes[f'dailyweek_{measure_type}'].append(str(forceRound(value_wh_total, 2)))
                         attributes[f'dailyweek_cost{measure_type}'].append(str(forceRound(dailyweek_cost, 2)))
-                    attributes["dailyweek_cost"][day-1] += forceRound(dailyweek_cost, 2)
+
                     if day == 1:
                         attributes["daily_cost"] = attributes["dailyweek_cost"][day-1]
                         if measure_type != "BASE":
@@ -319,6 +319,8 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         for tmp in attributes["dailyweek_cost"]:
             convert.append(str(tmp))
         attributes["dailyweek_cost"] = convert
+
+
 
         peak_offpeak_percent = {
             'HP': 0,

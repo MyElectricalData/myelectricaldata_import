@@ -277,11 +277,11 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
                 f.log(f"  => Import {len(new_date)} entry")
 
             elif detail['error_code'] == 2:
-                f.log(f"Fetch data error detected beetween {dateBegin} / {dateEnded}")
-                f.log(f" => {detail['description']}")
+                f.log(f"Fetch data error detected beetween {dateBegin} / {dateEnded}", "ERROR")
+                f.log(f" => {detail['description']}", "ERROR")
             else:
-                f.log(f"API return error beetween {dateBegin} / {dateEnded}")
-                f.log(f" => {detail['description']}")
+                f.log(f"API return error beetween {dateBegin} / {dateEnded}", "ERROR")
+                f.log(f" => {detail['description']}", "ERROR")
 
         con.commit()
     except Exception as e:
@@ -289,7 +289,7 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
         f.log(e)
         for error_key, error_msg in detail.items():
             response[error_key] = error_msg
-            f.log(f"==> {error_key} => {error_msg}")
+            f.log(f"==> {error_key} => {error_msg}", "ERROR")
     return response
 
 

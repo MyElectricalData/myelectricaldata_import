@@ -8,7 +8,7 @@ from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
-def getContract(client, con, cur):
+def getContract():
 
     def queryApi(url, headers, data, count=0):
         contract = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
@@ -56,31 +56,31 @@ def getContract(client, con, cur):
                 "message": contract['description']
             }
         }
-        f.publish(client, f"{pdl}/contract/error", str(1))
+        f.publish(main.client, f"{pdl}/contract/error", str(1))
         for key, value in contract.items():
-            f.publish(client, f"{pdl}/contract/errorMsg/{key}", str(value))
+            f.publish(main.client, f"{pdl}/contract/errorMsg/{key}", str(value))
     else:
-        f.publish(client, f"{pdl}/contract/error", str(0))
+        f.publish(main.client, f"{pdl}/contract/error", str(0))
         if "customer" in contract:
             customer = contract["customer"]
-            f.publish(client, f"{pdl}/customer_id", str(customer["customer_id"]))
+            f.publish(main.client, f"{pdl}/customer_id", str(customer["customer_id"]))
             for usage_points in customer['usage_points']:
                 for usage_point_key, usage_point_data in usage_points['usage_point'].items():
-                    f.publish(client, f"{pdl}/contract/{usage_point_key}", str(usage_point_data))
+                    f.publish(main.client, f"{pdl}/contract/{usage_point_key}", str(usage_point_data))
 
                 for contracts_key, contracts_data in usage_points['contracts'].items():
-                    f.publish(client, f"{pdl}/contract/{contracts_key}", str(contracts_data))
+                    f.publish(main.client, f"{pdl}/contract/{contracts_key}", str(contracts_data))
 
                     if contracts_key == "last_distribution_tariff_change_date":
-                        f.publish(client, f"{pdl}/last_distribution_tariff_change_date", str(contracts_data))
+                        f.publish(main.client, f"{pdl}/last_distribution_tariff_change_date", str(contracts_data))
                         ha_discovery[pdl]["last_distribution_tariff_change_date"] = str(contracts_data)
 
                     if contracts_key == "last_activation_date":
-                        f.publish(client, f"{pdl}/last_activation_date", str(contracts_data))
+                        f.publish(main.client, f"{pdl}/last_activation_date", str(contracts_data))
                         ha_discovery[pdl]["last_activation_date"] = str(contracts_data)
 
                     if contracts_key == "subscribed_power":
-                        f.publish(client, f"{pdl}/subscribed_power", str(contracts_data.split()[0]))
+                        f.publish(main.client, f"{pdl}/subscribed_power", str(contracts_data.split()[0]))
                         ha_discovery[pdl]["subscribed_power"] = str(contracts_data.split()[0])
                         config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
                         cur.execute(config_query, [f"{pdl}_subscribed_power", f"{str(contracts_data)}"])
@@ -97,10 +97,10 @@ def getContract(client, con, cur):
                         ha_discovery[pdl]["offpeak_hours"] = offpeak_hours
                         index = 0
                         for oh in offpeak_hours:
-                            f.publish(client, f"{pdl}/offpeak_hours/{index}/start", str(oh.split('-')[0]))
-                            f.publish(client, f"{pdl}/offpeak_hours/{index}/stop", str(oh.split('-')[1]))
+                            f.publish(main.client, f"{pdl}/offpeak_hours/{index}/start", str(oh.split('-')[0]))
+                            f.publish(main.client, f"{pdl}/offpeak_hours/{index}/stop", str(oh.split('-')[1]))
                             index += 1
-                        f.publish(client, f"{pdl}/offpeak_hours", str(offpeak_hours))
+                        f.publish(main.client, f"{pdl}/offpeak_hours", str(offpeak_hours))
                         offpeak_hours_store = ""
                         offpeak_hours_len = len(offpeak_hours)
                         i = 1
