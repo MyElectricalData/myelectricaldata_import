@@ -21,7 +21,7 @@ locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 url = "https://enedisgateway.tech/api"
 
-fail_count = 7
+fail_count = 15
 
 ########################################################################################################################
 # CHECK MANDATORY PARAMETERS
