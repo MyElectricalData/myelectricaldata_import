@@ -5,9 +5,10 @@ import json
 from pprint import pprint
 import main
 
-
 from importlib import import_module
+
 main = import_module("main")
+
 
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
@@ -31,7 +32,7 @@ def publish(client, topic, msg, prefix=main.prefix):
     result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=main.retain)
     status = result[0]
     if status == 0:
-        log(f" MQTT Send : {prefix}/{topic} => {msg}","debug")
+        log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
     else:
         log(f" - Failed to send message to topic {prefix}/{topic}")
     msg_count += 1
@@ -45,16 +46,17 @@ def subscribe(client, topic, prefix=main.prefix):
     client.subscribe(client, sub_topic)
     client.on_message = on_message
 
+
 def logLine():
     log("####################################################################################")
 
+
 def log(msg, level="INFO "):
-    global debug
     now = datetime.now()
     level = level.upper()
     display = False
     critical = False
-    if debug == True and level == "DEBUG":
+    if main.debug == True and level == "DEBUG":
         display = True
     if level == "INFO ":
         display = True
@@ -63,10 +65,11 @@ def log(msg, level="INFO "):
     if level == "CRITICAL":
         display = True
         critical = True
-    if display == True:
+    if display:
         print(f"{now} - {level} : {msg}")
-    if critical == True:
+    if critical:
         quit()
+
 
 def splitLog(msg):
     format_log = ""
@@ -87,6 +90,7 @@ def splitLog(msg):
         else:
             i = i + 1
         cur_length = cur_length + 1
+
 
 def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     config_query = f"SELECT * FROM config WHERE key = 'config'"

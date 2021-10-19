@@ -26,34 +26,22 @@ url = "https://enedisgateway.tech/api"
 fail_count = 24
 
 ########################################################################################################################
-# CHECK MANDATORY PARAMETERS
-if not "ACCESS_TOKEN" in os.environ:
-    f.log("Environement variable 'ACCESS_TOKEN' is mandatory")
-    quit()
-if not "PDL" in os.environ:
-    f.log("Environement variable 'PDL' is mandatory")
-    quit()
-if not "MQTT_HOST" in os.environ:
-    f.log("Environement variable 'MQTT_HOST' is mandatory")
-    quit()
-
-########################################################################################################################
 # AUTHENTIFICATION
-accessToken = os.environ['ACCESS_TOKEN']
-pdl = os.environ['PDL']
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': accessToken
-}
+if "ACCESS_TOKEN" in os.environ:
+    accessToken = os.environ['ACCESS_TOKEN']
+else:
+    accessToken = ""
+if "PDL" in os.environ:
+    pdl = os.environ['PDL']
+else:
+    pdl = ""
 
 ########################################################################################################################
 # MQTT
-broker = os.environ['MQTT_HOST']
-
-if broker == "":
-    f.log("Environement variable 'MQTT_HOST' can't be empty")
-    quit()
-
+if "MQTT_HOST" in os.environ:
+    broker = os.environ['MQTT_HOST']
+else:
+    broker = ""
 if "MQTT_PORT" in os.environ:
     port = int(os.environ['MQTT_PORT'])
 else:
@@ -231,7 +219,7 @@ api_no_result = []
 
 
 def init_database(cur):
-    log("Initialise database")
+    f.log("Initialise database")
 
     ## CONFIG
     cur.execute('''CREATE TABLE config (
@@ -304,25 +292,31 @@ def init_database(cur):
     }
     cur.execute(config_query, ["config", json.dumps(config)])
 
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': accessToken
+}
+
+try:
+    client = connect_mqtt()
+    client.loop_start()
+except:
+    f.log("MQTT : Connection failed")
+
+if influxdb_enable == True:
+    influxclient = influxdb_client.InfluxDBClient(
+        url=influxdb_host,
+        token=influxdb_token,
+        org=influxdb_org
+    )
+    write_api = influxclient.write_api(write_options=SYNCHRONOUS)
+    p = influxdb_client.Point("my_measurement").tag("location", "Prague").field("_time", datetime.now()).field(
+        "temperature", 25.3)
+    write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
+
 def run():
 
     global offpeak_hours
-
-    try:
-        client = connect_mqtt()
-        client.loop_start()
-    except:
-        log("MQTT : Connection failed")
-
-    if influxdb_enable == True:
-        influxclient = influxdb_client.InfluxDBClient(
-            url=influxdb_host,
-            token=influxdb_token,
-            org=influxdb_org
-        )
-        write_api = influxclient.write_api(write_options=SYNCHRONOUS)
-        p = influxdb_client.Point("my_measurement").tag("location", "Prague").field("_time", datetime.now()).field("temperature", 25.3)
-        write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
 
     while True:
 
@@ -396,7 +390,7 @@ def run():
 
         f.logLine()
         f.log("Get contract :")
-        contract = cont.getContract(client, con, cur)
+        contract = cont.getContract()
         f.log(contract,"debug")
         if "error_code" in contract:
             f.publish(client, f"error", str(1))
@@ -599,6 +593,18 @@ def run():
         con.close()
         time.sleep(cycle)
 
-
 if __name__ == '__main__':
+
+    if accessToken == "":
+        f.log("Environement variable 'ACCESS_TOKEN' is mandatory", "CRITICAL")
+    if pdl == "":
+        f.log("Environement variable 'PDL' is mandatory", "CRITICAL")
+    if broker == "":
+        f.log("Environement variable 'MQTT_HOST' is mandatory", "CRITICAL")
+    if broker == "":
+        f.log("Environement variable 'MQTT_HOST' can't be empty")
+
+
+
+
     run()
