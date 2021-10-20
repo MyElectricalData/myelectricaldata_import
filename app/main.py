@@ -7,6 +7,7 @@ import sqlite3
 import locale
 from pprint import pprint
 import json
+
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 from collections import namedtuple
@@ -597,16 +598,42 @@ if __name__ == '__main__':
 
     # INFLUXDB
     if influxdb_enable == True:
+
+        # class Daily(namedtuple('Daily', ['name', 'timestamp', 'pdl', 'value', 'measure_type'])):
+        #     """
+        #     Named structure - Daily
+        #     """
+        #     pass
+        #
+        #
+        # with InfluxDBClient(url=influxdb_host, token=influxdb_token, org=influxdb_org) as client:
+        #     write_api = client.write_api(write_options=SYNCHRONOUS)
+        #
+        # date = "2021-10-15 10:00:00"
+        # date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        # daily = Daily(name="test", timestamp=date, pdl=pdl, value="25", measure_type="HP")
+        # pprint(daily)
+        # pprint(datetime.utcnow())
+        #
+        # write_api.write(bucket=influxdb_bucket,
+        #                 record=daily,
+        #                 record_measurement_key="name",
+        #                 record_time_key="timestamp",
+        #                 record_tag_keys=["measure_type"],
+        #                 record_field_keys=["value"])
         influxdb = influxdb_client.InfluxDBClient(
             url=influxdb_host,
             token=influxdb_token,
             org=influxdb_org
         )
-        date = "2020-01-01 10:00:00"
+        date = "2021-10-15 15:00:00"
         date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
         write_api = influxdb.write_api(write_options=SYNCHRONOUS)
-        p = influxdb_client.Point("test").tag("location", "Prague").field("temperature", 23.6).time(date.utcnow())
+        p = influxdb_client.Point("test").tag("location", "Prague").field("temperature", 23.6).time(date)
+
         write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
+
+
 
     quit()
 
