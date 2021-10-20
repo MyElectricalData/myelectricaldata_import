@@ -9,6 +9,7 @@ from pprint import pprint
 import json
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
+from collections import namedtuple
 
 from importlib import import_module
 f = import_module("function")
@@ -184,8 +185,43 @@ if "CARD_MYENEDIS" in os.environ:
 else:
     card_myenedis = False
 
+########################################################################################################################
+# INFLUXDB_ENABLE
+if "INFLUXDB_ENABLE" in os.environ:
+    influxdb_enable = bool(strtobool(os.environ['INFLUXDB_ENABLE']))
+else:
+    influxdb_enable = False
+########################################################################################################################
+# INFLUXDB_HOST
+if "INFLUXDB_HOST" in os.environ:
+    influxdb_host = str(os.environ['INFLUXDB_HOST'])
+else:
+    influxdb_host = ""
+########################################################################################################################
+# INFLUXDB_TOKEN
+if "INFLUXDB_TOKEN" in os.environ:
+    influxdb_token = str(os.environ['INFLUXDB_TOKEN'])
+else:
+    influxdb_token = ""
+########################################################################################################################
+# INFLUXDB_ORG
+if "INFLUXDB_ORG" in os.environ:
+    influxdb_org = str(os.environ['INFLUXDB_ORG'])
+else:
+    influxdb_org = ""
+########################################################################################################################
+# INFLUXDB_BUCKET
+if "INFLUXDB_BUCKET" in os.environ:
+    influxdb_bucket = str(os.environ['INFLUXDB_BUCKET'])
+else:
+    influxdb_bucket = ""
+
 api_no_result = []
 
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': accessToken
+}
 
 def init_database(cur):
     f.log("Initialise database")
@@ -264,11 +300,6 @@ def init_database(cur):
 def run():
 
     global offpeak_hours
-    try:
-        client = f.connect_mqtt()
-        client.loop_start()
-    except:
-        f.log("MQTT : Connection failed")
 
     while True:
 
@@ -342,7 +373,7 @@ def run():
 
         f.logLine()
         f.log("Get contract :")
-        contract = cont.getContract()
+        contract = cont.getContract(client, cur, con)
         f.log(contract,"debug")
         if "error_code" in contract:
             f.publish(client, f"error", str(1))
@@ -556,7 +587,27 @@ if __name__ == '__main__':
     if broker == "":
         f.log("Environement variable 'MQTT_HOST' can't be empty")
 
+    # MQTT
+    try:
+        client = f.connect_mqtt()
+        client.loop_start()
+    except:
+        f.log("MQTT : Connection failed")
 
 
+    # INFLUXDB
+    if influxdb_enable == True:
+        influxdb = influxdb_client.InfluxDBClient(
+            url=influxdb_host,
+            token=influxdb_token,
+            org=influxdb_org
+        )
+        date = "2020-01-01 10:00:00"
+        date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        write_api = influxdb.write_api(write_options=SYNCHRONOUS)
+        p = influxdb_client.Point("test").tag("location", "Prague").field("temperature", 23.6).time(date.utcnow())
+        write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
+
+    quit()
 
     run()
