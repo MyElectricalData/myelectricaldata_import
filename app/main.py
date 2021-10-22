@@ -203,7 +203,7 @@ else:
 if "INFLUXDB_PORT" in os.environ:
     influxdb_port = str(os.environ['INFLUXDB_PORT'])
 else:
-    influxdb_port = ""
+    influxdb_port = 8086
 ########################################################################################################################
 # INFLUXDB_TOKEN
 if "INFLUXDB_TOKEN" in os.environ:
