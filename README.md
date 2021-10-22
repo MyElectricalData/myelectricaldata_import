@@ -99,6 +99,7 @@ See chapter [persistance](#persistance), to reduce API call number.
 | CURRENT_PLAN | Choose you plan "BASE" or "HP/HC"  | BASE |   
 | INFLUXDB_ENABLE | Enable influxdb exporter  | False |   
 | INFLUXDB_HOST | Influxdb Host or IP Address  | "" |   
+| INFLUXDB_PORT | Influxdb port | 8086 |   
 | INFLUXDB_TOKEN | Influxdb token (v2)  | "" |   
 | INFLUXDB_ORG | Influxdb Org (v2)  | "" |   
 | INFLUXDB_BUCKET | Influxdb bucket name (v2)  | "" |
