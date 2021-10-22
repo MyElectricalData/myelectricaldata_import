@@ -7,9 +7,8 @@ import sqlite3
 import locale
 from pprint import pprint
 import json
-
 import influxdb_client
-from influxdb_client.client.write_api import SYNCHRONOUS
+from influxdb_client.client.write_api import ASYNCHRONOUS
 from collections import namedtuple
 
 from importlib import import_module
@@ -20,6 +19,7 @@ day = import_module("daily")
 detail = import_module("detail")
 ha = import_module("home_assistant")
 myenedis = import_module("myenedis")
+influx = import_module("influxdb")
 
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
@@ -407,7 +407,7 @@ def run():
             if get_consumption == True:
                 f.logLine()
                 f.log("Get Consumption :")
-                ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
+                ha_discovery_consumption = day.getDaily(cur, con, client, influxdb_api, "consumption", last_activation_date)
                 # pprint(ha_discovery_consumption)
                 if ha_autodiscovery == True:
                     f.logLine()
@@ -434,11 +434,12 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
+
             # f.logLine()
 
             if get_consumption_detail == True:
                 f.log("Get Consumption Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "consumption", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption Detail) :")
@@ -470,7 +471,7 @@ def run():
             if get_production == True:
                 f.logLine()
                 f.log("Get production :")
-                ha_discovery_production = day.getDaily(cur, con, client, "production", last_activation_date)
+                ha_discovery_production = day.getDaily(cur, con, client, influxdb_api, "production", last_activation_date)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production) :")
@@ -500,7 +501,7 @@ def run():
             if get_production_detail == True:
                 f.logLine()
                 f.log("Get production Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "production", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production Detail) :")
@@ -555,6 +556,11 @@ def run():
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
 
+            if influxdb_enable == True:
+                f.logLine()
+                f.log("Push data in influxdb")
+                influx.influxdb_insert(cur, con, influxdb_api)
+
             query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
             if rows.fetchone() is not None:
@@ -575,6 +581,11 @@ def run():
 
         con.commit()
         con.close()
+
+        f.logLine()
+        f.log("IMPORT FINISH")
+        f.logLine()
+
         time.sleep(cycle)
 
 if __name__ == '__main__':
@@ -598,43 +609,11 @@ if __name__ == '__main__':
 
     # INFLUXDB
     if influxdb_enable == True:
-
-        # class Daily(namedtuple('Daily', ['name', 'timestamp', 'pdl', 'value', 'measure_type'])):
-        #     """
-        #     Named structure - Daily
-        #     """
-        #     pass
-        #
-        #
-        # with InfluxDBClient(url=influxdb_host, token=influxdb_token, org=influxdb_org) as client:
-        #     write_api = client.write_api(write_options=SYNCHRONOUS)
-        #
-        # date = "2021-10-15 10:00:00"
-        # date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-        # daily = Daily(name="test", timestamp=date, pdl=pdl, value="25", measure_type="HP")
-        # pprint(daily)
-        # pprint(datetime.utcnow())
-        #
-        # write_api.write(bucket=influxdb_bucket,
-        #                 record=daily,
-        #                 record_measurement_key="name",
-        #                 record_time_key="timestamp",
-        #                 record_tag_keys=["measure_type"],
-        #                 record_field_keys=["value"])
         influxdb = influxdb_client.InfluxDBClient(
             url=influxdb_host,
             token=influxdb_token,
             org=influxdb_org
         )
-        date = "2021-10-15 15:00:00"
-        date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-        write_api = influxdb.write_api(write_options=SYNCHRONOUS)
-        p = influxdb_client.Point("test").tag("location", "Prague").field("temperature", 23.6).time(date)
-
-        write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=p)
-
-
-
-    quit()
+        influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
 
     run()

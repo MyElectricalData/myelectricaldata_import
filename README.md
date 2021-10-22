@@ -97,6 +97,11 @@ See chapter [persistance](#persistance), to reduce API call number.
 | DEBUG | Display debug information  | False |   
 | CARD_MYENEDIS | Create HA sensor for Linky Card with auto-discovery  | False |   
 | CURRENT_PLAN | Choose you plan "BASE" or "HP/HC"  | BASE |   
+| INFLUXDB_ENABLE | Enable influxdb exporter  | False |   
+| INFLUXDB_HOST | Influxdb Host or IP Address  | "" |   
+| INFLUXDB_TOKEN | Influxdb token (v2)  | "" |   
+| INFLUXDB_ORG | Influxdb Org (v2)  | "" |   
+| INFLUXDB_BUCKET | Influxdb bucket name (v2)  | "" |
 
 ## Cache
 
@@ -123,6 +128,13 @@ The tool will do calculation for you and tell you which plan is the most advanta
 Sometimes there are holes in the Enedis consumption records. So I set up a blacklist system for certain dates.
 
 If date does not return information after 7 try (7 x CYCLE), I blacklist this date and will no longer generate an API call
+
+## Grafana & InfluxDB v2
+
+> Not compatible with InfluxDB v1.X
+
+EnedisGateway2MQTT integrates an influxdb connector which will allow you to export all the information.
+And you can found Grafana dashboard [here](grafana_dashboard.json).
 
 ## Usage :
 
@@ -154,6 +166,11 @@ WIPE_CACHE="False"
 DEBUG="False"              
 CARD_MYENEDIS="False"              
 CURRENT_PLAN="BASE"              
+INFLUXDB_ENABLE="False"   
+INFLUXDB_HOST=""   
+INFLUXDB_TOKEN=""   
+INFLUXDB_ORG=""   
+INFLUXDB_BUCKET=""
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -183,6 +200,11 @@ docker run -it --restart=unless-stopped \
     -e DEBUG="$DEBUG" \
     -e CARD_MYENEDIS="$CARD_MYENEDIS" \
     -e CURRENT_PLAN="$CURRENT_PLAN" \
+    -e INFLUXDB_ENABLE="$INFLUXDB_ENABLE" \
+    -e INFLUXDB_HOST="$INFLUXDB_HOST" \
+    -e INFLUXDB_TOKEN="$INFLUXDB_TOKEN" \
+    -e INFLUXDB_ORG="$INFLUXDB_ORG" \
+    -e INFLUXDB_BUCKET="$INFLUXDB_BUCKET" \
     -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
@@ -222,6 +244,11 @@ services:
       DEBUG: "False"   
       CARD_MYENEDIS: "False"   
       CURRENT_PLAN: "BASE"   
+     INFLUXDB_ENABLE: "False"
+     INFLUXDB_HOST: ""
+     INFLUXDB_TOKEN: ""
+     INFLUXDB_ORG: ""
+     INFLUXDB_BUCKET: ""      
     logging:
       options:
         max-size: "10m"
@@ -238,6 +265,11 @@ volumes:
 - Add InfluxDB Connector
 
 ## Change log:
+
+### [0.5.2] - 2021-10-22
+
+- Add influxdb connecter & exporter
+- Grafana dashboard exemple
 
 ### [0.5.1] - 2021-10-15
 
