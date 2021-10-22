@@ -199,6 +199,12 @@ if "INFLUXDB_HOST" in os.environ:
 else:
     influxdb_host = ""
 ########################################################################################################################
+# INFLUXDB_PORT
+if "INFLUXDB_PORT" in os.environ:
+    influxdb_port = str(os.environ['INFLUXDB_PORT'])
+else:
+    influxdb_port = ""
+########################################################################################################################
 # INFLUXDB_TOKEN
 if "INFLUXDB_TOKEN" in os.environ:
     influxdb_token = str(os.environ['INFLUXDB_TOKEN'])
@@ -604,16 +610,22 @@ if __name__ == '__main__':
         client = f.connect_mqtt()
         client.loop_start()
     except:
-        f.log("MQTT : Connection failed")
+        f.log("MQTT : Connection failed", "CRITICIAL")
 
 
     # INFLUXDB
     if influxdb_enable == True:
         influxdb = influxdb_client.InfluxDBClient(
-            url=influxdb_host,
+            url=f"http://{influxdb_host}:{influxdb_port}",
             token=influxdb_token,
             org=influxdb_org
         )
+        health = influxdb.health()
+        if health.status == "pass":
+            f.log("InfluxDB : Connection success")
+        else:
+            f.log("InfluxDB : Connection failed", "CRITICAL")
+
         influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
 
     run()
