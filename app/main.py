@@ -199,6 +199,12 @@ if "INFLUXDB_HOST" in os.environ:
 else:
     influxdb_host = ""
 ########################################################################################################################
+# INFLUXDB_PORT
+if "INFLUXDB_PORT" in os.environ:
+    influxdb_port = str(os.environ['INFLUXDB_PORT'])
+else:
+    influxdb_port = ""
+########################################################################################################################
 # INFLUXDB_TOKEN
 if "INFLUXDB_TOKEN" in os.environ:
     influxdb_token = str(os.environ['INFLUXDB_TOKEN'])
@@ -407,7 +413,7 @@ def run():
             if get_consumption == True:
                 f.logLine()
                 f.log("Get Consumption :")
-                ha_discovery_consumption = day.getDaily(cur, con, client, influxdb_api, "consumption", last_activation_date)
+                ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
                 # pprint(ha_discovery_consumption)
                 if ha_autodiscovery == True:
                     f.logLine()
@@ -439,7 +445,7 @@ def run():
 
             if get_consumption_detail == True:
                 f.log("Get Consumption Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "consumption", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption Detail) :")
@@ -471,7 +477,7 @@ def run():
             if get_production == True:
                 f.logLine()
                 f.log("Get production :")
-                ha_discovery_production = day.getDaily(cur, con, client, influxdb_api, "production", last_activation_date)
+                ha_discovery_production = day.getDaily(cur, con, client, "production", last_activation_date)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production) :")
@@ -501,7 +507,7 @@ def run():
             if get_production_detail == True:
                 f.logLine()
                 f.log("Get production Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "production", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production Detail) :")
@@ -604,16 +610,22 @@ if __name__ == '__main__':
         client = f.connect_mqtt()
         client.loop_start()
     except:
-        f.log("MQTT : Connection failed")
+        f.log("MQTT : Connection failed", "CRITICIAL")
 
 
     # INFLUXDB
     if influxdb_enable == True:
         influxdb = influxdb_client.InfluxDBClient(
-            url=influxdb_host,
+            url=f"http://{influxdb_host}:{influxdb_port}",
             token=influxdb_token,
             org=influxdb_org
         )
+        health = influxdb.health()
+        if health.status == "pass":
+            f.log("InfluxDB : Connection success")
+        else:
+            f.log("InfluxDB : Connection failed", "CRITICAL")
+
         influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
 
     run()

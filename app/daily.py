@@ -3,15 +3,13 @@ import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from pprint import pprint
-import influxdb_client
-from influxdb_client.client.write_api import SYNCHRONOUS
 
 from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
 
-def getDaily(cur, con, client, influxdb_api=None, mode="consumption", last_activation_date=datetime.now()):
+def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime.now()):
     max_days = 1095
     max_days_date = datetime.now() + relativedelta(days=-max_days)
     pdl = main.pdl
@@ -31,7 +29,7 @@ def getDaily(cur, con, client, influxdb_api=None, mode="consumption", last_activ
     dateEnded = datetime.now()
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
-    data = dailyBeetwen(cur, con, influxdb_api, pdl, mode, dateBegin, dateEnded, last_activation_date)
+    data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
     if "error_code" in data:
         f.publish(client, f"{pdl}/{mode}/current_year/error", str(1))
         for key, value in data.items():
@@ -92,7 +90,7 @@ def getDaily(cur, con, client, influxdb_api=None, mode="consumption", last_activ
         if last_activation_date > datetime.strptime(dateEnded, '%Y-%m-%d'):
             f.log(" - Skip (activation date > dateEnded)")
         else:
-            data = dailyBeetwen(cur, con, influxdb_api, pdl, mode, dateBegin, dateEnded, last_activation_date)
+            data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
             if "error_code" in data:
                 f.publish(client, f"{pdl}/{mode}/year-{current_year}/error", str(1))
                 for key, value in data.items():
@@ -167,7 +165,7 @@ def getDaily(cur, con, client, influxdb_api=None, mode="consumption", last_activ
     return ha_discovery
 
 
-def dailyBeetwen(cur, con, influxdb_api, pdl, mode, dateBegin, dateEnded, last_activation_date):
+def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date):
     response = {}
 
     lastYears = datetime.strptime(dateEnded, '%Y-%m-%d')

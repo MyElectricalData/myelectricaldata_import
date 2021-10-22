@@ -38,6 +38,7 @@ def influxdb_insert(cur, con, influxdb_api):
         value = result[2]
         value_kw = value / 1000
         current_price = forceRound(value_kw * price["BASE"], 4)
+        f.log(f"Insert daily {date} => {value}", "DEBUG")
         dateObject = datetime.strptime(date, '%Y-%m-%d') - relativedelta(hours=2)
         p = influxdb_client.Point("enedisgateway_daily") \
             .tag("pdl", pdl) \
@@ -61,8 +62,8 @@ def influxdb_insert(cur, con, influxdb_api):
         value_wh = value * interval_length / 60
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price[measure_type], 4)
+        f.log(f"Insert detail {date} => {value}", "DEBUG")
         dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S') - relativedelta(hours=2)
-        # pprint(current_price)
         p = influxdb_client.Point("enedisgateway_detail") \
             .tag("pdl", pdl) \
             .tag("measure_type", measure_type) \

@@ -168,6 +168,7 @@ CARD_MYENEDIS="False"
 CURRENT_PLAN="BASE"              
 INFLUXDB_ENABLE="False"   
 INFLUXDB_HOST=""   
+INFLUXDB_PORT=""   
 INFLUXDB_TOKEN=""   
 INFLUXDB_ORG=""   
 INFLUXDB_BUCKET=""
@@ -202,6 +203,7 @@ docker run -it --restart=unless-stopped \
     -e CURRENT_PLAN="$CURRENT_PLAN" \
     -e INFLUXDB_ENABLE="$INFLUXDB_ENABLE" \
     -e INFLUXDB_HOST="$INFLUXDB_HOST" \
+    -e INFLUXDB_PORT="$INFLUXDB_PORT" \
     -e INFLUXDB_TOKEN="$INFLUXDB_TOKEN" \
     -e INFLUXDB_ORG="$INFLUXDB_ORG" \
     -e INFLUXDB_BUCKET="$INFLUXDB_BUCKET" \
@@ -244,11 +246,12 @@ services:
       DEBUG: "False"   
       CARD_MYENEDIS: "False"   
       CURRENT_PLAN: "BASE"   
-     INFLUXDB_ENABLE: "False"
-     INFLUXDB_HOST: ""
-     INFLUXDB_TOKEN: ""
-     INFLUXDB_ORG: ""
-     INFLUXDB_BUCKET: ""      
+      INFLUXDB_ENABLE: "False"
+      INFLUXDB_HOST: ""
+      INFLUXDB_PORT: ""
+      INFLUXDB_TOKEN: ""
+      INFLUXDB_ORG: ""
+      INFLUXDB_BUCKET: ""      
     logging:
       options:
         max-size: "10m"
