@@ -7,6 +7,9 @@ import sqlite3
 import locale
 from pprint import pprint
 import json
+import influxdb_client
+from influxdb_client.client.write_api import ASYNCHRONOUS
+from collections import namedtuple
 
 from importlib import import_module
 f = import_module("function")
@@ -16,42 +19,31 @@ day = import_module("daily")
 detail = import_module("detail")
 ha = import_module("home_assistant")
 myenedis = import_module("myenedis")
+influx = import_module("influxdb")
 
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 url = "https://enedisgateway.tech/api"
 
-fail_count = 7
-
-########################################################################################################################
-# CHECK MANDATORY PARAMETERS
-if not "ACCESS_TOKEN" in os.environ:
-    f.log("Environement variable 'ACCESS_TOKEN' is mandatory")
-    quit()
-if not "PDL" in os.environ:
-    f.log("Environement variable 'PDL' is mandatory")
-    quit()
-if not "MQTT_HOST" in os.environ:
-    f.log("Environement variable 'MQTT_HOST' is mandatory")
-    quit()
+fail_count = 24
 
 ########################################################################################################################
 # AUTHENTIFICATION
-accessToken = os.environ['ACCESS_TOKEN']
-pdl = os.environ['PDL']
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': accessToken
-}
+if "ACCESS_TOKEN" in os.environ:
+    accessToken = os.environ['ACCESS_TOKEN']
+else:
+    accessToken = ""
+if "PDL" in os.environ:
+    pdl = os.environ['PDL']
+else:
+    pdl = ""
 
 ########################################################################################################################
 # MQTT
-broker = os.environ['MQTT_HOST']
-
-if broker == "":
-    f.log("Environement variable 'MQTT_HOST' can't be empty")
-    quit()
-
+if "MQTT_HOST" in os.environ:
+    broker = os.environ['MQTT_HOST']
+else:
+    broker = ""
 if "MQTT_PORT" in os.environ:
     port = int(os.environ['MQTT_PORT'])
 else:
@@ -194,8 +186,43 @@ if "CARD_MYENEDIS" in os.environ:
 else:
     card_myenedis = False
 
+########################################################################################################################
+# INFLUXDB_ENABLE
+if "INFLUXDB_ENABLE" in os.environ:
+    influxdb_enable = bool(strtobool(os.environ['INFLUXDB_ENABLE']))
+else:
+    influxdb_enable = False
+########################################################################################################################
+# INFLUXDB_HOST
+if "INFLUXDB_HOST" in os.environ:
+    influxdb_host = str(os.environ['INFLUXDB_HOST'])
+else:
+    influxdb_host = ""
+########################################################################################################################
+# INFLUXDB_TOKEN
+if "INFLUXDB_TOKEN" in os.environ:
+    influxdb_token = str(os.environ['INFLUXDB_TOKEN'])
+else:
+    influxdb_token = ""
+########################################################################################################################
+# INFLUXDB_ORG
+if "INFLUXDB_ORG" in os.environ:
+    influxdb_org = str(os.environ['INFLUXDB_ORG'])
+else:
+    influxdb_org = ""
+########################################################################################################################
+# INFLUXDB_BUCKET
+if "INFLUXDB_BUCKET" in os.environ:
+    influxdb_bucket = str(os.environ['INFLUXDB_BUCKET'])
+else:
+    influxdb_bucket = ""
+
 api_no_result = []
 
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': accessToken
+}
 
 def init_database(cur):
     f.log("Initialise database")
@@ -274,11 +301,6 @@ def init_database(cur):
 def run():
 
     global offpeak_hours
-    try:
-        client = f.connect_mqtt()
-        client.loop_start()
-    except:
-        f.log("MQTT : Connection failed")
 
     while True:
 
@@ -352,7 +374,7 @@ def run():
 
         f.logLine()
         f.log("Get contract :")
-        contract = cont.getContract(client, con, cur)
+        contract = cont.getContract(client, cur, con)
         f.log(contract,"debug")
         if "error_code" in contract:
             f.publish(client, f"error", str(1))
@@ -385,7 +407,7 @@ def run():
             if get_consumption == True:
                 f.logLine()
                 f.log("Get Consumption :")
-                ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
+                ha_discovery_consumption = day.getDaily(cur, con, client, influxdb_api, "consumption", last_activation_date)
                 # pprint(ha_discovery_consumption)
                 if ha_autodiscovery == True:
                     f.logLine()
@@ -412,11 +434,12 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
+
             # f.logLine()
 
             if get_consumption_detail == True:
                 f.log("Get Consumption Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "consumption", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption Detail) :")
@@ -448,7 +471,7 @@ def run():
             if get_production == True:
                 f.logLine()
                 f.log("Get production :")
-                ha_discovery_production = day.getDaily(cur, con, client, "production", last_activation_date)
+                ha_discovery_production = day.getDaily(cur, con, client, influxdb_api, "production", last_activation_date)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production) :")
@@ -478,7 +501,7 @@ def run():
             if get_production_detail == True:
                 f.logLine()
                 f.log("Get production Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "production", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production Detail) :")
@@ -533,6 +556,11 @@ def run():
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
 
+            if influxdb_enable == True:
+                f.logLine()
+                f.log("Push data in influxdb")
+                influx.influxdb_insert(cur, con, influxdb_api)
+
             query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
             if rows.fetchone() is not None:
@@ -553,8 +581,39 @@ def run():
 
         con.commit()
         con.close()
+
+        f.logLine()
+        f.log("IMPORT FINISH")
+        f.logLine()
+
         time.sleep(cycle)
 
-
 if __name__ == '__main__':
+
+    if accessToken == "":
+        f.log("Environement variable 'ACCESS_TOKEN' is mandatory", "CRITICAL")
+    if pdl == "":
+        f.log("Environement variable 'PDL' is mandatory", "CRITICAL")
+    if broker == "":
+        f.log("Environement variable 'MQTT_HOST' is mandatory", "CRITICAL")
+    if broker == "":
+        f.log("Environement variable 'MQTT_HOST' can't be empty")
+
+    # MQTT
+    try:
+        client = f.connect_mqtt()
+        client.loop_start()
+    except:
+        f.log("MQTT : Connection failed")
+
+
+    # INFLUXDB
+    if influxdb_enable == True:
+        influxdb = influxdb_client.InfluxDBClient(
+            url=influxdb_host,
+            token=influxdb_token,
+            org=influxdb_org
+        )
+        influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
+
     run()

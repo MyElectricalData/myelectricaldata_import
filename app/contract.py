@@ -8,9 +8,11 @@ from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
-def getContract(client, con, cur):
+def getContract(client, cur, con):
+
 
     def queryApi(url, headers, data, count=0):
+
         contract = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
         if not "error_code" in contract:
             query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
