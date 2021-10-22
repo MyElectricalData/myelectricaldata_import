@@ -413,7 +413,7 @@ def run():
             if get_consumption == True:
                 f.logLine()
                 f.log("Get Consumption :")
-                ha_discovery_consumption = day.getDaily(cur, con, client, influxdb_api, "consumption", last_activation_date)
+                ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
                 # pprint(ha_discovery_consumption)
                 if ha_autodiscovery == True:
                     f.logLine()
@@ -445,7 +445,7 @@ def run():
 
             if get_consumption_detail == True:
                 f.log("Get Consumption Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "consumption", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption Detail) :")
@@ -477,7 +477,7 @@ def run():
             if get_production == True:
                 f.logLine()
                 f.log("Get production :")
-                ha_discovery_production = day.getDaily(cur, con, client, influxdb_api, "production", last_activation_date)
+                ha_discovery_production = day.getDaily(cur, con, client, "production", last_activation_date)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production) :")
@@ -507,7 +507,7 @@ def run():
             if get_production_detail == True:
                 f.logLine()
                 f.log("Get production Detail:")
-                ha_discovery_consumption = detail.getDetail(cur, con, client, influxdb_api, "production", last_activation_date, offpeak_hours)
+                ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production Detail) :")
