@@ -208,7 +208,6 @@ docker run -it --restart=unless-stopped \
     -e INFLUXDB_TOKEN="$INFLUXDB_TOKEN" \
     -e INFLUXDB_ORG="$INFLUXDB_ORG" \
     -e INFLUXDB_BUCKET="$INFLUXDB_BUCKET" \
-    -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
 
