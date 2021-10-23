@@ -235,6 +235,10 @@ volumes:
 
 ## Change log:
 
+### [0.5.3] - 2021-10-23
+
+- Fix bug
+
 ### [0.5.2] - 2021-10-22
 
 - Add influxdb connecter & exporter
