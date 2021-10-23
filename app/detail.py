@@ -151,7 +151,8 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
 
     year = dateObject.strftime('%Y')
     month = dateObject.strftime('%m')
-    if offpeak_hours != None:
+
+    if offpeak_hours != None and offpeak_hours != "":
         for plan in ["hc", "hp"]:
             ha_discovery[pdl].update({
                 f"{mode}_detail_this_month_{plan}": {

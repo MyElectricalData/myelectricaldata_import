@@ -95,7 +95,7 @@ def getContract(client, cur, con):
                         if contracts_key == "offpeak_hours":
                             offpeak_hours = contracts_data[contracts_data.find("(") + 1:contracts_data.find(")")].split(';')
 
-                    if offpeak_hours != []:
+                    if offpeak_hours != [] and offpeak_hours != [""]:
                         ha_discovery[pdl]["offpeak_hours"] = offpeak_hours
                         index = 0
                         for oh in offpeak_hours:

@@ -139,6 +139,11 @@ And you can found Grafana dashboard [here](grafana_dashboard.json).
 
 ## Usage :
 
+**These are EXAMPLES, and do not necessarily represent your settings!**
+
+**Please read [parameter table](#Environment variable) and adapt to your configuration.**
+
+
 ```
 ACCESS_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 PDL="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
@@ -156,23 +161,10 @@ GET_PRODUCTION="False"
 GET_PRODUCTION_DETAIL="False"
 HA_AUTODISCOVERY="False"
 HA_AUTODISCOVERY_PREFIX='homeassistant'
-CYCLE=3600                 
-OFFPEAK_HOURS=""
 CONSUMPTION_PRICE_BASE=0
 CONSUMPTION_PRICE_HC=0
-CONSUMPTION_PRICE_HP=0 
-REFRESH_CONTRACT="False" 
-REFRESH_ADDRESSES="False"  
-WIPE_CACHE="False"              
-DEBUG="False"              
+CONSUMPTION_PRICE_HP=0   
 CARD_MYENEDIS="False"              
-CURRENT_PLAN="BASE"              
-INFLUXDB_ENABLE="False"   
-INFLUXDB_HOST=""   
-INFLUXDB_PORT=""   
-INFLUXDB_TOKEN=""   
-INFLUXDB_ORG=""   
-INFLUXDB_BUCKET=""
 
 docker run -it --restart=unless-stopped \
     -e ACCESS_TOKEN="$ACCESS_TOKEN" \
@@ -191,24 +183,10 @@ docker run -it --restart=unless-stopped \
     -e GET_PRODUCTION_DETAIL="$GET_PRODUCTION_DETAIL" \
     -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
     -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
-    -e CYCLE="$CYCLE" \
-    -e OFFPEAK_HOURS="$OFFPEAK_HOURS" \
     -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE" \
     -e CONSUMPTION_PRICE_HC="$CONSUMPTION_PRICE_HC" \
     -e CONSUMPTION_PRICE_HP="$CONSUMPTION_PRICE_HP" \
-    -e REFRESH_CONTRACT="$REFRESH_CONTRACT" \
-    -e REFRESH_ADDRESSES="$REFRESH_ADDRESSES" \
-    -e WIPE_CACHE="$WIPE_CACHE" \
-    -e DEBUG="$DEBUG" \
     -e CARD_MYENEDIS="$CARD_MYENEDIS" \
-    -e CURRENT_PLAN="$CURRENT_PLAN" \
-    -e INFLUXDB_ENABLE="$INFLUXDB_ENABLE" \
-    -e INFLUXDB_HOST="$INFLUXDB_HOST" \
-    -e INFLUXDB_PORT="$INFLUXDB_PORT" \
-    -e INFLUXDB_TOKEN="$INFLUXDB_TOKEN" \
-    -e INFLUXDB_ORG="$INFLUXDB_ORG" \
-    -e INFLUXDB_BUCKET="$INFLUXDB_BUCKET" \
-    -v $(pwd):/data
 m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
 
@@ -236,23 +214,10 @@ services:
       GET_PRODUCTION: "False"
       HA_AUTODISCOVERY: "False"
       HA_AUTODISCOVERY_PREFIX: 'homeassistant'
-      CYCLE: 86400
-      OFFPEAK_HOURS: ""
       CONSUMPTION_PRICE_BASE: 0
       CONSUMPTION_PRICE_HC: 0
       CONSUMPTION_PRICE_HP: 0 
-      REFRESH_CONTRACT: "False" 
-      REFRESH_ADDRESSES: "False"  
-      WIPE_CACHE: "False"   
-      DEBUG: "False"   
-      CARD_MYENEDIS: "False"   
-      CURRENT_PLAN: "BASE"   
-      INFLUXDB_ENABLE: "False"
-      INFLUXDB_HOST: ""
-      INFLUXDB_PORT: ""
-      INFLUXDB_TOKEN: ""
-      INFLUXDB_ORG: ""
-      INFLUXDB_BUCKET: ""      
+      CARD_MYENEDIS: "False"    
     logging:
       options:
         max-size: "10m"
