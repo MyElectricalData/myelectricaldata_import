@@ -141,7 +141,7 @@ And you can found Grafana dashboard [here](grafana_dashboard.json).
 
 **These are EXAMPLES, and do not necessarily represent your settings!**
 
-**Please read [parameter table](#Environment variable) and adapt to your configuration.**
+**Please read [parameter table](#environment-variable) and adapt to your configuration.**
 
 
 ```
