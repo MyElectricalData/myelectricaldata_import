@@ -38,6 +38,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
     name = f"enedisgateway_{pdl}"
     config = {
+        "uniq_id": name,
         "name": name,
         "stat_t": f"{ha_autodiscovery_prefix}/sensor/{name}/state",
         "json_attr_t": f"{ha_autodiscovery_prefix}/sensor/{name}/attributes",
@@ -376,24 +377,25 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
             query = f"SELECT * FROM config WHERE key = '{pdl}_offpeak_hours'"
             cur.execute(query)
             query_result = cur.fetchone()
-            attributes[f'offpeak_hours_enedis'] = query_result[1]
-            offpeak_hours_enedis = query_result[1]
-            offpeak_hours_enedis = offpeak_hours_enedis[offpeak_hours_enedis.find("(") + 1:offpeak_hours_enedis.find(")")].split(';')
-            offpeak_hours = []
-            for hours in offpeak_hours_enedis:
-                plage = hours.split("-")
-                today = datetime.now(timezone)
-                dateBegin = today.replace(hour=int(plage[0].split("H")[0]), minute=int(plage[0].split("H")[1]), second=0)
-                dateEnd = today.replace(hour=int(plage[1].split("H")[0]), minute=int(plage[1].split("H")[1]), second=0)
-                if dateBegin > dateEnd:
-                    current = [str(plage[0]), str("00H00")]
-                    offpeak_hours.append(current)
-                    current = [str("00H00"), str(plage[1])]
-                    offpeak_hours.append(current)
-                else:
-                    current = [str(plage[0]), str(plage[1])]
-                    offpeak_hours.append(current)
-            attributes[f'offpeak_hours'] = offpeak_hours
+            if query_result != None:
+                attributes[f'offpeak_hours_enedis'] = query_result[1]
+                offpeak_hours_enedis = query_result[1]
+                offpeak_hours_enedis = offpeak_hours_enedis[offpeak_hours_enedis.find("(") + 1:offpeak_hours_enedis.find(")")].split(';')
+                offpeak_hours = []
+                for hours in offpeak_hours_enedis:
+                    plage = hours.split("-")
+                    today = datetime.now(timezone)
+                    dateBegin = today.replace(hour=int(plage[0].split("H")[0]), minute=int(plage[0].split("H")[1]), second=0)
+                    dateEnd = today.replace(hour=int(plage[1].split("H")[0]), minute=int(plage[1].split("H")[1]), second=0)
+                    if dateBegin > dateEnd:
+                        current = [str(plage[0]), str("00H00")]
+                        offpeak_hours.append(current)
+                        current = [str("00H00"), str(plage[1])]
+                        offpeak_hours.append(current)
+                    else:
+                        current = [str(plage[0]), str(plage[1])]
+                        offpeak_hours.append(current)
+                attributes[f'offpeak_hours'] = offpeak_hours
         else:
             attributes[f'offpeak_hours_enedis'] = -1
             attributes[f'offpeak_hours'] = -1

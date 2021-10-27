@@ -65,7 +65,7 @@ If you reach this limit, you will be banned for 24 hours!
 See chapter [persistance](#persistance), to reduce API call number.
 
 
-## Environment variable
+## Environment variable 
 
 | Variable  | Information | Mandatory/Default |
 |:---------------|:---------------:|:-----:|
@@ -234,6 +234,12 @@ volumes:
 - Add InfluxDB Connector
 
 ## Change log:
+
+### [0.5.4] - 2021-10-XX
+
+- HA Sensor (kW => Wh)
+- HA Sensor add uniq_id 
+- Fix offpeak bug
 
 ### [0.5.3] - 2021-10-23
 
