@@ -161,8 +161,8 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
         for plan in ["hc", "hp"]:
             ha_discovery[pdl].update({
                 f"{mode}_detail_this_month_{plan}": {
-                    "value": result[year][month][f"measure_{plan}_wh"],
-                    "unit_of_meas": "Wh",
+                    "value": result[year][month][f"measure_{plan}_wh"] / 1000,
+                    "unit_of_meas": "kWh",
                     "device_class": "energy",
                     "state_class": "total_increasing",
                     "attributes": {}
@@ -176,8 +176,8 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
 
     ha_discovery[pdl].update({
         f"{mode}_detail_this_month_base": {
-            "value": result[year][month]["measure_total_wh"],
-            "unit_of_meas": "Wh",
+            "value": result[year][month]["measure_total_wh"]/1000,
+            "unit_of_meas": "kWh",
             "device_class": "energy",
             "state_class": "total_increasing",
             "attributes": {}
