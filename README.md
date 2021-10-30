@@ -226,6 +226,40 @@ volumes:
   mydata:      
 ```
 
+## Dev environment
+
+Requirement:
+ - docker
+ - docker-compose
+ - make
+
+Display help information:
+```bash
+make
+````
+
+Start containers:
+```bash
+make up
+````
+
+Stop containers:
+```bash
+make down
+````
+
+Start application:
+```bash
+make start
+````
+
+Connect to container:
+```bash
+make start
+````
+
+
+
 ## Roadmap
 
 - Add **DJU18**
