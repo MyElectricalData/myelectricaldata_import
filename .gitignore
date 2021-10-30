@@ -1,4 +1,5 @@
 .idea
+.env
 /data
 /app/__pycache__/
 /tmp
