@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+  enedisgateway2mqtt:
+    build: .
+    links:
+      - influxdb
+      - mosquitto
+    volumes:
+      - ./data:/data
+      - ./app:/app
+    env_file:
+      - .env
+    command: tail -f /dev/null
+      
+  influxdb:
+    image: influxdb:2.0.7
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://influxdb:8086"]
+      interval: 25s
+      timeout: 3s
+      start_period: 30s
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup 
+      DOCKER_INFLUXDB_INIT_USERNAME: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_PASSWORD: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_ORG: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_BUCKET: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: enedisgateway2mqtt
+      
+  mosquitto:
+    image: eclipse-mosquitto:2.0.12
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./data/mosquitto:/data
+      - ./mosquitto:/mosquitto/config/
+    ports:
+      - 1883:1883
+      - 9001:9001
+      
+      
+  mqtt_explorer:
+    image: smeagolworms4/mqtt-explorer
+    links:
+      - mosquitto
+    volumes:
+      - ./data/:/data
+    ports:
+      - 4000:4000
+      
+volumes:
+  mydata:
