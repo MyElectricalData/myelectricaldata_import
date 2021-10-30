@@ -48,7 +48,7 @@ services:
     links:
       - mosquitto
     volumes:
-      - ./data/:/data
+      - ./data/:/mqtt-explorer/config
     ports:
       - 4000:4000
       
