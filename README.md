@@ -258,8 +258,6 @@ Connect to container:
 make start
 ````
 
-
-
 ## Roadmap
 
 - Add **DJU18**
@@ -274,6 +272,7 @@ make start
 - HA Sensor (kW => Wh)
 - HA Sensor add uniq_id 
 - Fix offpeak bug
+- Add dev environment (thx to Smeagolworms4)
 
 ### [0.5.3] - 2021-10-23
 
