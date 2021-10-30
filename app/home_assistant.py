@@ -2,20 +2,22 @@ import json
 from dateutil.relativedelta import *
 
 from importlib import import_module
+
 main = import_module("main")
 f = import_module("function")
 
-def haAutodiscovery(client, type="Sensor", pdl=None, name=None, value=None, attributes=None, unit_of_meas=None, device_class=None,
-                     state_class=None):
+
+def haAutodiscovery(client, type="Sensor", pdl=None, name=None, value=None, attributes=None, unit_of_meas=None,
+                    device_class=None,
+                    state_class=None):
     name = name.replace("-", "_")
     config = {
-
-	"uniq_id": f"enedisgateway_{pdl}_{name}",
-        "name": f"enedisgateway/{pdl}_{name}",
+        "name": f"enedisgateway_{pdl}_{name}",
+        "uniq_id": f"enedisgateway.{pdl}_{name}",
         "stat_t": f"{main.ha_autodiscovery_prefix}/{type}/enedisgateway/{pdl}_{name}/state",
         "json_attr_t": f"{main.ha_autodiscovery_prefix}/{type}/enedisgateway/{pdl}_{name}/attributes",
         "device": {
-            "identifiers": [ f"linky_{pdl}" ],
+            "identifiers": [f"linky_{pdl}"],
             "name": f"Linky {pdl}",
             "model": "Linky",
             "manufacturer": "Enedis"
@@ -30,5 +32,6 @@ def haAutodiscovery(client, type="Sensor", pdl=None, name=None, value=None, attr
 
     f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/config", json.dumps(config), main.ha_autodiscovery_prefix)
     if attributes is not None:
-        f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/attributes", json.dumps(attributes), main.ha_autodiscovery_prefix)
+        f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/attributes", json.dumps(attributes),
+                  main.ha_autodiscovery_prefix)
     f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/state", str(value), main.ha_autodiscovery_prefix)
