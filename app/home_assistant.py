@@ -9,7 +9,8 @@ def haAutodiscovery(client, type="Sensor", pdl=None, name=None, value=None, attr
                      state_class=None):
     name = name.replace("-", "_")
     config = {
-        "name": f"enedisgateway/{pdl}_{name}",
+        "name": f"enedisgateway_{pdl}_{name}",
+        "uniq_id": f"enedisgateway.{pdl}_{name}",
         "stat_t": f"{main.ha_autodiscovery_prefix}/{type}/enedisgateway/{pdl}_{name}/state",
         "json_attr_t": f"{main.ha_autodiscovery_prefix}/{type}/enedisgateway/{pdl}_{name}/attributes",
         "device": {
