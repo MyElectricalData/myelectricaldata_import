@@ -36,15 +36,22 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         pdl: {}
     }
 
-    name = f"enedisgateway_{pdl}"
+    path = f"enedisgateway/{pdl}"
     config = {
-        "name": name,
-        "stat_t": f"{ha_autodiscovery_prefix}/sensor/{name}/state",
-        "json_attr_t": f"{ha_autodiscovery_prefix}/sensor/{name}/attributes",
+        "name": f"enedisgateway_{pdl}",
+        "uniq_id": f"enedisgateway.{pdl}",
+        "stat_t": f"{ha_autodiscovery_prefix}/sensor/{path}/state",
+        "json_attr_t": f"{ha_autodiscovery_prefix}/sensor/{path}/attributes",
         "unit_of_measurement": "kWh",
+        "device": {
+            "identifiers": [ f"linky_{pdl}" ],
+            "name": f"Linky {pdl}",
+            "model": "Linky",
+            "manufacturer": "Enedis"
+        },
     }
 
-    f.publish(client, f"sensor/{name}/config", json.dumps(config), ha_autodiscovery_prefix)
+    f.publish(client, f"sensor/{path}/config", json.dumps(config), ha_autodiscovery_prefix)
 
     today = datetime.now(timezone)
     attributes = {
@@ -403,8 +410,8 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         query_result = cur.fetchone()
         attributes[f'subscribed_power'] = query_result[1]
 
-        f.publish(client, f"sensor/{name}/state", str(state), ha_autodiscovery_prefix)
-        f.publish(client, f"sensor/{name}/attributes", json.dumps(attributes), ha_autodiscovery_prefix)
+        f.publish(client, f"sensor/{path}/state", str(state), ha_autodiscovery_prefix)
+        f.publish(client, f"sensor/{path}/attributes", json.dumps(attributes), ha_autodiscovery_prefix)
 
         if main.debug == True:
             pprint(attributes)
