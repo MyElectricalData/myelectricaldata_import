@@ -612,12 +612,9 @@ if __name__ == '__main__':
         f.log("Environement variable 'MQTT_HOST' can't be empty")
 
     # MQTT
-    try:
-        client = f.connect_mqtt()
-        client.loop_start()
-    except:
-        f.log("MQTT : Connection failed", "CRITICIAL")
-
+    client = f.connect_mqtt()
+    client.loop_start()
+    pprint(client)
 
     # INFLUXDB
     if influxdb_enable == True:

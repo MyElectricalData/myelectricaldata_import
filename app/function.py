@@ -11,21 +11,17 @@ main = import_module("main")
 
 
 def connect_mqtt():
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            log("Connected to MQTT Broker!")
-        else:
-            log(f"Failed to connect, return code {rc}\n")
-            quit()
-
-    # Set Connecting Client ID
-    client = mqtt_client.Client(main.client_id)
-    if main.username != "" and main.password != "":
-        client.username_pw_set(main.username, main.password)
-    client.on_connect = on_connect
-    client.connect(main.broker, main.port)
-    return client
-
+    try:
+        client = mqtt_client.Client(main.client_id)
+        if main.username != "" and main.password != "":
+            client.username_pw_set(main.username, main.password)
+        client.on_connect = on_connect
+        client.connect(main.broker, main.port)
+        log("Connected to MQTT Broker!")
+        return client
+    except:
+        log(f"Failed to connect to MQTT Broker")
+        log(f" => Check your MQTT Configuration", "CRITICAL")
 
 def publish(client, topic, msg, prefix=main.prefix):
     msg_count = 0
