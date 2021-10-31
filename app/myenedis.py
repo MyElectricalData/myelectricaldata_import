@@ -36,16 +36,22 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         pdl: {}
     }
 
-    name = f"enedisgateway_{pdl}"
+    path = f"enedisgateway/{pdl}"
     config = {
-        "uniq_id": name,
-        "name": name,
-        "stat_t": f"{ha_autodiscovery_prefix}/sensor/{name}/state",
-        "json_attr_t": f"{ha_autodiscovery_prefix}/sensor/{name}/attributes",
+        "name": f"enedisgateway_{pdl}",
+        "uniq_id": f"enedisgateway.{pdl}",
+        "stat_t": f"{ha_autodiscovery_prefix}/sensor/{path}/state",
+        "json_attr_t": f"{ha_autodiscovery_prefix}/sensor/{path}/attributes",
         "unit_of_measurement": "kWh",
+        "device": {
+            "identifiers": [ f"linky_{pdl}" ],
+            "name": f"Linky {pdl}",
+            "model": "Linky",
+            "manufacturer": "Enedis"
+        },
     }
 
-    f.publish(client, f"sensor/{name}/config", json.dumps(config), ha_autodiscovery_prefix)
+    f.publish(client, f"sensor/{path}/config", json.dumps(config), ha_autodiscovery_prefix)
 
     today = datetime.now(timezone)
     attributes = {
@@ -285,7 +291,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                         attributes[f'day_{day}_{measure_type}'] = -1
                         attributes[f'dailyweek_cost{measure_type}'].append(-1)
                         attributes[f'dailyweek_{measure_type}'].append(-1)
-                        attributes["dailyweek_cost"][day-1] = 0
+                        attributes["dailyweek_cost"][day-1] = -1
                 else:
                     value_wh_total = 0
                     dailyweek_cost = 0
@@ -305,6 +311,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                             dailyweek_cost += float(value_wh / 1000 * price[f"{measure_type}"])
 
                     attributes["dailyweek_cost"][day-1] += forceRound(dailyweek_cost, 2)
+
                     if measure_type != "BASE":
                         attributes[f'dailyweek_{measure_type}'].append(str(forceRound(value_wh_total, 2)))
                         attributes[f'dailyweek_cost{measure_type}'].append(str(forceRound(dailyweek_cost, 2)))
@@ -320,7 +327,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
             convert.append(str(tmp))
         attributes["dailyweek_cost"] = convert
 
-        pprint(attributes["dailyweek_cost"])
+
 
         peak_offpeak_percent = {
             'HP': 0,
@@ -376,25 +383,24 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
             query = f"SELECT * FROM config WHERE key = '{pdl}_offpeak_hours'"
             cur.execute(query)
             query_result = cur.fetchone()
-            if query_result != None:
-                attributes[f'offpeak_hours_enedis'] = query_result[1]
-                offpeak_hours_enedis = query_result[1]
-                offpeak_hours_enedis = offpeak_hours_enedis[offpeak_hours_enedis.find("(") + 1:offpeak_hours_enedis.find(")")].split(';')
-                offpeak_hours = []
-                for hours in offpeak_hours_enedis:
-                    plage = hours.split("-")
-                    today = datetime.now(timezone)
-                    dateBegin = today.replace(hour=int(plage[0].split("H")[0]), minute=int(plage[0].split("H")[1]), second=0)
-                    dateEnd = today.replace(hour=int(plage[1].split("H")[0]), minute=int(plage[1].split("H")[1]), second=0)
-                    if dateBegin > dateEnd:
-                        current = [str(plage[0]), str("00H00")]
-                        offpeak_hours.append(current)
-                        current = [str("00H00"), str(plage[1])]
-                        offpeak_hours.append(current)
-                    else:
-                        current = [str(plage[0]), str(plage[1])]
-                        offpeak_hours.append(current)
-                attributes[f'offpeak_hours'] = offpeak_hours
+            attributes[f'offpeak_hours_enedis'] = query_result[1]
+            offpeak_hours_enedis = query_result[1]
+            offpeak_hours_enedis = offpeak_hours_enedis[offpeak_hours_enedis.find("(") + 1:offpeak_hours_enedis.find(")")].split(';')
+            offpeak_hours = []
+            for hours in offpeak_hours_enedis:
+                plage = hours.split("-")
+                today = datetime.now(timezone)
+                dateBegin = today.replace(hour=int(plage[0].split("H")[0]), minute=int(plage[0].split("H")[1]), second=0)
+                dateEnd = today.replace(hour=int(plage[1].split("H")[0]), minute=int(plage[1].split("H")[1]), second=0)
+                if dateBegin > dateEnd:
+                    current = [str(plage[0]), str("00H00")]
+                    offpeak_hours.append(current)
+                    current = [str("00H00"), str(plage[1])]
+                    offpeak_hours.append(current)
+                else:
+                    current = [str(plage[0]), str(plage[1])]
+                    offpeak_hours.append(current)
+            attributes[f'offpeak_hours'] = offpeak_hours
         else:
             attributes[f'offpeak_hours_enedis'] = -1
             attributes[f'offpeak_hours'] = -1
@@ -404,9 +410,8 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         query_result = cur.fetchone()
         attributes[f'subscribed_power'] = query_result[1]
 
-        f.publish(client, f"sensor/{name}/state", str(state), ha_autodiscovery_prefix)
-        pprint(attributes)
-        f.publish(client, f"sensor/{name}/attributes", json.dumps(attributes), ha_autodiscovery_prefix)
+        f.publish(client, f"sensor/{path}/state", str(state), ha_autodiscovery_prefix)
+        f.publish(client, f"sensor/{path}/attributes", json.dumps(attributes), ha_autodiscovery_prefix)
 
         if main.debug == True:
             pprint(attributes)

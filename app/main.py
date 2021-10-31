@@ -27,6 +27,10 @@ url = "https://enedisgateway.tech/api"
 
 fail_count = 24
 
+fichier = open("/app/VERSION", "r")
+VERSION = fichier.read()
+fichier.close()
+
 ########################################################################################################################
 # AUTHENTIFICATION
 if "ACCESS_TOKEN" in os.environ:
@@ -227,7 +231,9 @@ api_no_result = []
 
 headers = {
     'Content-Type': 'application/json',
-    'Authorization': accessToken
+    'Authorization': accessToken,
+    'call-service': "enedisgateway2mqtt",
+    'version': VERSION
 }
 
 def init_database(cur):

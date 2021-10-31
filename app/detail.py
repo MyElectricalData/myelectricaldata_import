@@ -60,7 +60,6 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
                 data = detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date,
                                      max_days_per_demand, offpeak_hours)
 
-                pprint(data)
                 if "error_code" in data:
                     if data["error_code"] == "no_data_found":
                         no_data_found += 1

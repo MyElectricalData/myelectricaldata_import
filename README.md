@@ -263,7 +263,6 @@ make start
 - Add **DJU18**
 - Create Home Assistant OS Addons
 - Add Postgres/MariaDB Connector
-- Add InfluxDB Connector
 
 ## Change log:
 
@@ -271,6 +270,7 @@ make start
 
 - HA Sensor (kW => Wh)
 - HA Sensor add uniq_id 
+- HA Sensor add device (thx to Smeagolworms4)
 - Fix offpeak bug
 - Add dev environment (thx to Smeagolworms4)
 
