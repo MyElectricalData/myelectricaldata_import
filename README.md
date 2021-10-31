@@ -228,12 +228,12 @@ volumes:
 
 ## Dev environment
 
-Requirement:
+Requirements:
  - docker
  - docker-compose
  - make
 
-Display help information:
+Display help informations:
 ```bash
 make
 ````
@@ -253,9 +253,9 @@ Start application:
 make start
 ````
 
-Connect to container:
+Connect to app container:
 ```bash
-make start
+make bash
 ````
 
 
