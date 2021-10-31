@@ -266,6 +266,11 @@ make start
 
 ## Change log:
 
+### [0.5.5] - 2021-11-01
+
+- Fix log on MQTT connection failed :
+> NameError: name 'client' is not defined
+
 ### [0.5.4] - 2021-10-31
 
 - HA Sensor (kW => Wh)
