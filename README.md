@@ -266,7 +266,7 @@ make start
 
 ## Change log:
 
-### [0.5.4] - 2021-10-XX
+### [0.5.4] - 2021-10-31
 
 - HA Sensor (kW => Wh)
 - HA Sensor add uniq_id 

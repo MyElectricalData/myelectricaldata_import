@@ -57,6 +57,7 @@ jobs:
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:latest
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
+            m4dm4rtig4n/enedisgateway2mqtt:latest-dev
 
       - name: Build and push
         uses: docker/build-push-action@v2
