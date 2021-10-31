@@ -36,7 +36,7 @@ jobs:
 
       - name: Get version
         id: vars
-        run: echo ::set-output name=version::$(cat VERSION)
+        run: echo ::set-output name=version::$(cat app/VERSION)
 
       - name: Check Tag
         id: check-tag
@@ -67,6 +67,7 @@ jobs:
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
+            m4dm4rtig4n/enedisgateway2mqtt:latest-dev
 
       - name: Discord notification
 #        if: steps.check-tag.outputs.dev == 'false'

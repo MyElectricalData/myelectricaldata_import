@@ -50,6 +50,7 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
         dateBegin = dateBegin.strftime('%Y-%m-%d')
         current_week = 1
         finish = False
+        no_data_found = 0
         while max_days_date <= datetime.strptime(dateEnded, '%Y-%m-%d') and not "error_code" in data and finish == False:
             f.log(f"Load {dateBegin} => {dateEnded}")
             if last_activation_date > datetime.strptime(dateEnded, '%Y-%m-%d'):
@@ -58,7 +59,10 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
             else:
                 data = detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date,
                                      max_days_per_demand, offpeak_hours)
+
                 if "error_code" in data:
+                    if data["error_code"] == "no_data_found":
+                        no_data_found += 1
                     f.publish(client, f"{pdl}/{mode}/detail/error", str(1))
                     for key, value in data.items():
                         f.publish(client, f"{pdl}/{mode}/detail/errorMsg/{key}", str(value))
@@ -156,8 +160,8 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
         for plan in ["hc", "hp"]:
             ha_discovery[pdl].update({
                 f"{mode}_detail_this_month_{plan}": {
-                    "value": result[year][month][f"measure_{plan}_wh"],
-                    "unit_of_meas": "kW",
+                    "value": result[year][month][f"measure_{plan}_wh"] / 1000,
+                    "unit_of_meas": "kWh",
                     "device_class": "energy",
                     "state_class": "total_increasing",
                     "attributes": {}
@@ -171,8 +175,8 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
 
     ha_discovery[pdl].update({
         f"{mode}_detail_this_month_base": {
-            "value": result[year][month]["measure_total_wh"],
-            "unit_of_meas": "kW",
+            "value": result[year][month]["measure_total_wh"]/1000,
+            "unit_of_meas": "kWh",
             "device_class": "energy",
             "state_class": "total_increasing",
             "attributes": {}
@@ -269,9 +273,9 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
                             result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
                             if result == True:
                                 measure_type = "HC"
-                            new_date.append(date)
                     else:
                         measure_type = "BASE"
+                    new_date.append(date)
                     query = f"INSERT OR REPLACE INTO {mode}_detail VALUES ('{pdl}','{date}',{value},{interval_length},'{measure_type}', 0)"
                     cur.execute(query)
                 con.commit()
@@ -283,6 +287,7 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
             else:
                 f.log(f"API return error beetween {dateBegin} / {dateEnded}", "ERROR")
                 f.log(f" => {detail['description']}", "ERROR")
+                response["error_code"] = detail['error_code']
 
         con.commit()
     except Exception as e:

@@ -65,7 +65,7 @@ If you reach this limit, you will be banned for 24 hours!
 See chapter [persistance](#persistance), to reduce API call number.
 
 
-## Environment variable
+## Environment variable 
 
 | Variable  | Information | Mandatory/Default |
 |:---------------|:---------------:|:-----:|
@@ -258,16 +258,25 @@ Connect to app container:
 make bash
 ````
 
-
-
 ## Roadmap
 
 - Add **DJU18**
 - Create Home Assistant OS Addons
 - Add Postgres/MariaDB Connector
-- Add InfluxDB Connector
 
 ## Change log:
+
+### [0.5.4] - 2021-10-XX
+
+- HA Sensor (kW => Wh)
+- HA Sensor add uniq_id 
+- HA Sensor add device (thx to Smeagolworms4)
+- Fix offpeak bug
+- Add dev environment (thx to Smeagolworms4)
+
+### [0.5.3] - 2021-10-23
+
+- Fix bug
 
 ### [0.5.2] - 2021-10-22
 

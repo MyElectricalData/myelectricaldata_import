@@ -35,17 +35,17 @@ def influxdb_insert(cur, con, influxdb_api):
     query_result = cur.fetchall()
     for result in query_result:
         date = result[1]
-        value = result[2]
-        value_kw = value / 1000
-        current_price = forceRound(value_kw * price["BASE"], 4)
-        f.log(f"Insert daily {date} => {value}", "DEBUG")
+        value_wh = result[2]
+        value_kwh = value_wh / 1000
+        current_price = forceRound(value_kwh * price["BASE"], 4)
+        f.log(f"Insert daily {date} => {value_wh}", "DEBUG")
         dateObject = datetime.strptime(date, '%Y-%m-%d') - relativedelta(hours=2)
         p = influxdb_client.Point("enedisgateway_daily") \
             .tag("pdl", pdl) \
             .tag("year", dateObject.strftime("%Y")) \
             .tag("month", dateObject.strftime("%m")) \
-            .field("W", int(value)) \
-            .field("kW", forceRound(int(value_kw), 2)) \
+            .field("Wh", int(value_wh)) \
+            .field("kWh", forceRound(value_kwh, 2)) \
             .field("price", current_price) \
             .time(dateObject)
         influxdb_api.write(bucket=main.influxdb_bucket, org=main.influxdb_org, record=p)
