@@ -594,7 +594,7 @@ def run():
                 influx.influxdb_insert(cur, con, influxdb_api)
                 f.log(" => Data exported")
 
-            query = f"SELECT - FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
+            query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
             if rows.fetchone() is not None:
                 f.logLine()
@@ -603,7 +603,7 @@ def run():
                 for row in rows:
                     f.log(f"{row[0]} => {row[1]}")
 
-            query = f"SELECT - FROM production_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
+            query = f"SELECT * FROM production_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
             if rows.fetchone() is not None:
                 f.logLine()
