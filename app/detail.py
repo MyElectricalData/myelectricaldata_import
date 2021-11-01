@@ -284,6 +284,7 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
             elif detail['error_code'] == 2:
                 f.log(f"Fetch data error detected beetween {dateBegin} / {dateEnded}", "ERROR")
                 f.log(f" => {detail['description']}", "ERROR")
+                # cur.execute(f"UPDATE {mode}_detail SET fail = {date_data['fail'] + 1} WHERE pdl = '{pdl}' and date = '{date}'")
             else:
                 f.log(f"API return error beetween {dateBegin} / {dateEnded}", "ERROR")
                 f.log(f" => {detail['description']}", "ERROR")
@@ -312,7 +313,8 @@ def checkHistoryDetail(cur, con, mode, dateBegin, dateEnded):
         query = f"SELECT * FROM {mode}_detail WHERE pdl = '{pdl}' AND date BETWEEN '{dateBegin}' AND '{dateEnded}' ORDER BY date"
         cur.execute(query)
         query_result = cur.fetchall()
-        if len(query_result) < 160:
+        # if len(query_result) < 160:
+        if not query_result:
             result = {
                 "missing_data": True
             }

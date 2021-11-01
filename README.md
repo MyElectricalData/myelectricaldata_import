@@ -266,6 +266,12 @@ make start
 
 ## Change log:
 
+### [0.5.6] - 2021-11-01
+
+- Reduce API Call
+- Add more log
+- Fix bug
+
 ### [0.5.5] - 2021-11-01
 
 - Fix log on MQTT connection failed :
