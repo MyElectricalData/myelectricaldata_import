@@ -47,6 +47,14 @@ jobs:
             echo "::set-output name=dev::false"
           fi
 
+      - name: Discord notification
+#        if: steps.check-tag.outputs.dev == 'false'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '**EnedisGateway2MQTT** : Version **${{ steps.vars.outputs.version }}** is in building state...'
+
       - name: Build and push
         uses: docker/build-push-action@v2
         if: steps.check-tag.outputs.dev == 'false'
