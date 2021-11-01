@@ -122,7 +122,6 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
                 result[year][month]["measure_ration_hc"] = round(
                     100 * result[year][month]["measure_hc"] / result[year][month]["measure_total"], 2)
 
-
             if price_base != 0:
                 result[year][month]["measure_base_euro"] = result[year][month]["measure_total_wh"] / 1000 * price_base
 
@@ -155,7 +154,6 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
 
     year = dateObject.strftime('%Y')
     month = dateObject.strftime('%m')
-
     if offpeak_hours != None and offpeak_hours != "":
         for plan in ["hc", "hp"]:
             ha_discovery[pdl].update({
@@ -167,8 +165,10 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
                     "attributes": {}
                 }
             })
-            ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["ratio"] = result[year][month][f"measure_ration_{plan}"]
-            ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["W"] = result[year][month][f"measure_{plan}"]
+            if f"measure_ration_{plan}" in result[year][month]:
+                ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["ratio"] = result[year][month][f"measure_ration_{plan}"]
+            if f"measure_{plan}" in result[year][month]:
+                ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["W"] = result[year][month][f"measure_{plan}"]
 
             if price_hc != 0 and price_hp != 0:
                 ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"][f"measure_{plan}_euro"] = result[year][month][f"measure_{plan}_euro"]
