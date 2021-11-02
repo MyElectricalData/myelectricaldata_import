@@ -82,7 +82,7 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
     base_vs_offpeak = 0
 
     if query_result:
-        pprint(query_result)
+
         for data in query_result:
             date = data[1]
             value = data[2]

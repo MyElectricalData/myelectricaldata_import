@@ -312,7 +312,7 @@ def init_database(cur):
     config = {
         "day": datetime.now().strftime('%Y-%m-%d'),
         "call_number": 0,
-        "max_call": 200
+        "max_call": 15
     }
     cur.execute(config_query, ["config", json.dumps(config)])
 
@@ -558,6 +558,12 @@ def run():
                                                    device_class=device_class, state_class=state_class)
                     f.log(" => HA Sensor updated")
 
+            if influxdb_enable == True:
+                f.logLine()
+                f.log("Push data in influxdb")
+                influx.influxdb_insert(cur, con, influxdb_api)
+                f.log(" => Data exported")
+
             if card_myenedis == True:
                 f.logLine()
                 f.log("Generate Sensor for myEnedis card")
@@ -586,13 +592,6 @@ def run():
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
                 f.log(" => Sensor generated")
-
-
-            if influxdb_enable == True:
-                f.logLine()
-                f.log("Push data in influxdb")
-                influx.influxdb_insert(cur, con, influxdb_api)
-                f.log(" => Data exported")
 
             query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)

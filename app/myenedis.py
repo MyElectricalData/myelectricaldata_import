@@ -72,7 +72,6 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday}';"
         cur.execute(query)
         query_result = cur.fetchone()
-        pprint(query_result)
         attributes['yesterdayDate'] = yesterday
         if query_result != None and query_result[2] != 0:
             attributes['yesterday'] = query_result[2] / 1000
@@ -89,13 +88,12 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         state = attributes['yesterday']
 
         today = datetime.now(timezone)
-        yesterday_last_year_datetime = today - relativedelta(years=1, days=1)
+        yesterday_last_year_datetime = today - relativedelta(years=1, days=delta)
         yesterday_last_year = yesterday_last_year_datetime.strftime('%Y-%m-%d')
         attributes["yesterdayLastYearDate"] = yesterday_last_year
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday_last_year}';"
         cur.execute(query)
         query_result = cur.fetchone()
-        pprint(query_result)
         if query_result != None and query_result[2] != 0:
             attributes['yesterdayLastYear'] = query_result[2] / 1000
         else:
@@ -104,7 +102,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         # CURRENT WEEK
         today = datetime.now(timezone)
-        last_week_datetime = today - relativedelta(days=8)
+        last_week_datetime = today - relativedelta(days=7+delta)
         last_week = last_week_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_week}' AND '{yesterday}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -124,9 +122,9 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                 attributes['current_week'] += value / 1000
                 nbDayWeek += 1
             if id <= delta:
-                attributes['daily'].append(-1)
+                attributes['daily'].append(0)
+                # attributes['daily'].append(str(forceRound(value / 1000, 2)))
                 attributes[f'day_{id}'] = -1
-                attributes['daily'].append(str(forceRound(value / 1000, 2)))
             else:
                 attributes[f'day_{id}'] = str(forceRound(value / 1000, 2))
                 attributes['daily'].append(str(forceRound(value / 1000, 2)))
@@ -269,6 +267,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         else:
             attributes['current_year_last_year'] = str(forceRound(attributes['current_year_last_year'], 2))
 
+
         # WEEKLY
         attributes[f'dailyweek'] = []
         attributes['dailyweek_cost'] = [0, 0, 0, 0, 0, 0, 0]
@@ -287,12 +286,12 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                 query_result = cur.fetchall()
                 if measure_type != "BASE":
                     attributes[f'day_{day}_{measure_type}'] = int(0)
-                if query_result == []:
+                if not query_result:
                     if measure_type != "BASE":
                         attributes[f'day_{day}_{measure_type}'] = 0
                         attributes[f'dailyweek_cost{measure_type}'].append(0)
                         attributes[f'dailyweek_{measure_type}'].append(0)
-                        attributes["dailyweek_cost"][day0] = 0
+                        attributes["dailyweek_cost"][day-1] = 0
                 else:
                     value_wh_total = 0
                     dailyweek_cost = 0
@@ -322,6 +321,27 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                         if measure_type != "BASE":
                             attributes[f"yesterday_{measure_type}_cost"] = str(forceRound(dailyweek_cost, 3))
                             attributes[f"yesterday_{measure_type}"] = str(forceRound(value_wh_total, 3))
+
+        # IF DAILY COST EMPTY IN DETAIL, try in daily if in plan base
+        if attributes['dailyweek_cost'] == [0, 0, 0, 0, 0, 0, 0] and main.current_plan == "BASE":
+            today = datetime.now(timezone)
+            for day in [1, 2, 3, 4, 5, 6, 7]:
+                date = today - relativedelta(days=day)
+                dateBegin = date.strftime('%Y-%m-%d')
+                dateEnd = date.strftime('%Y-%m-%d')
+                query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{dateBegin}' AND '{dateEnd}' ORDER BY DATE DESC;"
+                cur.execute(query)
+                query_result = cur.fetchall()
+                if not query_result:
+                    attributes["dailyweek_cost"][day-1] = 0
+                else:
+                    for val in query_result:
+                        date = val[1]
+                        value_w = val[2]
+                        value_wh = value_w
+                        value_kwh = value_wh / 1000
+                        dailyweek_cost = float(value_kwh * price[f"BASE"])
+                        attributes["dailyweek_cost"][day - 1] += forceRound(dailyweek_cost, 2)
 
         convert = []
         for tmp in attributes["dailyweek_cost"]:
