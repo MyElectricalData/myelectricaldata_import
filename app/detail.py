@@ -81,132 +81,135 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
 
     result = {}
     base_vs_offpeak = 0
-    for data in query_result:
-        date = data[1]
-        value = data[2]
-        interval = data[3]
-        measure_type = data[4]
 
-        if value != 0:
+    if query_result:
+        pprint(query_result)
+        for data in query_result:
+            date = data[1]
+            value = data[2]
+            interval = data[3]
+            measure_type = data[4]
 
-            dateObject = datetime.strptime(date, date_format)
-            year = dateObject.strftime('%Y')
-            month = dateObject.strftime('%m')
+            if value != 0:
 
-            if not year in result:
-                result[year] =  {}
-            if not month in result[year]:
-                result[year].update({
-                    month: {
-                        "measure_hp": 0,
-                        "measure_hp_wh": 0,
-                        "measure_hc": 0,
-                        "measure_hc_wh": 0,
-                        "measure_total": 0,
-                        "measure_total_wh": 0
+                dateObject = datetime.strptime(date, date_format)
+                year = dateObject.strftime('%Y')
+                month = dateObject.strftime('%m')
+
+                if not year in result:
+                    result[year] =  {}
+                if not month in result[year]:
+                    result[year].update({
+                        month: {
+                            "measure_hp": 0,
+                            "measure_hp_wh": 0,
+                            "measure_hc": 0,
+                            "measure_hc_wh": 0,
+                            "measure_total": 0,
+                            "measure_total_wh": 0
+                        }
+                    })
+
+                value_wh = value * (interval / 60)
+                result[year][month]["measure_total"] += int(value)
+                result[year][month]["measure_total_wh"] += int(value_wh)
+
+                if measure_type == "HP":
+                    result[year][month]["measure_hp"] += int(value)
+                    result[year][month]["measure_hp_wh"] += int(value_wh)
+                    result[year][month]["measure_ration_hp"] = round(
+                        100 * result[year][month]["measure_hp"] / result[year][month]["measure_total"], 2)
+                if measure_type == "HC":
+                    result[year][month]["measure_hc"] += int(value)
+                    result[year][month]["measure_hc_wh"] += int(value_wh)
+                    result[year][month]["measure_ration_hc"] = round(
+                        100 * result[year][month]["measure_hc"] / result[year][month]["measure_total"], 2)
+
+                if price_base != 0:
+                    result[year][month]["measure_base_euro"] = result[year][month]["measure_total_wh"] / 1000 * price_base
+
+                if offpeak_hours != None:
+                    if price_hc != 0 and price_hp != 0:
+                        result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
+                        result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
+                        result[year][month]["measure_hphc_euro"] = result[year][month]["measure_hp_euro"] + result[year][month]["measure_hc_euro"]
+
+                    if price_base != 0 and price_hc != 0 and price_hp != 0 and measure_type != "BASE":
+                        result[year][month]["base_vs_offpeak"] = 100 - (
+                                100 * result[year][month]["measure_base_euro"] / (result[year][month]["measure_hphc_euro"]))
+
+                        base_vs_offpeak += result[year][month]["base_vs_offpeak"]
+
+                        if result[year][month]["base_vs_offpeak"] > 0:
+                            result[year][month]["best_plan"] = f"BASE"
+                            result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+                        else:
+                            result[year][month]["best_plan"] = f"HC/HP"
+                            result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+
+        if offpeak_hours != None and price_base != 0 and price_hc != 0 and price_hp != 0:
+            if base_vs_offpeak > 0:
+                best_plan = f"BASE"
+                best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+            else:
+                best_plan = f"HC/HP"
+                best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
+
+        year = dateObject.strftime('%Y')
+        month = dateObject.strftime('%m')
+        if offpeak_hours != None and offpeak_hours != "":
+            for plan in ["hc", "hp"]:
+                ha_discovery[pdl].update({
+                    f"{mode}_detail_this_month_{plan}": {
+                        "value": result[year][month][f"measure_{plan}_wh"] / 1000,
+                        "unit_of_meas": "kWh",
+                        "device_class": "energy",
+                        "state_class": "total_increasing",
+                        "attributes": {}
                     }
                 })
+                if f"measure_ration_{plan}" in result[year][month]:
+                    ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["ratio"] = result[year][month][f"measure_ration_{plan}"]
+                if f"measure_{plan}" in result[year][month]:
+                    ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["W"] = result[year][month][f"measure_{plan}"]
 
-            value_wh = value * (interval / 60)
-            result[year][month]["measure_total"] += int(value)
-            result[year][month]["measure_total_wh"] += int(value_wh)
-
-            if measure_type == "HP":
-                result[year][month]["measure_hp"] += int(value)
-                result[year][month]["measure_hp_wh"] += int(value_wh)
-                result[year][month]["measure_ration_hp"] = round(
-                    100 * result[year][month]["measure_hp"] / result[year][month]["measure_total"], 2)
-            if measure_type == "HC":
-                result[year][month]["measure_hc"] += int(value)
-                result[year][month]["measure_hc_wh"] += int(value_wh)
-                result[year][month]["measure_ration_hc"] = round(
-                    100 * result[year][month]["measure_hc"] / result[year][month]["measure_total"], 2)
-
-            if price_base != 0:
-                result[year][month]["measure_base_euro"] = result[year][month]["measure_total_wh"] / 1000 * price_base
-
-            if offpeak_hours != None:
                 if price_hc != 0 and price_hp != 0:
-                    result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
-                    result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
-                    result[year][month]["measure_hphc_euro"] = result[year][month]["measure_hp_euro"] + result[year][month]["measure_hc_euro"]
+                    ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"][f"measure_{plan}_euro"] = result[year][month][f"measure_{plan}_euro"]
 
-                if price_base != 0 and price_hc != 0 and price_hp != 0 and measure_type != "BASE":
-                    result[year][month]["base_vs_offpeak"] = 100 - (
-                            100 * result[year][month]["measure_base_euro"] / (result[year][month]["measure_hphc_euro"]))
+        ha_discovery[pdl].update({
+            f"{mode}_detail_this_month_base": {
+                "value": result[year][month]["measure_total_wh"]/1000,
+                "unit_of_meas": "kWh",
+                "device_class": "energy",
+                "state_class": "total_increasing",
+                "attributes": {}
+            }
+        })
+        ha_discovery[pdl][f"{mode}_detail_this_month_base"]["attributes"]["W"] = result[year][month][f"measure_total"]
+        if price_base != 0:
+            ha_discovery[pdl][f"{mode}_detail_this_month_base"]["attributes"][f"measure_base_euro"] = result[year][month][f"measure_base_euro"]
 
-                    base_vs_offpeak += result[year][month]["base_vs_offpeak"]
+        if offpeak_hours != None:
+            if price_base != 0 and price_hc != 0 and price_hp != 0:
+                ha_discovery[pdl].update({
+                    f"{mode}_detail_this_month_compare": {
+                        "value": result[year][month][f"best_plan"],
+                        "attributes": {}
+                    }
+                })
+                ha_discovery[pdl][f"{mode}_detail_this_month_compare"]["attributes"]["best_plan_percent"] = result[year][month][f"best_plan_percent"]
+                ha_discovery[pdl].update({
+                    f"{mode}_detail_this_year_compare": {
+                        "value": best_plan,
+                        "attributes": {}
+                    }
+                })
+                ha_discovery[pdl][f"{mode}_detail_this_year_compare"]["attributes"]["best_plan_percent"] = best_plan_percent
 
-                    if result[year][month]["base_vs_offpeak"] > 0:
-                        result[year][month]["best_plan"] = f"BASE"
-                        result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-                    else:
-                        result[year][month]["best_plan"] = f"HC/HP"
-                        result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-
-    if offpeak_hours != None and price_base != 0 and price_hc != 0 and price_hp != 0:
-        if base_vs_offpeak > 0:
-            best_plan = f"BASE"
-            best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-        else:
-            best_plan = f"HC/HP"
-            best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
-
-    year = dateObject.strftime('%Y')
-    month = dateObject.strftime('%m')
-    if offpeak_hours != None and offpeak_hours != "":
-        for plan in ["hc", "hp"]:
-            ha_discovery[pdl].update({
-                f"{mode}_detail_this_month_{plan}": {
-                    "value": result[year][month][f"measure_{plan}_wh"] / 1000,
-                    "unit_of_meas": "kWh",
-                    "device_class": "energy",
-                    "state_class": "total_increasing",
-                    "attributes": {}
-                }
-            })
-            if f"measure_ration_{plan}" in result[year][month]:
-                ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["ratio"] = result[year][month][f"measure_ration_{plan}"]
-            if f"measure_{plan}" in result[year][month]:
-                ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"]["W"] = result[year][month][f"measure_{plan}"]
-
-            if price_hc != 0 and price_hp != 0:
-                ha_discovery[pdl][f"{mode}_detail_this_month_{plan}"]["attributes"][f"measure_{plan}_euro"] = result[year][month][f"measure_{plan}_euro"]
-
-    ha_discovery[pdl].update({
-        f"{mode}_detail_this_month_base": {
-            "value": result[year][month]["measure_total_wh"]/1000,
-            "unit_of_meas": "kWh",
-            "device_class": "energy",
-            "state_class": "total_increasing",
-            "attributes": {}
-        }
-    })
-    ha_discovery[pdl][f"{mode}_detail_this_month_base"]["attributes"]["W"] = result[year][month][f"measure_total"]
-    if price_base != 0:
-        ha_discovery[pdl][f"{mode}_detail_this_month_base"]["attributes"][f"measure_base_euro"] = result[year][month][f"measure_base_euro"]
-
-    if offpeak_hours != None:
-        if price_base != 0 and price_hc != 0 and price_hp != 0:
-            ha_discovery[pdl].update({
-                f"{mode}_detail_this_month_compare": {
-                    "value": result[year][month][f"best_plan"],
-                    "attributes": {}
-                }
-            })
-            ha_discovery[pdl][f"{mode}_detail_this_month_compare"]["attributes"]["best_plan_percent"] = result[year][month][f"best_plan_percent"]
-            ha_discovery[pdl].update({
-                f"{mode}_detail_this_year_compare": {
-                    "value": best_plan,
-                    "attributes": {}
-                }
-            })
-            ha_discovery[pdl][f"{mode}_detail_this_year_compare"]["attributes"]["best_plan_percent"] = best_plan_percent
-
-    for year, value in result.items():
-        for month, subvalue in value.items():
-            for key, subsubvalue in subvalue.items():
-                f.publish(client, f"{pdl}/{mode}/detail/{year}/{month}/{key}", str(subsubvalue))
+        for year, value in result.items():
+            for month, subvalue in value.items():
+                for key, subsubvalue in subvalue.items():
+                    f.publish(client, f"{pdl}/{mode}/detail/{year}/{month}/{key}", str(subsubvalue))
 
     return ha_discovery
 

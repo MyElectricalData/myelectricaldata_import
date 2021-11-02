@@ -2,7 +2,7 @@ COMPOSE=docker-compose -f docker-compose.dev.yml
 
 ## Start docker conatiners for dev
 up: .env
-	@echo "Start docker conatiner for dev"
+	@echo "Start docker container for dev"
 	$(COMPOSE) up -d
 	@echo ""
 	@echo "\033[0;33mMQTT Explorer:\033[0m    \033[0;32mhttp://127.0.0.1:4000\033[0m    Auth info: (host: mosquitto)"
