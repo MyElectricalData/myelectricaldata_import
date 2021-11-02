@@ -281,6 +281,12 @@ def init_database(cur):
                         fail INTEGER)''')
     cur.execute('''CREATE UNIQUE INDEX idx_date_consumption_detail
                     ON consumption_detail (date)''')
+    # cur.execute('''CREATE TABLE consumption_detail_try (
+    #                     pdl TEXT NOT NULL,
+    #                     date TEXT NOT NULL,
+    #                     try INTEGER)''')
+    # cur.execute('''CREATE UNIQUE INDEX idx_date_consumption_detail_try
+    #                 ON consumption_detail_try (date)''')
     ## PRODUCTION
     # DAILY
     cur.execute('''CREATE TABLE production_daily (
@@ -420,7 +426,9 @@ def run():
                 f.logLine()
                 f.log("Get Consumption :")
                 ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
-                # pprint(ha_discovery_consumption)
+                f.logLine1()
+                f.log("                        SUCCESS : Consumption daily imported")
+                f.logLine1()
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption) :")
@@ -446,12 +454,15 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
-
+                f.log(" => HA Sensor updated")
             # f.logLine()
 
             if get_consumption_detail == True:
                 f.log("Get Consumption Detail:")
                 ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
+                f.logLine1()
+                f.log("                   SUCCESS : Consumption detail imported")
+                f.logLine1()
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Consumption Detail) :")
@@ -477,13 +488,16 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
-
+                    f.log(" => HA Sensor updated")
             # f.logLine()
 
             if get_production == True:
                 f.logLine()
                 f.log("Get production :")
                 ha_discovery_production = day.getDaily(cur, con, client, "production", last_activation_date)
+                f.logLine1()
+                f.log("             SUCCESS : Production daily imported")
+                f.logLine1()
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production) :")
@@ -508,12 +522,15 @@ def run():
                             ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                             attributes=attributes, unit_of_meas=unit_of_meas,
                                             device_class=device_class, state_class=state_class)
-            # f.logLine()
+                    f.log(" => HA Sensor updated")
 
             if get_production_detail == True:
                 f.logLine()
                 f.log("Get production Detail:")
                 ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)
+                f.logLine1()
+                f.log("              SUCCESS : Production detail imported")
+                f.logLine1()
                 if ha_autodiscovery == True:
                     f.logLine()
                     f.log("Home Assistant auto-discovery (Production Detail) :")
@@ -539,6 +556,13 @@ def run():
                                 ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                                    attributes=attributes, unit_of_meas=unit_of_meas,
                                                    device_class=device_class, state_class=state_class)
+                    f.log(" => HA Sensor updated")
+
+            if influxdb_enable == True:
+                f.logLine()
+                f.log("Push data in influxdb")
+                influx.influxdb_insert(cur, con, influxdb_api)
+                f.log(" => Data exported")
 
             if card_myenedis == True:
                 f.logLine()
@@ -567,11 +591,7 @@ def run():
                                                value=sensor_data['value'],
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
-
-            if influxdb_enable == True:
-                f.logLine()
-                f.log("Push data in influxdb")
-                influx.influxdb_insert(cur, con, influxdb_api)
+                f.log(" => Sensor generated")
 
             query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
             rows = con.execute(query)
@@ -579,15 +599,7 @@ def run():
                 f.logLine()
                 f.log(f"Consumption data not found on enedis (after {fail_count} retry) :")
                 # pprint(rows.fetchall())
-                for row in rows:
-                    f.log(f"{row[0]} => {row[1]}")
-
-            query = f"SELECT * FROM production_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
-            rows = con.execute(query)
-            if rows.fetchone() is not None:
-                f.logLine()
-                f.log(f"Production data not found on enedis (after {fail_count} retry) :")
-                # pprint(rows.fetchall())
+                # pprint(rows)
                 for row in rows:
                     f.log(f"{row[0]} => {row[1]}")
 
@@ -614,7 +626,6 @@ if __name__ == '__main__':
     # MQTT
     client = f.connect_mqtt()
     client.loop_start()
-    pprint(client)
 
     # INFLUXDB
     if influxdb_enable == True:

@@ -88,13 +88,12 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         state = attributes['yesterday']
 
         today = datetime.now(timezone)
-        yesterday_last_year_datetime = today - relativedelta(years=1, days=1)
+        yesterday_last_year_datetime = today - relativedelta(years=1, days=delta)
         yesterday_last_year = yesterday_last_year_datetime.strftime('%Y-%m-%d')
         attributes["yesterdayLastYearDate"] = yesterday_last_year
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday_last_year}';"
         cur.execute(query)
         query_result = cur.fetchone()
-
         if query_result != None and query_result[2] != 0:
             attributes['yesterdayLastYear'] = query_result[2] / 1000
         else:
@@ -103,7 +102,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         # CURRENT WEEK
         today = datetime.now(timezone)
-        last_week_datetime = today - relativedelta(days=8)
+        last_week_datetime = today - relativedelta(days=7+delta)
         last_week = last_week_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_week}' AND '{yesterday}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -123,9 +122,9 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                 attributes['current_week'] += value / 1000
                 nbDayWeek += 1
             if id <= delta:
-                attributes['daily'].append(-1)
+                attributes['daily'].append(0)
+                # attributes['daily'].append(str(forceRound(value / 1000, 2)))
                 attributes[f'day_{id}'] = -1
-                attributes['daily'].append(str(forceRound(value / 1000, 2)))
             else:
                 attributes[f'day_{id}'] = str(forceRound(value / 1000, 2))
                 attributes['daily'].append(str(forceRound(value / 1000, 2)))
@@ -149,7 +148,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         current_week_last_year = attributes['current_week_last_year']
         if attributes['current_week_last_year'] == 0:
-            attributes['current_week_last_year'] = -1
+            attributes['current_week_last_year'] = 0
         else:
             attributes['current_week_last_year'] = str(forceRound(attributes['current_week_last_year'], 2))
 
@@ -176,11 +175,11 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         last_month = attributes['last_month']
         if attributes['last_month'] == 0:
-            attributes['last_month'] = -1
+            attributes['last_month'] = 0
 
         current_month = attributes['current_month']
         if attributes['current_month'] == 0:
-            attributes['current_month'] = -1
+            attributes['current_month'] = 0
         else:
             attributes['current_month'] = str(forceRound(attributes['current_month'], 2))
 
@@ -201,7 +200,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         current_month_last_year = attributes['current_month_last_year']
         if attributes['current_month_last_year'] == 0:
-            attributes['current_month_last_year'] = -1
+            attributes['current_month_last_year'] = 0
         else:
             attributes['current_month_last_year'] = str(forceRound(attributes['current_month_last_year'], 2))
 
@@ -220,7 +219,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         last_month_last_year = attributes['last_month_last_year']
         if attributes['last_month_last_year'] == 0:
-            attributes['last_month_last_year'] = -1
+            attributes['last_month_last_year'] = 0
         else:
             attributes['last_month_last_year'] = str(forceRound(last_month_last_year, 2))
 
@@ -246,7 +245,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         current_year = attributes['current_year']
         if attributes['current_year'] == 0:
-            attributes['current_year'] = -1
+            attributes['current_year'] = 0
         else:
             attributes['current_year'] = str(forceRound(attributes['current_year'], 2))
 
@@ -264,9 +263,10 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
 
         current_year_last_year = attributes['current_year_last_year']
         if attributes['current_year_last_year'] == 0:
-            attributes['current_year_last_year'] = -1
+            attributes['current_year_last_year'] = 0
         else:
             attributes['current_year_last_year'] = str(forceRound(attributes['current_year_last_year'], 2))
+
 
         # WEEKLY
         attributes[f'dailyweek'] = []
@@ -286,12 +286,12 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                 query_result = cur.fetchall()
                 if measure_type != "BASE":
                     attributes[f'day_{day}_{measure_type}'] = int(0)
-                if query_result == []:
+                if not query_result:
                     if measure_type != "BASE":
-                        attributes[f'day_{day}_{measure_type}'] = -1
-                        attributes[f'dailyweek_cost{measure_type}'].append(-1)
-                        attributes[f'dailyweek_{measure_type}'].append(-1)
-                        attributes["dailyweek_cost"][day-1] = -1
+                        attributes[f'day_{day}_{measure_type}'] = 0
+                        attributes[f'dailyweek_cost{measure_type}'].append(0)
+                        attributes[f'dailyweek_{measure_type}'].append(0)
+                        attributes["dailyweek_cost"][day-1] = 0
                 else:
                     value_wh_total = 0
                     dailyweek_cost = 0
@@ -322,6 +322,27 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                             attributes[f"yesterday_{measure_type}_cost"] = str(forceRound(dailyweek_cost, 3))
                             attributes[f"yesterday_{measure_type}"] = str(forceRound(value_wh_total, 3))
 
+        # IF DAILY COST EMPTY IN DETAIL, try in daily if in plan base
+        if attributes['dailyweek_cost'] == [0, 0, 0, 0, 0, 0, 0] and main.current_plan == "BASE":
+            today = datetime.now(timezone)
+            for day in [1, 2, 3, 4, 5, 6, 7]:
+                date = today - relativedelta(days=day)
+                dateBegin = date.strftime('%Y-%m-%d')
+                dateEnd = date.strftime('%Y-%m-%d')
+                query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{dateBegin}' AND '{dateEnd}' ORDER BY DATE DESC;"
+                cur.execute(query)
+                query_result = cur.fetchall()
+                if not query_result:
+                    attributes["dailyweek_cost"][day-1] = 0
+                else:
+                    for val in query_result:
+                        date = val[1]
+                        value_w = val[2]
+                        value_wh = value_w
+                        value_kwh = value_wh / 1000
+                        dailyweek_cost = float(value_kwh * price[f"BASE"])
+                        attributes["dailyweek_cost"][day - 1] += forceRound(dailyweek_cost, 2)
+
         convert = []
         for tmp in attributes["dailyweek_cost"]:
             convert.append(str(tmp))
@@ -346,32 +367,32 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         if measure_type != "BASE":
             attributes['peak_offpeak_percent'] = forceRound(abs(100 * (peak_offpeak_percent['HC'] - peak_offpeak_percent['HP']) / peak_offpeak_percent['HP']), 2)
         else:
-            attributes['peak_offpeak_percent'] = -1
+            attributes['peak_offpeak_percent'] = 0
 
         def variation(val1, val2):
             # print(f"100 * ({val1} - {val2}) / {val2}")
             result = 100 * (val1 - val2) / val2
             return result
 
-        if last_month != -1 and last_month != 0 and last_month_last_year != -1 and last_month_last_year != 0:
+        if last_month != 0 and last_month != 0 and last_month_last_year != 0 and last_month_last_year != 0:
             attributes['monthly_evolution'] = forceRound(variation(last_month, last_month_last_year), 2)
         else:
-            attributes['monthly_evolution'] = -1
+            attributes['monthly_evolution'] = 0
 
-        if current_week != -1 and current_week != 0 and current_week_last_year != -1 and current_week_last_year != 0:
+        if current_week != 0 and current_week != 0 and current_week_last_year != 0 and current_week_last_year != 0:
             attributes['current_week_evolution'] = forceRound(variation(current_week, current_week_last_year), 2)
         else:
-            attributes['current_week_evolution'] = -1
+            attributes['current_week_evolution'] = 0
 
-        if current_month != -1 and current_month != 0 and current_month_last_year != -1 and current_month_last_year != 0:
+        if current_month != 0 and current_month != 0 and current_month_last_year != 0 and current_month_last_year != 0:
             attributes['current_month_evolution'] = forceRound(variation(current_month, current_month_last_year), 2)
         else:
-            attributes['current_month_evolution'] = -1
+            attributes['current_month_evolution'] = 0
 
-        if state != -1 and state != 0 and yesterdayLastYear != -1 and yesterdayLastYear != 0:
+        if state != 0 and state != 0 and yesterdayLastYear != 0 and yesterdayLastYear != 0:
             attributes['yesterday_evolution'] = forceRound(variation(state, yesterdayLastYear), 2)
         else:
-            attributes['yesterday_evolution'] = -1
+            attributes['yesterday_evolution'] = 0
 
         attributes[f'dailyweek'] = sorted(list(set(attributes[f'dailyweek'])), reverse=True)
         attributes[f'friendly_name'] = f"EnedisGateway.{pdl}"
@@ -402,8 +423,8 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                     offpeak_hours.append(current)
             attributes[f'offpeak_hours'] = offpeak_hours
         else:
-            attributes[f'offpeak_hours_enedis'] = -1
-            attributes[f'offpeak_hours'] = -1
+            attributes[f'offpeak_hours_enedis'] = 0
+            attributes[f'offpeak_hours'] = 0
 
         query = f"SELECT * FROM config WHERE key = '{pdl}_subscribed_power'"
         cur.execute(query)

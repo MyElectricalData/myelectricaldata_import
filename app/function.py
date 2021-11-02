@@ -15,7 +15,6 @@ def connect_mqtt():
         client = mqtt_client.Client(main.client_id)
         if main.username != "" and main.password != "":
             client.username_pw_set(main.username, main.password)
-        client.on_connect = on_connect
         client.connect(main.broker, main.port)
         log("Connected to MQTT Broker!")
         return client
@@ -45,6 +44,8 @@ def subscribe(client, topic, prefix=main.prefix):
 
 def logLine():
     log("####################################################################################")
+def logLine1():
+    log("------------------------------------------------------------------------------------")
 
 
 def log(msg, level="INFO "):

@@ -261,10 +261,20 @@ make bash
 ## Roadmap
 
 - Add **DJU18**
-- Create Home Assistant OS Addons
 - Add Postgres/MariaDB Connector
 
 ## Change log:
+
+### [0.5.7] - 2021-11-02
+
+- Fix bug
+- HassOS Addons available : https://github.com/alexbelgium/hassio-addons/tree/master/enedisGateway2MQTT (special thx to alexbelgium)
+
+### [0.5.6] - 2021-11-01
+
+- Reduce API Call
+- Add more log
+- Fix bug
 
 ### [0.5.5] - 2021-11-01
 
