@@ -214,11 +214,23 @@ def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date
                 for date, date_data in current_data['date'].items():
                     if not date in new_date:
                         not_found_data.append(date)
+                        current_date = datetime.strptime(date, '%Y-%m-%d').date()
+                        current_day = datetime.today().date()
                         if date_data['fail'] == 0 and date_data['value'] == 0:
-                            cur.execute(f"INSERT OR REPLACE INTO {mode}_daily VALUES ('{pdl}','{date}','0','1')")
+                            if current_day == current_date:
+                                fail = 0
+                            else:
+                                fail = 1
+                            cur.execute(f"INSERT OR REPLACE INTO {mode}_daily VALUES ('{pdl}','{date}','0','{fail}')")
+                            # cur.execute(f"INSERT OR REPLACE INTO {mode}_daily VALUES ('{pdl}','{date}','0','1')")
                         else:
-                            cur.execute(
-                                f"UPDATE {mode}_daily SET fail = {date_data['fail'] + 1} WHERE pdl = '{pdl}' and date = '{date}'")
+                            if current_day != current_date:
+                                fail = 0
+                            else:
+                                fail = date_data['fail']
+                            cur.execute(f"UPDATE {mode}_daily SET fail = {fail + 1} WHERE pdl = '{pdl}' and date = '{date}'")
+                            # cur.execute(f"UPDATE {mode}_daily SET fail = {date_data['fail'] + 1} WHERE pdl = '{pdl}' and date = '{date}'")
+
 
                 if not_found_data != []:
                     f.log("Data not found :")

@@ -312,7 +312,7 @@ def init_database(cur):
     config = {
         "day": datetime.now().strftime('%Y-%m-%d'),
         "call_number": 0,
-        "max_call": 15
+        "max_call": 200
     }
     cur.execute(config_query, ["config", json.dumps(config)])
 
@@ -600,15 +600,7 @@ def run():
                 f.logLine()
                 f.log(f"Consumption data not found on enedis (after {fail_count} retry) :")
                 # pprint(rows.fetchall())
-                for row in rows:
-                    f.log(f"{row[0]} => {row[1]}")
-
-            query = f"SELECT * FROM production_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
-            rows = con.execute(query)
-            if rows.fetchone() is not None:
-                f.logLine()
-                f.log(f"Production data not found on enedis (after {fail_count} retry) :")
-                # pprint(rows.fetchall())
+                # pprint(rows)
                 for row in rows:
                     f.log(f"{row[0]} => {row[1]}")
 
@@ -635,7 +627,6 @@ if __name__ == '__main__':
     # MQTT
     client = f.connect_mqtt()
     client.loop_start()
-    pprint(client)
 
     # INFLUXDB
     if influxdb_enable == True:
