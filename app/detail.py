@@ -78,7 +78,6 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
     query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' ORDER BY date;"
     cur.execute(query)
     query_result = cur.fetchall()
-
     result = {}
     base_vs_offpeak = 0
     for data in query_result:
