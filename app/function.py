@@ -112,7 +112,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
         query_result["call_number"] = 0
     log(f"Call API : {url}", "DEBUG")
     log(f"Data : {data}", "DEBUG")
-    retour = requests.request(type, url=f"{url}", headers=headers, data=data).json()
+    retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data).json()
     if main.debug == True:
         pprint(f"API Return :")
         pprint(retour)

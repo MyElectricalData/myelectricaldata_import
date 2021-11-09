@@ -30,7 +30,7 @@ services:
       DOCKER_INFLUXDB_INIT_ORG: enedisgateway2mqtt
       DOCKER_INFLUXDB_INIT_BUCKET: enedisgateway2mqtt
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: enedisgateway2mqtt
-      
+
   mosquitto:
     image: eclipse-mosquitto:2.0.12
     volumes:

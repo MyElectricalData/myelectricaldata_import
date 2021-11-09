@@ -196,31 +196,26 @@ if "INFLUXDB_ENABLE" in os.environ:
     influxdb_enable = bool(strtobool(os.environ['INFLUXDB_ENABLE']))
 else:
     influxdb_enable = False
-########################################################################################################################
 # INFLUXDB_HOST
 if "INFLUXDB_HOST" in os.environ:
     influxdb_host = str(os.environ['INFLUXDB_HOST'])
 else:
     influxdb_host = ""
-########################################################################################################################
 # INFLUXDB_PORT
 if "INFLUXDB_PORT" in os.environ:
     influxdb_port = str(os.environ['INFLUXDB_PORT'])
 else:
     influxdb_port = 8086
-########################################################################################################################
 # INFLUXDB_TOKEN
 if "INFLUXDB_TOKEN" in os.environ:
     influxdb_token = str(os.environ['INFLUXDB_TOKEN'])
 else:
     influxdb_token = ""
-########################################################################################################################
 # INFLUXDB_ORG
 if "INFLUXDB_ORG" in os.environ:
     influxdb_org = str(os.environ['INFLUXDB_ORG'])
 else:
     influxdb_org = ""
-########################################################################################################################
 # INFLUXDB_BUCKET
 if "INFLUXDB_BUCKET" in os.environ:
     influxdb_bucket = str(os.environ['INFLUXDB_BUCKET'])
