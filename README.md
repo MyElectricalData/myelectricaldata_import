@@ -265,6 +265,10 @@ make bash
 
 ## Change log:
 
+### [0.6.0] - 2021-11-XX
+
+- Add timeout to API Call
+
 ### [0.5.7] - 2021-11-02
 
 - Fix bug
