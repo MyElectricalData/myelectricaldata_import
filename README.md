@@ -272,7 +272,7 @@ make bash
 ### [0.5.7] - 2021-11-02
 
 - Fix bug
-- HassOS Addons available : https://github.com/alexbelgium/hassio-addons/tree/master/enedisGateway2MQTT (special thx to [alexbelgium](https://github.com/alexbelgium))
+- HassOS Addons available : https://github.com/alexbelgium/hassio-addons/tree/master/enedisgateway2mqtt (special thx to [alexbelgium](https://github.com/alexbelgium))
 
 ### [0.5.6] - 2021-11-01
 
