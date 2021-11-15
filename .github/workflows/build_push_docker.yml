@@ -46,7 +46,6 @@ jobs:
           else
             echo "::set-output name=dev::false"
           fi
-        run: |
           if [[ ${{ steps.vars.outputs.nobuild }} =~ .*\-nobuild$ ]]; then
             echo "::set-output name=nobuild::true"
           else
