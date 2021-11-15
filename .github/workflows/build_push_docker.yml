@@ -46,10 +46,8 @@ jobs:
           else
             echo "::set-output name=dev::false"
           fi
-      - name: Check build
-        id: check-build
-        run: |
-          if [[ ${{ steps.vars.outputs.nobuild }} =~ .*\-nobuild$ ]]; then
+
+          if [[ ${{ steps.vars.outputs.version }} =~ .*\-nobuild$ ]]; then
             echo "::set-output name=nobuild::true"
           else
             echo "::set-output name=nobuild::false"
