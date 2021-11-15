@@ -8,7 +8,7 @@ from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
-def getAddresses(client, con, cur):
+def getAddresses(headers, client, con, cur, pdl, pdl_config):
 
     def queryApi(url, headers, data, count=0):
         addresses = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
@@ -18,9 +18,7 @@ def getAddresses(client, con, cur):
             con.commit()
         return addresses
 
-    pdl = main.pdl
     url = main.url
-    headers = main.headers
 
     data = {
         "type": "addresses",

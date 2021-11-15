@@ -14,8 +14,8 @@ def haAutodiscovery(client, type="Sensor", pdl=None, name=None, value=None, attr
     config = {
         "name": f"enedisgateway_{pdl}_{name}",
         "uniq_id": f"enedisgateway.{pdl}_{name}",
-        "stat_t": f"{main.ha_autodiscovery_prefix}/{type}/enedisgateway/{pdl}_{name}/state",
-        "json_attr_t": f"{main.ha_autodiscovery_prefix}/{type}/enedisgateway/{pdl}_{name}/attributes",
+        "stat_t": f"{main.config['home_assistant']['discovery_prefix']}/{type}/enedisgateway/{pdl}_{name}/state",
+        "json_attr_t": f"{main.config['home_assistant']['discovery_prefix']}/{type}/enedisgateway/{pdl}_{name}/attributes",
         "device": {
             "identifiers": [f"linky_{pdl}"],
             "name": f"Linky {pdl}",
@@ -30,8 +30,8 @@ def haAutodiscovery(client, type="Sensor", pdl=None, name=None, value=None, attr
     if state_class is not None:
         config['state_class'] = str(state_class)
 
-    f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/config", json.dumps(config), main.ha_autodiscovery_prefix)
+    f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/config", json.dumps(config), main.config['home_assistant']['discovery_prefix'])
     if attributes is not None:
         f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/attributes", json.dumps(attributes),
-                  main.ha_autodiscovery_prefix)
-    f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/state", str(value), main.ha_autodiscovery_prefix)
+                  main.config['home_assistant']['discovery_prefix'])
+    f.publish(client, f"{type}/enedisgateway/{pdl}_{name}/state", str(value), main.config['home_assistant']['discovery_prefix'])

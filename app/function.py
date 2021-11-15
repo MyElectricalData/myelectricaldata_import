@@ -11,20 +11,21 @@ main = import_module("main")
 
 
 def connect_mqtt():
+    log("MQTT Connect")
     try:
-        client = mqtt_client.Client(main.client_id)
-        if main.username != "" and main.password != "":
-            client.username_pw_set(main.username, main.password)
-        client.connect(main.broker, main.port)
-        log("Connected to MQTT Broker!")
+        client = mqtt_client.Client(main.config["mqtt"]["client_id"])
+        if main.config["mqtt"]["username"] != "" and main.config["mqtt"]["password"] != "":
+            client.username_pw_set(main.config["mqtt"]["username"], main.config["mqtt"]["password"])
+        client.connect(main.config["mqtt"]["host"], main.config["mqtt"]["port"])
+        log(" => Connected to MQTT Broker!")
         return client
     except:
         log(f"Failed to connect to MQTT Broker")
         log(f" => Check your MQTT Configuration", "CRITICAL")
 
-def publish(client, topic, msg, prefix=main.prefix):
+def publish(client, topic, msg, prefix=main.config["mqtt"]['prefix']):
     msg_count = 0
-    result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.qos, retain=main.retain)
+    result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.config["mqtt"]["qos"], retain=main.config["mqtt"]["retain"])
     status = result[0]
     if status == 0:
         log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
@@ -33,7 +34,7 @@ def publish(client, topic, msg, prefix=main.prefix):
     msg_count += 1
 
 
-def subscribe(client, topic, prefix=main.prefix):
+def subscribe(client, topic, prefix=main.config["mqtt"]['prefix']):
     def on_message(client, userdata, msg):
         print(f" MQTT Received : `{prefix}/{topic}` => `{msg.payload.decode()}`")
 
@@ -46,6 +47,8 @@ def logLine():
     log("####################################################################################")
 def logLine1():
     log("------------------------------------------------------------------------------------")
+def title(msg):
+    log(f"#                                {msg}                                    #")
 
 
 def log(msg, level="INFO "):
@@ -53,7 +56,7 @@ def log(msg, level="INFO "):
     level = level.upper()
     display = False
     critical = False
-    if main.debug == True and level == "DEBUG":
+    if main.config["debug"]== True and level == "DEBUG":
         display = True
     if level == "INFO ":
         display = True
@@ -93,6 +96,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     config_query = f"SELECT * FROM config WHERE key = 'config'"
     cur.execute(config_query)
     query_result = cur.fetchall()
+    pprint(query_result)
     query_result = json.loads(query_result[0][1])
     log(f"call_number : {query_result['call_number']}", "debug")
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
@@ -113,7 +117,7 @@ def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
     log(f"Call API : {url}", "DEBUG")
     log(f"Data : {data}", "DEBUG")
     retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data).json()
-    if main.debug == True:
+    if "debug" in main.config and main.config["debug"] == True:
         pprint(f"API Return :")
         pprint(retour)
     return retour
