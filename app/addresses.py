@@ -36,7 +36,7 @@ def getAddresses(headers, client, con, cur, pdl, pdl_config):
         f.log(" => Query API")
         addresses = queryApi(url, headers, data)
     else:
-        if main.refresh_addresses == True:
+        if pdl_config['refresh_addresses'] == True:
             f.log(" => Query API (Refresh Cache)")
             addresses = queryApi(url, headers, data, 0)
         else:

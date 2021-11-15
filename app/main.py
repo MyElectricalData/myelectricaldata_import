@@ -158,7 +158,7 @@ def run(pdl, pdl_config):
         if pdl_config['consumption'] == True:
             f.logLine()
             f.log("Get Consumption :")
-            ha_discovery_consumption = day.getDaily(cur, con, client, "consumption", last_activation_date)
+            ha_discovery_consumption = day.getDaily(headers, cur, con, client, pdl, pdl_config, "consumption", last_activation_date)
             f.logLine1()
             f.log("                        SUCCESS : Consumption daily imported")
             f.logLine1()
@@ -335,9 +335,7 @@ def run(pdl, pdl_config):
             # pprint(rows)
             for row in rows:
                 f.log(f"{row[0]} => {row[1]}")
-
     con.commit()
-    con.close()
 
     f.logLine()
     f.log("IMPORT FINISH")
@@ -477,7 +475,9 @@ if __name__ == '__main__':
         influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
 
     while True:
+        
         for pdl, pdl_config in config['enedis_gateway'].items():
             run(pdl, pdl_config)
 
-    time.sleep(config['cycle'])
+        con.close()
+        time.sleep(config['cycle'])

@@ -9,11 +9,12 @@ main = import_module("main")
 f = import_module("function")
 
 
-def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime.now()):
+def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.now()):
     max_days = 1095
     max_days_date = datetime.now() + relativedelta(days=-max_days)
-    pdl = main.pdl
-    base_price = main.consumption_price_base
+    base_price = pdl_config['consumption_price_base']
+
+    url = main.url
 
     ha_discovery = {
         pdl: {}
@@ -30,7 +31,7 @@ def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
     lastData = {}
-    data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
+    data = dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_activation_date)
     if "error_code" in data:
         f.publish(client, f"{pdl}/{mode}/current_year/error", str(1))
         for key, value in data.items():
@@ -91,7 +92,7 @@ def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime
         if last_activation_date > datetime.strptime(dateEnded, '%Y-%m-%d'):
             f.log(" - Skip (activation date > dateEnded)")
         else:
-            data = dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date)
+            data = dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_activation_date)
             if "error_code" in data:
                 f.publish(client, f"{pdl}/{mode}/year-{current_year}/error", str(1))
                 for key, value in data.items():
@@ -166,7 +167,7 @@ def getDaily(cur, con, client, mode="consumption", last_activation_date=datetime
     return ha_discovery
 
 
-def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date):
+def dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_activation_date):
     response = {}
 
     lastYears = datetime.strptime(dateEnded, '%Y-%m-%d')
@@ -187,7 +188,7 @@ def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date
 
     try:
         new_date = []
-        current_data = checkHistoryDaily(cur, mode, dateBegin, dateEnded)
+        current_data = checkHistoryDaily(cur, mode, pdl, dateBegin, dateEnded)
         mesures = {}
         if current_data['missing_data'] == False:
             f.log(f"All data loading beetween {dateBegin} / {dateEnded}")
@@ -197,7 +198,7 @@ def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date
         else:
             f.log(f"Data is missing between {dateBegin} / {dateEnded}")
             f.log(f" => Load data from API")
-            daily = f.apiRequest(cur, con, type="POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data))
+            daily = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
             if not "error_code" in daily:
                 meter_reading = daily['meter_reading']
                 f.log("Import data :")
@@ -340,8 +341,7 @@ def dailyBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date
     return response
 
 
-def checkHistoryDaily(cur, mode, dateBegin, dateEnded):
-    pdl = main.pdl
+def checkHistoryDaily(cur, mode, pdl, dateBegin, dateEnded):
     dateBegin = datetime.strptime(dateBegin, '%Y-%m-%d')
     dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
     delta = dateEnded - dateBegin
