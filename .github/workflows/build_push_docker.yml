@@ -46,6 +46,9 @@ jobs:
           else
             echo "::set-output name=dev::false"
           fi
+      - name: Check build
+        id: check-build
+        run: |
           if [[ ${{ steps.vars.outputs.nobuild }} =~ .*\-nobuild$ ]]; then
             echo "::set-output name=nobuild::true"
           else
@@ -53,7 +56,7 @@ jobs:
           fi
 
       - name: Discord notification building state
-        if: steps.check-tag.outputs.nobuild == 'false'
+        if: steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
@@ -64,7 +67,7 @@ jobs:
       # VERSION
       - name: Build and push ${{ steps.vars.outputs.version }}
         uses: docker/build-push-action@v2
-        if: steps.check-tag.outputs.nobuild == 'false'
+        if: steps.check-build.outputs.nobuild == 'false'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -73,7 +76,7 @@ jobs:
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
 
       - name: Discord notification {{ steps.vars.outputs.version }} image version is up to date
-        if: steps.check-tag.outputs.nobuild == 'false'
+        if: steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
@@ -84,7 +87,7 @@ jobs:
       # LATEST-DEV
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: steps.check-tag.outputs.nobuild == 'false'
+        if: steps.check-build.outputs.nobuild == 'false'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -93,7 +96,7 @@ jobs:
             m4dm4rtig4n/enedisgateway2mqtt:latest-dev
 
       - name: Discord notification
-        if: steps.check-tag.outputs.nobuild == 'false'
+        if: steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
@@ -104,7 +107,7 @@ jobs:
       # LATEST
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: steps.check-tag.outputs.dev == 'false' && steps.check-tag.outputs.nobuild == 'false'
+        if: steps.check-tag.outputs.dev == 'false' && steps.check-build.outputs.nobuild == 'false'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -113,7 +116,7 @@ jobs:
             m4dm4rtig4n/enedisgateway2mqtt:latest
 
       - name: Discord notification
-        if: steps.check-tag.outputs.dev == 'false'
+        if: steps.check-tag.outputs.dev == 'false' && steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
@@ -123,7 +126,7 @@ jobs:
       ##################################################################################################################
       # FINISH
       - name: Discord notification
-#        if: steps.check-tag.outputs.dev == 'false'
+        if: steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 #          DISCORD_EMBEDS: {color: 3447003, author: { name: client.user.username, icon_url: client.user.displayAvatarURL() }, title: "EnedisGateway2MQTT new version available => ${{ steps.vars.outputs.version }}", url: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt", fields: [{ name: "Github", value: "https://github.com/m4dm4rtig4n/enedisgateway2mqtt"}, {name: "Docker.io", value: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt"}], timestamp: new Date(), footer: {icon_url: client.user.displayAvatarURL(), text: "© m4dm4rtig4n"}}
