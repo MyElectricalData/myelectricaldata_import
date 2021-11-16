@@ -23,7 +23,9 @@ def connect_mqtt():
         log(f"Failed to connect to MQTT Broker")
         log(f" => Check your MQTT Configuration", "CRITICAL")
 
-def publish(client, topic, msg, prefix=main.config["mqtt"]['prefix']):
+def publish(client, topic, msg, prefix=None):
+    if prefix == None:
+        prefix = main.config["mqtt"]['prefix']
     msg_count = 0
     result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.config["mqtt"]["qos"], retain=main.config["mqtt"]["retain"])
     status = result[0]
@@ -34,7 +36,10 @@ def publish(client, topic, msg, prefix=main.config["mqtt"]['prefix']):
     msg_count += 1
 
 
-def subscribe(client, topic, prefix=main.config["mqtt"]['prefix']):
+def subscribe(client, topic, prefix=None):
+    if prefix == None:
+        prefix = main.config["mqtt"]['prefix']
+
     def on_message(client, userdata, msg):
         print(f" MQTT Received : `{prefix}/{topic}` => `{msg.payload.decode()}`")
 
@@ -56,7 +61,11 @@ def log(msg, level="INFO "):
     level = level.upper()
     display = False
     critical = False
-    if main.config["debug"]== True and level == "DEBUG":
+    if not "debug" in main.config:
+        debug = False
+    else:
+        debug = main.config["debug"]
+    if debug == True and level == "DEBUG":
         display = True
     if level == "INFO ":
         display = True

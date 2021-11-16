@@ -13,6 +13,7 @@ from influxdb_client.client.write_api import ASYNCHRONOUS
 from collections import namedtuple
 
 from importlib import import_module
+
 f = import_module("function")
 addr = import_module("addresses")
 cont = import_module("contract")
@@ -36,6 +37,7 @@ with open(r'/data/config.yaml') as file:
     config = yaml.load(file, Loader=yaml.FullLoader)
 
 api_no_result = []
+
 
 def init_database(cur):
     ## CONFIG
@@ -99,7 +101,6 @@ def init_database(cur):
     cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
                     ON production_detail (date)''')
 
-
     ## Default Config
     config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
     config = {
@@ -109,8 +110,8 @@ def init_database(cur):
     }
     cur.execute(config_query, ["config", json.dumps(config)])
 
-def run(pdl, pdl_config):
 
+def run(pdl, pdl_config):
     f.logLine()
     f.title(pdl)
 
@@ -126,7 +127,7 @@ def run(pdl, pdl_config):
     f.logLine()
     f.log("Get contract :")
     contract = cont.getContract(headers, client, cur, con, pdl, pdl_config)
-    f.log(contract,"debug")
+    f.log(contract, "debug")
     if "error_code" in contract:
         f.publish(client, f"error", str(1))
         for key, data in contract["detail"].items():
@@ -141,7 +142,8 @@ def run(pdl, pdl_config):
                     last_activation_date = data
                 if key == "offpeak_hours":
                     offpeak_hours = data
-                if "home_assistant" in config and "discovery" in config['home_assistant'] and config['home_assistant']['discovery'] == True:
+                if "home_assistant" in config and "discovery" in config['home_assistant'] and config['home_assistant'][
+                    'discovery'] == True:
                     ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=key, value=data)
 
         if pdl_config['addresses'] == True:
@@ -158,7 +160,8 @@ def run(pdl, pdl_config):
         if pdl_config['consumption'] == True:
             f.logLine()
             f.log("Get Consumption :")
-            ha_discovery_consumption = day.getDaily(headers, cur, con, client, pdl, pdl_config, "consumption", last_activation_date)
+            ha_discovery_consumption = day.getDaily(headers, cur, con, client, pdl, pdl_config, "consumption",
+                                                    last_activation_date)
             f.logLine1()
             f.log("                        SUCCESS : Consumption daily imported")
             f.logLine1()
@@ -184,7 +187,8 @@ def run(pdl, pdl_config):
                         else:
                             state_class = None
                         if "value" in sensor_data:
-                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                                               value=sensor_data['value'],
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
             f.log(" => HA Sensor updated")
@@ -192,7 +196,8 @@ def run(pdl, pdl_config):
 
         if pdl_config['consumption_detail'] == True:
             f.log("Get Consumption Detail:")
-            ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "consumption", last_activation_date, offpeak_hours)
+            ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "consumption",
+                                                        last_activation_date, offpeak_hours)
             f.logLine1()
             f.log("                   SUCCESS : Consumption detail imported")
             f.logLine1()
@@ -218,7 +223,8 @@ def run(pdl, pdl_config):
                         else:
                             state_class = None
                         if "value" in sensor_data:
-                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                                               value=sensor_data['value'],
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
                 f.log(" => HA Sensor updated")
@@ -227,7 +233,8 @@ def run(pdl, pdl_config):
         if pdl_config['production'] == True:
             f.logLine()
             f.log("Get production :")
-            ha_discovery_production = day.getDaily(headers, cur, con, client, pdl, pdl_config, "production", last_activation_date)
+            ha_discovery_production = day.getDaily(headers, cur, con, client, pdl, pdl_config, "production",
+                                                   last_activation_date)
             f.logLine1()
             f.log("             SUCCESS : Production daily imported")
             f.logLine1()
@@ -253,14 +260,15 @@ def run(pdl, pdl_config):
                         else:
                             state_class = None
                         ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
-                                        attributes=attributes, unit_of_meas=unit_of_meas,
-                                        device_class=device_class, state_class=state_class)
+                                           attributes=attributes, unit_of_meas=unit_of_meas,
+                                           device_class=device_class, state_class=state_class)
                 f.log(" => HA Sensor updated")
 
         if pdl_config['production_detail'] == True:
             f.logLine()
             f.log("Get production Detail:")
-            ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "production", last_activation_date, offpeak_hours)
+            ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "production",
+                                                        last_activation_date, offpeak_hours)
             f.logLine1()
             f.log("              SUCCESS : Production detail imported")
             f.logLine1()
@@ -286,7 +294,8 @@ def run(pdl, pdl_config):
                         else:
                             state_class = None
                         if "value" in sensor_data:
-                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                                               value=sensor_data['value'],
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
                 f.log(" => HA Sensor updated")
@@ -294,10 +303,11 @@ def run(pdl, pdl_config):
         if "influxdb" in config and config["influxdb"] != {}:
             f.logLine()
             f.log("Push data in influxdb")
-            influx.influxdb_insert(cur, con, pdl, pdl_config,influxdb_api)
+            influx.influxdb_insert(cur, con, pdl, pdl_config, influxdb_api)
             f.log(" => Data exported")
 
-        if "home_assistant" in config and "card_myenedis" in config['home_assistant'] and config['home_assistant']['card_myenedis'] == True:
+        if "home_assistant" in config and "card_myenedis" in config['home_assistant'] and config['home_assistant'][
+            'card_myenedis'] == True:
             f.logLine()
             f.log("Generate Sensor for myEnedis card")
             my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date, offpeak_hours)
@@ -345,9 +355,11 @@ def run(pdl, pdl_config):
 if __name__ == '__main__':
 
     default = {
+        "wipe_cache": False,
+        "cycle": 3600,
         "debug": False,
-        "mqtt": {
-            "host": "MANDATORY",
+        "*mqtt": {
+            "*host": "X.X.X.X",
             "port": 1883,
             "username": "",
             "password": "",
@@ -361,9 +373,9 @@ if __name__ == '__main__':
             "discovery_prefix": "homeassistant",
             "card_myenedis": False
         },
-        "enedis_gateway": {
-            "MANDATORY": {
-                "token": "MANDATORY",
+        "*enedis_gateway": {
+            "*pdl": {
+                "*token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
                 "plan": "BASE",
                 "consumption": True,
                 "consumption_detail": True,
@@ -379,6 +391,113 @@ if __name__ == '__main__':
             }
         }
     }
+
+    lost_params = []
+    # CHECK GLOBAL CONFIGURATION
+    for id, data in default.items():
+        isDict = False
+        if isinstance(default[id], dict):
+            isDict = True
+        name = id
+        mandatory = False
+        if id.startswith('*'):
+            mandatory = True
+            name = id[1:]
+        if mandatory == True and not name in config:
+            lost_params.append(name.upper())
+        elif not isDict:
+            if not name in config:
+                config[name] = data
+
+    # CHECK MQTT CONFIGURATION
+    list = "*mqtt"
+    for id, data in default[list].items():
+        name = id
+        mandatory = False
+        if list.startswith('*'):
+            list = list[1:]
+        if id.startswith('*'):
+            mandatory = True
+            name = id[1:]
+        if mandatory == True and not name in config[list]:
+            lost_params.append(f"{list}.{name.upper()}")
+        else:
+            if not name in config[list]:
+                config[list][name] = data
+
+    # CHECK HOME ASSISTANT CONFIGURATION
+    list = "home_assistant"
+    for id, data in default[list].items():
+        name = id
+        mandatory = False
+        if list.startswith('*'):
+            list = list[1:]
+        if id.startswith('*'):
+            mandatory = True
+            name = id[1:]
+        if mandatory == True and not name in config[list]:
+            lost_params.append(f"{list}.{name.upper()}")
+        else:
+            if not name in config[list]:
+                config[list][name] = data
+
+    # CHECK ENEDIS GATEWAY CONFIGURATION
+    if not "enedis_gateway" in config:
+        lost_params.append("enedis_gateway")
+    else:
+        if not isinstance(config["enedis_gateway"], dict):
+            lost_params.append("enedis_gateway.PDL")
+        else:
+            for pdl, pdl_data in config["enedis_gateway"].items():
+                if len(str(pdl)) != 14:
+                    lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
+                if not isinstance(config["enedis_gateway"][pdl], dict):
+                    lost_params.append(f"enedis_gateway.{pdl}.TOKEN")
+                else:
+                    for id, data in default['*enedis_gateway']['*pdl'].items():
+                        name = id
+                        mandatory = False
+                        if id.startswith('*'):
+                            mandatory = True
+                            name = id[1:]
+                        if mandatory == True and not name in config["enedis_gateway"][pdl]:
+                            lost_params.append(f"enedis_gateway.{pdl}.{name.upper()}")
+                        else:
+                            if not name in config["enedis_gateway"][pdl]:
+                                config["enedis_gateway"][pdl][name] = data
+
+    if lost_params != []:
+        f.log(f'Some mandatory parameters are missing :', "ERROR")
+        for param in lost_params:
+            f.log(f'- {param}', "ERROR")
+        f.log("", "ERROR")
+        f.log("You can get list of parameters here :", "ERROR")
+        f.log(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file", "ERROR")
+        f.log("-- Stop application --", "CRITICAL")
+
+    pprint(config)
+
+    quit()
+
+    if not "debug" in config:
+        config['debug'] = False
+
+    if not "mqtt" in config:
+        f.log("MQTT Configuration is mandatory", "CRITICAL")
+    else:
+        if not "host" in config['mqtt']:
+            f.log("MQTT host is mandatory", "CRITICAL")
+        else:
+            if not "port" in config['mqtt']:
+                config['mqtt'] = default['mqtt']['port']
+            if not "username" in config['mqtt']:
+                config['username'] = ''
+            if not "port" in config['mqtt']:
+                config['mqtt'] = 1883
+            if not "port" in config['mqtt']:
+                config['mqtt'] = 1883
+            if not "port" in config['mqtt']:
+                config['mqtt'] = 1883
 
     f.logLine()
     if "mqtt" in config:
@@ -511,9 +630,49 @@ if __name__ == '__main__':
         influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
 
     while True:
-        
+
         for pdl, pdl_config in config['enedis_gateway'].items():
             run(pdl, pdl_config)
 
         con.close()
         time.sleep(config['cycle'])
+
+# lost_params = []
+# for id, config_data in default.items():
+#     isDict = False
+#     if isinstance(default[id], dict):
+#         isDict = True
+#     mandatory = False
+#     if id.startswith('*'):
+#         mandatory = True
+#         id = id[1:]
+#     if mandatory == True and not id in config:
+#         lost_params.append(id)
+#     if isDict == True:
+#         for id_1, data_1 in config_data.items():
+#             isDict = False
+#             if isinstance(config_data[id_1], dict):
+#                 isDict = True
+#             mandatory = False
+#             if id_1.startswith('*'):
+#                 mandatory = True
+#                 id_1 = f"{id}.{id_1[1:]}"
+#             if mandatory == True and not id_1 in config[id]:
+#                 lost_params.append(id_1)
+#         if isDict == True:
+#             for id_2, data_2 in data_1.items():
+#                 mandatory = False
+#                 if id_2.startswith('*'):
+#                     mandatory = True
+#                     id_2 = f"{id_1}.{id_2[1:]}"
+#                 if mandatory == True and not id_2 in config[id]:
+#                     lost_params.append(id_2)
+#                 # else:
+#                 #     if not id_2 in config[id][id_1]:
+#                 #         config[id][id_1] = data_2
+#         else:
+#             if not id_1 in config[id]:
+#                 config[id] = data_1
+#     else:
+#         if not id in config:
+#             config[id] = config_data
