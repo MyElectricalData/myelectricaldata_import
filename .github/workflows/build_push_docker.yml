@@ -17,6 +17,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Get version
+        if: steps.check-build.outputs.nobuild == 'false'
+        id: vars
+        run: echo ::set-output name=version::$(cat app/VERSION)
+
       - name: Check Tag
         id: check-tag
         run: |
@@ -55,11 +60,6 @@ jobs:
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: extract_branch
-
-      - name: Get version
-        if: steps.check-build.outputs.nobuild == 'false'
-        id: vars
-        run: echo ::set-output name=version::$(cat app/VERSION)
 
       - name: Discord notification building state
         if: steps.check-build.outputs.nobuild == 'false'
