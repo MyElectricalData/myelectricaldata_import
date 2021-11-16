@@ -33,11 +33,67 @@ fichier = open("/app/VERSION", "r")
 VERSION = fichier.read()
 fichier.close()
 
-with open(r'/data/config.yaml') as file:
-    config = yaml.load(file, Loader=yaml.FullLoader)
-
 api_no_result = []
 
+mandatory_parameters = {
+    "mqtt": {
+        "host"
+    },
+    "enedis_gateway": {
+        "pdl": {
+            "token"
+        }
+    }
+}
+
+default = {
+    "wipe_cache": False,
+    "cycle": 3600,
+    "debug": False,
+    "mqtt": {
+        "host": "X.X.X.X",
+        "port": 1883,
+        "username": "",
+        "password": "",
+        "prefix": "enedis_gateway",
+        "client_id": "enedis_gateway",
+        "retain": True,
+        "qos": 0
+    },
+    "home_assistant": {
+        "discovery": False,
+        "discovery_prefix": "homeassistant",
+        "card_myenedis": False
+    },
+    "enedis_gateway": {
+        "pdl": {
+            "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "plan": "BASE",
+            "consumption": True,
+            "consumption_detail": True,
+            "consumption_price_hc": 0,
+            "consumption_price_hp": 0,
+            "consumption_price_base": 0,
+            "production": False,
+            "production_detail": False,
+            "offpeak_hours": 0,
+            "addresses": True,
+            "refresh_contract": False,
+            "refresh_addresses": False
+        }
+    }
+}
+
+config_file = '/data/config.yaml'
+if os.path.exists(config_file):
+    with open(r'/data/config.yaml') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+else:
+    f = open(config_file, "a")
+    f.write(yaml.dump(default))
+    f.close()
+    with open(r'/data/config.yaml') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
 
 def init_database(cur):
     ## CONFIG
@@ -354,44 +410,6 @@ def run(pdl, pdl_config):
 
 if __name__ == '__main__':
 
-    default = {
-        "wipe_cache": False,
-        "cycle": 3600,
-        "debug": False,
-        "*mqtt": {
-            "*host": "X.X.X.X",
-            "port": 1883,
-            "username": "",
-            "password": "",
-            "prefix": "enedis_gateway",
-            "client_id": "enedis_gateway",
-            "retain": True,
-            "qos": 0
-        },
-        "home_assistant": {
-            "discovery": False,
-            "discovery_prefix": "homeassistant",
-            "card_myenedis": False
-        },
-        "*enedis_gateway": {
-            "*pdl": {
-                "*token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                "plan": "BASE",
-                "consumption": True,
-                "consumption_detail": True,
-                "consumption_price_hc": 0,
-                "consumption_price_hp": 0,
-                "consumption_price_base": 0,
-                "production": False,
-                "production_detail": False,
-                "offpeak_hours": 0,
-                "addresses": True,
-                "refresh_contract": False,
-                "refresh_addresses": False
-            }
-        }
-    }
-
     lost_params = []
     # CHECK GLOBAL CONFIGURATION
     for id, data in default.items():
@@ -400,9 +418,9 @@ if __name__ == '__main__':
             isDict = True
         name = id
         mandatory = False
-        if id.startswith('*'):
+        if id in mandatory_parameters:
             mandatory = True
-            name = id[1:]
+            name = id
         if mandatory == True and not name in config:
             lost_params.append(name.upper())
         elif not isDict:
@@ -410,36 +428,28 @@ if __name__ == '__main__':
                 config[name] = data
 
     # CHECK MQTT CONFIGURATION
-    list = "*mqtt"
+    list = "mqtt"
     for id, data in default[list].items():
-        name = id
         mandatory = False
-        if list.startswith('*'):
-            list = list[1:]
-        if id.startswith('*'):
+        if id in mandatory_parameters["mqtt"]:
             mandatory = True
-            name = id[1:]
-        if mandatory == True and not name in config[list]:
-            lost_params.append(f"{list}.{name.upper()}")
+        if mandatory == True and not id in config[list]:
+            lost_params.append(f"{list}.{id.upper()}")
         else:
-            if not name in config[list]:
-                config[list][name] = data
+            if not id in config[list]:
+                config[list][id] = data
 
     # CHECK HOME ASSISTANT CONFIGURATION
     list = "home_assistant"
     for id, data in default[list].items():
-        name = id
         mandatory = False
-        if list.startswith('*'):
-            list = list[1:]
-        if id.startswith('*'):
+        if id in mandatory_parameters:
             mandatory = True
-            name = id[1:]
-        if mandatory == True and not name in config[list]:
-            lost_params.append(f"{list}.{name.upper()}")
+        if mandatory == True and not id in config[list]:
+            lost_params.append(f"{list}.{id.upper()}")
         else:
-            if not name in config[list]:
-                config[list][name] = data
+            if not id in config[list]:
+                config[list][id] = data
 
     # CHECK ENEDIS GATEWAY CONFIGURATION
     if not "enedis_gateway" in config:
@@ -454,17 +464,15 @@ if __name__ == '__main__':
                 if not isinstance(config["enedis_gateway"][pdl], dict):
                     lost_params.append(f"enedis_gateway.{pdl}.TOKEN")
                 else:
-                    for id, data in default['*enedis_gateway']['*pdl'].items():
-                        name = id
+                    for id, data in default['enedis_gateway']['pdl'].items():
                         mandatory = False
-                        if id.startswith('*'):
+                        if id in mandatory_parameters:
                             mandatory = True
-                            name = id[1:]
-                        if mandatory == True and not name in config["enedis_gateway"][pdl]:
-                            lost_params.append(f"enedis_gateway.{pdl}.{name.upper()}")
+                        if mandatory == True and not id in config["enedis_gateway"][pdl]:
+                            lost_params.append(f"enedis_gateway.{pdl}.{id.upper()}")
                         else:
-                            if not name in config["enedis_gateway"][pdl]:
-                                config["enedis_gateway"][pdl][name] = data
+                            if not id in config["enedis_gateway"][pdl]:
+                                config["enedis_gateway"][pdl][id] = data
 
     if lost_params != []:
         f.log(f'Some mandatory parameters are missing :', "ERROR")
@@ -474,30 +482,6 @@ if __name__ == '__main__':
         f.log("You can get list of parameters here :", "ERROR")
         f.log(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file", "ERROR")
         f.log("-- Stop application --", "CRITICAL")
-
-    pprint(config)
-
-    quit()
-
-    if not "debug" in config:
-        config['debug'] = False
-
-    if not "mqtt" in config:
-        f.log("MQTT Configuration is mandatory", "CRITICAL")
-    else:
-        if not "host" in config['mqtt']:
-            f.log("MQTT host is mandatory", "CRITICAL")
-        else:
-            if not "port" in config['mqtt']:
-                config['mqtt'] = default['mqtt']['port']
-            if not "username" in config['mqtt']:
-                config['username'] = ''
-            if not "port" in config['mqtt']:
-                config['mqtt'] = 1883
-            if not "port" in config['mqtt']:
-                config['mqtt'] = 1883
-            if not "port" in config['mqtt']:
-                config['mqtt'] = 1883
 
     f.logLine()
     if "mqtt" in config:

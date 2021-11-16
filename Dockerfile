@@ -10,6 +10,8 @@ RUN apt-get update && \
 
 ENV LANG fr_FR.UTF-8
 ENV LC_ALL fr_FR.UTF-8
+ENV TZ=Europe/Paris
+
 
 RUN mkdir -p /data
 RUN pip install --upgrade pip

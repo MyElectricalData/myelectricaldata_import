@@ -106,12 +106,10 @@ def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
     cur.execute(config_query)
     query_result = cur.fetchall()
     query_result = json.loads(query_result[0][1])
-
     if not f"call_nb_{pdl}" in query_result:
         query_result[f"call_nb_{pdl}"] = 0
 
     log(f"call_number : {query_result[f'call_nb_{pdl}']} (max : {query_result['max_call']})", "debug")
-
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
         if query_result[f"call_nb_{pdl}"] > query_result["max_call"]:
             return {
@@ -123,6 +121,7 @@ def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
             query_result["day"] = datetime.now().strftime('%Y-%m-%d')
     else:
         query_result[f"call_nb_{pdl}"] = 0
+        query_result["day"] = datetime.now().strftime('%Y-%m-%d')
 
     query = f"UPDATE config SET key = 'config', value = '{json.dumps(query_result)}' WHERE key = 'config'"
     cur.execute(query)
