@@ -11,7 +11,7 @@ f = import_module("function")
 def getAddresses(headers, client, con, cur, pdl, pdl_config):
 
     def queryApi(url, headers, data, count=0):
-        addresses = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
+        addresses = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
         if not "error_code" in addresses:
             query = f"INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
             cur.execute(query, [pdl, json.dumps(addresses), count])

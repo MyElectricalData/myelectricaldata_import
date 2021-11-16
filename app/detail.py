@@ -13,16 +13,17 @@ f = import_module("function")
 date_format = "%Y-%m-%d %H:%M:%S"
 
 
-def getDetail(cur, con, client, mode="consumption", last_activation_date=datetime.now(), offpeak_hours=None,
+def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.now(), offpeak_hours=None,
               measure_total=None):
 
     max_days = 730
     max_days_per_demand = 7
     max_days_date = datetime.now() + relativedelta(days=-max_days)
-    pdl = main.pdl
-    price_base = main.consumption_price_base
-    price_hc = main.consumption_price_hc
-    price_hp = main.consumption_price_hp
+    price_base = pdl_config['consumption_price_base']
+    price_hc = pdl_config['consumption_price_hc']
+    price_hp = pdl_config['consumption_price_hp']
+
+    url = main.url
 
     ha_discovery = {
         pdl: {}
@@ -37,7 +38,7 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
     dateEnded = datetime.now()
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
-    data = detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand,
+    data = detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand,
                          offpeak_hours)
     if "error_code" in data:
         f.publish(client, f"{pdl}/{mode}/detail/error", str(1))
@@ -57,7 +58,7 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
                 f.log(" - Skip (activation date > dateEnded)")
                 finish = True
             else:
-                data = detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date,
+                data = detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, dateEnded, last_activation_date,
                                      max_days_per_demand, offpeak_hours)
 
                 if "error_code" in data:
@@ -213,7 +214,7 @@ def getDetail(cur, con, client, mode="consumption", last_activation_date=datetim
     return ha_discovery
 
 
-def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand, offpeak_hours):
+def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand, offpeak_hours):
 
     response = {}
 
@@ -242,7 +243,7 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
         new_date = []
         dateBeginLong = datetime.strptime(dateBegin, '%Y-%m-%d')
         dateEndedLong = datetime.strptime(dateEnded, '%Y-%m-%d')
-        current_data = checkHistoryDetail(cur, con, mode, dateBeginLong, dateEndedLong)
+        current_data = checkHistoryDetail(cur, con, pdl, mode, dateBeginLong, dateEndedLong)
         if current_data['missing_data'] == False:
             f.log(f"Week allready in cache {dateBegin} / {dateEnded}")
             f.log(f" => Load data from cache")
@@ -250,7 +251,7 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
             f.log(f"Data is missing between {dateBegin} / {dateEnded}")
             f.log(f" => Load data from API")
 
-            detail = f.apiRequest(cur, con, type="POST", url=f"{main.url}", headers=main.headers, data=json.dumps(data))
+            detail = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
             if not "error_code" in detail:
                 meter_reading = detail['meter_reading']
                 f.log("Import data :")
@@ -302,8 +303,7 @@ def detailBeetwen(cur, con, pdl, mode, dateBegin, dateEnded, last_activation_dat
     return response
 
 
-def checkHistoryDetail(cur, con, mode, dateBegin, dateEnded):
-    pdl = main.pdl
+def checkHistoryDetail(cur, con, pdl, mode, dateBegin, dateEnded):
 
     # FORCE THIS WEEK
     if datetime.now().strftime('%Y-%m-%d') == dateEnded.strftime('%Y-%m-%d'):

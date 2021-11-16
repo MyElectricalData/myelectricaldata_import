@@ -192,7 +192,7 @@ def run(pdl, pdl_config):
 
         if pdl_config['consumption_detail'] == True:
             f.log("Get Consumption Detail:")
-            ha_discovery_consumption = detail.getDetail(cur, con, client, "consumption", last_activation_date, offpeak_hours)
+            ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "consumption", last_activation_date, offpeak_hours)
             f.logLine1()
             f.log("                   SUCCESS : Consumption detail imported")
             f.logLine1()
@@ -227,7 +227,7 @@ def run(pdl, pdl_config):
         if pdl_config['production'] == True:
             f.logLine()
             f.log("Get production :")
-            ha_discovery_production = day.getDaily(cur, con, client, "production", last_activation_date)
+            ha_discovery_production = day.getDaily(headers, cur, con, client, pdl, pdl_config, "production", last_activation_date)
             f.logLine1()
             f.log("             SUCCESS : Production daily imported")
             f.logLine1()
@@ -260,7 +260,7 @@ def run(pdl, pdl_config):
         if pdl_config['production_detail'] == True:
             f.logLine()
             f.log("Get production Detail:")
-            ha_discovery_consumption = detail.getDetail(cur, con, client, "production", last_activation_date, offpeak_hours)
+            ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "production", last_activation_date, offpeak_hours)
             f.logLine1()
             f.log("              SUCCESS : Production detail imported")
             f.logLine1()
@@ -294,13 +294,13 @@ def run(pdl, pdl_config):
         if "influxdb" in config and config["influxdb"] != {}:
             f.logLine()
             f.log("Push data in influxdb")
-            influx.influxdb_insert(cur, con, influxdb_api)
+            influx.influxdb_insert(cur, con, pdl, pdl_config,influxdb_api)
             f.log(" => Data exported")
 
         if "home_assistant" in config and "card_myenedis" in config['home_assistant'] and config['home_assistant']['card_myenedis'] == True:
             f.logLine()
             f.log("Generate Sensor for myEnedis card")
-            my_enedis_data = myenedis.myEnedis(cur, con, client, last_activation_date, offpeak_hours)
+            my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date, offpeak_hours)
             for pdl, data in my_enedis_data.items():
                 for name, sensor_data in data.items():
                     if "attributes" in sensor_data:
@@ -343,6 +343,42 @@ def run(pdl, pdl_config):
 
 
 if __name__ == '__main__':
+
+    default = {
+        "debug": False,
+        "mqtt": {
+            "host": "MANDATORY",
+            "port": 1883,
+            "username": "",
+            "password": "",
+            "prefix": "enedis_gateway",
+            "client_id": "enedis_gateway",
+            "retain": True,
+            "qos": 0
+        },
+        "home_assistant": {
+            "discovery": False,
+            "discovery_prefix": "homeassistant",
+            "card_myenedis": False
+        },
+        "enedis_gateway": {
+            "MANDATORY": {
+                "token": "MANDATORY",
+                "plan": "BASE",
+                "consumption": True,
+                "consumption_detail": True,
+                "consumption_price_hc": 0,
+                "consumption_price_hp": 0,
+                "consumption_price_base": 0,
+                "production": False,
+                "production_detail": False,
+                "offpeak_hours": 0,
+                "addresses": True,
+                "refresh_contract": False,
+                "refresh_addresses": False
+            }
+        }
+    }
 
     f.logLine()
     if "mqtt" in config:

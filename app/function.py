@@ -92,28 +92,33 @@ def splitLog(msg):
         cur_length = cur_length + 1
 
 
-def apiRequest(cur, con, type="POST", url=None, headers=None, data=None):
+def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
     config_query = f"SELECT * FROM config WHERE key = 'config'"
     cur.execute(config_query)
     query_result = cur.fetchall()
-    pprint(query_result)
     query_result = json.loads(query_result[0][1])
-    log(f"call_number : {query_result['call_number']}", "debug")
+
+    if not f"call_nb_{pdl}" in query_result:
+        query_result[f"call_nb_{pdl}"] = 0
+
+    log(f"call_number : {query_result[f'call_nb_{pdl}']} (max : {query_result['max_call']})", "debug")
+
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
-        if query_result["call_number"] > query_result["max_call"]:
+        if query_result[f"call_nb_{pdl}"] > query_result["max_call"]:
             return {
                 "error_code": 2,
                 "description": f"API Call number per day is reached ({query_result['max_call']}), please wait until tomorrow to load the rest of data"
             }
         else:
-            query_result["call_number"] = int(query_result["call_number"]) + 1
+            query_result[f"call_nb_{pdl}"] = int(query_result[f"call_nb_{pdl}"]) + 1
             query_result["day"] = datetime.now().strftime('%Y-%m-%d')
-            query = f"UPDATE config SET key = 'config', value = '{json.dumps(query_result)}' WHERE key = 'config'"
-            cur.execute(query)
-            con.commit()
-
     else:
-        query_result["call_number"] = 0
+        query_result[f"call_nb_{pdl}"] = 0
+
+    query = f"UPDATE config SET key = 'config', value = '{json.dumps(query_result)}' WHERE key = 'config'"
+    cur.execute(query)
+    con.commit()
+
     log(f"Call API : {url}", "DEBUG")
     log(f"Data : {data}", "DEBUG")
     retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data).json()

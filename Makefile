@@ -13,11 +13,6 @@ down: .env
 	@echo "Start docker conatiner for dev"
 	$(COMPOSE) down
 
-## Recreate .env file
-init:
-	rm -rf .env
-	make .env
-
 ## Start in app
 start:
 	$(COMPOSE) exec enedisgateway2mqtt python -u /app/main.py
@@ -25,15 +20,6 @@ start:
 ## Connect to enedisgateway2mqtt container
 bash:
 	$(COMPOSE) exec enedisgateway2mqtt bash
-
-.env:
-	@cp .env.dist .env
-	@echo "Init your environment:"
-	@echo ""
-	@read -p "	- Enter your API key: " ACCESS_TOKEN; echo "ACCESS_TOKEN=$$ACCESS_TOKEN" >> .env
-	@read -p "	- Enter your PDL: " PDL; echo "PDL=$$PDL" >> .env
-	@echo ""
-
 
 .DEFAULT_GOAL := help
 .PHONY: help

@@ -12,7 +12,7 @@ def getContract(headers, client, cur, con, pdl, pdl_config):
 
     def queryApi(url, headers, data, count=0):
 
-        contract = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
+        contract = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
         if not "error_code" in contract:
             query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
             cur.execute(query, [pdl, json.dumps(contract), count])

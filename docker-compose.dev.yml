@@ -8,8 +8,6 @@ services:
     volumes:
       - ./data:/data
       - ./app:/app
-    env_file:
-      - .env
     command: tail -f /dev/null
       
   influxdb:

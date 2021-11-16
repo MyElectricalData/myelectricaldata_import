@@ -198,7 +198,7 @@ def dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_a
         else:
             f.log(f"Data is missing between {dateBegin} / {dateEnded}")
             f.log(f" => Load data from API")
-            daily = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
+            daily = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
             if not "error_code" in daily:
                 meter_reading = daily['meter_reading']
                 f.log("Import data :")
