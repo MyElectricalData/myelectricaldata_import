@@ -47,6 +47,8 @@ jobs:
             echo "::set-output name=dev::false"
           fi
 
+      - name: Check Build
+        id: check-build
           if [[ ${{ steps.vars.outputs.version }} =~ .*\-nobuild$ ]]; then
             echo "::set-output name=nobuild::true"
           else
@@ -124,7 +126,7 @@ jobs:
       ##################################################################################################################
       # FINISH
       - name: Discord notification
-        if: steps.check-build.outputs.nobuild == 'false'
+        if: steps.check-tag.outputs.dev == 'false' && steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 #          DISCORD_EMBEDS: {color: 3447003, author: { name: client.user.username, icon_url: client.user.displayAvatarURL() }, title: "EnedisGateway2MQTT new version available => ${{ steps.vars.outputs.version }}", url: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt", fields: [{ name: "Github", value: "https://github.com/m4dm4rtig4n/enedisgateway2mqtt"}, {name: "Docker.io", value: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt"}], timestamp: new Date(), footer: {icon_url: client.user.displayAvatarURL(), text: "© m4dm4rtig4n"}}
