@@ -12,8 +12,6 @@ ENV LANG fr_FR.UTF-8
 ENV LC_ALL fr_FR.UTF-8
 ENV TZ=Europe/Paris
 
-
-RUN mkdir -p /data
 RUN pip install --upgrade pip
 RUN pip install -r /app/requirement.txt
 RUN pip install git+https://github.com/influxdata/influxdb-client-python.git@master
