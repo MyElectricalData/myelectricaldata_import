@@ -17,27 +17,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Extract branch name
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
-
-      - name: Get version
-        id: vars
-        run: echo ::set-output name=version::$(cat app/VERSION)
-
       - name: Check Tag
         id: check-tag
         run: |
@@ -56,8 +35,34 @@ jobs:
             echo "::set-output name=nobuild::false"
           fi
 
+      - name: Set up QEMU
+        if: steps.check-build.outputs.nobuild == 'false'
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        if: steps.check-build.outputs.nobuild == 'false'
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        if: steps.check-build.outputs.nobuild == 'false'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract branch name
+        if: steps.check-build.outputs.nobuild == 'false'
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Get version
+        if: steps.check-build.outputs.nobuild == 'false'
+        id: vars
+        run: echo ::set-output name=version::$(cat app/VERSION)
+
       - name: Discord notification building state
-#        if: steps.check-build.outputs.nobuild == 'false'
+        if: steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
