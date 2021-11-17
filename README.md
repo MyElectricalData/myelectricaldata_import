@@ -259,6 +259,14 @@ make start
 
 ## Change log:
 
+### [0.7.3] - 2021-11-17
+
+- Fix debug
+
+### [0.7.2] - 2021-11-17
+
+- Fix OFFPEAK_HOUR bug
+
 ### [0.7.1] - 2021-11-16
 
 **BREAKING CHANGE - All configuration is now in config.yml**
