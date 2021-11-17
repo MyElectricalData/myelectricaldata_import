@@ -76,7 +76,7 @@ default = {
             "consumption_price_base": 0,
             "production": False,
             "production_detail": False,
-            "offpeak_hours": 0,
+            "offpeak_hours": None,
             "addresses": True,
             "refresh_contract": False,
             "refresh_addresses": False
