@@ -432,7 +432,11 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         f.publish(client, f"sensor/{path}/state", str(state), ha_autodiscovery_prefix)
         f.publish(client, f"sensor/{path}/attributes", json.dumps(attributes), ha_autodiscovery_prefix)
 
-        if main.config['debug'] == True:
+        if not "debug" in main.config:
+            debug = False
+        else:
+            debug = main.config["debug"]
+        if debug == True:
             pprint(attributes)
 
     return ha_discovery
