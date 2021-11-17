@@ -14,9 +14,7 @@ f = import_module("function")
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 timezone = pytz.timezone('Europe/Paris')
 
-def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('Europe/Paris')), offpeak_hours=None):
-    pdl = main.pdl
-
+def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(pytz.timezone('Europe/Paris')), offpeak_hours=None):
     def forceRound(x, n):
         import decimal
         d = decimal.Decimal(repr(x))
@@ -25,12 +23,12 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         return float(chopped)
 
     price = {
-        "BASE": main.consumption_price_base,
-        "HC": main.consumption_price_hc,
-        "HP": main.consumption_price_hp
+        "BASE": pdl_config['consumption_price_base'],
+        "HC": pdl_config['consumption_price_hc'],
+        "HP": pdl_config['consumption_price_hp']
     }
 
-    ha_autodiscovery_prefix= main.ha_autodiscovery_prefix
+    ha_autodiscovery_prefix= main.config['home_assistant']['discovery_prefix']
 
     ha_discovery = {
         pdl: {}
@@ -305,7 +303,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                         if measure_type != "BASE":
                             attributes[f'day_{day}_{measure_type}'] += int(value_w)
                         value_wh_total += value_kwh
-                        if main.current_plan == "BASE" or measure_type == "BASE":
+                        if pdl_config['plan'] == "BASE" or measure_type == "BASE":
                             dailyweek_cost += float(value_wh / 1000 * price[f"BASE"])
                         else:
                             dailyweek_cost += float(value_wh / 1000 * price[f"{measure_type}"])
@@ -323,7 +321,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
                             attributes[f"yesterday_{measure_type}"] = str(forceRound(value_wh_total, 3))
 
         # IF DAILY COST EMPTY IN DETAIL, try in daily if in plan base
-        if attributes['dailyweek_cost'] == [0, 0, 0, 0, 0, 0, 0] and main.current_plan == "BASE":
+        if attributes['dailyweek_cost'] == [0, 0, 0, 0, 0, 0, 0] and pdl_config['plan'] == "BASE":
             today = datetime.now(timezone)
             for day in [1, 2, 3, 4, 5, 6, 7]:
                 date = today - relativedelta(days=day)
@@ -434,7 +432,7 @@ def myEnedis(cur, con, client,last_activation_date=datetime.now(pytz.timezone('E
         f.publish(client, f"sensor/{path}/state", str(state), ha_autodiscovery_prefix)
         f.publish(client, f"sensor/{path}/attributes", json.dumps(attributes), ha_autodiscovery_prefix)
 
-        if main.debug == True:
+        if main.config['debug'] == True:
             pprint(attributes)
 
     return ha_discovery

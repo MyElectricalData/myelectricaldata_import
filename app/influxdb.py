@@ -14,8 +14,7 @@ f = import_module("function")
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 timezone = pytz.timezone('Europe/Paris')
 
-def influxdb_insert(cur, con, influxdb_api):
-    pdl = main.pdl
+def influxdb_insert(cur, con, pdl, pdl_config, influxdb_api):
 
     def forceRound(x, n):
         import decimal
@@ -25,9 +24,9 @@ def influxdb_insert(cur, con, influxdb_api):
         return float(chopped)
 
     price = {
-        "BASE": main.consumption_price_base,
-        "HC": main.consumption_price_hc,
-        "HP": main.consumption_price_hp
+        "BASE": pdl_config['consumption_price_base'],
+        "HC": pdl_config['consumption_price_hc'],
+        "HP": pdl_config['consumption_price_hp']
     }
 
     query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}';"
@@ -48,7 +47,7 @@ def influxdb_insert(cur, con, influxdb_api):
             .field("kWh", forceRound(value_kwh, 2)) \
             .field("price", current_price) \
             .time(dateObject)
-        influxdb_api.write(bucket=main.influxdb_bucket, org=main.influxdb_org, record=p)
+        influxdb_api.write(bucket=main.config['influxdb']['bucket'], org=main.config['influxdb']['org'], record=p)
 
     query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}';"
     cur.execute(query)
@@ -76,4 +75,4 @@ def influxdb_insert(cur, con, influxdb_api):
             .field("kWh", forceRound(int(value_kwh), 2)) \
             .field("price", current_price) \
             .time(dateObject)
-        influxdb_api.write(bucket=main.influxdb_bucket, org=main.influxdb_org, record=p)
+        influxdb_api.write(bucket=main.config['influxdb']['bucket'], org=main.config['influxdb']['org'], record=p)

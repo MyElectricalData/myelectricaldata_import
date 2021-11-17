@@ -8,20 +8,17 @@ from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
-def getContract(client, cur, con):
-
+def getContract(headers, client, cur, con, pdl, pdl_config):
 
     def queryApi(url, headers, data, count=0):
 
-        contract = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
+        contract = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
         if not "error_code" in contract:
             query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
             cur.execute(query, [pdl, json.dumps(contract), count])
             con.commit()
         return contract
 
-    pdl = main.pdl
-    headers = main.headers
     url = main.url
 
     ha_discovery = {
@@ -40,7 +37,7 @@ def getContract(client, cur, con):
         f.log(" => Query API")
         contract = queryApi(url, headers, data)
     else:
-        if main.refresh_contract == True:
+        if "refresh_contract" in pdl_config and pdl_config['refresh_contract'] == True:
             f.log(" => Query API (Refresh Cache)")
             contract = queryApi(url, headers, data, 0)
         else:
@@ -89,8 +86,8 @@ def getContract(client, cur, con):
                         con.commit()
 
                     offpeak_hours = []
-                    if main.offpeak_hours != None:
-                        offpeak_hours = main.offpeak_hours.split(';')
+                    if pdl_config['offpeak_hours'] != None:
+                        offpeak_hours = pdl_config['offpeak_hours'].split(';')
                     else:
                         if contracts_key == "offpeak_hours":
                             offpeak_hours = contracts_data[contracts_data.find("(") + 1:contracts_data.find(")")].split(';')

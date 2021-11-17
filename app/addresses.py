@@ -8,19 +8,17 @@ from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
-def getAddresses(client, con, cur):
+def getAddresses(headers, client, con, cur, pdl, pdl_config):
 
     def queryApi(url, headers, data, count=0):
-        addresses = f.apiRequest(cur, con, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
+        addresses = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
         if not "error_code" in addresses:
             query = f"INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
             cur.execute(query, [pdl, json.dumps(addresses), count])
             con.commit()
         return addresses
 
-    pdl = main.pdl
     url = main.url
-    headers = main.headers
 
     data = {
         "type": "addresses",
@@ -38,7 +36,7 @@ def getAddresses(client, con, cur):
         f.log(" => Query API")
         addresses = queryApi(url, headers, data)
     else:
-        if main.refresh_addresses == True:
+        if pdl_config['refresh_addresses'] == True:
             f.log(" => Query API (Refresh Cache)")
             addresses = queryApi(url, headers, data, 0)
         else:

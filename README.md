@@ -6,14 +6,13 @@ It is possible that various functions disappear or be modified**
 
 # Links
 
-Github Repository : https://github.com/m4dm4rtig4n/enedisgateway2mqtt
-
-Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt
+* Github Repository : https://github.com/m4dm4rtig4n/enedisgateway2mqtt
+* Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt
+* Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/enedisgateway2mqtt
 
 ## Informations
 
 EnedisGateway2MQTT use [Enedis Gateway](https://enedisgateway.tech/) API to send data in your MQTT Broker.
-
 
 ### Generate ACCESS_TOKEN
 
@@ -65,57 +64,95 @@ If you reach this limit, you will be banned for 24 hours!
 See chapter [persistance](#persistance), to reduce API call number.
 
 
-## Environment variable 
+## Configuration File
 
-| Variable  | Information | Mandatory/Default |
-|:---------------|:---------------:|:-----:|
-| ACCESS_TOKEN | Your access token generate after Enedis Gateway consent | * |
-| PDL | Your Linky Point Of Delivery | * |
-| MQTT_HOST | Mosquitto IP address  | * |
-| MQTT_PORT | Mosquitto Port | 1883 |
-| MQTT_PREFIX | Mosquitto Queue Prefix | enedis_gateway |
-| MQTT_CLIENT_ID | Mosquitto Client ID | enedis_gateway |
-| MQTT_USERNAME | Mosquitto Username (leave empty if no user) |  |
-| MQTT_PASSWORD | Mosquitto Password (leave empty if no user) |  |
-| RETAIN | Retain data in MQTT | False |
-| QOS | Quality Of Service MQTT | 0 |
-| GET_CONSUMPTION | Enable API call to get your consumption | True |
-| GET_CONSUMPTION_DETAIL | Enable API call to get your consumption in detail mode | True |
-| GET_PRODUCTION | Enable API call to get your production | False |
-| GET_PRODUCTION_DETAIL | Enable API call to get your production in detail mode | False |
-| HA_AUTODISCOVERY | Enable auto-discovery | False |
-| HA_AUTODISCOVERY_PREFIX | Home Assistant auto discovery prefix | homeassistant |
-| OFFPEAK_HOURS | Force HP/HC format : "HHhMM-HHhMM;HHhMM-HHhMM;...". It's optionnal, by default I load this info automatically when I get contracts | "" |
-| CONSUMPTION_PRICE_BASE | Price of kWh in base plan | 0 |
-| CONSUMPTION_PRICE_HC | Price of HC kWh | 0 |
-| CONSUMPTION_PRICE_HP | Price of HP kWh | 0 |
-| CYCLE | Data refresh cycle (1h minimum) | 3600 |
-| ADDRESSES | Get all addresses information | False |
-| REFRESH_CONTRACT | Refresh contract data | False | 
-| REFRESH_ADDRESSES | Refresh addresses data | False |  
-| WIPE_CACHE | Force refresh all data (wipe all cached data)  | False |   
-| DEBUG | Display debug information  | False |   
-| CARD_MYENEDIS | Create HA sensor for Linky Card with auto-discovery  | False |   
-| CURRENT_PLAN | Choose you plan "BASE" or "HP/HC"  | BASE |   
-| INFLUXDB_ENABLE | Enable influxdb exporter  | False |   
-| INFLUXDB_HOST | Influxdb Host or IP Address  | "" |   
-| INFLUXDB_PORT | Influxdb port | 8086 |   
-| INFLUXDB_TOKEN | Influxdb token (v2)  | "" |   
-| INFLUXDB_ORG | Influxdb Org (v2)  | "" |   
-| INFLUXDB_BUCKET | Influxdb bucket name (v2)  | "" |
+Filename : config.yaml
+
+Container path : /data/config.yaml
+
+The easiest is to map the "/data" in local because it is also this folder that contains the cache.
+
+3 parameters is mandatory :
+- MQTT Hostname
+- At least one PDL 
+- PDL token
+
+> All other variables have default values
+
+```yaml
+##########
+# GLOBAL #
+##########
+debug: false
+
+####################
+##      MQTT      ##
+####################
+mqtt:
+  host: MOSQUITO_SERVER       # MANDATORY
+  port: 1883
+  username: ""
+  password: ""
+  prefix: enedis_gateway
+  client_id: enedis_gateway
+  retain: true
+  qos: 0
+
+####################
+## Home assistant ##
+####################
+home_assistant:
+  discovery: false
+  discovery_prefix: homeassistant
+  card_myenedis: false
+
+###############
+## Influx DB ##
+###############
+#influxdb: 
+#  host: MY_INFLUXDB_SERVER
+#  port: 8086
+#  token: MY_TOKEN
+#  org: MY_ORG
+#  bucket: MY_BUCKET
+
+####################
+## ENEDIS GATEWAY ##
+####################
+enedis_gateway:  
+  PDL_1:                       # MANDATORY
+    token: PDL_1_TOKEN         # MANDATORY
+    plan: BASE                 # BASE or HP/HC
+    consumption: true                 
+    consumption_detail: true         
+    consumption_price_hc: 0           
+    consumption_price_hp: 0           
+    consumption_price_base: 0         
+    production: false                 
+    production_detail: false          
+#    offpeak_hours: ""        # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-00h10;01h00-06h00
+    addresses: true
+#  PDL_2:
+#    token: PDL_2_TOKEN
+#    plan: HP/HC
+#    consumption: true
+#    consumption_detail: true
+#    consumption_price_hc: 0.1781
+#    consumption_price_hp: 0.1337
+#    consumption_price_base: 0.1781
+#    production: false
+#    production_detail: false
+#    addresses: true
+```
 
 ## Cache
 
 Since v0.3, Enedis Gateway use SQLite database to store all data and reduce API call number.
 > **Don't forget to mount /data to keep database persistance !!**
 
-If you change your contract, plan it is necessary to do a reset "**REFRESH_CONTRACT**" to "**True**"
+If you wan wipe cache, just delete enedisgateway.db and restat container.
 
-if you move, it is necessary to make a "**REFRESH_ADDRESSES**" to "**True**"
-
-If you want force refresh all data you can set environment variable "**WIPE_CACHE**" to "**True**".
-
-**WARNING, This parameters wipe all data (addresses, contracts, consumption, production) and generate lot of API Call (don't forget [Enedis Gateway limit](#Enedis Gateway limit))**
+**WARNING, if you wipe all data you generate lot of API Call (don't forget [Enedis Gateway limit](#Enedis Gateway limit))**
 
 > It doesn't forget that it takes several days to recover consumption/production in detail mode.
 
@@ -130,12 +167,36 @@ Sometimes there are holes in the Enedis consumption records. So I set up a black
 
 If date does not return information after 7 try (7 x CYCLE), I blacklist this date and will no longer generate an API call
 
-## Grafana & InfluxDB v2
+## InfluxDB
 
-> Not compatible with InfluxDB v1.X
+Gateway is work with influxDB version 1.X & 2.X
 
-EnedisGateway2MQTT integrates an influxdb connector which will allow you to export all the information.
-And you can found Grafana dashboard [here](grafana_dashboard.json).
+### v1.X :
+```yaml
+influxdb:
+    host: influxdb
+    port: 8086
+    token: USERNAME/PASSWORD
+    org: "-"
+    bucket: "DATABASE/RETENTION"
+```
+
+### v2.X :
+```yaml
+influxdb:
+    host: influxdb
+    port: 8086
+    token: MY_TOKEN
+    org: MY_ORG
+    bucket: MY_BUCKET
+```
+
+## Grafana 
+
+When you are exported all data in your influxDB, you can use this [grafana dashboard](grafana_dashboard.json).
+
+> Actually it's work only in InfluxQL (v1 language), Flux mode (v2 language) it's in progress...
+> But you can use InfluxQL in V2. 
 
 ## Usage :
 
@@ -145,49 +206,7 @@ And you can found Grafana dashboard [here](grafana_dashboard.json).
 
 
 ```
-ACCESS_TOKEN="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-PDL="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-MQTT_HOST='' 
-MQTT_PORT="1883"                
-MQTT_PREFIX="enedis_gateway"    
-MQTT_CLIENT_ID="enedis_gateway" 
-MQTT_USERNAME='enedis_gateway_username'
-MQTT_PASSWORD='enedis_gateway_password'
-RETAIN="True"
-QOS=0
-GET_CONSUMPTION="True"
-GET_CONSUMPTION_DETAIL="True"
-GET_PRODUCTION="False"
-GET_PRODUCTION_DETAIL="False"
-HA_AUTODISCOVERY="False"
-HA_AUTODISCOVERY_PREFIX='homeassistant'
-CONSUMPTION_PRICE_BASE=0
-CONSUMPTION_PRICE_HC=0
-CONSUMPTION_PRICE_HP=0   
-CARD_MYENEDIS="False"              
-
-docker run -it --restart=unless-stopped \
-    -e ACCESS_TOKEN="$ACCESS_TOKEN" \
-    -e PDL="$PDL" \
-    -e MQTT_HOST="$MQTT_HOST" \
-    -e MQTT_PORT="$MQTT_PORT" \
-    -e MQTT_PREFIX="$MQTT_PREFIX" \
-    -e MQTT_CLIENT_ID="$MQTT_CLIENT_ID" \
-    -e MQTT_USERNAME="$MQTT_USERNAME" \
-    -e MQTT_PASSWORD="$MQTT_PASSWORD" \
-    -e RETAIN="$RETAIN" \
-    -e QOS="$QOS" \
-    -e GET_CONSUMPTION="$GET_CONSUMPTION" \
-    -e GET_CONSUMPTION_DETAIL="$GET_CONSUMPTION_DETAIL" \
-    -e GET_PRODUCTION="$GET_PRODUCTION" \
-    -e GET_PRODUCTION_DETAIL="$GET_PRODUCTION_DETAIL" \
-    -e HA_AUTODISCOVERY="$HA_AUTODISCOVERY" \
-    -e HA_AUTODISCOVERY_PREFIX="$HA_AUTODISCOVERY_PREFIX" \
-    -e CONSUMPTION_PRICE_BASE="$CONSUMPTION_PRICE_BASE" \
-    -e CONSUMPTION_PRICE_HC="$CONSUMPTION_PRICE_HC" \
-    -e CONSUMPTION_PRICE_HP="$CONSUMPTION_PRICE_HP" \
-    -e CARD_MYENEDIS="$CARD_MYENEDIS" \
-m4dm4rtig4n/enedisgateway2mqtt:latest
+docker run -it --restart=unless-stopped -v $(pwd):/data m4dm4rtig4n/enedisgateway2mqtt:latest
 ```
 
 **docker-compose.yml**
@@ -198,32 +217,7 @@ services:
     image: m4dm4rtig4n/enedisgateway2mqtt:latest
     restart: unless-stopped
     volumes:
-        - mydata:/data
-    environment:
-      ACCESS_TOKEN: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-      PDL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-      MQTT_HOST: ""
-      MQTT_PORT: "1883"
-      MQTT_PREFIX: "enedis_gateway"
-      MQTT_CLIENT_ID: "enedis_gateway"
-      MQTT_USERNAME: 'enedis_gateway_username'
-      MQTT_PASSWORD: 'enedis_gateway_password'
-      RETAIN: "True"
-      QOS: 0
-      GET_CONSUMPTION: "True"
-      GET_PRODUCTION: "False"
-      HA_AUTODISCOVERY: "False"
-      HA_AUTODISCOVERY_PREFIX: 'homeassistant'
-      CONSUMPTION_PRICE_BASE: 0
-      CONSUMPTION_PRICE_HC: 0
-      CONSUMPTION_PRICE_HP: 0 
-      CARD_MYENEDIS: "False"    
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "3"
-volumes:
-  mydata:      
+        -./:/data     
 ```
 
 ## Dev environment
@@ -265,7 +259,17 @@ make start
 
 ## Change log:
 
-### [0.6.0] - 2021-11-XX
+### [0.7.1] - 2021-11-16
+
+**BREAKING CHANGE - All configuration is now in config.yml**
+
+>**Not update to 0.7.0 if you don't have adapt your configuration**
+
+### [0.7.0] - 2021-11-14
+
+- Skip version
+
+### [0.6.0] - 2021-11-05
 
 - Add timeout to API Call
 
