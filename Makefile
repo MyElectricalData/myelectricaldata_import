@@ -21,6 +21,27 @@ start:
 bash:
 	$(COMPOSE) exec enedisgateway2mqtt bash
 
+## Create git branch
+version=
+git_branch:
+	git branch $(version) || true
+	git checkout $(version) || true
+	echo $(branch) > app/VERSION
+
+## Create add/commit/push
+current_version := $(shell cat app/VERSION)
+comment=
+.PHONY: git_push
+git_push:
+	set -x
+	@(echo "git add --all")
+	git add --all
+	@if [ "$(comment)" = "" ]; then comment="maj"; fi; \
+    echo "git commit -m '$${comment}'"
+	git commit -m "$${comment}"
+	@(echo "git push origin $(current_version)")
+	git push origin $(current_version)
+
 .DEFAULT_GOAL := help
 .PHONY: help
 help:
@@ -39,4 +60,3 @@ help:
 			{lastLine = $$0;}' $(MAKEFILE_LIST)\
 			| sed  -e "s/\`/\\\\\`/g"
 	@echo ""
-		

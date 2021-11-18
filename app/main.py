@@ -584,6 +584,11 @@ if __name__ == '__main__':
             cur.execute("DELETE FROM consumption_detail WHERE pdl = 0")
             cur.execute("DELETE FROM production_daily WHERE pdl = 0")
             cur.execute("DELETE FROM production_detail WHERE pdl = 0")
+            cur.execute("DELETE FROM production_detail WHERE pdl = 0")
+            config_query = f"SELECT * FROM config WHERE key = 'config'"
+            cur.execute(config_query)
+            query_result = cur.fetchall()
+            query_result = json.loads(query_result[0][1])
         except Exception as e:
             f.log("=====> ERROR : Exception <======")
             f.log(e)
