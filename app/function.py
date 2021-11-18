@@ -6,7 +6,6 @@ from pprint import pprint
 import main
 
 from importlib import import_module
-
 main = import_module("main")
 
 
