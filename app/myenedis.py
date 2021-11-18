@@ -14,7 +14,7 @@ f = import_module("function")
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 timezone = pytz.timezone('Europe/Paris')
 
-def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(pytz.timezone('Europe/Paris')), offpeak_hours=None):
+def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(pytz.timezone('Europe/Paris'))):
     def forceRound(x, n):
         import decimal
         d = decimal.Decimal(repr(x))
@@ -398,7 +398,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         attributes[f'errorLastCallInterne'] = f""
         attributes[f'current_week_number'] = int(datetime.now(timezone).strftime("%V"))
 
-        if measure_type != "BASE":
+        if pdl_config['plan'] != "BASE":
             query = f"SELECT * FROM config WHERE key = '{pdl}_offpeak_hours'"
             cur.execute(query)
             query_result = cur.fetchone()

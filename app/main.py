@@ -162,6 +162,7 @@ else:
                             config["enedis_gateway"][pdl][id] = data
 
 def init_database(cur):
+
     ## CONFIG
     cur.execute('''CREATE TABLE config (
                         key TEXT PRIMARY KEY,
@@ -218,7 +219,8 @@ def init_database(cur):
                         pdl TEXT NOT NULL, 
                         date TEXT NOT NULL, 
                         value INTEGER NOT NULL, 
-                        interval INTEGER NOT NULL,                        
+                        interval INTEGER NOT NULL,
+                        measure_type TEXT NOT NULL,                         
                         fail INTEGER)''')
     cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
                     ON production_detail (date)''')
@@ -228,10 +230,10 @@ def init_database(cur):
     config = {
         "day": datetime.now().strftime('%Y-%m-%d'),
         "call_number": 0,
-        "max_call": 15
+        "max_call": 500
     }
     cur.execute(config_query, ["config", json.dumps(config)])
-
+    con.commit()
 
 def run(pdl, pdl_config):
     f.logLine()
@@ -319,7 +321,7 @@ def run(pdl, pdl_config):
         if pdl_config['consumption_detail'] == True:
             f.log("Get Consumption Detail:")
             ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "consumption",
-                                                        last_activation_date, offpeak_hours)
+                                                        last_activation_date)
             f.logLine1()
             f.log("                   SUCCESS : Consumption detail imported")
             f.logLine1()
@@ -390,7 +392,7 @@ def run(pdl, pdl_config):
             f.logLine()
             f.log("Get production Detail:")
             ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "production",
-                                                        last_activation_date, offpeak_hours)
+                                                        last_activation_date)
             f.logLine1()
             f.log("              SUCCESS : Production detail imported")
             f.logLine1()
@@ -432,7 +434,7 @@ def run(pdl, pdl_config):
             'card_myenedis'] == True:
             f.logLine()
             f.log("Generate Sensor for myEnedis card")
-            my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date, offpeak_hours)
+            my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date)
             for pdl, data in my_enedis_data.items():
                 for name, sensor_data in data.items():
                     if "attributes" in sensor_data:
@@ -573,7 +575,8 @@ if __name__ == '__main__':
             cur.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)",
                         [0, '1970-01-01', 0, 0, "", 0])
             cur.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-            cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?)", [0, '1970-01-01', 0, 0, 0])
+            cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?,?)",
+                        [0, '1970-01-01', 0, 0, "", 0])
             cur.execute("DELETE FROM config WHERE key = 0")
             cur.execute("DELETE FROM addresses WHERE pdl = 0")
             cur.execute("DELETE FROM contracts WHERE pdl = 0")
