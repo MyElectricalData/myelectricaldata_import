@@ -79,6 +79,8 @@ The easiest is to map the "/data" in local because it is also this folder that c
 
 > All other variables have default values
 
+Exemple :
+
 ```yaml
 ##########
 # GLOBAL #
@@ -119,9 +121,9 @@ home_assistant:
 ####################
 ## ENEDIS GATEWAY ##
 ####################
-enedis_gateway:  
-  PDL_1:                       # MANDATORY
-    token: PDL_1_TOKEN         # MANDATORY
+enedis_gateway:
+  XXXXXXXXXXXXXX:              # Replace XXXXXXXXXXXXXX by your PDL Number. MANDATORY
+    token: YOUR_TOKEN          # MANDATORY
     plan: BASE                 # BASE or HP/HC
     consumption: true                 
     consumption_detail: true         
@@ -130,10 +132,10 @@ enedis_gateway:
     consumption_price_base: 0         
     production: false                 
     production_detail: false          
-#    offpeak_hours: ""        # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-00h10;01h00-06h00
+    offpeak_hours: ""         # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-06h00
     addresses: true
-#  PDL_2:
-#    token: PDL_2_TOKEN
+#  YYYYYYYYYYYYYY:            # Replace YYYYYYYYYYYYYY by your other PDL Number
+#    token: YOUR_TOKEN
 #    plan: HP/HC
 #    consumption: true
 #    consumption_detail: true
@@ -144,6 +146,8 @@ enedis_gateway:
 #    production_detail: false
 #    addresses: true
 ```
+> offpeak_hours : I automatically retrieve the information via the Enedis APIs, but it happens that some account does not upload it.
+This parameter will allow you to fill in your HP / HC ranges yourself in order to be able to compare your consumption according to the 2 subscriptions. 
 
 ## Cache
 
