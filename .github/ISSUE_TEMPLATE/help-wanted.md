@@ -1,13 +1,13 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: Help Wanted
+about: Need help ?
 title: ''
-labels: bug
+labels: help wanted
 assignees: m4dm4rtig4n
 
 ---
 
-**Describe the bug**
+**What can I do for you?**
 A clear and concise description of what the bug is.
 
 **Configuration**
