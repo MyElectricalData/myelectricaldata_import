@@ -615,48 +615,12 @@ if __name__ == '__main__':
 
     while True:
 
+        con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
+        cur = con.cursor()
+
         for pdl, pdl_config in config['enedis_gateway'].items():
             run(pdl, pdl_config)
 
         con.close()
-        time.sleep(config['cycle'])
 
-# lost_params = []
-# for id, config_data in default.items():
-#     isDict = False
-#     if isinstance(default[id], dict):
-#         isDict = True
-#     mandatory = False
-#     if id.startswith('*'):
-#         mandatory = True
-#         id = id[1:]
-#     if mandatory == True and not id in config:
-#         lost_params.append(id)
-#     if isDict == True:
-#         for id_1, data_1 in config_data.items():
-#             isDict = False
-#             if isinstance(config_data[id_1], dict):
-#                 isDict = True
-#             mandatory = False
-#             if id_1.startswith('*'):
-#                 mandatory = True
-#                 id_1 = f"{id}.{id_1[1:]}"
-#             if mandatory == True and not id_1 in config[id]:
-#                 lost_params.append(id_1)
-#         if isDict == True:
-#             for id_2, data_2 in data_1.items():
-#                 mandatory = False
-#                 if id_2.startswith('*'):
-#                     mandatory = True
-#                     id_2 = f"{id_1}.{id_2[1:]}"
-#                 if mandatory == True and not id_2 in config[id]:
-#                     lost_params.append(id_2)
-#                 # else:
-#                 #     if not id_2 in config[id][id_1]:
-#                 #         config[id][id_1] = data_2
-#         else:
-#             if not id_1 in config[id]:
-#                 config[id] = data_1
-#     else:
-#         if not id in config:
-#             config[id] = config_data
+        time.sleep(config['cycle'])

@@ -259,6 +259,10 @@ make start
 
 ## Change log:
 
+### [0.7.4] - 2021-11-18
+
+- Fix SQLite closed connection
+
 ### [0.7.3] - 2021-11-17
 
 - Fix debug
