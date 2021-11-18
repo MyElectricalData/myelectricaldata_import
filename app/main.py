@@ -84,6 +84,8 @@ default = {
     }
 }
 
+global config
+
 config_file = '/data/config.yaml'
 if os.path.exists(config_file):
     with open(r'/data/config.yaml') as file:
@@ -94,6 +96,70 @@ else:
     f.close()
     with open(r'/data/config.yaml') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
+
+lost_params = []
+# CHECK GLOBAL CONFIGURATION
+for id, data in default.items():
+    isDict = False
+    if isinstance(default[id], dict):
+        isDict = True
+    name = id
+    mandatory = False
+    if id in mandatory_parameters:
+        mandatory = True
+        name = id
+    if mandatory == True and not name in config:
+        lost_params.append(name.upper())
+    elif not isDict:
+        if not name in config:
+            config[name] = data
+
+# CHECK MQTT CONFIGURATION
+list = "mqtt"
+for id, data in default[list].items():
+    mandatory = False
+    if id in mandatory_parameters["mqtt"]:
+        mandatory = True
+    if mandatory == True and not id in config[list]:
+        lost_params.append(f"{list}.{id.upper()}")
+    else:
+        if not id in config[list]:
+            config[list][id] = data
+
+# CHECK HOME ASSISTANT CONFIGURATION
+list = "home_assistant"
+for id, data in default[list].items():
+    mandatory = False
+    if id in mandatory_parameters:
+        mandatory = True
+    if mandatory == True and not id in config[list]:
+        lost_params.append(f"{list}.{id.upper()}")
+    else:
+        if not id in config[list]:
+            config[list][id] = data
+
+# CHECK ENEDIS GATEWAY CONFIGURATION
+if not "enedis_gateway" in config:
+    lost_params.append("enedis_gateway")
+else:
+    if not isinstance(config["enedis_gateway"], dict):
+        lost_params.append("enedis_gateway.PDL")
+    else:
+        for pdl, pdl_data in config["enedis_gateway"].items():
+            if len(str(pdl)) != 14:
+                lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
+            if not isinstance(config["enedis_gateway"][pdl], dict):
+                lost_params.append(f"enedis_gateway.{pdl}.TOKEN")
+            else:
+                for id, data in default['enedis_gateway']['pdl'].items():
+                    mandatory = False
+                    if id in mandatory_parameters:
+                        mandatory = True
+                    if mandatory == True and not id in config["enedis_gateway"][pdl]:
+                        lost_params.append(f"enedis_gateway.{pdl}.{id.upper()}")
+                    else:
+                        if not id in config["enedis_gateway"][pdl]:
+                            config["enedis_gateway"][pdl][id] = data
 
 def init_database(cur):
     ## CONFIG
@@ -200,7 +266,7 @@ def run(pdl, pdl_config):
                     offpeak_hours = data
                 if "home_assistant" in config and "discovery" in config['home_assistant'] and config['home_assistant'][
                     'discovery'] == True:
-                    ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=key, value=data)
+                    ha.haAutodiscovery(config=config, client=client, type="sensor", pdl=pdl, name=key, value=data)
 
         if pdl_config['addresses'] == True:
             f.logLine()
@@ -243,7 +309,7 @@ def run(pdl, pdl_config):
                         else:
                             state_class = None
                         if "value" in sensor_data:
-                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                            ha.haAutodiscovery(config=config, client=client, type="sensor", pdl=pdl, name=name,
                                                value=sensor_data['value'],
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
@@ -279,7 +345,7 @@ def run(pdl, pdl_config):
                         else:
                             state_class = None
                         if "value" in sensor_data:
-                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                            ha.haAutodiscovery(config=config, client=client, type="sensor", pdl=pdl, name=name,
                                                value=sensor_data['value'],
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
@@ -315,7 +381,7 @@ def run(pdl, pdl_config):
                             state_class = sensor_data['state_class']
                         else:
                             state_class = None
-                        ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
+                        ha.haAutodiscovery(config=config, client=client, type="sensor", pdl=pdl, name=name, value=sensor_data['value'],
                                            attributes=attributes, unit_of_meas=unit_of_meas,
                                            device_class=device_class, state_class=state_class)
                 f.log(" => HA Sensor updated")
@@ -350,7 +416,7 @@ def run(pdl, pdl_config):
                         else:
                             state_class = None
                         if "value" in sensor_data:
-                            ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                            ha.haAutodiscovery(config=config, client=client, type="sensor", pdl=pdl, name=name,
                                                value=sensor_data['value'],
                                                attributes=attributes, unit_of_meas=unit_of_meas,
                                                device_class=device_class, state_class=state_class)
@@ -386,7 +452,7 @@ def run(pdl, pdl_config):
                     else:
                         state_class = None
                     if "value" in sensor_data:
-                        ha.haAutodiscovery(client=client, type="sensor", pdl=pdl, name=name,
+                        ha.haAutodiscovery(config=config, client=client, type="sensor", pdl=pdl, name=name,
                                            value=sensor_data['value'],
                                            attributes=attributes, unit_of_meas=unit_of_meas,
                                            device_class=device_class, state_class=state_class)
@@ -409,70 +475,6 @@ def run(pdl, pdl_config):
 
 
 if __name__ == '__main__':
-
-    lost_params = []
-    # CHECK GLOBAL CONFIGURATION
-    for id, data in default.items():
-        isDict = False
-        if isinstance(default[id], dict):
-            isDict = True
-        name = id
-        mandatory = False
-        if id in mandatory_parameters:
-            mandatory = True
-            name = id
-        if mandatory == True and not name in config:
-            lost_params.append(name.upper())
-        elif not isDict:
-            if not name in config:
-                config[name] = data
-
-    # CHECK MQTT CONFIGURATION
-    list = "mqtt"
-    for id, data in default[list].items():
-        mandatory = False
-        if id in mandatory_parameters["mqtt"]:
-            mandatory = True
-        if mandatory == True and not id in config[list]:
-            lost_params.append(f"{list}.{id.upper()}")
-        else:
-            if not id in config[list]:
-                config[list][id] = data
-
-    # CHECK HOME ASSISTANT CONFIGURATION
-    list = "home_assistant"
-    for id, data in default[list].items():
-        mandatory = False
-        if id in mandatory_parameters:
-            mandatory = True
-        if mandatory == True and not id in config[list]:
-            lost_params.append(f"{list}.{id.upper()}")
-        else:
-            if not id in config[list]:
-                config[list][id] = data
-
-    # CHECK ENEDIS GATEWAY CONFIGURATION
-    if not "enedis_gateway" in config:
-        lost_params.append("enedis_gateway")
-    else:
-        if not isinstance(config["enedis_gateway"], dict):
-            lost_params.append("enedis_gateway.PDL")
-        else:
-            for pdl, pdl_data in config["enedis_gateway"].items():
-                if len(str(pdl)) != 14:
-                    lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
-                if not isinstance(config["enedis_gateway"][pdl], dict):
-                    lost_params.append(f"enedis_gateway.{pdl}.TOKEN")
-                else:
-                    for id, data in default['enedis_gateway']['pdl'].items():
-                        mandatory = False
-                        if id in mandatory_parameters:
-                            mandatory = True
-                        if mandatory == True and not id in config["enedis_gateway"][pdl]:
-                            lost_params.append(f"enedis_gateway.{pdl}.{id.upper()}")
-                        else:
-                            if not id in config["enedis_gateway"][pdl]:
-                                config["enedis_gateway"][pdl][id] = data
 
     if lost_params != []:
         f.log(f'Some mandatory parameters are missing :', "ERROR")
