@@ -71,7 +71,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         cur.execute(query)
         query_result = cur.fetchone()
         attributes['yesterdayDate'] = yesterday
-        if query_result != None and query_result[2] != 0:
+        if query_result != None:
             attributes['yesterday'] = query_result[2] / 1000
             found = True
         else:
@@ -92,7 +92,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday_last_year}';"
         cur.execute(query)
         query_result = cur.fetchone()
-        if query_result != None and query_result[2] != 0:
+        if query_result != None:
             attributes['yesterdayLastYear'] = query_result[2] / 1000
         else:
             attributes['yesterdayLastYear'] = -1
