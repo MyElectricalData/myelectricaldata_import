@@ -180,7 +180,7 @@ Gateway is work with influxDB version 1.X & 2.X
 influxdb:
     host: influxdb
     port: 8086
-    token: USERNAME/PASSWORD
+    token: USERNAME:PASSWORD
     org: "-"
     bucket: "DATABASE/RETENTION"
 ```
