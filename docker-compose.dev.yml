@@ -2,6 +2,8 @@ version: "3.9"
 services:
   enedisgateway2mqtt:
     build: .
+    environment:
+      TZ: Europe/Paris
     links:
       - influxdb
       - mosquitto
@@ -22,6 +24,7 @@ services:
       timeout: 3s
       start_period: 30s
     environment:
+      TZ: Europe/Paris
       DOCKER_INFLUXDB_INIT_MODE: setup 
       DOCKER_INFLUXDB_INIT_USERNAME: enedisgateway2mqtt
       DOCKER_INFLUXDB_INIT_PASSWORD: enedisgateway2mqtt
@@ -31,6 +34,8 @@ services:
 
   mosquitto:
     image: eclipse-mosquitto:2.0.12
+    environment:
+      TZ: Europe/Paris
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -43,6 +48,8 @@ services:
 
   mqtt_explorer:
     image: smeagolworms4/mqtt-explorer
+    environment:
+      TZ: Europe/Paris
     links:
       - mosquitto
     volumes:

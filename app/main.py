@@ -10,6 +10,9 @@ import yaml
 import json
 import influxdb_client
 from influxdb_client.client.write_api import ASYNCHRONOUS
+from dateutil.tz import tzlocal
+from influxdb_client.client.util import date_utils
+from influxdb_client.client.util.date_utils import DateHelper
 from collections import namedtuple
 
 from importlib import import_module
@@ -427,7 +430,7 @@ def run(pdl, pdl_config):
         if "influxdb" in config and config["influxdb"] != {}:
             f.logLine()
             f.log("Push data in influxdb")
-            influx.influxdb_insert(cur, con, pdl, pdl_config, influxdb_api)
+            influx.influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api)
             f.log(" => Data exported")
 
         if "home_assistant" in config and "card_myenedis" in config['home_assistant'] and config['home_assistant'][
@@ -610,10 +613,13 @@ if __name__ == '__main__':
     if "influxdb" in config and config["influxdb"] != {}:
         f.logLine()
         f.log("InfluxDB connect :")
+
+        date_utils.date_helper = DateHelper(timezone=tzlocal())
         influxdb = influxdb_client.InfluxDBClient(
             url=f"http://{config['influxdb']['host']}:{config['influxdb']['port']}",
             token=config['influxdb']['token'],
-            org=config['influxdb']['org']
+            org=config['influxdb']['org'],
+            timeout="600000"
         )
         health = influxdb.health()
         if health.status == "pass":

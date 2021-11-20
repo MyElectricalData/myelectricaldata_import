@@ -260,13 +260,15 @@ make start
 
 - Add **DJU18**
 - Add Postgres/MariaDB Connector
+- Add max power
 
 ## Change log:
 
 ### [0.7.7] - 2021-11-XX
 
 - Fix [Null values don’t mean no values](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/45)
-- 
+- Fix [Timezone bug](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/48)
+- Clean all infludb measurement (enedisgateway_daily & enedisgateway_detail) before import
 
 ### [0.7.4] - 2021-11-18
 
