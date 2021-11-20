@@ -9,6 +9,7 @@ It is possible that various functions disappear or be modified**
 * Github Repository : https://github.com/m4dm4rtig4n/enedisgateway2mqtt
 * Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt
 * Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/enedisgateway2mqtt
+* Saniho Card for Home Assistant : https://github.com/saniho/content-card-linky
 
 ## Informations
 
