@@ -3,15 +3,20 @@ import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from pprint import pprint
+import locale
+import pytz
 
 from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
+# locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+# timezone = pytz.timezone('Europe/Paris')
 
-def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.now()):
+
+def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.utcnow()):
     max_days = 1095
-    max_days_date = datetime.now() + relativedelta(days=-max_days)
+    max_days_date = datetime.utcnow() + relativedelta(days=-max_days)
     base_price = pdl_config['consumption_price_base']
 
     url = main.url
@@ -24,10 +29,10 @@ def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", las
     last_activation_date = last_activation_date.split("+")[0]
     last_activation_date = datetime.strptime(last_activation_date, '%Y-%m-%d')
 
-    lastYears = datetime.now() + relativedelta(years=-1)
+    lastYears = datetime.utcnow() - relativedelta(years=1)
     dateBegin = lastYears.strftime('%Y-%m-%d')
-    # dateEnded = datetime.now() + relativedelta(days=-1)
-    dateEnded = datetime.now()
+    # dateEnded = datetime.now() - relativedelta(days=1)
+    dateEnded = datetime.utcnow()
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
     lastData = {}
@@ -60,7 +65,7 @@ def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", las
                     ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes']["day"] = day.capitalize()
                 if not "date" in ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes'].keys():
                     ha_discovery[pdl][f"{mode}_{key.replace('-', '_')}"]['attributes']["date"] = value["date"]
-                today = datetime.now()
+                today = datetime.utcnow()
                 today = today.strftime('%A')
                 if day == today:
                     today = True

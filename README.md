@@ -268,6 +268,9 @@ make start
 
 - Fix [Null values don’t mean no values](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/45)
 - Fix [Timezone bug](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/48)
+- Fix [HP/HC no cost](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/67)
+- Switch Enedis API Call in UTC Datetime (reduce error)
+- Fix offpeak hours in HA Sensor
 - Clean all infludb measurement (enedisgateway_daily & enedisgateway_detail) before import
 
 ### [0.7.4] - 2021-11-18

@@ -254,6 +254,7 @@ def run(pdl, pdl_config):
     f.logLine()
     f.log("Get contract :")
     contract = cont.getContract(headers, client, cur, con, pdl, pdl_config)
+    offpeak_hours = []
     f.log(contract, "debug")
     if "error_code" in contract:
         f.publish(client, f"error", str(1))
@@ -324,7 +325,7 @@ def run(pdl, pdl_config):
         if pdl_config['consumption_detail'] == True:
             f.log("Get Consumption Detail:")
             ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "consumption",
-                                                        last_activation_date)
+                                                        last_activation_date, offpeak_hours=offpeak_hours)
             f.logLine1()
             f.log("                   SUCCESS : Consumption detail imported")
             f.logLine1()
@@ -437,7 +438,7 @@ def run(pdl, pdl_config):
             'card_myenedis'] == True:
             f.logLine()
             f.log("Generate Sensor for myEnedis card")
-            my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date)
+            my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date, offpeak_hours=offpeak_hours)
             for pdl, data in my_enedis_data.items():
                 for name, sensor_data in data.items():
                     if "attributes" in sensor_data:

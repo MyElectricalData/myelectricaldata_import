@@ -14,7 +14,7 @@ f = import_module("function")
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 timezone = pytz.timezone('Europe/Paris')
 
-def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(pytz.timezone('Europe/Paris'))):
+def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(pytz.timezone('Europe/Paris')), offpeak_hours=None):
     def forceRound(x, n):
         import decimal
         d = decimal.Decimal(repr(x))
@@ -345,9 +345,6 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         for tmp in attributes["dailyweek_cost"]:
             convert.append(str(tmp))
         attributes["dailyweek_cost"] = convert
-
-
-
         peak_offpeak_percent = {
             'HP': 0,
             'HC': 0,
@@ -398,12 +395,16 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         attributes[f'errorLastCallInterne'] = f""
         attributes[f'current_week_number'] = int(datetime.now(timezone).strftime("%V"))
 
-        if pdl_config['plan'] != "BASE":
-            query = f"SELECT * FROM config WHERE key = '{pdl}_offpeak_hours'"
-            cur.execute(query)
-            query_result = cur.fetchone()
-            attributes[f'offpeak_hours_enedis'] = query_result[1]
-            offpeak_hours_enedis = query_result[1]
+        if offpeak_hours != []:
+            peak = ""
+            id = 0
+            for offpeak in offpeak_hours:
+                peak += offpeak.upper()
+                id += 1
+                if id < len(offpeak_hours):
+                    peak += ";"
+            attributes[f'offpeak_hours_enedis'] = f"HC ({peak})"
+            offpeak_hours_enedis = attributes[f'offpeak_hours_enedis']
             offpeak_hours_enedis = offpeak_hours_enedis[offpeak_hours_enedis.find("(") + 1:offpeak_hours_enedis.find(")")].split(';')
             offpeak_hours = []
             for hours in offpeak_hours_enedis:
