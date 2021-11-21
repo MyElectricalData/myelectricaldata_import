@@ -1,7 +1,8 @@
 # EnedisGateway2MQTT
 
-Best french discord community about "Domotique & Diy" ?
-=> https://discord.gg/DfVJZme
+**Best french discord community about "Domotique & Diy" ?**
+
+** => https://discord.gg/DfVJZme**
 
 ## IMPORTANT !
 **The tool is still under development.
