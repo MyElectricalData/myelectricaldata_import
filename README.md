@@ -1,5 +1,9 @@
 # EnedisGateway2MQTT
 
+**Best french discord community about "Domotique & Diy" ?**
+
+=> https://discord.gg/DfVJZme
+
 ## IMPORTANT !
 **The tool is still under development.
 It is possible that various functions disappear or be modified**
@@ -9,6 +13,7 @@ It is possible that various functions disappear or be modified**
 * Github Repository : https://github.com/m4dm4rtig4n/enedisgateway2mqtt
 * Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt
 * Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/enedisgateway2mqtt
+* Saniho Card for Home Assistant : https://github.com/saniho/content-card-linky
 
 ## Informations
 
@@ -132,7 +137,7 @@ enedis_gateway:
     consumption_price_base: 0         
     production: false                 
     production_detail: false          
-    offpeak_hours: ""         # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-06h00
+    offpeak_hours: ""         # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-06h00;11h30-14h30
     addresses: true
 #  YYYYYYYYYYYYYY:            # Replace YYYYYYYYYYYYYY by your other PDL Number
 #    token: YOUR_TOKEN
@@ -180,7 +185,7 @@ Gateway is work with influxDB version 1.X & 2.X
 influxdb:
     host: influxdb
     port: 8086
-    token: USERNAME/PASSWORD
+    token: USERNAME:PASSWORD
     org: "-"
     bucket: "DATABASE/RETENTION"
 ```

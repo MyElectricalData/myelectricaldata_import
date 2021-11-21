@@ -1,19 +1,19 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Créé un rapport pour m'aider à débug
 title: "[BUG] - "
 labels: bug
 assignees: m4dm4rtig4n
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Description du bug**
+Merci de me détaillé au mieux le bug et une procédure pour le reproduire si possible.
 
 **Configuration**
-Share your config.yml without personnel information.
+Il me faut la partie enedis_gateway de votre config.yml, sans les PDL et Token.
 
-**Installation type**
-Docker or HassIO addons
+**Type d'installation**
+Docker, HassIO ?
 
 **Version : X.X.X**
