@@ -133,7 +133,7 @@ enedis_gateway:
     consumption_price_base: 0         
     production: false                 
     production_detail: false          
-    offpeak_hours: ""         # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-06h00
+    offpeak_hours: ""         # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-06h00;11h30-14h30
     addresses: true
 #  YYYYYYYYYYYYYY:            # Replace YYYYYYYYYYYYYY by your other PDL Number
 #    token: YOUR_TOKEN
