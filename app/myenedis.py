@@ -319,7 +319,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
                         if plan != "BASE":
                             attributes[f"yesterday_{plan}_cost"] = str(forceRound(dailyweek_cost, 3))
                             attributes[f"yesterday_{plan}"] = str(forceRound(value_wh_total, 3))
-                            
+
         # IF DAILY COST EMPTY IN DETAIL, try in daily if in plan base
         if attributes['dailyweek_cost'] == [0, 0, 0, 0, 0, 0, 0] and pdl_config['plan'] == "BASE":
             today = datetime.now(timezone)
