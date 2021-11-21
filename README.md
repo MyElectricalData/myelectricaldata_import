@@ -2,7 +2,7 @@
 
 **Best french discord community about "Domotique & Diy" ?**
 
-** => https://discord.gg/DfVJZme**
+=> https://discord.gg/DfVJZme
 
 ## IMPORTANT !
 **The tool is still under development.
