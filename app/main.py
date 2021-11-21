@@ -233,7 +233,8 @@ def init_database(cur):
     config = {
         "day": datetime.now().strftime('%Y-%m-%d'),
         "call_number": 0,
-        "max_call": 500
+        "max_call": 500,
+        "version": VERSION
     }
     cur.execute(config_query, ["config", json.dumps(config)])
     con.commit()
@@ -492,6 +493,7 @@ if __name__ == '__main__':
         f.log("-- Stop application --", "CRITICAL")
 
     f.logLine()
+    f.logo(VERSION)
     if "mqtt" in config:
         f.log("MQTT")
         for id, value in config['mqtt'].items():
@@ -629,6 +631,21 @@ if __name__ == '__main__':
             f.log(" => Connection failed", "CRITICAL")
 
         influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
+
+        # RESET DATA
+        f.log(f"Reset InfluxDB data")
+        delete_api = influxdb.delete_api()
+        start = "1970-01-01T00:00:00Z"
+        # start = datetime.utcnow() - relativedelta(years=3)
+        stop = datetime.utcnow()
+        # f.log(f" - {start} -> {stop}")
+        delete_api.delete(start, stop, '_measurement="enedisgateway_daily"', config['influxdb']['bucket'],
+                          org=config['influxdb']['org'])
+        start = datetime.utcnow() - relativedelta(years=2)
+        # f.log(f" - {start} -> {stop}")
+        delete_api.delete(start, stop, '_measurement="enedisgateway_detail"', config['influxdb']['bucket'],
+                          org=config['influxdb']['org'])
+        f.log(f" => Data reset")
 
     while True:
 

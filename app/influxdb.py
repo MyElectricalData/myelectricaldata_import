@@ -29,14 +29,6 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         "HP": pdl_config['consumption_price_hp']
     }
 
-    # RESET DATA
-    f.log(f" => Reset InfluxDB data")
-    delete_api = influxdb.delete_api()
-    start = "1970-01-01T00:00:00Z"
-    stop = datetime.now()
-    delete_api.delete(start, stop, '_measurement="enedisgateway_daily"', main.config['influxdb']['bucket'], org=main.config['influxdb']['org'])
-    delete_api.delete(start, stop, '_measurement="enedisgateway_detail"', main.config['influxdb']['bucket'], org=main.config['influxdb']['org'])
-
     f.log(f" => Import daily")
     query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}';"
     cur.execute(query)
