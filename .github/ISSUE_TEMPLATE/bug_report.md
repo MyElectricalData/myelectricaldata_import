@@ -7,6 +7,8 @@ assignees: m4dm4rtig4n
 
 ---
 
+**MERCI DE RESPECTER LES DIFFERENTS CHAMP SINON JE CLOS L'ISSUE.**
+
 **Description du bug**
 Merci de me détaillé au mieux le bug et une procédure pour le reproduire si possible.
 
