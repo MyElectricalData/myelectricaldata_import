@@ -6,9 +6,11 @@
 
 ![Supports aarch64 Architecture][aarch64-shield] ![Supports amd64 Architecture][amd64-shield] ![Supports armhf Architecture][armhf-shield] ![Supports armv7 Architecture][armv7-shield]
 
-**Best french discord community about "Domotique & Diy" ?**
+**Best french discord community about "Domotique & Diy" :**
 
-=> https://discord.gg/DfVJZme
+[![https://discord.gg/DfVJZme](discord.png 'Best french discord community about "Domotique & Diy"')](https://discord.gg/DfVJZme)
+
+****
 
 ## IMPORTANT !
 **The tool is still under development.
@@ -271,8 +273,22 @@ make start
 
 - Add **DJU18**
 - Add Postgres/MariaDB Connector
+- Add max power
 
 ## Change log:
+
+### [0.7.7] - 2021-11-22
+
+*UPGRADE Procedure :*
+- 0.7.6 -> 0.7.7 : Wipe cache (rm enedisgateway.db) 
+
+*Change Log :*
+- Fix [Null values don’t mean no values](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/45)
+- Fix [Timezone bug](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/48)
+- Fix [HP/HC no cost](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/67)
+- Fix [HP/HC wrong price](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/54)
+- Switch Enedis API Call in UTC Datetime (reduce error)
+- Fix offpeak hours in HA Sensor
 
 ### [0.7.4] - 2021-11-18
 

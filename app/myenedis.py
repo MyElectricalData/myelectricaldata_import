@@ -71,7 +71,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         cur.execute(query)
         query_result = cur.fetchone()
         attributes['yesterdayDate'] = yesterday
-        if query_result != None and query_result[2] != 0:
+        if query_result != None:
             attributes['yesterday'] = query_result[2] / 1000
             found = True
         else:
@@ -92,7 +92,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday_last_year}';"
         cur.execute(query)
         query_result = cur.fetchone()
-        if query_result != None and query_result[2] != 0:
+        if query_result != None:
             attributes['yesterdayLastYear'] = query_result[2] / 1000
         else:
             attributes['yesterdayLastYear'] = -1
@@ -297,28 +297,28 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
                         date = val[1]
                         value_w = val[2]
                         interval = val[3]
-                        measure_type = val[4]
+                        plan = val[4]
                         value_wh = value_w * interval / 60
                         value_kwh = value_wh / 1000
-                        if measure_type != "BASE":
-                            attributes[f'day_{day}_{measure_type}'] += int(value_w)
+                        if plan != "BASE":
+                            attributes[f'day_{day}_{plan}'] += int(value_w)
                         value_wh_total += value_kwh
-                        if pdl_config['plan'] == "BASE" or measure_type == "BASE":
+                        if pdl_config['plan'] == "BASE" or plan == "BASE":
                             dailyweek_cost += float(value_wh / 1000 * price[f"BASE"])
                         else:
-                            dailyweek_cost += float(value_wh / 1000 * price[f"{measure_type}"])
+                            dailyweek_cost += float(value_wh / 1000 * price[f"{plan}"])
 
                     attributes["dailyweek_cost"][day-1] += forceRound(dailyweek_cost, 2)
 
-                    if measure_type != "BASE":
-                        attributes[f'dailyweek_{measure_type}'].append(str(forceRound(value_wh_total, 2)))
-                        attributes[f'dailyweek_cost{measure_type}'].append(str(forceRound(dailyweek_cost, 2)))
+                    if plan != "BASE":
+                        attributes[f'dailyweek_{plan}'].append(str(forceRound(value_wh_total, 2)))
+                        attributes[f'dailyweek_cost{plan}'].append(str(forceRound(dailyweek_cost, 2)))
 
                     if day == 1:
                         attributes["daily_cost"] = attributes["dailyweek_cost"][day-1]
-                        if measure_type != "BASE":
-                            attributes[f"yesterday_{measure_type}_cost"] = str(forceRound(dailyweek_cost, 3))
-                            attributes[f"yesterday_{measure_type}"] = str(forceRound(value_wh_total, 3))
+                        if plan != "BASE":
+                            attributes[f"yesterday_{plan}_cost"] = str(forceRound(dailyweek_cost, 3))
+                            attributes[f"yesterday_{plan}"] = str(forceRound(value_wh_total, 3))
 
         # IF DAILY COST EMPTY IN DETAIL, try in daily if in plan base
         if attributes['dailyweek_cost'] == [0, 0, 0, 0, 0, 0, 0] and pdl_config['plan'] == "BASE":
@@ -345,9 +345,6 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         for tmp in attributes["dailyweek_cost"]:
             convert.append(str(tmp))
         attributes["dailyweek_cost"] = convert
-
-
-
         peak_offpeak_percent = {
             'HP': 0,
             'HC': 0,
@@ -398,12 +395,16 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         attributes[f'errorLastCallInterne'] = f""
         attributes[f'current_week_number'] = int(datetime.now(timezone).strftime("%V"))
 
-        if measure_type != "BASE":
-            query = f"SELECT * FROM config WHERE key = '{pdl}_offpeak_hours'"
-            cur.execute(query)
-            query_result = cur.fetchone()
-            attributes[f'offpeak_hours_enedis'] = query_result[1]
-            offpeak_hours_enedis = query_result[1]
+        if offpeak_hours != []:
+            peak = ""
+            id = 0
+            for offpeak in offpeak_hours:
+                peak += offpeak.upper()
+                id += 1
+                if id < len(offpeak_hours):
+                    peak += ";"
+            attributes[f'offpeak_hours_enedis'] = f"HC ({peak})"
+            offpeak_hours_enedis = attributes[f'offpeak_hours_enedis']
             offpeak_hours_enedis = offpeak_hours_enedis[offpeak_hours_enedis.find("(") + 1:offpeak_hours_enedis.find(")")].split(';')
             offpeak_hours = []
             for hours in offpeak_hours_enedis:

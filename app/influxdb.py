@@ -14,7 +14,7 @@ f = import_module("function")
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 timezone = pytz.timezone('Europe/Paris')
 
-def influxdb_insert(cur, con, pdl, pdl_config, influxdb_api):
+def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
 
     def forceRound(x, n):
         import decimal
@@ -29,6 +29,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb_api):
         "HP": pdl_config['consumption_price_hp']
     }
 
+    f.log(f" => Import daily")
     query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}';"
     cur.execute(query)
     query_result = cur.fetchall()
@@ -38,7 +39,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price["BASE"], 4)
         f.log(f"Insert daily {date} => {value_wh}", "DEBUG")
-        dateObject = datetime.strptime(date, '%Y-%m-%d') - relativedelta(hours=2)
+        dateObject = datetime.strptime(date, '%Y-%m-%d')
         p = influxdb_client.Point("enedisgateway_daily") \
             .tag("pdl", pdl) \
             .tag("year", dateObject.strftime("%Y")) \
@@ -49,6 +50,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb_api):
             .time(dateObject)
         influxdb_api.write(bucket=main.config['influxdb']['bucket'], org=main.config['influxdb']['org'], record=p)
 
+    f.log(f" => Import detail")
     query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}';"
     cur.execute(query)
     query_result = cur.fetchall()
@@ -62,7 +64,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price[measure_type], 4)
         f.log(f"Insert detail {date} => {value}", "DEBUG")
-        dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S') - relativedelta(hours=2)
+        dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
         p = influxdb_client.Point("enedisgateway_detail") \
             .tag("pdl", pdl) \
             .tag("measure_type", measure_type) \

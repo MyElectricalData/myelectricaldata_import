@@ -109,9 +109,9 @@ def getContract(headers, client, cur, con, pdl, pdl_config):
                                 offpeak_hours_store += ";"
                             i += 1
 
-                        config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
-                        cur.execute(config_query, [f"{pdl}_offpeak_hours", f"HC ({str(offpeak_hours_store)})"])
-                        con.commit()
+                        # config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
+                        # cur.execute(config_query, [f"{pdl}_offpeak_hours", f"HC ({str(offpeak_hours_store)})"])
+                        # con.commit()
 
         else:
             ha_discovery = {

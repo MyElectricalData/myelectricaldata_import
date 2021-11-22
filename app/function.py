@@ -46,6 +46,20 @@ def subscribe(client, topic, prefix=None):
     client.subscribe(client, sub_topic)
     client.on_message = on_message
 
+def logo(version):
+    log(" _____                   _  _         ____         _                               ")
+    log("| ____| _ __    ___   __| |(_) ___   / ___|  __ _ | |_  ___ __      __ __ _  _   _ ")
+    log("|  _|  | '_ \  / _ \ / _` || |/ __| | |  _  / _` || __|/ _ \\\ \ /\ / // _` || | | |")
+    log("| |___ | | | ||  __/| (_| || |\__ \ | |_| || (_| || |_|  __/ \ V  V /| (_| || |_| |")
+    log("|_____||_| |_| \___| \__,_||_||___/  \____| \__,_| \__|\___|  \_/\_/  \__,_| \__, |")
+    log("                        ____   __  __   ___  _____  _____                     |___/")
+    log("                       |___ \ |  \/  | / _ \|_   _||_   _|")
+    log("                         __) || |\/| || | | | | |    | |")
+    log("                        / __/ | |  | || |_| | | |    | |                              ")
+    log("                       |_____||_|  |_| \__\_\ |_|    |_|                              ")
+    logLine1()
+    log(f"                             VERSION : {version}")
+    logLine1()
 
 def logLine():
     log("####################################################################################")
@@ -108,7 +122,7 @@ def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
     if not f"call_nb_{pdl}" in query_result:
         query_result[f"call_nb_{pdl}"] = 0
 
-    log(f"call_number : {query_result[f'call_nb_{pdl}']} (max : {query_result['max_call']})", "debug")
+    log(f"call_number : {query_result[f'call_nb_{pdl}']} (max : {query_result['max_call']})", "DEBUG")
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
         if query_result[f"call_nb_{pdl}"] > query_result["max_call"]:
             return {

@@ -10,6 +10,9 @@ import yaml
 import json
 import influxdb_client
 from influxdb_client.client.write_api import ASYNCHRONOUS
+from dateutil.tz import tzlocal
+from influxdb_client.client.util import date_utils
+from influxdb_client.client.util.date_utils import DateHelper
 from collections import namedtuple
 
 from importlib import import_module
@@ -162,6 +165,7 @@ else:
                             config["enedis_gateway"][pdl][id] = data
 
 def init_database(cur):
+
     ## CONFIG
     cur.execute('''CREATE TABLE config (
                         key TEXT PRIMARY KEY,
@@ -218,7 +222,8 @@ def init_database(cur):
                         pdl TEXT NOT NULL, 
                         date TEXT NOT NULL, 
                         value INTEGER NOT NULL, 
-                        interval INTEGER NOT NULL,                        
+                        interval INTEGER NOT NULL,
+                        measure_type TEXT NOT NULL,                         
                         fail INTEGER)''')
     cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
                     ON production_detail (date)''')
@@ -228,10 +233,11 @@ def init_database(cur):
     config = {
         "day": datetime.now().strftime('%Y-%m-%d'),
         "call_number": 0,
-        "max_call": 15
+        "max_call": 15,
+        "version": VERSION
     }
     cur.execute(config_query, ["config", json.dumps(config)])
-
+    con.commit()
 
 def run(pdl, pdl_config):
     f.logLine()
@@ -249,6 +255,7 @@ def run(pdl, pdl_config):
     f.logLine()
     f.log("Get contract :")
     contract = cont.getContract(headers, client, cur, con, pdl, pdl_config)
+    offpeak_hours = []
     f.log(contract, "debug")
     if "error_code" in contract:
         f.publish(client, f"error", str(1))
@@ -319,7 +326,7 @@ def run(pdl, pdl_config):
         if pdl_config['consumption_detail'] == True:
             f.log("Get Consumption Detail:")
             ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "consumption",
-                                                        last_activation_date, offpeak_hours)
+                                                        last_activation_date, offpeak_hours=offpeak_hours)
             f.logLine1()
             f.log("                   SUCCESS : Consumption detail imported")
             f.logLine1()
@@ -390,7 +397,7 @@ def run(pdl, pdl_config):
             f.logLine()
             f.log("Get production Detail:")
             ha_discovery_consumption = detail.getDetail(headers, cur, con, client, pdl, pdl_config, "production",
-                                                        last_activation_date, offpeak_hours)
+                                                        last_activation_date)
             f.logLine1()
             f.log("              SUCCESS : Production detail imported")
             f.logLine1()
@@ -425,14 +432,14 @@ def run(pdl, pdl_config):
         if "influxdb" in config and config["influxdb"] != {}:
             f.logLine()
             f.log("Push data in influxdb")
-            influx.influxdb_insert(cur, con, pdl, pdl_config, influxdb_api)
+            influx.influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api)
             f.log(" => Data exported")
 
         if "home_assistant" in config and "card_myenedis" in config['home_assistant'] and config['home_assistant'][
             'card_myenedis'] == True:
             f.logLine()
             f.log("Generate Sensor for myEnedis card")
-            my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date, offpeak_hours)
+            my_enedis_data = myenedis.myEnedis(cur, con, client, pdl, pdl_config, last_activation_date, offpeak_hours=offpeak_hours)
             for pdl, data in my_enedis_data.items():
                 for name, sensor_data in data.items():
                     if "attributes" in sensor_data:
@@ -486,6 +493,7 @@ if __name__ == '__main__':
         f.log("-- Stop application --", "CRITICAL")
 
     f.logLine()
+    f.logo(VERSION)
     if "mqtt" in config:
         f.log("MQTT")
         for id, value in config['mqtt'].items():
@@ -573,7 +581,8 @@ if __name__ == '__main__':
             cur.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)",
                         [0, '1970-01-01', 0, 0, "", 0])
             cur.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-            cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?)", [0, '1970-01-01', 0, 0, 0])
+            cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?,?)",
+                        [0, '1970-01-01', 0, 0, "", 0])
             cur.execute("DELETE FROM config WHERE key = 0")
             cur.execute("DELETE FROM addresses WHERE pdl = 0")
             cur.execute("DELETE FROM contracts WHERE pdl = 0")
@@ -581,6 +590,11 @@ if __name__ == '__main__':
             cur.execute("DELETE FROM consumption_detail WHERE pdl = 0")
             cur.execute("DELETE FROM production_daily WHERE pdl = 0")
             cur.execute("DELETE FROM production_detail WHERE pdl = 0")
+            cur.execute("DELETE FROM production_detail WHERE pdl = 0")
+            config_query = f"SELECT * FROM config WHERE key = 'config'"
+            cur.execute(config_query)
+            query_result = cur.fetchall()
+            query_result = json.loads(query_result[0][1])
         except Exception as e:
             f.log("=====> ERROR : Exception <======")
             f.log(e)
@@ -602,10 +616,13 @@ if __name__ == '__main__':
     if "influxdb" in config and config["influxdb"] != {}:
         f.logLine()
         f.log("InfluxDB connect :")
+
+        date_utils.date_helper = DateHelper(timezone=tzlocal())
         influxdb = influxdb_client.InfluxDBClient(
             url=f"http://{config['influxdb']['host']}:{config['influxdb']['port']}",
             token=config['influxdb']['token'],
-            org=config['influxdb']['org']
+            org=config['influxdb']['org'],
+            timeout="600000"
         )
         health = influxdb.health()
         if health.status == "pass":
@@ -614,6 +631,21 @@ if __name__ == '__main__':
             f.log(" => Connection failed", "CRITICAL")
 
         influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
+
+        # RESET DATA
+        # f.log(f"Reset InfluxDB data")
+        # delete_api = influxdb.delete_api()
+        # start = "1970-01-01T00:00:00Z"
+        # # start = datetime.utcnow() - relativedelta(years=3)
+        # stop = datetime.utcnow()
+        # # f.log(f" - {start} -> {stop}")
+        # delete_api.delete(start, stop, '_measurement="enedisgateway_daily"', config['influxdb']['bucket'],
+        #                   org=config['influxdb']['org'])
+        # start = datetime.utcnow() - relativedelta(years=2)
+        # # f.log(f" - {start} -> {stop}")
+        # delete_api.delete(start, stop, '_measurement="enedisgateway_detail"', config['influxdb']['bucket'],
+        #                   org=config['influxdb']['org'])
+        # f.log(f" => Data reset")
 
     while True:
 

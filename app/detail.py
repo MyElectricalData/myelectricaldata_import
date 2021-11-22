@@ -13,12 +13,11 @@ f = import_module("function")
 date_format = "%Y-%m-%d %H:%M:%S"
 
 
-def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.now(), offpeak_hours=None,
-              measure_total=None):
+def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.utcnow(), measure_total=None, offpeak_hours=[]):
 
     max_days = 730
     max_days_per_demand = 7
-    max_days_date = datetime.now() + relativedelta(days=-max_days)
+    max_days_date = datetime.utcnow() + relativedelta(days=-max_days)
     price_base = pdl_config['consumption_price_base']
     price_hc = pdl_config['consumption_price_hc']
     price_hp = pdl_config['consumption_price_hp']
@@ -33,13 +32,12 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
     last_activation_date = last_activation_date.split("+")[0]
     last_activation_date = datetime.strptime(last_activation_date, '%Y-%m-%d')
 
-    lastYears = datetime.now() + relativedelta(days=-max_days_per_demand)
+    lastYears = datetime.utcnow() + relativedelta(days=-max_days_per_demand)
     dateBegin = lastYears.strftime('%Y-%m-%d')
-    dateEnded = datetime.now()
+    dateEnded = datetime.utcnow()
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
-    data = detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand,
-                         offpeak_hours)
+    data = detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand, offpeak_hours)
     if "error_code" in data:
         f.publish(client, f"{pdl}/{mode}/detail/error", str(1))
         for key, value in data.items():
@@ -128,7 +126,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
                 if price_base != 0:
                     result[year][month]["measure_base_euro"] = result[year][month]["measure_total_wh"] / 1000 * price_base
 
-                if offpeak_hours != None:
+                if offpeak_hours != []:
                     if price_hc != 0 and price_hp != 0:
                         result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
                         result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
@@ -147,7 +145,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
                             result[year][month]["best_plan"] = f"HC/HP"
                             result[year][month]["best_plan_percent"] = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
 
-        if offpeak_hours != None and price_base != 0 and price_hc != 0 and price_hp != 0:
+        if offpeak_hours != [] and price_base != 0 and price_hc != 0 and price_hp != 0:
             if base_vs_offpeak > 0:
                 best_plan = f"BASE"
                 best_plan_percent = f"{abs(round(result[year][month]['base_vs_offpeak'], 2))}"
@@ -157,7 +155,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
 
         year = dateObject.strftime('%Y')
         month = dateObject.strftime('%m')
-        if offpeak_hours != None and offpeak_hours != "":
+        if offpeak_hours != [] and offpeak_hours != "":
             for plan in ["hc", "hp"]:
                 ha_discovery[pdl].update({
                     f"{mode}_detail_this_month_{plan}": {
@@ -189,7 +187,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
         if price_base != 0:
             ha_discovery[pdl][f"{mode}_detail_this_month_base"]["attributes"][f"measure_base_euro"] = result[year][month][f"measure_base_euro"]
 
-        if offpeak_hours != None:
+        if offpeak_hours != []:
             if price_base != 0 and price_hc != 0 and price_hp != 0:
                 ha_discovery[pdl].update({
                     f"{mode}_detail_this_month_compare": {
@@ -214,7 +212,8 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
     return ha_discovery
 
 
-def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand, offpeak_hours):
+def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, dateEnded, last_activation_date, max_days_per_demand,
+                  offpeak_hours=[]):
 
     response = {}
 
@@ -262,7 +261,7 @@ def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, date
                     value = int(interval_reading['value'])
                     dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
                     dateHourMinute = dateObject.strftime('%H:%M')
-                    if offpeak_hours != None:
+                    if offpeak_hours != []:
                         measure_type = "HP"
                         for offpeak_hour in offpeak_hours:
                             offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
@@ -306,7 +305,7 @@ def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, date
 def checkHistoryDetail(cur, con, pdl, mode, dateBegin, dateEnded):
 
     # FORCE THIS WEEK
-    if datetime.now().strftime('%Y-%m-%d') == dateEnded.strftime('%Y-%m-%d'):
+    if datetime.utcnow().strftime('%Y-%m-%d') == dateEnded.strftime('%Y-%m-%d'):
         result = {
             "missing_data": True
         }
