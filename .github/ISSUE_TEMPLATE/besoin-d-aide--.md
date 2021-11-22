@@ -7,8 +7,9 @@ assignees: m4dm4rtig4n
 
 ---
 
-**Description de la fonctionnalité**
+MERCI DE RESPECTER LES DIFFERENTS CHAMPS SINON JE CLOS L'ISSUE.
 
+**Description de la fonctionnalité**
 
 **Type d'installation**
 Docker, HassIO ?
