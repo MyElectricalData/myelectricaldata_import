@@ -8,7 +8,7 @@
 
 **Best french discord community about "Domotique & Diy" :**
 
-![https://discord.gg/DfVJZme](discord.png 'Best french discord community about "Domotique & Diy"')
+[![https://discord.gg/DfVJZme](discord.png 'Best french discord community about "Domotique & Diy"')](https://discord.gg/DfVJZme)
 
 ****
 
