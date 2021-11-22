@@ -122,7 +122,7 @@ def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
     if not f"call_nb_{pdl}" in query_result:
         query_result[f"call_nb_{pdl}"] = 0
 
-    log(f"call_number : {query_result[f'call_nb_{pdl}']} (max : {query_result['max_call']})", "debug")
+    log(f"call_number : {query_result[f'call_nb_{pdl}']} (max : {query_result['max_call']})", "DEBUG")
     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
         if query_result[f"call_nb_{pdl}"] > query_result["max_call"]:
             return {
