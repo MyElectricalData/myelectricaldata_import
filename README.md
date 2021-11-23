@@ -277,10 +277,16 @@ make start
 
 ## Change log:
 
+### [0.7.8] - 2021-11-XX
+
+- Add "wipe_influxdb" paramaters (drop meseaurement enedisgateway_daily & enedisgateway_detail)
+- Remove addresses parameters
+- Force to false refresh paramaters (refresh_addresses, refresh_contracts, wipe_cache, wipe_influxdb)
+
 ### [0.7.7] - 2021-11-22
 
 *UPGRADE Procedure :*
-- 0.7.6 -> 0.7.7 : Wipe cache (rm enedisgateway.db) 
+- 0.7.6 -> 0.7.7 : Wipe influxdb database. 
 
 *Change Log :*
 - Fix [Null values don’t mean no values](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/45)
