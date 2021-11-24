@@ -249,7 +249,6 @@ def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, date
         else:
             f.log(f"Data is missing between {dateBegin} / {dateEnded}")
             f.log(f" => Load data from API")
-
             detail = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
             if not "error_code" in detail:
                 meter_reading = detail['meter_reading']

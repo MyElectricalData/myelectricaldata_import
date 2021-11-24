@@ -233,7 +233,7 @@ def init_database(cur):
     config = {
         "day": datetime.now().strftime('%Y-%m-%d'),
         "call_number": 0,
-        "max_call": 15,
+        "max_call": 500,
         "version": VERSION
     }
     cur.execute(config_query, ["config", json.dumps(config)])

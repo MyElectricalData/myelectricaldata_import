@@ -51,10 +51,12 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         influxdb_api.write(bucket=main.config['influxdb']['bucket'], org=main.config['influxdb']['org'], record=p)
 
     f.log(f" => Import detail")
-    query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}';"
+    query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' AND date BETWEEN '2021-11-23' AND '2021-11-24' ORDER BY date"
     cur.execute(query)
     query_result = cur.fetchall()
     for result in query_result:
+        # pprint(query_result)
+        # quit()
         date = result[1]
         interval_length = result[3]
         measure_type = result[4]
