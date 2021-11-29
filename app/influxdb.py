@@ -8,14 +8,15 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 import pytz
 
 from importlib import import_module
+
 main = import_module("main")
 f = import_module("function")
 
-locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
-timezone = pytz.timezone('Europe/Paris')
+# locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+# timezone = pytz.timezone('Europe/Paris')
+
 
 def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
-
     def forceRound(x, n):
         import decimal
         d = decimal.Decimal(repr(x))
@@ -28,9 +29,6 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         "HC": pdl_config['consumption_price_hc'],
         "HP": pdl_config['consumption_price_hp']
     }
-
-    
-
 
     f.log(f" => Import daily")
     query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' ORDER BY date DESC;"
@@ -54,13 +52,11 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         influxdb_api.write(bucket=main.config['influxdb']['bucket'], org=main.config['influxdb']['org'], record=p)
 
     f.log(f" => Import detail")
-    # query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' AND date BETWEEN '2021-11-23' AND '2021-11-24' ORDER BY date"
-    query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' ORDER BY date DESC"
+    query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' AND date BETWEEN '2021-11-22' AND '2021-11-30' ORDER BY date"
+    # query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' ORDER BY date DESC"
     cur.execute(query)
     query_result = cur.fetchall()
     for result in query_result:
-        pprint(query_result)
-        quit()
         date = result[1]
         interval_length = result[3]
         measure_type = result[4]
@@ -70,7 +66,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price[measure_type], 4)
         dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-        # date = dateObject - relativedelta(minutes=int(interval_length))
+        date = dateObject - relativedelta(minutes=int(interval_length))
         f.log(f"Insert detail {date} => {value}", "DEBUG")
         p = influxdb_client.Point("enedisgateway_detail") \
             .tag("pdl", pdl) \
@@ -83,5 +79,6 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
             .field("Wh", forceRound(int(value_wh), 2)) \
             .field("kWh", forceRound(int(value_kwh), 2)) \
             .field("price", current_price) \
-            .time(dateObject)
+            .time(date)
+
         influxdb_api.write(bucket=main.config['influxdb']['bucket'], org=main.config['influxdb']['org'], record=p)
