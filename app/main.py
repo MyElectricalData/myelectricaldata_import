@@ -233,7 +233,7 @@ def init_database(cur):
     config = {
         "day": datetime.now().strftime('%Y-%m-%d'),
         "call_number": 0,
-        "max_call": 500,
+        "max_call": 15,
         "version": VERSION
     }
     cur.execute(config_query, ["config", json.dumps(config)])
@@ -617,7 +617,7 @@ if __name__ == '__main__':
         f.logLine()
         f.log("InfluxDB connect :")
 
-        date_utils.date_helper = DateHelper(timezone=tzlocal())
+        # date_utils.date_helper = DateHelper(timezone=tzlocal())
         influxdb = influxdb_client.InfluxDBClient(
             url=f"http://{config['influxdb']['host']}:{config['influxdb']['port']}",
             token=config['influxdb']['token'],

@@ -142,8 +142,30 @@ def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
 
     log(f"Call API : {url}", "DEBUG")
     log(f"Data : {data}", "DEBUG")
-    retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data).json()
+    try:
+        retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data).json()
+    except requests.exceptions.Timeout:
+        log(" !! Query Timeout !!")
+        retour = {
+            "error_code": "timeout",
+            "description": "Query Timeout"
+        }
+    except requests.exceptions.TooManyRedirects:
+        log(" !! Too Many Redirection !!")
+        retour = {
+            "error_code": "TooManyRedirects",
+            "description": "TooManyRedirects"
+        }
+    except requests.exceptions.RequestException as e:
+        log(" !! Critical error !!")
+        retour = {
+            "error_code": "RequestException",
+            "description": "RequestException"
+        }
+
     if "debug" in main.config and main.config["debug"] == True:
         pprint(f"API Return :")
         pprint(retour)
+
     return retour
+
