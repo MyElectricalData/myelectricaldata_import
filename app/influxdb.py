@@ -39,7 +39,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price["BASE"], 4)
         f.log(f"Insert daily {date} => {value_wh}", "DEBUG")
-        dateObject = datetime.strptime(date, '%Y-%m-%d')
+        dateObject = datetime.strptime(date, '%Y-%m-%d').astimezone(pytz.UTC)
         p = influxdb_client.Point("enedisgateway_daily") \
             .tag("pdl", pdl) \
             .tag("year", dateObject.strftime("%Y")) \
@@ -64,7 +64,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price[measure_type], 4)
         f.log(f"Insert detail {date} => {value}", "DEBUG")
-        dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').astimezone(pytz.UTC)
         p = influxdb_client.Point("enedisgateway_detail") \
             .tag("pdl", pdl) \
             .tag("measure_type", measure_type) \
