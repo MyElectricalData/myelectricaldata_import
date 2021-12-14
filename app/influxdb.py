@@ -30,7 +30,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
     }
 
     f.log(f" => Import daily")
-    query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}';"
+    query = f"SELECT * FROM consumption_daily WHERE (pdl = '{pdl}' AND date < date('now'));"
     cur.execute(query)
     query_result = cur.fetchall()
     for result in query_result:
