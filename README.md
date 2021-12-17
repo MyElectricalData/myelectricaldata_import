@@ -135,8 +135,8 @@ home_assistant:
 ## ENEDIS GATEWAY ##
 ####################
 enedis_gateway:
-  XXXXXXXXXXXXXX:              # Replace XXXXXXXXXXXXXX by your PDL Number. MANDATORY
-    token: YOUR_TOKEN          # MANDATORY
+  "XXXXXXXXXXXXXX":              # Replace XXXXXXXXXXXXXX by your PDL Number. MANDATORY
+    token: "YOUR_TOKEN"          # MANDATORY
     plan: BASE                 # BASE or HP/HC
     consumption: true                 
     consumption_detail: true         
