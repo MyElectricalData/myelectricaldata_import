@@ -42,7 +42,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price["BASE"], 4)
         f.log(f"Insert daily {date} => {value_wh}", "DEBUG")
-        dateObject = CET.localize(datetime.strptime(date, '%Y-%m-%d'))
+        dateObject = UTC.localize(datetime.strptime(date, '%Y-%m-%d'))
         p = influxdb_client.Point("enedisgateway_daily") \
             .tag("pdl", pdl) \
             .tag("year", dateObject.strftime("%Y")) \
