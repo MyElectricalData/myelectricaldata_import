@@ -1,18 +1,21 @@
 import json
+import pytz
+import influxdb_client
+import locale
 from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 from pprint import pprint
-import locale
-import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
-import pytz
+from influxdb_client.domain.write_precision import WritePrecision
+from pytz import timezone
 
 from importlib import import_module
 main = import_module("main")
 f = import_module("function")
 
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
-timezone = pytz.timezone('Europe/Paris')
+CET = timezone('Europe/Paris')
+UTC = pytz.utc
 
 def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
 
@@ -30,7 +33,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
     }
 
     f.log(f" => Import daily")
-    query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}';"
+    query = f"SELECT * FROM consumption_daily WHERE (pdl = '{pdl}' AND date < date('now'));"
     cur.execute(query)
     query_result = cur.fetchall()
     for result in query_result:
@@ -39,7 +42,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price["BASE"], 4)
         f.log(f"Insert daily {date} => {value_wh}", "DEBUG")
-        dateObject = datetime.strptime(date, '%Y-%m-%d')
+        dateObject = UTC.localize(datetime.strptime(date, '%Y-%m-%d'))
         p = influxdb_client.Point("enedisgateway_daily") \
             .tag("pdl", pdl) \
             .tag("year", dateObject.strftime("%Y")) \
@@ -64,7 +67,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price[measure_type], 4)
         f.log(f"Insert detail {date} => {value}", "DEBUG")
-        dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        dateObject = CET.localize(datetime.strptime(date, '%Y-%m-%d %H:%M:%S'))
         p = influxdb_client.Point("enedisgateway_detail") \
             .tag("pdl", pdl) \
             .tag("measure_type", measure_type) \
