@@ -125,6 +125,7 @@ home_assistant:
 ## Influx DB ##
 ###############
 #influxdb: 
+#  scheme: http    # or https
 #  host: MY_INFLUXDB_SERVER
 #  port: 8086
 #  token: MY_TOKEN
@@ -135,7 +136,7 @@ home_assistant:
 ## ENEDIS GATEWAY ##
 ####################
 enedis_gateway:
-  "XXXXXXXXXXXXXX":            # Replace XXXXXXXXXXXXXX by your PDL Number (don't forget quote). MANDATORY
+  XXXXXXXXXXXXXX:              # Replace XXXXXXXXXXXXXX by your PDL Number. MANDATORY
     token: YOUR_TOKEN          # MANDATORY
     plan: BASE                 # BASE or HP/HC
     consumption: true                 
@@ -273,7 +274,8 @@ make start
 
 - Add **DJU18**
 - Add Postgres/MariaDB Connector
-- Add max power
+- [Add max power](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/66)
+- [Add range date](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/68)
 
 ## Change log:
 
@@ -282,7 +284,6 @@ make start
 - Add "wipe_influxdb" paramaters (drop meseaurement enedisgateway_daily & enedisgateway_detail)
 - Remove addresses parameters
 - Force to false refresh paramaters (refresh_addresses, refresh_contracts, wipe_cache, wipe_influxdb)
-- Fix crash when receive timeout from Gateway
 
 ### [0.7.7] - 2021-11-22
 
