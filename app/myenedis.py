@@ -72,10 +72,10 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         query_result = cur.fetchone()
         attributes['yesterdayDate'] = yesterday
         if query_result != None:
-            attributes['yesterday'] = query_result[2] / 1000
+            attributes['yesterday_HCHP'] = query_result[2] / 1000
             found = True
         else:
-            attributes['yesterday'] = -1
+            attributes['yesterday_HCHP'] = -1
             delta += 1
             if delta >= deltaMax:
                 notFound = True
