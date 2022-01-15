@@ -52,7 +52,7 @@ enedis_gateway:
     production_detail: false
 #    offpeak_hours: ""        # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-00h10;01h00-06h00
     addresses: true
-    max_daily_days: 500       # no. of days to search in the past, Enedis is not giving back more that 1.5 years (556)
+    max_daily_days: 500       # no. of days to search in the past, e.g. when no old(er) data exists or not of interest, reduces number of connections
     max_detail_days: 100      # no. of days to search in the past, not everyone interested in such history
 #  PDL_2:
 #    token: PDL_2_TOKEN
