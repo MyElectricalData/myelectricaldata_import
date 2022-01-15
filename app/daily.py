@@ -15,7 +15,7 @@ f = import_module("function")
 
 
 def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.utcnow()):
-    max_days = 1095
+    max_days = pdl_config['max_daily_days']
     max_days_date = datetime.utcnow() + relativedelta(days=-max_days)
     base_price = pdl_config['consumption_price_base']
 

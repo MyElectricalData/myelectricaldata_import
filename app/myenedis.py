@@ -86,7 +86,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         state = attributes['yesterday']
 
         today = datetime.now(timezone)
-        yesterday_last_year_datetime = today - relativedelta(years=1, days=delta)
+        yesterday_last_year_datetime = today - relativedelta(years=1, days=1+delta)
         yesterday_last_year = yesterday_last_year_datetime.strftime('%Y-%m-%d')
         attributes["yesterdayLastYearDate"] = yesterday_last_year
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday_last_year}';"
@@ -150,12 +150,28 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         else:
             attributes['current_week_last_year'] = str(forceRound(attributes['current_week_last_year'], 2))
 
+	# LAST DETAIL 
+        query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' AND date = (select max(date) from consumption_detail);"
+        cur.execute(query)
+        query_result = cur.fetchall()
+        attributes['last_detail'] = 0
+        for val in query_result:
+            date = val[1]
+            value = val[2]
+            attributes['last_detail'] += value / 1000
+
+        last_detail = attributes['last_detail']
+        if attributes['last_detail'] == 0:
+            attributes['last_detail'] = 0
+        else:
+            attributes['last_detail'] = str(forceRound(attributes['last_detail'], 4))
 
         # CURRENT MONTH
         today = datetime.now(timezone)
         last_month_datetime = today - relativedelta(months=1)
-        last_month = last_month_datetime.strftime('%Y-%m-%d')
-        query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_month}' AND '{yesterday}' ORDER BY DATE DESC;"
+        last_month = last_month_datetime.strftime('%Y-%m')
+        lastMonthNumber = last_month_datetime.strftime('%m')
+        query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_month}-01' AND '{yesterday}' ORDER BY DATE DESC;"
         cur.execute(query)
         query_result = cur.fetchall()
         attributes['last_month'] = 0
@@ -165,8 +181,10 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
             date = val[1]
             value = val[2]
             currentMonthNumber = today.strftime("%m")
+            lastMonthNumber = last_month_datetime.strftime('%m')
             monthNumber = datetime.strptime(date, '%Y-%m-%d').strftime('%m')
-            attributes['last_month'] += value / 1000
+            if monthNumber == lastMonthNumber:
+            	attributes['last_month'] += value / 1000
             if monthNumber == currentMonthNumber:
                 attributes['current_month'] += value / 1000
                 nbDayMonth += 1
@@ -174,6 +192,8 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         last_month = attributes['last_month']
         if attributes['last_month'] == 0:
             attributes['last_month'] = 0
+        else:
+            attributes['last_month'] = str(forceRound(attributes['last_month'], 2))
 
         current_month = attributes['current_month']
         if attributes['current_month'] == 0:
@@ -205,21 +225,24 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         # CURRENT MONTH
         today = datetime.now(timezone)
         last_month_last_year_datetime = today - relativedelta(years=1, months=1)
-        last_month_last_year = last_month_last_year_datetime.strftime('%Y-%m-%d')
-        query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_month_last_year}' AND '{yesterday_last_year}' ORDER BY DATE DESC;"
+        last_month_last_year = last_month_last_year_datetime.strftime('%Y-%m')
+        query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_month_last_year}-01' AND '{yesterday_last_year}' ORDER BY DATE DESC;"
         cur.execute(query)
         query_result = cur.fetchall()
         attributes['last_month_last_year'] = 0
         for val in query_result:
             date = val[1]
             value = val[2]
-            attributes['last_month_last_year'] += value / 1000
+            lastYearLastMonthNumber = last_month_last_year_datetime.strftime('%m')
+            monthNumber = datetime.strptime(date, '%Y-%m-%d').strftime('%m')
+            if monthNumber == lastMonthNumber:
+                attributes['last_month_last_year'] += value / 1000
 
         last_month_last_year = attributes['last_month_last_year']
         if attributes['last_month_last_year'] == 0:
             attributes['last_month_last_year'] = 0
         else:
-            attributes['last_month_last_year'] = str(forceRound(last_month_last_year, 2))
+            attributes['last_month_last_year'] = str(forceRound(attributes['last_month_last_year'], 2))
 
         # CURRENT YEARS
         today = datetime.now(timezone)

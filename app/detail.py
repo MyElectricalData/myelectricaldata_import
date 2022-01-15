@@ -15,7 +15,7 @@ date_format = "%Y-%m-%d %H:%M:%S"
 
 def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.utcnow(), measure_total=None, offpeak_hours=[]):
 
-    max_days = 730
+    max_days = pdl_config['max_detail_days']
     max_days_per_demand = 7
     max_days_date = datetime.utcnow() + relativedelta(days=-max_days)
     price_base = pdl_config['consumption_price_base']

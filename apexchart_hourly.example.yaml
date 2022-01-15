@@ -1,0 +1,23 @@
+## example on how to configure apexcharts to use the hourly sensor of enedsigateway2mqtt
+type: custom:apexcharts-card
+header:
+  title: Consommation 3 yours
+  show: true
+graph_span: 3d
+span:
+  start: day
+  offset: '-3d'
+apex_config:
+  dataLabels:
+    enabled: true
+series:
+  - entity: sensor.enedisgateway_xxxxxxxxxxxxxx_hourly   # replace XXXX with your pdl
+    name: EnedisGateway2MQTT
+    extend_to_end: false
+    data_generator: |
+      return entity.attributes.hourly.map((hourly, index) => {     
+                return [new Date(hourly).getTime(), entity.attributes.hourly_value[index]];
+              });
+    group_by:
+      func: avg
+      duration: 60min
