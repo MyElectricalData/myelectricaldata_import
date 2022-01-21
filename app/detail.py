@@ -303,24 +303,24 @@ def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, date
 
 
 def checkHistoryDetail(cur, con, pdl, mode, dateBegin, dateEnded):
-
-    # FORCE THIS WEEK
+    # FORCE THIS WEEK by adding 10 mins to dateEnded, as data is collected till today:00:00:00
     if datetime.utcnow().strftime('%Y-%m-%d') == dateEnded.strftime('%Y-%m-%d'):
+        #result = {
+        #    "missing_data": True
+        #}
+        dateEnded = dateEnded + relativedelta(minutes=10)
+        f.log(f"Run today with dateEnded: {dateEnded}")
+    # CHECK CURRENT DATA
+    query = f"SELECT * FROM {mode}_detail WHERE pdl = '{pdl}' AND date BETWEEN '{dateBegin}' AND '{dateEnded}' ORDER BY date"
+    cur.execute(query)
+    query_result = cur.fetchall()
+    # if len(query_result) < 160:
+    if not query_result:
         result = {
             "missing_data": True
         }
     else:
-        # CHECK CURRENT DATA
-        query = f"SELECT * FROM {mode}_detail WHERE pdl = '{pdl}' AND date BETWEEN '{dateBegin}' AND '{dateEnded}' ORDER BY date"
-        cur.execute(query)
-        query_result = cur.fetchall()
-        # if len(query_result) < 160:
-        if not query_result:
-            result = {
-                "missing_data": True
-            }
-        else:
-            result = {
-                "missing_data": False
-            }
+        result = {
+            "missing_data": False
+        }
     return result

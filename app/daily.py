@@ -31,10 +31,9 @@ def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", las
 
     lastYears = datetime.utcnow() - relativedelta(years=1)
     dateBegin = lastYears.strftime('%Y-%m-%d')
-    # dateEnded = datetime.now() - relativedelta(days=1)
-    dateEnded = datetime.utcnow()
-    dateEnded = dateEnded.strftime('%Y-%m-%d')
-
+    dateEnded = datetime.now() - relativedelta(days=0)
+    dateEnded = dateEnded.strftime('%Y-%m-%d') 
+    f.log(f"Checking last year with max_days_date: {max_days_date} / dateBegin: {datetime.strptime(dateBegin, '%Y-%m-%d')} / dateEnded: {datetime.strptime(dateEnded, '%Y-%m-%d')}")
     lastData = {}
     data = dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_activation_date)
     if "error_code" in data:
@@ -91,7 +90,11 @@ def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", las
     dateEnded = dateBegin
     dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
     dateBegin = dateEndedDelta + relativedelta(years=-1)
+    if dateBegin < max_days_date:
+            dateBegin = max_days_date
+            f.log(f"dateBegin=max_days_date = : {dateBegin}")
     dateBegin = dateBegin.strftime('%Y-%m-%d')
+    f.log(f"Checking older years with max_days_date: {max_days_date} / dateBegin: {datetime.strptime(dateBegin, '%Y-%m-%d')} / dateEnded: {datetime.strptime(dateEnded, '%Y-%m-%d')}")
     while max_days_date <= datetime.strptime(dateEnded, '%Y-%m-%d'):
         f.log(f"Year => {dateEndedDelta.strftime('%Y')}")
         if last_activation_date > datetime.strptime(dateEnded, '%Y-%m-%d'):
@@ -347,6 +350,8 @@ def dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_a
 
 
 def checkHistoryDaily(cur, mode, pdl, dateBegin, dateEnded):
+    dateToday = datetime.utcnow()
+    dateToday = dateToday.strftime('%Y-%m-%d')
     dateBegin = datetime.strptime(dateBegin, '%Y-%m-%d')
     dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
     delta = dateEnded - dateBegin
@@ -358,6 +363,10 @@ def checkHistoryDaily(cur, mode, pdl, dateBegin, dateEnded):
     for i in range(delta.days + 1):
         checkDate = dateBegin + timedelta(days=i)
         checkDate = checkDate.strftime('%Y-%m-%d')
+        # f.log(f"Not including check vs. today: {checkDate} vs {dateToday}")
+        if checkDate == dateToday :
+            f.log(f"Not today: return")
+            return result
         query = f"SELECT * FROM {mode}_daily WHERE pdl = '{pdl}' AND date = '{checkDate}'"
         cur.execute(query)
         query_result = cur.fetchone()

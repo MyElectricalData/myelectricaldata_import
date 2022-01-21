@@ -50,6 +50,7 @@ def Hourly(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(
         "numPDL": pdl,
         "lastUpdate": today.strftime('%Y-%m-%dT%H:%M:%SZ'),
         "timeLastCall": today.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        "device_class": "energy",
     }
 
     today = datetime.now(timezone)
@@ -95,6 +96,9 @@ def Hourly(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(
         else:
             debug = main.config["debug"]
         if debug == True:
-            pprint(attributes)
+            # temporariy switched off :    
+            pprint ('hourly data:')
+            # pprint(attributes)
+            
             
     return ha_discovery
