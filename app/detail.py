@@ -244,7 +244,7 @@ def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, date
         dateEndedLong = datetime.strptime(dateEnded, '%Y-%m-%d')
         current_data = checkHistoryDetail(cur, con, pdl, mode, dateBeginLong, dateEndedLong)
         if current_data['missing_data'] == False:
-            f.log(f"Week allready in cache {dateBegin} / {dateEnded}")
+            f.log(f"Week already in cache {dateBegin} / {dateEnded}")
             f.log(f" => Load data from cache")
         else:
             f.log(f"Data is missing between {dateBegin} / {dateEnded}")
