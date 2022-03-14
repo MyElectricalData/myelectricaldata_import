@@ -128,8 +128,14 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
 
                 if offpeak_hours != []:
                     if price_hc != 0 and price_hp != 0:
-                        result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
-                        result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
+                        if result[year][month]["measure_hp_wh"] != 0:
+                            result[year][month]["measure_hp_euro"] = result[year][month]["measure_hp_wh"] / 1000 * price_hp
+                        else:
+                            result[year][month]["measure_hp_euro"] = 0
+                        if result[year][month]["measure_hc_wh"] != 0:
+                            result[year][month]["measure_hc_euro"] = result[year][month]["measure_hc_wh"] / 1000 * price_hc
+                        else:
+                            result[year][month]["measure_hc_euro"] = 0
                         result[year][month]["measure_hphc_euro"] = result[year][month]["measure_hp_euro"] + result[year][month]["measure_hc_euro"]
 
                     if price_base != 0 and price_hc != 0 and price_hp != 0 and measure_type != "BASE":

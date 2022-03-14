@@ -120,6 +120,7 @@ home_assistant:
   discovery: false
   discovery_prefix: homeassistant
   card_myenedis: false
+  hourly: false
 
 ###############
 ## Influx DB ##
@@ -284,6 +285,30 @@ make start
 - Add "wipe_influxdb" paramaters (drop meseaurement enedisgateway_daily & enedisgateway_detail)
 - Remove addresses parameters
 - Force to false refresh paramaters (refresh_addresses, refresh_contracts, wipe_cache, wipe_influxdb)
+- Add hourly consumption compatible with apexchart-card.
+
+*Exemple for hourly consumption :*
+
+```
+type: custom:apexcharts-card
+graph_span: 5d
+span:
+  start: day
+  offset: '-6d'
+apex_config:
+  dataLabels:
+    enabled: true
+series:
+  - entity: sensor.enedisgateway_XXXXXXXXXXXXXXXXXX_hourly
+    name: af
+    extend_to_end: false
+    data_generator: |
+      return entity.attributes.hourly.map((hourly, index) => {     
+                return [new Date(hourly).getTime(), entity.attributes.hourly_value[index]];
+              });
+
+```
+
 
 ### [0.7.7] - 2021-11-22
 
