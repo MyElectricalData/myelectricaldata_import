@@ -6,7 +6,7 @@
 	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
 	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
 	"dockerComposeFile": [
-		"docker-compose.yml",
+		"docker-compose.dev.yml",
 	],
 
     // Set *default* container specific settings.json values on container create.
@@ -35,8 +35,7 @@
         "files.trimTrailingWhitespace": true
     },
 
->>>>>>> 02304a1... update
-	// The 'service' property is the name of the service for the container that VS Code should
+    // The 'service' property is the name of the service for the container that VS Code should
 	// use. Update this value and .devcontainer/docker-compose.yml to the real service name.
 	"service": "workspace",
 
