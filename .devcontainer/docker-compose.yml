@@ -1,31 +1,36 @@
-version: '3.9'
+version: '3.7'
 services:
-  # Update this to the name of the service you want to work with in your docker-compose.yml file
-  enedisgateway2mqtt:
+  workspace:
     # If you want add a non-root user to your Dockerfile, you can use the "remoteUser"
-    # property in devcontainer.json to cause VS Code its sub-processes (terminals, tasks, 
-    # debugging) to execute as the user. Uncomment the next line if you want the entire 
-    # container to run as this user instead. Note that, on Linux, you may need to 
-    # ensure the UID and GID of the container user you create matches your local user. 
+    # property in devcontainer.json to cause VS Code its sub-processes (terminals, tasks,
+    # debugging) to execute as the user. Uncomment the next line if you want the entire
+    # container to run as this user instead. Note that, on Linux, you may need to
+    # ensure the UID and GID of the container user you create matches your local user.
     # See https://aka.ms/vscode-remote/containers/non-root for details.
     #
     # user: vscode
 
-    # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer 
-    # folder. Note that the path of the Dockerfile and context is relative to the *primary* 
+    # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer
+    # folder. Note that the path of the Dockerfile and context is relative to the *primary*
     # docker-compose.yml file (the first in the devcontainer.json "dockerComposeFile"
     # array). The sample below assumes your primary file is in the root of your project.
     #
-    # build:
-    #   context: .
-    #   dockerfile: .devcontainer/Dockerfile
+    build: 
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        # 3, 3.10, 3.9, 3.8, 3.7, 3.6, 3-bullseye, 3.10-bullseye, 3.9-bullseye, 3.8-bullseye, 
+        # 3.7-bullseye, 3.6-bullseye, 3-buster, 3.10-buster, 3.9-buster, 3.8-buster, 3.7-buster, 3.6-buster
+        VARIANT: 3-bullseye
+
+    # entrypoint: /usr/local/share/docker-init.sh
 
     volumes:
       # Update this to wherever you want VS Code to mount the folder of your project
-      - .:/workspace:cached
+      - ..:/workspace:cached
 
       # Uncomment the next line to use Docker from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker-compose for details.
-      # - /var/run/docker.sock:/var/run/docker.sock 
+      - /var/run/docker.sock:/var/run/docker.sock
 
     # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
     # cap_add:
@@ -34,5 +39,48 @@ services:
     #   - seccomp:unconfined
 
     # Overrides default command so things don't shut down after the process ends.
-    command: /bin/sh -c "while sleep 1000; do :; done"
- 
+    command: sleep infinity 
+
+  influxdb:
+    image: influxdb:2.0.7
+    ports:
+      - '8086:8086'
+    volumes:
+      - ../data/influxdb:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://influxdb:8086"]
+      interval: 25s
+      timeout: 3s
+      start_period: 30s
+    environment:
+      TZ: Europe/Paris
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_PASSWORD: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_ORG: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_BUCKET: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: enedisgateway2mqtt
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.12
+    environment:
+      TZ: Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ../data/mosquitto:/data
+      - ../mosquitto:/mosquitto/config/
+    ports:
+      - 1883:1883
+      - 9002:9001
+
+  mqtt_explorer:
+    image: smeagolworms4/mqtt-explorer
+    environment:
+      TZ: Europe/Paris
+    links:
+      - mosquitto
+    volumes:
+      - ../data/:/mqtt-explorer/config
+    ports:
+      - 4000:4000

@@ -15,7 +15,7 @@ RUN export LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/dock
     && chmod +x /usr/local/bin/docker-compose
 
 # [Optional] If your pip requirements rarely change, uncomment this section to add them to the image.
-COPY /app/requirement.txt /tmp/pip-tmp/
+COPY app/requirement.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirement.txt \
     && rm -rf /tmp/pip-tmp
 
