@@ -1,45 +1,20 @@
 version: '3.7'
 services:
   workspace:
-    # If you want add a non-root user to your Dockerfile, you can use the "remoteUser"
-    # property in devcontainer.json to cause VS Code its sub-processes (terminals, tasks,
-    # debugging) to execute as the user. Uncomment the next line if you want the entire
-    # container to run as this user instead. Note that, on Linux, you may need to
-    # ensure the UID and GID of the container user you create matches your local user.
-    # See https://aka.ms/vscode-remote/containers/non-root for details.
-    #
-    # user: vscode
-
-    # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer
-    # folder. Note that the path of the Dockerfile and context is relative to the *primary*
-    # docker-compose.yml file (the first in the devcontainer.json "dockerComposeFile"
-    # array). The sample below assumes your primary file is in the root of your project.
-    #
-    build: 
+    build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
-        # 3, 3.10, 3.9, 3.8, 3.7, 3.6, 3-bullseye, 3.10-bullseye, 3.9-bullseye, 3.8-bullseye, 
+        # 3, 3.10, 3.9, 3.8, 3.7, 3.6, 3-bullseye, 3.10-bullseye, 3.9-bullseye, 3.8-bullseye,
         # 3.7-bullseye, 3.6-bullseye, 3-buster, 3.10-buster, 3.9-buster, 3.8-buster, 3.7-buster, 3.6-buster
-        VARIANT: 3-bullseye
-
-    # entrypoint: /usr/local/share/docker-init.sh
-
+        VARIANT: 3.10-bullseye
+        LOCAL: fr_FR.UTF-8
     volumes:
-      # Update this to wherever you want VS Code to mount the folder of your project
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ..:/workspace:cached
-
-      # Uncomment the next line to use Docker from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker-compose for details.
       - /var/run/docker.sock:/var/run/docker.sock
-
-    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
-    # cap_add:
-    #   - SYS_PTRACE
-    # security_opt:
-    #   - seccomp:unconfined
-
-    # Overrides default command so things don't shut down after the process ends.
-    command: sleep infinity 
+    command: sleep infinity
 
   influxdb:
     image: influxdb:2.0.7
@@ -78,6 +53,7 @@ services:
     image: smeagolworms4/mqtt-explorer
     environment:
       TZ: Europe/Paris
+      HTTP_PORT: 4000
     links:
       - mosquitto
     volumes:
