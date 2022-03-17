@@ -16,6 +16,19 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: sleep infinity
 
+  enedisgateway2mqtt:
+    build:
+      context: ..
+    environment:
+      TZ: Europe/Paris
+    links:
+      - influxdb
+      - mosquitto
+    volumes:
+      - ../data:/data
+      - ../app:/app
+    command: tail -f /dev/null
+
   influxdb:
     image: influxdb:2.0.7
     ports:
