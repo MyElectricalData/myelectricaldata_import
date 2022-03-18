@@ -22,7 +22,8 @@ addr = import_module("addresses")
 cont = import_module("contract")
 day = import_module("daily")
 detail = import_module("detail")
-hourly = import_module("hourly")
+hourly = import_module("hourly_has")
+daily = import_module("daily_has")
 ha = import_module("home_assistant")
 myenedis = import_module("myenedis")
 influx = import_module("influxdb")
@@ -468,7 +469,8 @@ def run(pdl, pdl_config):
                                            attributes=attributes, unit_of_meas=unit_of_meas,
                                            device_class=device_class, state_class=state_class)
             f.log(" => Sensor generated")
-            
+         
+        ##generate hourly sensor
         if "home_assistant" in config and "hourly" in config['home_assistant'] and config['home_assistant'][
             'hourly'] == True:
             f.logLine()
@@ -497,7 +499,38 @@ def run(pdl, pdl_config):
                                            value=sensor_data['value'],
                                            attributes=attributes, unit_of_meas=unit_of_meas,
                                            device_class=device_class, state_class=state_class)
-            f.log(" => Sensor generated")
+            f.log(" => Hourly Sensor generated")
+            
+        ##generate daily sensor
+        if "home_assistant" in config and "daily" in config['home_assistant'] and config['home_assistant'][
+            'hourly'] == True:
+            f.logLine()
+            f.log("Generate Daily Sensor")
+            hourly_data = daily.Daily(cur, con, client, pdl, pdl_config, last_activation_date, offpeak_hours=offpeak_hours)
+            for pdl, data in my_enedis_data.items():
+                for name, sensor_data in data.items():
+                    if "attributes" in sensor_data:
+                        attributes = sensor_data['attributes']
+                    else:
+                        attributes = None
+                    if "unit_of_meas" in sensor_data:
+                        unit_of_meas = sensor_data['unit_of_meas']
+                    else:
+                        unit_of_meas = None
+                    if "device_class" in sensor_data:
+                        device_class = sensor_data['device_class']
+                    else:
+                        device_class = None
+                    if "state_class" in sensor_data:
+                        state_class = sensor_data['state_class']
+                    else:
+                        state_class = None
+                    if "value" in sensor_data:
+                        ha.haAutodiscovery(config=config, client=client, type="sensor", pdl=pdl, name=name,
+                                           value=sensor_data['value'],
+                                           attributes=attributes, unit_of_meas=unit_of_meas,
+                                           device_class=device_class, state_class=state_class)
+            f.log(" => Daily Sensor generated")    
 
         query = f"SELECT * FROM consumption_daily WHERE pdl == '{pdl}' AND fail > {fail_count} ORDER BY date"
         rows = con.execute(query)

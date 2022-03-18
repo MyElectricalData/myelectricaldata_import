@@ -72,7 +72,7 @@ def Hourly(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(
     if notFound == True:
         f.log(" => No detail data found (skip HA Hourly Sensor)")
     else:
-        
+        # no more than 5 days back to keep population of HA sensor data 'reasonable' (else: use db and e.g. grafana)
         date_history_datetime = today - relativedelta(days=5)
         date_history = date_history_datetime.strftime('%Y-%m-%d')
 	 
