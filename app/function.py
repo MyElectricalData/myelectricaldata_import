@@ -142,7 +142,8 @@ def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
 
     log(f"Call API : {url}", "DEBUG")
     log(f"Data : {data}", "DEBUG")
-    retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data).json()
+    retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data)
+    retour = json.loads(retour.text)
     if "debug" in main.config and main.config["debug"] == True:
         pprint(f"API Return :")
         pprint(retour)
