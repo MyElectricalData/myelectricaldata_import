@@ -1,5 +1,11 @@
 COMPOSE=docker compose -f docker-compose.dev.yml
 
+## Connect to EnedisGateway container : DEV
+debug:
+	set -x
+	$(call title,"Debug mode")
+	$(COMPOSE) run -p 80:80 myelectricaldata_import
+
 ## Start docker conatiners for dev
 up:
 	@echo "Start docker container for dev"

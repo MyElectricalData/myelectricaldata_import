@@ -3,6 +3,6 @@
 /data/*
 /app/__pycache__/
 /tmp
-/config.yaml
+/data/config.yaml
 /mosquitto
 /data
