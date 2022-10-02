@@ -188,5 +188,6 @@ def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
         log(f"API Return :", "ERROR")
         log(retour, "ERROR")
 
+
     return retour
 

@@ -30,7 +30,6 @@ influx = import_module("influxdb")
 
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
-# url = "https://enedisgateway.tech/api"
 url = "https://myelectricaldata.fr/api"
 
 fail_count = 24

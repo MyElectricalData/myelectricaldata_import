@@ -1,4 +1,4 @@
-COMPOSE=docker-compose -f docker-compose.dev.yml
+COMPOSE=docker compose -f docker-compose.dev.yml
 
 ## Start docker conatiners for dev
 up:
