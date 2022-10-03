@@ -1,86 +1,16 @@
-import os
-
-
 from config import *
 from dependencies import *
 from models.config import config
+from models.cache import Cache, wipe_cache
 
 logo(VERSION)
+config.display()
 
-# def init_database(cur):
-#     ## CONFIG
-#     cur.execute('''CREATE TABLE config (
-#                         key TEXT PRIMARY KEY,
-#                         value json NOT NULL)''')
-#     cur.execute('''CREATE UNIQUE INDEX idx_config_key
-#                     ON config (key)''')
-#
-#     ## ADDRESSES
-#     cur.execute('''CREATE TABLE addresses (
-#                         pdl TEXT PRIMARY KEY,
-#                         json json NOT NULL,
-#                         count INTEGER)''')
-#     cur.execute('''CREATE UNIQUE INDEX idx_pdl_addresses
-#                     ON addresses (pdl)''')
-#
-#     ## CONTRACT
-#     cur.execute('''CREATE TABLE contracts (
-#                         pdl TEXT PRIMARY KEY,
-#                         json json NOT NULL,
-#                         count INTEGER)''')
-#     cur.execute('''CREATE UNIQUE INDEX idx_pdl_contracts
-#                     ON contracts (pdl)''')
-#     ## CONSUMPTION
-#     # DAILY
-#     cur.execute('''CREATE TABLE consumption_daily (
-#                         pdl TEXT NOT NULL,
-#                         date TEXT NOT NULL,
-#                         value INTEGER NOT NULL,
-#                         fail INTEGER)''')
-#     cur.execute('''CREATE UNIQUE INDEX idx_date_consumption
-#                     ON consumption_daily (date)''')
-#
-#     # DETAIL
-#     cur.execute('''CREATE TABLE consumption_detail (
-#                         pdl TEXT NOT NULL,
-#                         date TEXT NOT NULL,
-#                         value INTEGER NOT NULL,
-#                         interval INTEGER NOT NULL,
-#                         measure_type TEXT NOT NULL,
-#                         fail INTEGER)''')
-#     cur.execute('''CREATE UNIQUE INDEX idx_date_consumption_detail
-#                     ON consumption_detail (date)''')
-#     ## PRODUCTION
-#     # DAILY
-#     cur.execute('''CREATE TABLE production_daily (
-#                         pdl TEXT NOT NULL,
-#                         date TEXT NOT NULL,
-#                         value INTEGER NOT NULL,
-#                         fail INTEGER)''')
-#     cur.execute('''CREATE UNIQUE INDEX idx_date_production
-#                     ON production_daily (date)''')
-#     # DETAIL
-#     cur.execute('''CREATE TABLE production_detail (
-#                         pdl TEXT NOT NULL,
-#                         date TEXT NOT NULL,
-#                         value INTEGER NOT NULL,
-#                         interval INTEGER NOT NULL,
-#                         measure_type TEXT NOT NULL,
-#                         fail INTEGER)''')
-#     cur.execute('''CREATE UNIQUE INDEX idx_date_production_detail
-#                     ON production_detail (date)''')
-#
-#     ## Default Config
-#     config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
-#     config = {
-#         "day": datetime.now().strftime('%Y-%m-%d'),
-#         "call_number": 0,
-#         "max_call": 500,
-#         "version": VERSION
-#     }
-#     cur.execute(config_query, ["config", json.dumps(config)])
-#     con.commit()
-#
+if config.get("wipe_cache"):
+    wipe_cache()
+
+cache = Cache()
+
 #
 # def run(pdl, pdl_config):
 #     f.logLine()
@@ -411,77 +341,7 @@ logo(VERSION)
 #     if not os.path.exists('/data'):
 #         os.mkdir('/data')
 #
-#     if "wipe_cache" in config and config["wipe_cache"] == True:
-#         if os.path.exists('/data/enedisgateway.db'):
-#             f.logLine()
-#             f.log(" => Reset Cache")
-#             os.remove("/data/enedisgateway.db")
-#             config["wipe_cache"] = False
 #
-#     if not os.path.exists('/data/enedisgateway.db'):
-#         f.log(" => Init SQLite Database")
-#         con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
-#         cur = con.cursor()
-#         init_database(cur)
-#
-#     else:
-#         f.log(" => Connect to SQLite Database")
-#         con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
-#         cur = con.cursor()
-#
-#         # Check database structure
-#         try:
-#
-#             config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
-#             cur.execute(config_query, ["lastUpdate", datetime.now()])
-#             con.commit()
-#
-#             list_tables = ["config", "addresses", "contracts", "consumption_daily", "consumption_detail",
-#                            "production_daily", "production_detail"]
-#
-#             query = f"SELECT name FROM sqlite_master WHERE type='table';"
-#             cur.execute(query)
-#             query_result = cur.fetchall()
-#             tables = []
-#             for table in query_result:
-#                 tables.append(str(table).replace("('", "").replace("',)", ''))
-#             for tab in list_tables:
-#                 if not tab in tables:
-#                     msg = f"Table {tab} is missing"
-#                     f.log(msg)
-#                     raise msg
-#             cur.execute("INSERT OR REPLACE INTO config VALUES (?,?)", [0, 0])
-#             cur.execute("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
-#             cur.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
-#             cur.execute("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-#             cur.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)",
-#                         [0, '1970-01-01', 0, 0, "", 0])
-#             cur.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-#             cur.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?,?)",
-#                         [0, '1970-01-01', 0, 0, "", 0])
-#             cur.execute("DELETE FROM config WHERE key = 0")
-#             cur.execute("DELETE FROM addresses WHERE pdl = 0")
-#             cur.execute("DELETE FROM contracts WHERE pdl = 0")
-#             cur.execute("DELETE FROM consumption_daily WHERE pdl = 0")
-#             cur.execute("DELETE FROM consumption_detail WHERE pdl = 0")
-#             cur.execute("DELETE FROM production_daily WHERE pdl = 0")
-#             cur.execute("DELETE FROM production_detail WHERE pdl = 0")
-#             cur.execute("DELETE FROM production_detail WHERE pdl = 0")
-#             config_query = f"SELECT * FROM config WHERE key = 'config'"
-#             cur.execute(config_query)
-#             query_result = cur.fetchall()
-#             query_result = json.loads(query_result[0][1])
-#         except Exception as e:
-#             f.log("=====> ERROR : Exception <======")
-#             f.log(e)
-#             f.log('<!> Database structure is invalid <!>')
-#             f.log(" => Reset database")
-#             con.close()
-#             os.remove("/data/enedisgateway.db")
-#             f.log(" => Reconnect")
-#             con = sqlite3.connect('/data/enedisgateway.db', timeout=10)
-#             cur = con.cursor()
-#             init_database(cur)
 #
 #     # MQTT
 #     f.logLine()

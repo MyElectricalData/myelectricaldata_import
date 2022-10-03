@@ -1,8 +1,9 @@
 import os
 
 import yaml
+import json
 
-from models.log import *
+from models.log import log
 
 
 class Config:
@@ -122,9 +123,26 @@ class Config:
                                     self.config["myelectricaldata"][pdl][key] = data
 
     def display(self):
-        logg(self.config)
+        log("Display configuration :")
+        for key, value in self.config.items():
+            if type(value) is dict:
+                log(f"  {key}:")
+                for dic_key, dic_value in value.items():
+                    if type(dic_value) is dict:
+                        log(f"    {dic_key}:")
+                        for dic1_key, dic1_value in dic_value.items():
+                            log(f"      {dic1_key}: {dic1_value}")
+                    else:
+                        log(f"    {dic_key}: {dic_value}")
+            else:
+                log(f"  {key}: {value}")
 
-    def get(self):
+    def get(self, path=None):
+        if path:
+            return self.config[path]
+        else:
+            return self.config
+
 
 if "APPLICATION_PATH_DATA" in os.environ:
     APPLICATION_PATH_DATA = os.getenv("APPLICATION_PATH_DATA")
@@ -136,4 +154,3 @@ config = Config(
 
 config.load()
 config.check()
-config.display()
