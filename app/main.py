@@ -1,15 +1,72 @@
+import time
+
+from dateutil.relativedelta import relativedelta
+
+
 from config import *
 from dependencies import *
-from models.config import config
-from models.cache import Cache, wipe_cache
+from models.config import CONFIG
+from models.cache import Cache
+from models.mqtt import Mqtt
+from models.influxdb import InfluxDB
 
-logo(VERSION)
-config.display()
+from pprint import pprint
 
-if config.get("wipe_cache"):
-    wipe_cache()
+# logo(VERSION)
 
-cache = Cache()
+CONFIG.display()
+CONFIG.check()
+
+CACHE = Cache()
+if CONFIG.get("wipe_cache"):
+    CACHE.purge_cache()
+    CONFIG.set("wipe_cache", False)
+    logWarn()
+
+MQTT_CONFIG = CONFIG.mqtt_config()
+if MQTT_CONFIG and "enable" in MQTT_CONFIG and MQTT_CONFIG["enable"]:
+    MQTT = Mqtt(
+        hostname=MQTT_CONFIG["hostname"],
+        port=MQTT_CONFIG["port"],
+        username=MQTT_CONFIG["username"],
+        password=MQTT_CONFIG["password"],
+        client_id=MQTT_CONFIG["client_id"],
+        prefix=MQTT_CONFIG["prefix"],
+        retain=MQTT_CONFIG["retain"],
+        qos=MQTT_CONFIG["qos"]
+    )
+
+INFLUXDB_CONFIG = CONFIG.influxdb_config()
+if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]:
+    INFLUXDB = InfluxDB(
+        hostname=INFLUXDB_CONFIG["hostname"],
+        port=INFLUXDB_CONFIG["port"],
+        token=INFLUXDB_CONFIG["token"],
+        org=INFLUXDB_CONFIG["org"],
+        bucket=INFLUXDB_CONFIG["bucket"]
+    )
+    if CONFIG.get("wipe_influxdb"):
+        INFLUXDB.purge_influxdb()
+        CONFIG = CONFIG.set("wipe_influxdb", False)
+        logWarn()
+
+CYCLE = CONFIG.get('cycle')
+if CYCLE < 3600:
+    logSep()
+    log("Le cycle minimun est de 3600s")
+    CYCLE = 3600
+    CONFIG.set(CYCLE, 3600)
+
+if __name__ == '__main__':
+
+    while True:
+
+
+
+        logSep()
+        date = datetime.datetime.now() + relativedelta(seconds=CYCLE)
+        log(f"Prochain import : {date}")
+        time.sleep(CYCLE)
 
 #
 # def run(pdl, pdl_config):
@@ -287,103 +344,7 @@ cache = Cache()
 #
 #
 # if __name__ == '__main__':
-#
-#     if lost_params != []:
-#         f.log(f'Some mandatory parameters are missing :', "ERROR")
-#         for param in lost_params:
-#             f.log(f'- {param}', "ERROR")
-#         f.log("", "ERROR")
-#         f.log("You can get list of parameters here :", "ERROR")
-#         f.log(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file", "ERROR")
-#         f.log("-- Stop application --", "CRITICAL")
-#
-#     f.logLine()
-#     f.logo(VERSION)
-#     if "mqtt" in config:
-#         f.log("MQTT")
-#         for id, value in config['mqtt'].items():
-#             if id == "password":
-#                 value = "** hidden **"
-#             f.log(f" - {id} : {value}")
-#     else:
-#         f.log("MQTT Configuration missing !", "CRITICAL")
-#
-#     if "home_assistant" in config:
-#         f.logLine()
-#         f.log("Home Assistant")
-#         for id, value in config['home_assistant'].items():
-#             f.log(f" - {id} : {value}")
-#
-#     if "influxdb" in config:
-#         f.logLine()
-#         f.log("InfluxDB")
-#         for id, value in config['influxdb'].items():
-#             if id == "token":
-#                 value = "** hidden **"
-#             f.log(f" - {id} : {value}")
-#
-#     if "enedis_gateway" in config:
-#         f.logLine()
-#         f.log("Enedis Gateway")
-#         for pdl, data in config['enedis_gateway'].items():
-#             f.log(f" - {pdl}")
-#             for id, value in data.items():
-#                 if id == "token":
-#                     value = "** hidden **"
-#                 f.log(f"     {id} : {value}")
-#     else:
-#         f.log("Enedis Gateway Configuration missing !", "CRITICAL")
-#     f.logLine()
-#
-#     # SQLlite
-#     f.log("Check database/cache")
-#
-#     if not os.path.exists('/data'):
-#         os.mkdir('/data')
-#
-#
-#
-#     # MQTT
-#     f.logLine()
-#     client = f.connect_mqtt()
-#     client.loop_start()
-#
-#     # INFLUXDB
-#     if "influxdb" in config and config["influxdb"] != {}:
-#         f.logLine()
-#         f.log("InfluxDB connect :")
-#
-#         date_utils.date_helper = DateHelper(timezone=tzlocal())
-#         if "scheme" not in config['influxdb']:
-#             scheme = "http"
-#         else:
-#             scheme = config['influxdb']['scheme']
-#         influxdb = influxdb_client.InfluxDBClient(
-#             url=f"{scheme}://{config['influxdb']['host']}:{config['influxdb']['port']}",
-#             token=config['influxdb']['token'],
-#             org=config['influxdb']['org'],
-#             timeout="600000"
-#         )
-#         health = influxdb.health()
-#         if health.status == "pass":
-#             f.log(" => Connection success")
-#         else:
-#             f.log(" => Connection failed", "CRITICAL")
-#
-#         influxdb_api = influxdb.write_api(write_options=ASYNCHRONOUS)
-#
-#     if "wipe_influxdb" in config and config["wipe_influxdb"] == True:
-#         f.log(f"Reset InfluxDB data")
-#         delete_api = influxdb.delete_api()
-#         start = "1970-01-01T00:00:00Z"
-#         stop = datetime.utcnow()
-#         delete_api.delete(start, stop, '_measurement="enedisgateway_daily"', config['influxdb']['bucket'],
-#                           org=config['influxdb']['org'])
-#         start = datetime.utcnow() - relativedelta(years=2)
-#         delete_api.delete(start, stop, '_measurement="enedisgateway_detail"', config['influxdb']['bucket'],
-#                           org=config['influxdb']['org'])
-#         f.log(f" => Data reset")
-#         config["wipe_influxdb"] = False
+
 #
 #     while True:
 #

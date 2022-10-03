@@ -1,15 +1,18 @@
 import os
 
-import yaml
-import json
+import re
+from ruamel.yaml import YAML
+# import yaml
 
-from models.log import log
 
+from models.log import log, critical, logSep
 
 class Config:
 
     def __init__(self, path="/data"):
         self.path = path
+        self.file = "config.yaml"
+        self.path_file = f"{self.path}/{self.file}"
         self.config = {}
         self.mandatory_parameters = {
             "myelectricaldata": {
@@ -19,7 +22,7 @@ class Config:
             }
         }
         self.default = {
-            "wipe_local_cache": False,
+            "wipe_cache": False,
             "cycle": 3600,
             "debug": False,
             "myelectricaldata": {
@@ -40,7 +43,7 @@ class Config:
                 }
             },
             "mqtt": {
-                "enable": True,
+                "enable": False,
                 "host": "X.X.X.X",
                 "port": 1883,
                 "username": "",
@@ -53,40 +56,42 @@ class Config:
             "home_assistant": {
                 "enable": False,
                 "discovery_prefix": "homeassistant",
-                "card_myenedis": False
+                "card_myenedis": True
+            },
+            "influxdb": {
+                "enable": False,
+                "host": "influxdb",
+                "port": 8086,
+                "token": "XXXXXXXXXXX",
+                "org": "myelectricaldata",
+                "bucket": "myelectricaldata",
             }
         }
 
     def load(self):
-        config_file = f'{self.path}/config.yaml'
+        config_file = f'{self.path_file}'
+        yaml = YAML()
         if os.path.exists(config_file):
-            with open(f'{self.path}/config.yaml') as file:
+            with open(f'{self.path_file}') as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
         else:
             f = open(config_file, "a")
             f.write(yaml.dump(self.default))
             f.close()
-            with open(f'{self.path}/config.yaml') as file:
+            with open(f'{self.path_file}') as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
+        if self.config is None:
+            critical([
+                "Impossible de charger le fichier de configuration.",
+                "",
+                "Vous pouvez récupérer un exemple ici :",
+                "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
+            ])
 
     def check(self):
+        logSep()
+        log(f"Check {self.file} :")
         lost_params = []
-        # CHECK GLOBAL CONFIGURATION
-        for key, data in self.default.items():
-            isDict = False
-            if isinstance(self.default[key], dict):
-                isDict = True
-            name = key
-            mandatory = False
-            if key in self.mandatory_parameters:
-                mandatory = True
-                name = key
-            if mandatory and name not in self.config:
-                lost_params.append(name.upper())
-            elif not isDict:
-                if name not in self.config:
-                    self.config[name] = data
-
         # CHECK HOME ASSISTANT CONFIGURATION
         config_name = "home_assistant"
         for key, data in self.default[config_name].items():
@@ -122,6 +127,21 @@ class Config:
                                 if key not in self.config["myelectricaldata"][pdl]:
                                     self.config["myelectricaldata"][pdl][key] = data
 
+        if lost_params:
+            msg = [
+                "Some mandatory parameters are missing:",
+            ]
+            for param in lost_params:
+                msg.append(f'- {param}')
+            msg.append("")
+            msg.append("You can get list of parameters here :")
+            msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
+            critical(msg)
+        else:
+            log(" => Config valid")
+
+        return lost_params
+
     def display(self):
         log("Display configuration :")
         for key, value in self.config.items():
@@ -131,26 +151,68 @@ class Config:
                     if type(dic_value) is dict:
                         log(f"    {dic_key}:")
                         for dic1_key, dic1_value in dic_value.items():
+                            dic1_value = "** hidden **" if dic1_key == "password" or dic1_key == "token" else 0
                             log(f"      {dic1_key}: {dic1_value}")
                     else:
+                        dic_value = "** hidden **" if dic_key == "password" or dic_key == "token" else 0
                         log(f"    {dic_key}: {dic_value}")
             else:
+                value = "** hidden **" if key == "password" or key == "token" else 0
                 log(f"  {key}: {value}")
 
     def get(self, path=None):
         if path:
-            return self.config[path]
+            if path in self.config:
+                return self.config[path]
+            else:
+                return False
         else:
             return self.config
+
+    def set(self, path, value):
+        # file_name = f'{self.path_file}'
+        # with open(file_name) as f:
+        #     self.config = yaml.safe_load(f)
+        # self.config[path] = value
+        # with open(file_name, 'w') as f:
+        #     yaml.safe_dump(self.config, f, default_flow_style=False)
+        # return self.config
+
+        # with open(f'{self.path_file}', 'r+') as f:
+        #     text = f.read()
+        #     text = re.sub(f'^[[:space:]]*{path}:(.*)', f'${value}', text)
+        #     f.seek(0)
+        #     f.write(text)
+        #     f.truncate()
+        yaml = YAML()
+        file_name = f'{self.path_file}'
+        with open(file_name) as f:
+            current_config = yaml.safe_load(f)
+
+        code = yaml.load(current_config)
+        code[path] = value
+
+        yaml.dump(code, self.config)
+
+    def mqtt_config(self):
+        if "mqtt" in self.config:
+            return self.config["mqtt"]
+        else:
+            return False
+
+    def influxdb_config(self):
+        if "influxdb" in self.config:
+            return self.config["influxdb"]
+        else:
+            return False
 
 
 if "APPLICATION_PATH_DATA" in os.environ:
     APPLICATION_PATH_DATA = os.getenv("APPLICATION_PATH_DATA")
 else:
     APPLICATION_PATH_DATA = "/data"
-config = Config(
+CONFIG = Config(
     path=APPLICATION_PATH_DATA
 )
 
-config.load()
-config.check()
+CONFIG.load()

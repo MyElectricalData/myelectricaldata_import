@@ -6,26 +6,21 @@ import sqlite3
 
 from dependencies import *
 from config import *
-from models.log import *
-
-
-def wipe_cache():
-    if os.path.exists('/data/cache.db'):
-        logSep()
-        log(" => Reset Cache")
-        os.remove("/data/cache.db")
+from models.log import log, logSep
+from models.config import CONFIG
 
 
 class Cache:
 
-    def __init__(self):
+    def __init__(self, path="/data"):
+        self.path = path
         self.db_name = "cache.db"
-        if not os.path.exists(f'/data/{self.db_name}'):
-            self.sqlite = sqlite3.connect(f'/data/{self.db_name}', timeout=10)
+        if not os.path.exists(f'{self.path}/{self.db_name}'):
+            self.sqlite = sqlite3.connect(f'{self.path}/{self.db_name}', timeout=10)
             self.cursor = self.sqlite.cursor()
             self.init_database()
         else:
-            self.sqlite = sqlite3.connect(f'/data/{self.db_name}', timeout=10)
+            self.sqlite = sqlite3.connect(f'{self.path}/{self.db_name}', timeout=10)
             self.cursor = self.sqlite.cursor()
         self.check()
 
@@ -77,10 +72,10 @@ class Cache:
             self.cursor.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
             self.cursor.execute("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
             self.cursor.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)",
-                        [0, '1970-01-01', 0, 0, "", 0])
+                                [0, '1970-01-01', 0, 0, "", 0])
             self.cursor.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
             self.cursor.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?,?)",
-                        [0, '1970-01-01', 0, 0, "", 0])
+                                [0, '1970-01-01', 0, 0, "", 0])
             self.cursor.execute("DELETE FROM config WHERE key = 0")
             self.cursor.execute("DELETE FROM addresses WHERE pdl = 0")
             self.cursor.execute("DELETE FROM contracts WHERE pdl = 0")
@@ -100,6 +95,15 @@ class Cache:
             log('<!> Database structure is invalid <!>')
             log(" => Reset database")
             self.sqlite.close()
-            os.remove(f"/data/{self.db_name}")
+            os.remove(f"{self.path}/{self.db_name}")
             log(" => Reconnect")
             self.init_database()
+
+    def purge_cache(self):
+        logWarn()
+        log("Reset SQLite Database")
+        if os.path.exists(f'{self.path}/cache.db'):
+            os.remove(f"{self.path}/cache.db")
+            log(" => Success")
+        else:
+            log(" => Not cache detected")

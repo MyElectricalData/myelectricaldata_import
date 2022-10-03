@@ -1,4 +1,5 @@
 import os
+import sys
 from pprint import pprint
 import datetime
 
@@ -40,7 +41,7 @@ def trace(message):
 
 
 def error(message, detail=None):
-    Log(error=True).msg("========================= ERROR =============================")
+    Log(error=True).msg("=================================== ERROR ========================================")
     Log(error=True).msg(message)
     if detail is not None:
         Log(error=True).msg(detail)
@@ -57,3 +58,19 @@ def logg(message, tag=None):
 
 def logSep():
     log("==================================================================================")
+
+def logWarn():
+    log("**********************************************************************************")
+    log("**********************************************************************************")
+
+
+def critical(message, detail=None):
+    Log().msg("================================== CRITICAL ======================================")
+    if type(message) is list:
+        for msg in message:
+            Log().msg(msg)
+    else:
+        Log().msg(message)
+    logSep()
+    sys.exit()
+

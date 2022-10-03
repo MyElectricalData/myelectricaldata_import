@@ -1,52 +1,9 @@
 from models.log import *
 
-
 # import requests
-# from paho.mqtt import client as mqtt_client
 # from datetime import datetime
 # import json
 # from pprint import pprint
-
-# def connect_mqtt():
-#     log("MQTT Connect")
-#     try:
-#         client = mqtt_client.Client(main.config["mqtt"]["client_id"])
-#         if main.config["mqtt"]["username"] != "" and main.config["mqtt"]["password"] != "":
-#             client.username_pw_set(main.config["mqtt"]["username"], main.config["mqtt"]["password"])
-#         client.connect(main.config["mqtt"]["host"], main.config["mqtt"]["port"])
-#         log(" => Connected to MQTT Broker!")
-#         return client
-#     except Exception as e:
-#         print(e)
-#         log(f"Failed to connect to MQTT Broker")
-#         log(f" => Check your MQTT Configuration", "CRITICAL")
-#
-#
-# def publish(client, topic, msg, prefix=None):
-#     if prefix == None:
-#         prefix = main.config["mqtt"]['prefix']
-#     msg_count = 0
-#     result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.config["mqtt"]["qos"],
-#                             retain=main.config["mqtt"]["retain"])
-#     status = result[0]
-#     if status == 0:
-#         log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
-#     else:
-#         log(f" - Failed to send message to topic {prefix}/{topic}")
-#     msg_count += 1
-#
-#
-# def subscribe(client, topic, prefix=None):
-#     if prefix == None:
-#         prefix = main.config["mqtt"]['prefix']
-#
-#     def on_message(client, userdata, msg):
-#         print(f" MQTT Received : `{prefix}/{topic}` => `{msg.payload.decode()}`")
-#
-#     sub_topic = f"{prefix}/{topic}"
-#     client.subscribe(client, sub_topic)
-#     client.on_message = on_message
-
 
 def logo(version):
     logSep()
