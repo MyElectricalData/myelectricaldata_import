@@ -6,3 +6,4 @@
 /data/config.yaml
 /mosquitto
 /data
+/app/models/__pycache__/
