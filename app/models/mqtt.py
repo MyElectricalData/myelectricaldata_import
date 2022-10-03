@@ -38,7 +38,7 @@ class Mqtt:
                 self.client.username_pw_set(self.username, self.password)
             self.client.connect(self.hostname, self.port)
             self.client.loop_start()
-            log(" => Connected to MQTT Broker!")
+            log(" => Connection success")
         except Exception as e:
             critical(["MQTT Connexion failed", e])
 

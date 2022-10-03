@@ -1,11 +1,21 @@
 import os
-
 import re
-from ruamel.yaml import YAML
-# import yaml
+import sys
 
+from pathlib import Path
+
+import yaml
+import json
 
 from models.log import log, critical, logSep
+
+
+def get_version():
+    f = open("/app/VERSION", "r")
+    version = f.read()
+    f.close()
+    return version
+
 
 class Config:
 
@@ -70,16 +80,16 @@ class Config:
 
     def load(self):
         config_file = f'{self.path_file}'
-        yaml = YAML()
         if os.path.exists(config_file):
-            with open(f'{self.path_file}') as file:
+            with open(f'{self.path}/config.yaml') as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
         else:
             f = open(config_file, "a")
             f.write(yaml.dump(self.default))
             f.close()
-            with open(f'{self.path_file}') as file:
+            with open(f'{self.path}/config.yaml') as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
+
         if self.config is None:
             critical([
                 "Impossible de charger le fichier de configuration.",
@@ -151,13 +161,16 @@ class Config:
                     if type(dic_value) is dict:
                         log(f"    {dic_key}:")
                         for dic1_key, dic1_value in dic_value.items():
-                            dic1_value = "** hidden **" if dic1_key == "password" or dic1_key == "token" else 0
+                            if dic1_key == "password" or dic1_key == "token":
+                                dic1_value = "** hidden **"
                             log(f"      {dic1_key}: {dic1_value}")
                     else:
-                        dic_value = "** hidden **" if dic_key == "password" or dic_key == "token" else 0
+                        if dic_key == "password" or dic_key == "token":
+                            dic_value = "** hidden **"
                         log(f"    {dic_key}: {dic_value}")
             else:
-                value = "** hidden **" if key == "password" or key == "token" else 0
+                if key == "password" or key == "token":
+                    value = "** hidden **"
                 log(f"  {key}: {value}")
 
     def get(self, path=None):
@@ -170,29 +183,15 @@ class Config:
             return self.config
 
     def set(self, path, value):
-        # file_name = f'{self.path_file}'
-        # with open(file_name) as f:
-        #     self.config = yaml.safe_load(f)
-        # self.config[path] = value
-        # with open(file_name, 'w') as f:
-        #     yaml.safe_dump(self.config, f, default_flow_style=False)
-        # return self.config
+        log(f" => Switch {path} to {value}")
+        with open(f'{self.path_file}', 'r+') as f:
+            text = f.read()
 
-        # with open(f'{self.path_file}', 'r+') as f:
-        #     text = f.read()
-        #     text = re.sub(f'^[[:space:]]*{path}:(.*)', f'${value}', text)
-        #     f.seek(0)
-        #     f.write(text)
-        #     f.truncate()
-        yaml = YAML()
-        file_name = f'{self.path_file}'
-        with open(file_name) as f:
-            current_config = yaml.safe_load(f)
-
-        code = yaml.load(current_config)
-        code[path] = value
-
-        yaml.dump(code, self.config)
+            text = re.sub(fr'(?<={path}: ).*', str(value).lower(), text)
+            f.seek(0)
+            f.write(text)
+            f.truncate()
+        self.config = text
 
     def mqtt_config(self):
         if "mqtt" in self.config:

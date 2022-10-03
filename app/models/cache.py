@@ -6,8 +6,8 @@ import sqlite3
 
 from dependencies import *
 from config import *
-from models.log import log, logSep
-from models.config import CONFIG
+from models.log import log, logSep, logWarn, critical
+from models.config import CONFIG, get_version
 
 
 class Cache:
@@ -35,15 +35,16 @@ class Cache:
                 "day": datetime.datetime.now().strftime('%Y-%m-%d'),
                 "call_number": 0,
                 "max_call": 500,
-                "version": VERSION
+                "version": get_version()
             })])
             self.sqlite.commit()
-            log(" => Success")
+            log(" => Initialization success")
         except Exception as e:
-            log("=====> ERROR : Exception <======")
-            log(e)
-            log('<!> SQLite Database initialisation failed <!>')
-            log(" => Reset database")
+            msg = [
+                "=====> ERROR : Exception <======", e,
+                '<!> SQLite Database initialisation failed <!>',
+            ]
+            critical(msg)
 
     def check(self):
         logSep()
@@ -88,7 +89,7 @@ class Cache:
             self.cursor.execute(config_query)
             query_result = self.cursor.fetchall()
             json.loads(query_result[0][1])
-            log(" => Success")
+            log(" => Connection success")
         except Exception as e:
             log("=====> ERROR : Exception <======")
             log(e)
@@ -107,3 +108,14 @@ class Cache:
             log(" => Success")
         else:
             log(" => Not cache detected")
+
+    def get_contract(self, usage_point_id):
+        query = f"SELECT * FROM contracts WHERE pdl = '{usage_point_id}'"
+        self.cursor.execute(query)
+        query_result = self.cursor.fetchone()
+        return query_result
+
+    def insert_contract(self, usage_point_id, contract, count):
+        query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)'"
+        self.cursor.execute(query, [usage_point_id, json.dumps(contract), count])
+        self.sqlite.commit()

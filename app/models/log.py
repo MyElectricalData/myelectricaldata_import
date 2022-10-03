@@ -48,6 +48,25 @@ def error(message, detail=None):
     logSep()
 
 
+def warning(message, detail=None):
+    Log().msg("================================== WARNING ======================================")
+    if type(message) is list:
+        for msg in message:
+            Log().msg(msg)
+    else:
+        Log().msg(message)
+
+
+def critical(message, detail=None):
+    Log().msg("================================== CRITICAL ======================================")
+    if type(message) is list:
+        for msg in message:
+            Log().msg(msg)
+    else:
+        Log().msg(message)
+    logSep()
+    sys.exit()
+
 def logg(message, tag=None):
     logSep()
     if tag is not None:
@@ -64,13 +83,4 @@ def logWarn():
     log("**********************************************************************************")
 
 
-def critical(message, detail=None):
-    Log().msg("================================== CRITICAL ======================================")
-    if type(message) is list:
-        for msg in message:
-            Log().msg(msg)
-    else:
-        Log().msg(message)
-    logSep()
-    sys.exit()
 
