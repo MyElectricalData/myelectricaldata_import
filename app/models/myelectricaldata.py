@@ -1,4 +1,5 @@
 import json
+import sys
 
 from models.config import get_version
 from models.query import Query

@@ -6,7 +6,7 @@ import sqlite3
 
 from dependencies import *
 from config import *
-from models.log import log, logSep, logWarn, critical
+from models.log import log, logSep, logWarn, critical, debug
 from models.config import CONFIG, get_version
 
 
@@ -111,11 +111,13 @@ class Cache:
 
     def get_contract(self, usage_point_id):
         query = f"SELECT * FROM contracts WHERE pdl = '{usage_point_id}'"
+        debug(query)
         self.cursor.execute(query)
         query_result = self.cursor.fetchone()
         return query_result
 
     def insert_contract(self, usage_point_id, contract, count):
-        query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)'"
+        query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
+        debug(query)
         self.cursor.execute(query, [usage_point_id, json.dumps(contract), count])
-        self.sqlite.commit()
+        return self.sqlite.commit()
