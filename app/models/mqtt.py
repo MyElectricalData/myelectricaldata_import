@@ -42,19 +42,23 @@ class Mqtt:
         except Exception as e:
             critical(["MQTT Connexion failed", e])
 
-    # def publish(self, client, topic, msg, prefix=None):
-    #     if prefix == None:
-    #         prefix = main.config["mqtt"]['prefix']
-    #     msg_count = 0
-    #     result = client.publish(f'{prefix}/{topic}', str(msg), qos=main.config["mqtt"]["qos"],
-    #                             retain=main.config["mqtt"]["retain"])
-    #     status = result[0]
-    #     if status == 0:
-    #         log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
-    #     else:
-    #         log(f" - Failed to send message to topic {prefix}/{topic}")
-    #     msg_count += 1
-    #
+    def publish(self, topic, msg, prefix=None):
+        if prefix is None:
+            prefix = self.prefix
+        msg_count = 0
+        result = self.client.publish(
+            f'{prefix}/{topic}',
+            str(msg),
+            qos=self.qos,
+            retain=self.retain
+        )
+        status = result[0]
+        if status == 0:
+            log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
+        else:
+            log(f" - Failed to send message to topic {prefix}/{topic}")
+        msg_count += 1
+
     # def subscribe(self, client, topic, prefix=None):
     #     if prefix == None:
     #         prefix = main.config["mqtt"]['prefix']
