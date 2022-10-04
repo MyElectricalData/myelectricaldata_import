@@ -318,16 +318,13 @@ if CYCLE < cycle_minimun:
 if __name__ == '__main__':
 
     # while True:
-    print(CONFIG.get('myelectricaldata'))
     for usage_point_id, config in CONFIG.get('myelectricaldata').items():
-
         myelectricaldata = MyElectricalData(
             cache=CACHE,
             url=url,
             usage_point_id=usage_point_id,
             config=config
         )
-
         logSep()
         log("Récupération du contrat :")
         myelectricaldata.contract()

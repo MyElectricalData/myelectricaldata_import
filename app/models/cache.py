@@ -116,7 +116,7 @@ class Cache:
         query_result = self.cursor.fetchone()
         return query_result
 
-    def insert_contract(self, usage_point_id, contract, count):
+    def insert_contract(self, usage_point_id, contract, count=0):
         query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
         debug(query)
         self.cursor.execute(query, [usage_point_id, json.dumps(contract), count])

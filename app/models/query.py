@@ -27,10 +27,10 @@ class Query(object):
             response = requests.request('GET', headers=headers, params=params, url=self.endpoint)
             debug(f"[RESPONSE] : status_code {response.status_code}")
             debug(f" => {response.text}")
+            return response
         except Exception as e:
             error(e)
             print(str(e))
-        return response
 
     def post(self, headers=None, params=None, data=None):
         if headers is None:

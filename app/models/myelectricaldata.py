@@ -1,9 +1,10 @@
 import json
 import sys
 
+from . import MQTT
 from models.config import get_version
 from models.query import Query
-from models.log import log, debug
+from models.log import log, debug, critical
 
 
 class MyElectricalData:
@@ -20,7 +21,6 @@ class MyElectricalData:
 
         self.usage_point_id = usage_point_id
         self.config = config
-        self.contrat = {}
 
     def contract(self):
         name = "contracts"
@@ -32,48 +32,37 @@ class MyElectricalData:
         if current_cache is None:
             # No cache
             log(f" => No cache : {target}")
-            self.contrat = Query(endpoint=target, headers=self.headers).get(headers=self.headers)
-            self.cache.insert_contract(usage_point_id=self.usage_point_id, contract=self.contract(), count=0)
-        else:
-            if "refresh_contract" in self.config and self.config["refresh_contract"] == True:
-                log(f" => Refresh Cache : {target}")
-                self.contrat = Query(endpoint=target, headers=self.headers).get(headers=self.headers)
-                self.cache.insert_contract(usage_point_id=self.usage_point_id, contract=self.contract(), count=0)
+            response = Query(endpoint=target, headers=self.headers).get(headers=self.headers)
+            if response.status_code == 200:
+                self.cache.insert_contract(
+                    usage_point_id=self.usage_point_id,
+                    contract=response.text,
+                )
             else:
+                critical("Erreur lors de la récupération du contrat.")
+        else:
+            # Refresh cache
+            if "refresh_contract" in self.config and self.config["refresh_contract"]:
+                log(f" => Refresh Cache : {target}")
+                response = Query(endpoint=target, headers=self.headers).get(headers=self.headers)
+                if response.status_code == 200:
+                    self.cache.insert_contract(
+                        usage_point_id=self.usage_point_id,
+                        contract=response.text,
+                    )
+                else:
+                    critical("Erreur lors de la récupération du contrat.")
+            else:
+                # Get data in cache
                 log(f" => Query Cache")
-                contract = json.loads(query_result[1])
-                query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
-                cur.execute(query, [pdl, json.dumps(contract), 0])
-                con.commit()
+                contract = json.loads(current_cache[1])
+                self.cache.insert_contract(
+                    usage_point_id=self.usage_point_id,
+                    contract=contract,
+                )
 
-        # def queryApi(url, headers, data, count=0):
-        #     contract = f.apiRequest(cur, con, pdl, type="POST", url=f"{url}", headers=headers, data=json.dumps(data))
-        #     if not "error_code" in contract:
-        #         query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
-        #         cur.execute(query, [pdl, json.dumps(contract), count])
-        #         con.commit()
-        #     return contract
-        #
-        # url = main.url
-        #
         # ha_discovery = {pdl: {}}
-        #
-        #
 
-        # if query_result is None:
-        #     f.log(" => Query API")
-        #     contract = queryApi(url, headers, data)
-        # else:
-        #     if "refresh_contract" in pdl_config and pdl_config["refresh_contract"] == True:
-        #         f.log(" => Query API (Refresh Cache)")
-        #         contract = queryApi(url, headers, data, 0)
-        #     else:
-        #         f.log(f" => Query Cache")
-        #         contract = json.loads(query_result[1])
-        #         query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
-        #         cur.execute(query, [pdl, json.dumps(contract), 0])
-        #         con.commit()
-        #
         # if "error_code" in contract:
         #     f.log(contract["description"])
         #     ha_discovery = {"error_code": True, "detail": {"message": contract["description"]}}
