@@ -1,7 +1,5 @@
 import json
-import sys
 
-from models.config import get_version
 from models.query import Query
 from models.log import log, debug, critical
 from config import URL
@@ -26,7 +24,7 @@ class Contract:
             endpoint += "/cache"
         target = f"{self.url}/{endpoint}"
 
-        response = Query(endpoint=target, headers=self.headers).get(headers=self.headers)
+        response = Query(endpoint=target, headers=self.headers).get()
         if response.status_code == 200:
             try:
                 response_json = json.loads(response.text)
@@ -58,12 +56,5 @@ class Contract:
             if "refresh_contract" in self.config and self.config["refresh_contract"]:
                 log(f" => Refresh Cache")
                 return self.run()
-            else:
-                # Get data in cache
-                log(f" => Query Cache")
-                contract = json.loads(current_cache[1])
-                self.cache.insert_contract(
-                    usage_point_id=self.usage_point_id,
-                    contract=contract,
-                )
-                return contract
+        print(current_cache)
+        return json.loads(current_cache)

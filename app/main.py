@@ -7,6 +7,7 @@ from models.config import CONFIG, get_version
 from models.cache import Cache
 from models.mqtt import Mqtt
 from models.influxdb import InfluxDB
+from models.query_status import Status
 from models.query_address import Address
 from models.query_contract import Contract
 from models.query_consumption_daily import ConsumptionDaily
@@ -76,7 +77,15 @@ if __name__ == '__main__':
         }
 
         logSep()
+        log("Status de la passerelle :")
+        log("---")
+        result["status"] = Status(
+            headers=headers,
+        ).get()
+
+        logSep()
         log("Récupération du contrat :")
+        log("---")
         result["contract"] = Contract(
             headers=headers,
             usage_point_id=usage_point_id,
@@ -86,13 +95,14 @@ if __name__ == '__main__':
         activation_date = False
         if result.get('contract', {}).get('contracts', {}).get('last_activation_date', {}):
             activation_date = result["contract"]["contracts"]["last_activation_date"]
-
+        print(activation_date)
         offpeak_hours = False
         if result.get('contract', {}).get('contracts', {}).get('offpeak_hours', {}):
             offpeak_hours = result["contract"]["contracts"]["offpeak_hours"]
 
         logSep()
         log("Récupération de coordonnée :")
+        log("---")
         result["addresses"] = Address(
             headers=headers,
             usage_point_id=usage_point_id,
@@ -102,6 +112,7 @@ if __name__ == '__main__':
         if config["consumption"]:
             logSep()
             log("Récupération de la consommation journalière :")
+            log("---")
             result["consumption_daily"] = ConsumptionDaily(
                 headers=headers,
                 usage_point_id=usage_point_id,

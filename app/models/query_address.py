@@ -1,7 +1,5 @@
 import json
-import sys
 
-from models.config import get_version
 from models.query import Query
 from models.log import log, debug, critical
 from config import URL
@@ -26,7 +24,7 @@ class Address:
             endpoint += "/cache"
         target = f"{self.url}/{endpoint}"
 
-        response = Query(endpoint=target, headers=self.headers).get(headers=self.headers)
+        response = Query(endpoint=target, headers=self.headers).get()
         if response.status_code == 200:
             try:
                 response_json = json.loads(response.text)
