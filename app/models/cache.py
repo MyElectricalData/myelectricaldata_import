@@ -119,5 +119,31 @@ class Cache:
     def insert_contract(self, usage_point_id, contract, count=0):
         query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
         debug(query)
-        self.cursor.execute(query, [usage_point_id, json.dumps(contract), count])
+        self.cursor.execute(query, [usage_point_id, contract, count])
+        return self.sqlite.commit()
+
+    def get_addresse(self, usage_point_id):
+        query = f"SELECT * FROM addresses WHERE pdl = '{usage_point_id}'"
+        debug(query)
+        self.cursor.execute(query)
+        query_result = self.cursor.fetchone()
+        return query_result
+
+    def insert_addresse(self, usage_point_id, addresse, count=0):
+        query = f"INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
+        debug(query)
+        self.cursor.execute(query, [usage_point_id, addresse, count])
+        return self.sqlite.commit()
+
+    def get_consumption_daily(self, usage_point_id):
+        query = f"SELECT * FROM consumption_daily WHERE pdl = '{usage_point_id}'"
+        debug(query)
+        self.cursor.execute(query)
+        query_result = self.cursor.fetchone()
+        return query_result
+
+    def insert_consumption_daily(self, usage_point_id, consumption_daily, count=0):
+        query = f"INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?)"
+        debug(query)
+        self.cursor.execute(query, [usage_point_id, json.dumps(consumption_daily), count])
         return self.sqlite.commit()

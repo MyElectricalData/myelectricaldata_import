@@ -1,9 +1,8 @@
 from models.log import *
+from models.cache import Cache
 
-# import requests
-# from datetime import datetime
-# import json
-# from pprint import pprint
+
+CACHE = Cache()
 
 def logo(version):
     logSep()

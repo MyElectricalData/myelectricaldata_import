@@ -1,6 +1,5 @@
 import time
-
-from dateutil.relativedelta import relativedelta
+import json
 
 from config import *
 from dependencies import *
@@ -8,14 +7,15 @@ from models.config import CONFIG, get_version
 from models.cache import Cache
 from models.mqtt import Mqtt
 from models.influxdb import InfluxDB
-from models.myelectricaldata import MyElectricalData
+from models.query_address import Address
+from models.query_contract import Contract
+from models.query_consumption_daily import ConsumptionDaily
 
 logo(get_version())
 
 CONFIG.display()
 CONFIG.check()
 
-CACHE = Cache()
 if CONFIG.get("wipe_cache"):
     CACHE.purge_cache()
     CONFIG.set("wipe_cache", False)
@@ -60,34 +60,94 @@ if CYCLE < cycle_minimun:
     CYCLE = cycle_minimun
     CONFIG.set("cycle", cycle_minimun)
 
-
 if __name__ == '__main__':
 
     # while True:
     for usage_point_id, config in CONFIG.get('myelectricaldata').items():
-
         ha_discovery = {usage_point_id: {}}
 
-        mydata = MyElectricalData(
-            cache=CACHE,
-            url=url,
-            usage_point_id=usage_point_id,
-            config=config
-        )
+        result = {}
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': config['token'],
+            'call-service': "myelectricaldata",
+            'version': get_version()
+        }
+
         logSep()
         log("Récupération du contrat :")
-        contract = mydata.contract()
-        if "error" in contract:
-            error(contract["description"])
-            ha_discovery = {"error_code": True, "detail": {"message": contract["description"]}}
-            if MQTT_ENABLE:
-                for key, msg in contract.items():
-                    MQTT.publish(topic=f"{usage_point_id}/contract/{key}", msg=str(msg))
-        else:
-            if MQTT_ENABLE:
-                MQTT.publish(topic=f"{usage_point_id}/contract/error", msg=str(0))
-                for key, msg in contract.items():
-                    MQTT.publish(topic=f"{usage_point_id}/contract/{key}", msg=str(msg))
+        result["contract"] = Contract(
+            headers=headers,
+            usage_point_id=usage_point_id,
+            config=config
+        ).get()
+
+        activation_date = False
+        if result.get('contract', {}).get('contracts', {}).get('last_activation_date', {}):
+            activation_date = result["contract"]["contracts"]["last_activation_date"]
+
+        offpeak_hours = False
+        if result.get('contract', {}).get('contracts', {}).get('offpeak_hours', {}):
+            offpeak_hours = result["contract"]["contracts"]["offpeak_hours"]
+
+        logSep()
+        log("Récupération de coordonnée :")
+        result["addresses"] = Address(
+            headers=headers,
+            usage_point_id=usage_point_id,
+            config=config
+        ).get()
+
+        if config["consumption"]:
+            logSep()
+            log("Récupération de la consommation journalière :")
+            result["consumption_daily"] = ConsumptionDaily(
+                headers=headers,
+                usage_point_id=usage_point_id,
+                config=config,
+                activation_date=activation_date,
+                offpeak_hours=offpeak_hours
+            ).get()
+
+        # if config["consumption_detail"]:
+        #     logSep()
+        #     log("Récupération de la consommation détaillé :")
+        #     result["consumption_detail"] = ConsumptionDetail(
+        #         usage_point_id=usage_point_id,
+        #         config=config
+        #     ).get()
+        #
+        # if config["production"]:
+        #     logSep()
+        #     log("Récupération de la production journalière :")
+        #     result["production_daily"] = ProductionDaily(
+        #         usage_point_id=usage_point_id,
+        #         config=config
+        #     ).get()
+        #
+        # if config["production_detail"]:
+        #     logSep()
+        #     log("Récupération de la production détaillé :")
+        #     result["production_detail"] = ProductionDetail(
+        #         usage_point_id=usage_point_id,
+        #         config=config
+        #     ).get()
+
+        print(json.dumps(result, sort_keys=True, indent=4))
+
+        # if "error" in contract:
+        #     error(contract["description"])
+        #     ha_discovery = {"error_code": True, "detail": {"message": contract["description"]}}
+        #     if MQTT_ENABLE:
+        #         for key, msg in contract.items():
+        #             MQTT.publish(topic=f"{usage_point_id}/contract/{key}", msg=str(msg))
+        # else:
+        #     if MQTT_ENABLE:
+        #         MQTT.publish(topic=f"{usage_point_id}/contract/error", msg=str(0))
+        #         for key, msg in contract.items():
+        #             MQTT.publish(topic=f"{usage_point_id}/contract/{key}", msg=str(msg))
+
         # if "error_code" in contract:
         #     f.log(contract["description"])
         #     ha_discovery = {"error_code": True, "detail": {"message": contract["description"]}}
@@ -154,10 +214,6 @@ if __name__ == '__main__':
         #     else:
         #         ha_discovery = {"error_code": True, "detail": {"message": contract}}
         # return ha_discovery
-
-        logSep()
-        log("Récupération de coordonnée :")
-        addresses = mydata.addresses()
 
         #     contract = cont.getContract(headers, client, cur, con, pdl, pdl_config)
         #     offpeak_hours = []
@@ -416,7 +472,6 @@ if __name__ == '__main__':
         #     f.logLine()
         #     f.log("IMPORT FINISH")
         #     f.logLine()
-
 
     # logSep()
     # date = datetime.datetime.now() + relativedelta(seconds=CYCLE)
