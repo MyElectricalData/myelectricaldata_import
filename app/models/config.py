@@ -1,14 +1,12 @@
 import os
 import re
 import sys
-
-from pathlib import Path
-
 import yaml
 import json
 
-from models.log import log, critical, logSep
+from pathlib import Path
 
+from dependencies import *
 
 def get_version():
     f = open("/app/VERSION", "r")
@@ -91,12 +89,14 @@ class Config:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         if self.config is None:
-            critical([
-                "Impossible de charger le fichier de configuration.",
-                "",
-                "Vous pouvez récupérer un exemple ici :",
-                "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
-            ])
+            return {
+                "error": True,
+                "message": ["Impossible de charger le fichier de configuration.",
+                    "",
+                    "Vous pouvez récupérer un exemple ici :",
+                    "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
+                ]
+            }
 
     def check(self):
         logSep()
@@ -146,7 +146,7 @@ class Config:
             msg.append("")
             msg.append("You can get list of parameters here :")
             msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
-            critical(msg)
+            logCritical(msg)
         else:
             log(" => Config valid")
 
@@ -186,12 +186,11 @@ class Config:
         log(f" => Switch {path} to {value}")
         with open(f'{self.path_file}', 'r+') as f:
             text = f.read()
-
             text = re.sub(fr'(?<={path}: ).*', str(value).lower(), text)
             f.seek(0)
             f.write(text)
             f.truncate()
-        self.config = text
+        self.config = yaml.load(text, Loader=yaml.FullLoader)
 
     def mqtt_config(self):
         if "mqtt" in self.config:
@@ -204,14 +203,3 @@ class Config:
             return self.config["influxdb"]
         else:
             return False
-
-
-if "APPLICATION_PATH_DATA" in os.environ:
-    APPLICATION_PATH_DATA = os.getenv("APPLICATION_PATH_DATA")
-else:
-    APPLICATION_PATH_DATA = "/data"
-CONFIG = Config(
-    path=APPLICATION_PATH_DATA
-)
-
-CONFIG.load()

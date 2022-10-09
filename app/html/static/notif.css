@@ -1,0 +1,37 @@
+.notifyjs-error-base {
+    opacity: 0.85;
+    background: #fa7979;
+    padding: 5px;
+    border-radius: 10px;
+    color: black;
+    width: 500px;
+    text-align: center;
+}
+.notifyjs-error-base .title{
+    opacity: 0.85;
+    background: #fa7979;
+    padding: 5px;
+    border-radius: 10px;
+    color: black;
+    width: 500px;
+    font-weight: bolder;
+    text-align: center;
+}
+
+.notifyjs-enedis-base {
+    font-size: 20px;
+    white-space: nowrap;
+    background-color: var(--sde-bg-color);
+    padding: 15px;
+    border: 3px solid var(--main-bg-color);
+    border-radius: 15px;
+    color: white;
+}
+
+.notifyjs-enedis-error {
+    background-color: var(--text-warning)
+}
+
+.notifyjs-enedis-success {
+    background-color: var(--success-bg)
+}

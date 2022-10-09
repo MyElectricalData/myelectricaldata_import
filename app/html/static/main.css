@@ -1,0 +1,241 @@
+:root {
+	--logo: #e5c723;
+    --main-bg-color: #FFFFFF;
+	--sde-bg-color: #1b5bb4;
+	--text-color: #2a2a2a;
+	--text-title: #FFFFFF;
+	--strong-color: #000;
+	--code-color: #0024a9;
+	--text-warning: #c53e3e;
+	--success-bg: #39af3f;
+}
+
+* {
+    font-family: 'Roboto', sans-serif;
+}
+
+strong em {
+    color: var(--text-title);
+    letter-spacing: 3px;
+    font-size: 23px;
+}
+
+body {
+    /*background: var(--sde-bg-color);*/
+    background: -webkit-linear-gradient(left top, var(--main-bg-color), var(--main-bg-color));
+    background: -moz-linear-gradient(bottom right, var(--main-bg-color), var(--main-bg-color));
+    background: linear-gradient(to bottom right, var(--main-bg-color), var(--main-bg-color));
+    background-attachment: fixed;
+    color: var(--text-color);
+    font-size: 18px;
+    font-weight: 450;
+    line-height: 140%;
+    margin: 0;
+    height: 100%;
+    padding: 0;
+    width: 100%;
+}
+a {
+    color: var(--text-title);
+    font-weight: bold;
+}
+
+/*p {*/
+/*    text-shadow: 1px 1px 7px var(--main-bg-color);*/
+/*}*/
+
+/*li {*/
+/*    text-shadow: 1px 1px 7px var(--main-bg-color);*/
+/*}*/
+
+h1 {
+    font-size: 24px;
+    background: #FFF;
+    color: var(--sde-bg-color);
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid var(--sde-bg-color);
+    margin-top: 50px;
+}
+
+h2 {
+    color: var(--text-title);
+    letter-spacing: 2px;
+    font-size: 17px;
+    background: var(--sde-bg-color);
+    border: 1px solid var(--main-bg-color);
+    border-radius: 15px;
+    padding: 10px;
+}
+h3 {
+    color: var(--text-color);
+    font-size: 15px;
+    background: var(--logo);
+    border: 1px solid var(--text-title);
+    border-radius: 15px;
+    padding: 10px;
+}
+
+#footer {
+    position: fixed;
+    left: 50%;
+    bottom: 0px;
+    transform: translate(-50%, -50%);
+    margin: 0 auto;
+    width: 500px;
+    text-align: center;
+}
+.btn {
+    text-decoration: none;
+    padding: 10px;
+    font-size: 1em;
+    color: var(--text-title);
+    background-color: var(--sde-bg-color);
+    border-radius: 24px;
+    -webkit-border-radius: 24px;
+    -moz-border-radius: 24px;
+    border: 4px solid var(--sde-bg-color);
+    box-shadow: 3px 3px 12px var(--text-color);
+    -webkit-box-shadow: 3px 3px 12px var(--text-color);
+    -moz-box-shadow: 3px 3px 12px var(--text-color);
+    cursor: pointer;
+}
+
+.btn_sandbox {
+    text-decoration: none;
+    padding: 10px;
+    font-size: 1em;
+    color: var(--text-title);
+    background-color: var(--sde-bg-color);
+    border-radius: 24px;
+    -webkit-border-radius: 24px;
+    -moz-border-radius: 24px;
+    border: 4px solid var(--sde-bg-color);
+    box-shadow: 3px 3px 12px var(--text-color);
+    -webkit-box-shadow: 3px 3px 12px var(--text-color);
+    -moz-box-shadow: 3px 3px 12px var(--text-color);
+    cursor: pointer;
+}
+
+#consent_select {
+    text-decoration: none;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: bolder;
+    height: 53px;
+    color: var(--text-title);
+    background-color: var(--sde-bg-color);
+    border-radius: 24px;
+    -webkit-border-radius: 24px;
+    -moz-border-radius: 24px;
+    border: 4px solid var(--sde-bg-color);
+    box-shadow: 3px 3px 12px var(--text-color);
+    -webkit-box-shadow: 3px 3px 12px var(--text-color);
+    -moz-box-shadow: 3px 3px 12px var(--text-color);
+    cursor: pointer;
+}
+
+code {
+    display: inline-block;
+    white-space: pre-wrap !important;
+    color: var(--code-color);
+    background: #FFF;
+    border: 1px solid;
+    border-left: 10px solid;
+    padding: 10px;
+    width: 99%;
+    box-sizing: border-box;
+    cursor: pointer;
+    background-image: url('/static/paste.png');
+    background-repeat: no-repeat;
+    background-position-x: 99.5%;
+    background-size: 24px;
+}
+
+#logo_enedis {
+    border-radius: 10px;
+    padding: 10px
+}
+#header {
+    height: 140px;
+}
+
+#paypal {
+    background: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 3px var(--sde-bg-color) solid;
+    width: 98%;
+    color: var(--sde-bg-color);
+}
+#paypal_img {
+    width: 170px;
+    background: var(--main-bg-color);
+    border-radius: 14px;
+    padding: 5px 12px 5px 12px;
+}
+
+
+
+blockquote {
+  background: var(--main-bg-color);
+  border: 3px var(--text-warning) solid;
+  border-left: 10px var(--text-warning) solid;
+  padding: 5px 12px 5px 12px;
+  color: var(--text-warning);
+}
+
+#stat {
+    text-align: right;
+    width: 215px;
+    padding: 10px;
+    background: var(--main-bg-color);;
+    border-radius: 0 0 0 10px;
+    color: var(--sde-bg-color);
+    border: 1px solid var(--sde-bg-color);
+    top: 0px;
+    position: absolute;
+    right: 0px;
+}
+
+.input_doc {
+    border: 3px solid var(--sde-bg-color);
+    border-radius: 10px;
+    font-weight: bolder;
+    height: 23px;
+    padding: 8px;
+    text-align: center;
+}
+
+#text_input {
+    width: 150px;
+    display: inline-block;
+    text-align: right;
+    padding-right: 7px;
+}
+
+
+#token {
+    border: 3px solid var(--sde-bg-color);
+    border-radius: 10px;
+    font-weight: bolder;
+    height: 23px;
+    padding: 8px;
+    text-align: left;
+}
+
+#menu_link img {
+    background: var(--main-bg-color);
+    border-radius: 15px;
+    padding: 4px;
+}
+
+select{
+    padding: 3px;
+    border-radius: 15px;
+    border: 1px solid var(--code-color);
+    font-weight: bold;
+    width: 200px;
+    text-align: center;
+    cursor: pointer;
+}

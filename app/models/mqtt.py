@@ -1,7 +1,6 @@
 from paho.mqtt import client as mqtt
 
-from models.log import critical, log, logSep
-from models.config import CONFIG
+from dependencies import *
 
 
 class Mqtt:
@@ -40,7 +39,7 @@ class Mqtt:
             self.client.loop_start()
             log(" => Connection success")
         except Exception as e:
-            critical(["MQTT Connexion failed", e])
+            logging.critical(["MQTT Connexion failed", e])
 
     def publish(self, topic, msg, prefix=None):
         if prefix is None:

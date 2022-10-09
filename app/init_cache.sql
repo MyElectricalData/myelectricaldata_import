@@ -30,8 +30,6 @@ CREATE TABLE consumption_daily
     value INTEGER NOT NULL,
     fail  INTEGER
 );
-CREATE UNIQUE INDEX idx_date_consumption
-    ON consumption_daily (date);
 
 CREATE TABLE consumption_detail
 (
@@ -42,8 +40,6 @@ CREATE TABLE consumption_detail
     measure_type TEXT    NOT NULL,
     fail         INTEGER
 );
-CREATE UNIQUE INDEX idx_date_consumption_detail
-    ON consumption_detail (date);
 
 CREATE TABLE production_daily
 (

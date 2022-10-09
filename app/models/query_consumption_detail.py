@@ -1,25 +1,25 @@
 import json
+import re
 
 import datetime
-import sys
 
 from dateutil.relativedelta import relativedelta
 import pytz
 from mergedeep import Strategy, merge
 
 import __main__
-from dependencies import *
 from config import URL, DAILY_MAX_DAYS
+from dependencies import *
 from models.query import Query
 
 
-class ConsumptionDaily:
+class ConsumptionDetail:
 
-    def __init__(self, headers, usage_point_id, config, activation_date):
+    def __init__(self, headers, usage_point_id, config, activation_date, offpeak_hours):
 
         self.cache = __main__.CACHE
         self.url = URL
-        self.max_daily = 36
+        self.max_detail = 7
 
         self.headers = headers
         self.usage_point_id = usage_point_id
@@ -28,6 +28,8 @@ class ConsumptionDaily:
             self.activation_date = datetime.datetime.strptime(activation_date, "%Y-%m-%d%z").replace(tzinfo=None)
         else:
             self.activation_date = activation_date
+
+        self.offpeak_hours = offpeak_hours
 
         self.daily_max_days = DAILY_MAX_DAYS
         self.max_days_date = datetime.datetime.utcnow() - relativedelta(days=self.daily_max_days)
@@ -38,12 +40,11 @@ class ConsumptionDaily:
         begin = begin.strftime('%Y-%m-%d')
         end = end.strftime('%Y-%m-%d')
         log(f"Récupération des données : {begin} => {end}")
-        endpoint = f"daily_consumption/{self.usage_point_id}/start/{begin}/end/{end}"
+        endpoint = f"consumption_load_curve/{self.usage_point_id}/start/{begin}/end/{end}"
         if "cache" in self.config and self.config["cache"] and cache:
             endpoint += "/cache"
         try:
-            current_data = self.cache.get_consumption_daily(usage_point_id=self.usage_point_id, begin=begin, end=end)
-            # debug(current_data)
+            current_data = self.cache.get_consumption_detail(usage_point_id=self.usage_point_id, begin=begin, end=end)
             if not current_data["missing_data"]:
                 log(" => Toutes les données sont déjà en cache.")
                 output = []
@@ -53,19 +54,41 @@ class ConsumptionDaily:
             else:
                 log(f" => Chargement des données depuis MyElectricalData {begin} => {end}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
-                fail = 0
                 if data.status_code == 200:
                     meter_reading = json.loads(data.text)['meter_reading']
-                    # debug(meter_reading["interval_reading"])
+                    debug(meter_reading["interval_reading"])
                     for interval_reading in meter_reading["interval_reading"]:
                         value = interval_reading["value"]
+                        interval = re.findall(r'\d+', interval_reading['interval_length'])[0]
                         date = interval_reading["date"]
-                        self.cache.insert_consumption_daily(usage_point_id=self.usage_point_id, date=date, value=value, fail=fail)
+                        dateObject = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+                        dateHourMinute = dateObject.strftime('%H:%M')
+                        measure_type = "HP"
+                        for offpeak_hour in self.offpeak_hours:
+                            offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
+                            # FORMAT HOUR WITH 2 DIGIT
+                            offpeak_begin = datetime.datetime.strptime(offpeak_begin, '%H:%M')
+                            offpeak_begin = datetime.datetime.strftime(offpeak_begin, '%H:%M')
+                            offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
+                            # FORMAT HOUR WITH 2 DIGIT
+                            offpeak_stop = datetime.datetime.strptime(offpeak_stop, '%H:%M')
+                            offpeak_stop = datetime.datetime.strftime(offpeak_stop, '%H:%M')
+                            result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
+                            if result == True:
+                                measure_type = "HC"
+                        self.cache.insert_consumption_detail(
+                            usage_point_id=self.usage_point_id,
+                            date=date, value=value,
+                            interval=interval,
+                            measure_type=measure_type,
+                            count=0
+                        )
+                        debug(meter_reading)
                     return meter_reading["interval_reading"]
                 else:
                     return {
                         "error": True,
-                        "description": "Erreur lors de la récupération de la consommation journalière."
+                        "description": "Erreur lors de la récupération de la consommation détaillé."
                     }
         except Exception as e:
             logError(e)
@@ -73,7 +96,7 @@ class ConsumptionDaily:
     def get(self):
 
         # REMOVE TODAY
-        begin = datetime.datetime.now() - relativedelta(days=self.max_daily)
+        begin = datetime.datetime.now() - relativedelta(days=self.max_detail)
         end = datetime.datetime.now()
         finish = True
         result = []
@@ -98,9 +121,10 @@ class ConsumptionDaily:
                     response = self.run(begin, end, cache=False)
                 else:
                     response = self.run(begin, end)
+                debug(response)
                 result = [*result, *response]
-                begin = begin - relativedelta(days=self.max_daily)
-                end = end - relativedelta(days=self.max_daily)
+                begin = begin - relativedelta(days=self.max_detail)
+                end = end - relativedelta(days=self.max_detail)
 
             if "error" in response and response["error"]:
                 logError(["Echec de la récupération des données.", f' => {response["description"]}',
@@ -108,4 +132,7 @@ class ConsumptionDaily:
 
             count += 1
 
-        return result
+def is_between(time, time_range):
+    if time_range[1] < time_range[0]:
+        return time >= time_range[0] or time <= time_range[1]
+    return time_range[0] <= time <= time_range[1]

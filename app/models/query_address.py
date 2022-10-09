@@ -1,15 +1,15 @@
 import json
 
-from models.query import Query
-from models.log import log, debug, critical
+import __main__
 from config import URL
-from dependencies import CACHE
+from models.query import Query
+from dependencies import *
 
 
 class Address:
 
     def __init__(self, headers, usage_point_id, config):
-        self.cache = CACHE
+        self.cache = __main__.CACHE
         self.url = URL
 
         self.headers = headers
@@ -24,21 +24,21 @@ class Address:
             endpoint += "/cache"
         target = f"{self.url}/{endpoint}"
 
-        response = Query(endpoint=target, headers=self.headers).get()
-        if response.status_code == 200:
+        query_response = Query(endpoint=target, headers=self.headers).get()
+        if query_response.status_code == 200:
             try:
-                response_json = json.loads(response.text)
-                addresse = response_json["customer"]["usage_points"][0]
+                response_json = json.loads(query_response.text)
+                reponse = response_json["customer"]["usage_points"][0]
                 self.cache.insert_addresse(
                     usage_point_id=self.usage_point_id,
-                    addresse=json.dumps(addresse),
+                    addresse=json.dumps(reponse),
                 )
             except LookupError:
-                addresse = {
+                reponse = {
                     "error": True,
                     "description": "Erreur lors de la récupération du contrat."
                 }
-            return addresse
+            return reponse
         else:
             return {
                 "error": True,
@@ -50,18 +50,24 @@ class Address:
         if current_cache is None:
             # No cache
             log(f" => No cache")
-            return self.run()
+            result = self.run()
         else:
             # Refresh cache
             if "refresh_addresse" in self.config and self.config["refresh_addresse"]:
                 log(f" => Refresh Cache")
-                return self.run()
+                result = self.run()
             else:
                 # Get data in cache
                 log(f" => Query Cache")
-                addresse = json.loads(current_cache[1])
-                self.cache.insert_addresse(
-                    usage_point_id=self.usage_point_id,
-                    addresse=addresse,
-                )
-                return addresse
+                value = current_cache[1]
+                logDebug(f" => {value}")
+                result = json.loads(value)
+        if "error" not in result:
+            for key, value in result["usage_point"].items():
+                if isinstance(value, dict):
+                    for k, v in value.items():
+                        log(f"  {k}: {v}")
+                else:
+                    log(f"{key}: {value}")
+
+        return result

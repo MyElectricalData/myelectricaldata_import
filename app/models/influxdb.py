@@ -9,8 +9,7 @@ from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
 from dateutil.tz import tzlocal
 
-from models.config import CONFIG
-from models.log import critical, log, logSep, logWarn
+from dependencies import *
 
 
 class InfluxDB:
@@ -40,7 +39,7 @@ class InfluxDB:
         if health.status == "pass":
             log(" => Connection success")
         else:
-            critical([
+            logging.critical([
                 "Impossible de se connecter à la base influxdb.",
                 "",
                 "Vous pouvez récupérer un exemple ici :",

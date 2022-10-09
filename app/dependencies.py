@@ -1,25 +1,149 @@
-from models.log import *
-from models.cache import Cache
+import logging
+import os
+import sys
+
+from jinja2 import Template
+
+from config import *
+
+def debug(message):
+    logWarn()
+    if type(message) is list:
+        for msg in message:
+            logging.debug(f" {msg}")
+    else:
+        logging.debug(f" {message}")
+    logWarn()
+
+def log(message):
+    if type(message) is list:
+        for msg in message:
+            logging.info(f" {msg}")
+    else:
+        logging.info(f" {message}")
 
 
-CACHE = Cache()
+def logTitle(message):
+    logSep()
+    logging.info(f" {message.upper()}")
+    logSep()
+
+
+def logDebug(message):
+    if type(message) is list:
+        for msg in message:
+            logging.debug(f" {msg}")
+    else:
+        logging.debug(f" {message}")
+
+
+def logWarning(message):
+    if type(message) is list:
+        for msg in message:
+            logging.warning(f" {msg}")
+    else:
+        logging.warning(f" {message}")
+
+
+def logError(message):
+    logging.error("═════════════════════════════════•°• :ERREUR: •°•══════════════════════════════════")
+    logging.error("")
+    if type(message) is list:
+        for msg in message:
+            logging.error(f" {msg}")
+    else:
+        logging.error(f" {message}")
+    logging.error("")
+    logging.error("═══════════════════════════════════════════════════════════════════════════════════")
+
+
+def logCritical(message):
+    if type(message) is list:
+        for msg in message:
+            logging.critical(f" {msg}")
+    else:
+        logging.critical(f" {message}")
+    sys.exit()
+
+
+def logSep():
+    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+
+def logWarn():
+    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
 
 def logo(version):
     logSep()
-    log("#  __  __       ______ _           _        _           _ _____        _         #")
-    log("# |  \/  |     |  ____| |         | |      (_)         | |  __ \      | |        #")
-    log("# | \  / |_   _| |__  | | ___  ___| |_ _ __ _  ___ __ _| | |  | | __ _| |_ __ _  #")
-    log("# | |\/| | | | |  __| | |/ _ \/ __| __| '__| |/ __/ _` | | |  | |/ _` | __/ _` | #")
-    log("# | |  | | |_| | |____| |  __/ (__| |_| |  | | (_| (_| | | |__| | (_| | || (_| | #")
-    log("# |_|  |_|\__, |______|_|\___|\___|\__|_|  |_|\___\__,_|_|_____/ \__,_|\__\__,_| #")
-    log("#          __/ |                                                                 #")
-    log("#         |___/                                                                  #")
+    logging.info("#  __  __       ______ _           _        _           _ _____        _          #")
+    logging.info("# |  \/  |     |  ____| |         | |      (_)         | |  __ \      | |         #")
+    logging.info("# | \  / |_   _| |__  | | ___  ___| |_ _ __ _  ___ __ _| | |  | | __ _| |_ __ _   #")
+    logging.info("# | |\/| | | | |  __| | |/ _ \/ __| __| '__| |/ __/ _` | | |  | |/ _` | __/ _` |  #")
+    logging.info("# | |  | | |_| | |____| |  __/ (__| |_| |  | | (_| (_| | | |__| | (_| | || (_| |  #")
+    logging.info("# |_|  |_|\__, |______|_|\___|\___|\__|_|  |_|\___\__,_|_|_____/ \__,_|\__\__,_|  #")
+    logging.info("#          __/ |                                                                  #")
+    logging.info("#         |___/                                                                   #")
     logSep()
-    log(f"                            VERSION : {version}")
-    logSep()
+    logging.info(f"                            VERSION : {version}")
 
 
+if os.environ.get("APPLICATION_PATH") is None:
+    APPLICATION_PATH = "/app"
+else:
+    APPLICATION_PATH = os.environ.get('APPLICATION_PATH')
 
+
+def html_return(body, url="/import/0"):
+    links = ["Forcer l'importation"]
+    footer = ""
+    for i, comment in enumerate(links):
+        footer += f"""
+            <div id="bouton_enedis" style="">
+                <a style="text-decoration: none" href="{url}"><div class="btn">{comment}</div></a>
+            </div>
+        """
+
+    with open(f'{APPLICATION_PATH}/html/footer.html') as file_:
+        footer_template = Template(file_.read())
+    footer = footer_template.render(footer=footer)
+
+    with open(f'{APPLICATION_PATH}/html/index.html') as file_:
+        index_template = Template(file_.read())
+
+    html = index_template.render(
+        body=body,
+        fullscreen=True,
+        footer=footer,
+        homepage_link="/",
+        footer_height=80,
+        concent_url=f'{URL}',
+        swagger_url=f"{URL}/docs/",
+        redoc_url=f"{URL}/redoc/",
+        faq_url=f"{URL}/faq/",
+        code_url=f"{URL}/error_code/",
+        doc_url=f"{URL}/documentation/",
+    )
+    return html
+
+
+paypal_footer = """
+<div style="text-align: center" id="paypal" class="paypal_link">
+    <form action="https://www.paypal.com/donate" method="post" target="_top" style="height: 30px;" id="paypal_form">
+        <input type="hidden" name="business" value="FY25JLXDYLXAJ" />
+        <input type="hidden" name="no_recurring" value="0" />
+        <input type="hidden" name="currency_code" value="EUR" />
+        <input type="image" id="paypal_img"
+               src="/static/paypal.png"
+               border="0"
+               name="submit"
+               title="PayPal - The safer, easier way to pay online!"
+               alt="Bouton Faites un don avec PayPal"/>
+        <img alt="" border="0" src="https://www.paypal.com/fr_FR/i/scr/pixel.gif" width="1" height="1" />
+    </form>
+    Le service est gratuit, mais si tu souhaites soutenir le projet (serveur & domaine).
+</div>
+"""
 
 # def is_json(myjson):
 #     try:

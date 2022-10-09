@@ -1,0 +1,158 @@
+<html>
+<head>
+    <title>MyElectricalData</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <script src="https://rawgit.com/notifyjs/notifyjs/master/dist/notify.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <script src="/static/menu.js"></script>
+    <script src="/static/notif.js"></script>
+	<script src="/static/nice-select.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+	<link rel="stylesheet" href="/static/main.css">
+	<link rel="stylesheet" href="/static/menu.css">
+	<link rel="stylesheet" href="/static/notif.css">
+	<link rel="stylesheet" href="/static/logo.css">
+	<link rel="stylesheet" href="/static/nice-select.css">
+	<script>
+
+		$(document).ready(function(){
+
+			$( ".paypal_link" ).click(function() {
+			  $("#paypal_form").first().submit();
+			});
+
+			$('code').on('click', (e) => {
+			  var content = e.target.innerText
+			  copyToClipboard(content);
+			  $.notify(" Copie : "+ content.slice(0, 30) + "..." + content.slice(-30), { style: 'enedis', className: 'success'});
+			});
+
+			$.notify.addStyle('enedis', {
+			  html: "<div><span data-notify-text/></div>"
+			});
+
+			$( "#bouton_enedis").click(function() {
+			  $.LoadingOverlay("show");
+			});
+
+			$( ".alert_redirect" ).click(function(e) {
+				var url = $(this).attr("about")
+				$.confirm({
+					columnClass: 'col-md-4 col-md-offset-8 col-xs-4 col-xs-offset-8',
+					containerFluid: true, // this will add 'container-fluid' instead of 'container'
+					boxWidth: '600px',
+					useBootstrap: false,
+					title: 'Confirmation',
+					content: 'Vous allez être rediriger vers '+url,
+					buttons: {
+						confirm: {
+							text: 'OK!',
+							btnClass: 'btn-blue',
+							action: function () {
+								location.href = url;
+							}
+						},
+						cancel: {
+							text: 'Non merci',
+							btnClass: 'btn-blue',
+						},
+					}
+				});
+			});
+
+			$("#select_usage_point_id").niceSelect()
+
+			$("#select_usage_point_id").change(function() {
+				location.href = "/usage_point_id/"+$("#select_usage_point_id").val();
+			});
+
+		});
+
+
+		function copyToClipboard(text) {
+			var dummy = document.createElement("textarea");
+			document.body.appendChild(dummy);
+			dummy.value = text;
+			dummy.select();
+			document.execCommand("copy");
+			document.body.removeChild(dummy);
+		}
+
+	</script>
+</head>
+<body style="margin: 0px">
+<div class="side_menu">
+<div class="burger_box">
+	<div class="menu-icon-container">
+		<a href="#" class="menu-icon js-menu_toggle closed">
+			<span class="menu-icon_box">
+				<span class="menu-icon_line menu-icon_line--1"></span>
+				<span class="menu-icon_line menu-icon_line--2"></span>
+				<span class="menu-icon_line menu-icon_line--3"></span>
+			</span>
+		</a>
+	</div>
+</div>
+	<div class="container">
+		<h2 class="menu_title">Menu</h2>
+		<ul class="list_load">
+			<li class="list_item"><a href="/">Accueil</a></li>
+			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ concent_url }}">Consentement</a></li>
+			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ doc_url }}">Documentation</a></li>
+			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ swagger_url }}">Swagger</a></li>
+			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ redoc_url }}">Redoc</a></li>
+			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ code_url }}">Codes d'erreurs</a></li>
+			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ faq_url }}">FAQ</a></li>
+		</ul>
+		<div class="spacer_box"><p>Liens</p></div>
+		<ul id="menu_link" class="list_load">
+			<li class="list_item"><a href="https://discord.gg/DfVJZme" style="display: inline-block;">
+				<div>
+				  <img style="vertical-align:middle; width: 18px" src="/static/discord.png" alt="Discord">
+				  <span style="padding-left: 10px;">Discord</span>
+				</div></a>
+			</li>
+			<li class="list_item"><a href="https://mon-compte-client.enedis.fr" style="display: inline-block;">
+				<div>
+				  <img style="vertical-align:middle; width: 18px" src="/static/enedis.png" alt="Enedis">
+				  <span style="padding-left: 10px;">Enedis</span>
+				</div></a>
+			</li>
+		</ul>
+		<ul class="list_load">
+			<li class="list_item">
+				<div style="text-align: center" id="paypal" class="paypal_link">
+					<form action="https://www.paypal.com/donate" method="post" target="_top" style="height: 40px;" id="paypal_form">
+						<input type="hidden" name="business" value="FY25JLXDYLXAJ" />
+						<input type="hidden" name="no_recurring" value="0" />
+						<input type="hidden" name="currency_code" value="EUR" />
+						<input type="image" id="paypal_img"
+							   src="/static/paypal.png"
+							   border="0"
+							   name="submit"
+							   title="PayPal - The safer, easier way to pay online!"
+							   alt="Bouton Faites un don avec PayPal"/>
+						<img alt="" border="0" src="https://www.paypal.com/fr_FR/i/scr/pixel.gif" width="1" height="1" />
+					</form>
+				</div>
+			</li>
+		</ul>
+	</div>
+</div>
+<div id="content" style="padding-left: 50px;">
+	<div id="header">
+		<div id="header_logo" style="float: left;">
+			<div id="logo" onClick="parent.location='/'">&nbsp;</div>
+		</div>
+	</div>
+	<div id="body" style="padding-bottom: 100px;">{{ body }}</div>
+	<div id="footer">{{ footer }}</div>
+</div>
+</body>
+</html>

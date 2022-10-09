@@ -1,15 +1,20 @@
 import os
 import sys
+import yaml
 from pprint import pprint
 import datetime
 
 
-class Log(object):
+class Log:
     def __init__(self, debug=False, error=False, trace=False):
         self.message = None
-        self.trace = trace
-        self.debug = debug
-        self.error = error
+        if os.path.exists("/data/config.yaml"):
+            with open(f'/data/config.yaml') as file:
+                self.config = yaml.load(file, Loader=yaml.FullLoader)
+        self.trace = self.config["trace"]
+        self.debug = self.config["debug"]
+        self.error = self.config["error"]
+
 
     def msg(self, message, level=0):
         now = datetime.datetime.now()
@@ -17,11 +22,9 @@ class Log(object):
         for n in range(level):
             tab += "\t"
         if self.debug:
-            if "DEBUG" in os.environ and os.environ['DEBUG']:
-                print(f"{now} - DEBUG : {tab}{message}")
+            print(f"{now} - DEBUG : {tab}{message}")
         elif self.trace:
-            if "TRACE" in os.environ and os.environ['TRACE']:
-                print(f"{now} - TRACE : {tab}{message}")
+            print(f"{now} - TRACE : {tab}{message}")
         elif self.error:
             print(f"{now} - ERROR : {tab}{message}")
         else:
@@ -33,11 +36,19 @@ def log(message):
 
 
 def debug(message):
-    Log(debug=True).msg(message)
+    if type(message) is list:
+        for msg in message:
+            Log(debug=True).msg(msg)
+    else:
+        Log(debug=True).msg(message)
 
 
 def trace(message):
-    Log(trace=True).msg(message)
+    if type(message) is list:
+        for msg in message:
+            Log(trace=True).msg(msg)
+    else:
+        Log(trace=True).msg(message)
 
 
 def error(message, detail=None):
@@ -67,6 +78,7 @@ def critical(message, detail=None):
     logSep()
     sys.exit()
 
+
 def logg(message, tag=None):
     logSep()
     if tag is not None:
@@ -78,9 +90,7 @@ def logg(message, tag=None):
 def logSep():
     log("==================================================================================")
 
+
 def logWarn():
     log("**********************************************************************************")
     log("**********************************************************************************")
-
-
-

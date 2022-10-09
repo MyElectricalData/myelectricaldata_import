@@ -8,8 +8,7 @@ import sqlite3
 
 from dependencies import *
 from config import fail_count
-from models.log import log, logSep, logWarn, critical, debug
-from models.config import CONFIG, get_version
+from models.config import get_version
 
 
 class Cache:
@@ -18,13 +17,16 @@ class Cache:
         self.path = path
         self.db_name = "cache.db"
         if not os.path.exists(f'{self.path}/{self.db_name}'):
-            self.sqlite = sqlite3.connect(f'{self.path}/{self.db_name}', timeout=10)
+            self.sqlite = sqlite3.connect(f'{self.path}/{self.db_name}', timeout=10, check_same_thread=False)
             self.cursor = self.sqlite.cursor()
             self.init_database()
         else:
-            self.sqlite = sqlite3.connect(f'{self.path}/{self.db_name}', timeout=10)
+            self.sqlite = sqlite3.connect(f'{self.path}/{self.db_name}', timeout=10, check_same_thread=False)
             self.cursor = self.sqlite.cursor()
         self.check()
+
+    def close(self):
+        self.sqlite.close()
 
     def init_database(self):
         logSep()
@@ -46,7 +48,7 @@ class Cache:
                 "=====> ERROR : Exception <======", e,
                 '<!> SQLite Database initialisation failed <!>',
             ]
-            critical(msg)
+            logging.critical(msg)
 
     def check(self):
         logSep()
@@ -102,6 +104,13 @@ class Cache:
             log(" => Reconnect")
             self.init_database()
 
+    def get_usage_points_id(self):
+        query = f"SELECT pdl FROM contracts"
+        logDebug(query)
+        self.cursor.execute(query)
+        query_result = self.cursor.fetchall()
+        return query_result
+
     def purge_cache(self):
         logWarn()
         log("Reset SQLite Database")
@@ -113,32 +122,36 @@ class Cache:
 
     def get_contract(self, usage_point_id):
         query = f"SELECT * FROM contracts WHERE pdl = '{usage_point_id}'"
-        debug(query)
+        logDebug(query)
         self.cursor.execute(query)
         query_result = self.cursor.fetchone()
         return query_result
 
     def insert_contract(self, usage_point_id, contract, count=0):
         query = f"INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
-        debug(query)
-        print(usage_point_id)
-        print(contract)
-        print(count)
+        logDebug(query)
         self.cursor.execute(query, [usage_point_id, str(contract), count])
         return self.sqlite.commit()
 
     def get_addresse(self, usage_point_id):
-        query = f"SELECT * FROM addresses WHERE pdl = '{usage_point_id}'"
-        debug(query)
-        self.cursor.execute(query)
+        query = f"SELECT * FROM addresses WHERE pdl = (?)"
+        logDebug(query)
+        self.cursor.execute(query, [usage_point_id])
         query_result = self.cursor.fetchone()
         return query_result
 
     def insert_addresse(self, usage_point_id, addresse, count=0):
         query = f"INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
-        debug(query)
+        logDebug(query)
         self.cursor.execute(query, [usage_point_id, str(addresse), count])
         return self.sqlite.commit()
+
+    def get_consumption_daily_all(self, usage_point_id):
+        query = f"SELECT * FROM consumption_daily WHERE pdl = (?)"
+        logDebug(query)
+        self.cursor.execute(query, [usage_point_id])
+        query_result = self.cursor.fetchall()
+        return query_result
 
     def get_consumption_daily(self, usage_point_id, begin, end):
 
@@ -155,7 +168,7 @@ class Cache:
             checkDate = dateBegin + timedelta(days=i)
             checkDate = checkDate.strftime('%Y-%m-%d')
             query = f"SELECT * FROM consumption_daily WHERE pdl = (?) AND date = (?)"
-            debug(query)
+            # logDebug(query)
             self.cursor.execute(query, [usage_point_id, checkDate])
             query_result = self.cursor.fetchone()
             if query_result is None:
@@ -188,8 +201,64 @@ class Cache:
                 }
         return result
 
-    def insert_consumption_daily(self, usage_point_id, consumption_daily, count=0):
-        query = f"INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?)"
-        debug(query)
-        self.cursor.execute(query, [usage_point_id, json.dumps(consumption_daily), count])
+    def insert_consumption_daily(self, usage_point_id, date, value, fail=0):
+        query = f"INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)"
+        data = [usage_point_id, date, value, fail]
+        # logDebug([query, data])
+        self.cursor.execute(query, data)
+        return self.sqlite.commit()
+
+    def get_consumption_detail(self, usage_point_id, begin, end):
+
+            dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
+            dateEnded = datetime.datetime.strptime(end, '%Y-%m-%d')
+
+            delta = dateEnded - dateBegin
+            result = {
+                "missing_data": False,
+                "date": {},
+                "count": 0
+            }
+            for i in range(delta.days + 1):
+                checkDate = dateBegin + timedelta(days=i)
+                checkDate = checkDate.strftime('%Y-%m-%d')
+                query = f"SELECT * FROM consumption_detail WHERE pdl = (?) AND date = (?)"
+                # logDebug(query)
+                self.cursor.execute(query, [usage_point_id, checkDate])
+                query_result = self.cursor.fetchone()
+                if query_result is None:
+                    result["date"][checkDate] = {
+                        "status": False,
+                        "fail": 0,
+                        "value": 0
+                    }
+                    result["missing_data"] = True
+                    result["count"] = result["count"] + 1
+                elif query_result[3] >= fail_count:
+                    result["date"][checkDate] = {
+                        "status": True,
+                        "fail": query_result[3],
+                        "value": query_result[2]
+                    }
+                elif query_result[2] == 0:
+                    result["date"][checkDate] = {
+                        "status": False,
+                        "fail": query_result[3],
+                        "value": query_result[2]
+                    }
+                    result["missing_data"] = True
+                    result["count"] = result["count"] + 1
+                else:
+                    result["date"][checkDate] = {
+                        "status": True,
+                        "fail": 0,
+                        "value": query_result[2]
+                    }
+            return result
+
+    def insert_consumption_detail(self, usage_point_id, date, value, interval, measure_type, fail=0):
+        query = f"INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)"
+        data = [usage_point_id, date, value, interval, measure_type, fail]
+        # logDebug([query, data])
+        self.cursor.execute(query, data)
         return self.sqlite.commit()
