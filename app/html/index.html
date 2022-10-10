@@ -1,24 +1,36 @@
 <html>
 <head>
     <title>MyElectricalData</title>
+<!--	JQUERY-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 	<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
-    <script src="https://rawgit.com/notifyjs/notifyjs/master/dist/notify.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
-    <script src="/static/menu.js"></script>
-    <script src="/static/notif.js"></script>
-	<script src="/static/nice-select.js"></script>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
+	<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<!--	JQUERY CONFIRM-->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
+<!--	LOADING PAGE-->
+	<script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+<!--	DATATABLE-->
+	<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.css">
+<!--    NOTIFY-->
+	<script src="https://rawgit.com/notifyjs/notifyjs/master/dist/notify.js"></script>
+	<script src="/static/notif.js"></script>
+	<link rel="stylesheet" href="/static/notif.css">
+<!--	GOOGLE FONT-->
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-	<link rel="stylesheet" href="/static/main.css">
-	<link rel="stylesheet" href="/static/menu.css">
-	<link rel="stylesheet" href="/static/notif.css">
-	<link rel="stylesheet" href="/static/logo.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
+<!--	NICE SELECT-->
+	<script src="/static/nice-select.js"></script>
 	<link rel="stylesheet" href="/static/nice-select.css">
+<!--	MENU-->
+	<script src="/static/menu.js"></script>
+	<link rel="stylesheet" href="/static/menu.css">
+<!--	STATIC-->
+	<link rel="stylesheet" href="/static/main.css">
+	<link rel="stylesheet" href="/static/logo.css">
 	<script>
 
 		$(document).ready(function(){
@@ -67,11 +79,35 @@
 			});
 
 			$("#select_usage_point_id").niceSelect()
+			$("#select_type").niceSelect()
 
 			$("#select_usage_point_id").change(function() {
 				location.href = "/usage_point_id/"+$("#select_usage_point_id").val();
 			});
-
+			$('#dataTable').DataTable( {
+				language: {
+					processing:     "Traitement en cours...",
+					search:         "Rechercher&nbsp;:",
+					lengthMenu:    "Afficher _MENU_ &eacute;l&eacute;ments",
+					info:           "Affichage de l'&eacute;lement _START_ &agrave; _END_ sur _TOTAL_ &eacute;l&eacute;ments",
+					infoEmpty:      "Affichage de l'&eacute;lement 0 &agrave; 0 sur 0 &eacute;l&eacute;ments",
+					infoFiltered:   "(filtr&eacute; de _MAX_ &eacute;l&eacute;ments au total)",
+					infoPostFix:    "",
+					loadingRecords: "Chargement en cours...",
+					zeroRecords:    "Aucun &eacute;l&eacute;ment &agrave; afficher",
+					emptyTable:     "Aucune donnée disponible dans le tableau",
+					paginate: {
+						first:      "Premier",
+						previous:   "Pr&eacute;c&eacute;dent",
+						next:       "Suivant",
+						last:       "Dernier"
+					},
+					aria: {
+						sortAscending:  ": activer pour trier la colonne par ordre croissant",
+						sortDescending: ": activer pour trier la colonne par ordre décroissant"
+					}
+				}
+			});
 		});
 
 

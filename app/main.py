@@ -158,6 +158,30 @@ def get_data():
             ).get()
 
 
+def usage_points_id_list(selected_usage_point=None, choice=False):
+    usage_points_id_data = '<select name="usages_points_id" id="select_usage_point_id" class="right">'
+    if choice:
+        usage_points_id_data += '<option value="none">--- Choix du point de livraison ---</option>'
+    for pdl in CACHE.get_usage_points_id():
+        usage_point = pdl[0]
+        address_data = json.loads(CACHE.get_addresse(usage_point_id=usage_point)[1])
+        print(address_data)
+        if address_data:
+            street = address_data['usage_point']['usage_point_addresses']['street']
+            postal_code = address_data['usage_point']['usage_point_addresses']['postal_code']
+            city = address_data['usage_point']['usage_point_addresses']['city']
+            country = address_data['usage_point']['usage_point_addresses']['country']
+            text = f"{usage_point} - {street}, {postal_code} {city} {country}"
+        else:
+            text = usage_point
+        select = ""
+        if selected_usage_point == usage_point:
+            select = "selected"
+        usage_points_id_data += f'<option value="{usage_point}" {select}>{text}</option>'
+    usage_points_id_data += '</select>'
+    return usage_points_id_data
+
+
 if __name__ == '__main__':
 
     APP = Flask(__name__,
@@ -193,12 +217,7 @@ if __name__ == '__main__':
         usage_points_id = CACHE.get_usage_points_id()
         usage_points_id_data = ""
         if usage_points_id:
-            usage_points_id_data = '<select name="usages_points_id" id="select_usage_point_id" class="right">'
-            usage_points_id_data += '<option value="none">--- Choix du point de livraison ---</option>'
-            for pdl in CACHE.get_usage_points_id():
-                usage_point = pdl[0]
-                usage_points_id_data += f'<option value="{usage_point}">{usage_point}</option>'
-            usage_points_id_data += '</select>'
+            usage_points_id_data = usage_points_id_list(choice=True)
         with open(f'{APPLICATION_PATH}/html/homepage.md') as file_:
             homepage_template = Template(file_.read())
         data = homepage_template.render(
@@ -211,43 +230,109 @@ if __name__ == '__main__':
 {data}            
 </div>
 """
-
         html_content = html_return(body=data, url="/import/0")
         return html_content
 
     @APP.route('/usage_point_id/<usage_point_id>', methods=['GET'])
     @APP.route('/usage_point_id/<usage_point_id>/', methods=['GET'])
     def usage_point_id(usage_point_id):
-        usage_points_id = CACHE.get_usage_points_id()
-        usage_points_id_data = ""
-        contract_data = ""
-        address_data = ""
-        daily_consumption_data = ""
-        if usage_points_id:
-            usage_points_id_data = '<select name="usages_points_id" id="select_usage_point_id" class="right">'
-            for pdl in CACHE.get_usage_points_id():
-                select = ""
-                if pdl[0] == usage_point_id:
-                    select = "selected"
-                usage_points_id_data += f'<option value="{pdl[0]}" {select}>{pdl[0]}</option>'
-                contract_data = json.loads(CACHE.get_contract(usage_point_id=usage_point_id)[1])
-                address_data = json.loads(CACHE.get_addresse(usage_point_id=usage_point_id)[1])
-                daily_consumption_data = CACHE.get_consumption_daily_all(usage_point_id=usage_point_id)
-            usage_points_id_data += '</select>'
+        usage_points_id_data = usage_points_id_list(selected_usage_point=usage_point_id)
+        contract = CACHE.get_contract(usage_point_id=usage_point_id)
+        contract_data = {}
+        if contract is not None:
+            _tmp = json.loads(contract[1])
+            contract_data = {
+                "usage_point_status": _tmp['usage_point']['usage_point_status'],
+                "meter_type": _tmp['usage_point']['meter_type'],
+                "segment": _tmp['contracts']['segment'],
+                "subscribed_power": _tmp['contracts']['subscribed_power'],
+                "last_activation_date": _tmp['contracts']['last_activation_date'],
+                "distribution_tariff": _tmp['contracts']['distribution_tariff'],
+                "offpeak_hours": _tmp['contracts']['offpeak_hours'],
+                "contract_status": _tmp['contracts']['contract_status'],
+                "last_distribution_tariff_change_date": _tmp['contracts']['last_distribution_tariff_change_date'],
+            }
+        address = CACHE.get_addresse(usage_point_id=usage_point_id)
+        address_data = {}
+        if address is not None:
+            _tmp = json.loads(address[1])
+            address_data = {
+                "street": _tmp['usage_point']['usage_point_addresses']['street'],
+                "postal_code": _tmp['usage_point']['usage_point_addresses']['postal_code'],
+                "city": _tmp['usage_point']['usage_point_addresses']['city'],
+                "country": _tmp['usage_point']['usage_point_addresses']['country'],
+            }
 
         with open(f'{APPLICATION_PATH}/html/usage_point_id.md') as file_:
             homepage_template = Template(file_.read())
+
+        usage_point_config = CONFIG.usage_point_id_config(usage_point_id)
+        if usage_point_config:
+            found = False
+            type_select = '<select name="type_select" id="select_type" class="wide">'
+            if "consumption" in usage_point_config and usage_point_config['consumption']:
+                found = True
+                type_select += '<option value="none">Ma consommation journalière</option>'
+            if "consumption_detail" in usage_point_config and usage_point_config['consumption_detail']:
+                found = True
+                type_select += '<option value="none">Ma consommation détaillée</option>'
+            if "production" in usage_point_config and usage_point_config['production']:
+                found = True
+                type_select += '<option value="none">Ma production journalière</option>'
+            if "production_detail" in usage_point_config and usage_point_config['production_detail']:
+                found = True
+                type_select += '<option value="none">Ma production journalière</option>'
+            if not found:
+                type_select = '<select name="type_select" id="select_type" class="wide" disabled>'
+                type_select += '<option value="none">--- Aucune collecte activée dans le config.yaml sur ce endpoint ---</option>'
+                type_select += "</select>"
+            else:
+                type_select += "</select>"
+        else:
+            type_select = '<select name="type_select" id="select_type" class="wide" disabled>'
+            type_select += "<option value="">--- Aucune donnée en cache ---</option>"
+            type_select += "</select>"
+
+        debug(type_select)
+
+        daily_consumption_data = """
+        <table id="dataTable" class="display">
+            <thead>
+                <tr>
+                    <th class="title">Date</th>
+                    <th class="title">Consommation (W)</th>
+                    <th class="title">Consommation (kW)</th>
+                    <th class="title">En cache</th>
+                    <th class="title">Reset cache</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        for daily_consumption in CACHE.get_consumption_daily_all(usage_point_id=usage_point_id):
+            daily_consumption_data += f"""
+            <tr>
+                <td>{daily_consumption[1]}</td>
+                <td>{daily_consumption[2]} W</td>
+                <td>{daily_consumption[2]/1000} kW</td>
+                <td></td>
+                <td></td>
+            </tr>
+            """
+        daily_consumption_data += "</tbody></table>"
         data = homepage_template.render(
             usage_points_id=usage_points_id_data,
             contract_data=contract_data,
             address_data=address_data,
-            daily_consumption=daily_consumption_data
+            type_select=type_select
         )
         data = markdown.markdown(data, extensions=['fenced_code', 'codehilite'])
         data = f"""
         <h3 style="line-height: 45px; font-size: 25px;">Choix du point de livraison {usage_points_id_data}</h3>
         <div style="padding-right:50px; font-family: 'Inter UI',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';" id="accueil"> 
-        {data}            
+        {data}      
+        <br>
+        <br>
+        {daily_consumption_data}      
         </div>
         """
         html_content = html_return(body=data, url=f"/import/{usage_point_id}")

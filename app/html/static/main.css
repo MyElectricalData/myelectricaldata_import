@@ -239,3 +239,18 @@ select{
     text-align: center;
     cursor: pointer;
 }
+
+#dataTable {
+    padding: 10px;
+}
+
+table .title {
+    font-weight: bolder;
+    /*text-align: center;*/
+    background: var(--sde-bg-color);
+    color: var(--text-title);
+}
+
+table td {
+    border: 1px solid var(--code-color);
+}

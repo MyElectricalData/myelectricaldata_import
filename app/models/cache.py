@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 
 import datetime
 from datetime import timedelta
@@ -147,7 +148,7 @@ class Cache:
         return self.sqlite.commit()
 
     def get_consumption_daily_all(self, usage_point_id):
-        query = f"SELECT * FROM consumption_daily WHERE pdl = (?)"
+        query = f"SELECT * FROM consumption_daily WHERE pdl = (?) ORDER BY date DESC"
         logDebug(query)
         self.cursor.execute(query, [usage_point_id])
         query_result = self.cursor.fetchall()
@@ -202,8 +203,18 @@ class Cache:
         return result
 
     def insert_consumption_daily(self, usage_point_id, date, value, fail=0):
-        query = f"INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)"
-        data = [usage_point_id, date, value, fail]
+        query = f"SELECT * FROM consumption_daily WHERE pdl = (?) and date = (?)"
+        data = [usage_point_id, date]
+        self.cursor.execute(query, data)
+        query_result = self.cursor.fetchone()
+        if query_result is None:
+            # INSERT
+            query = f"INSERT INTO consumption_daily VALUES (?,?,?,?)"
+            data = [usage_point_id, date, value, fail]
+        else:
+            # UPDATE
+            query = f"UPDATE consumption_daily SET pdl=?, date=?, value=?, fail=? WHERE pdl = (?) AND date = (?)"
+            data = [usage_point_id, date, value, fail, usage_point_id, date]
         # logDebug([query, data])
         self.cursor.execute(query, data)
         return self.sqlite.commit()
@@ -257,8 +268,18 @@ class Cache:
             return result
 
     def insert_consumption_detail(self, usage_point_id, date, value, interval, measure_type, fail=0):
-        query = f"INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)"
-        data = [usage_point_id, date, value, interval, measure_type, fail]
-        # logDebug([query, data])
+        query = f"SELECT * FROM consumption_daily WHERE pdl = (?) and date = (?)"
+        data = [usage_point_id, date]
+        self.cursor.execute(query, data)
+        query_result = self.cursor.fetchone()
+        if query_result is None:
+            # INSERT
+            query = f"INSERT INTO consumption_detail VALUES (?,?,?,?,?,?)"
+            data = [usage_point_id, date, value, interval, measure_type, fail]
+        else:
+            # UPDATE
+            query = f"UPDATE consumption_detail SET pdl=?, date=?, value=?, fail=? WHERE pdl = (?) AND date = (?)"
+            data = [usage_point_id, date, value, fail, usage_point_id, date]
+        logDebug([query, data])
         self.cursor.execute(query, data)
         return self.sqlite.commit()

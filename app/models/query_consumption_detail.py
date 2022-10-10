@@ -2,6 +2,7 @@ import json
 import re
 
 import datetime
+import sys
 
 from dateutil.relativedelta import relativedelta
 import pytz
@@ -29,7 +30,12 @@ class ConsumptionDetail:
         else:
             self.activation_date = activation_date
 
-        self.offpeak_hours = offpeak_hours
+        offpeak_hours = "HC (22h38-6h38;12h00-13h00)"
+        if offpeak_hours:
+            self.offpeak_hours = re.search('HC \((.*)\)', offpeak_hours).group(1).split(";")
+        else:
+            self.offpeak_hours = []
+
 
         self.daily_max_days = DAILY_MAX_DAYS
         self.max_days_date = datetime.datetime.utcnow() - relativedelta(days=self.daily_max_days)
@@ -64,24 +70,26 @@ class ConsumptionDetail:
                         dateObject = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
                         dateHourMinute = dateObject.strftime('%H:%M')
                         measure_type = "HP"
-                        for offpeak_hour in self.offpeak_hours:
-                            offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
-                            # FORMAT HOUR WITH 2 DIGIT
-                            offpeak_begin = datetime.datetime.strptime(offpeak_begin, '%H:%M')
-                            offpeak_begin = datetime.datetime.strftime(offpeak_begin, '%H:%M')
-                            offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
-                            # FORMAT HOUR WITH 2 DIGIT
-                            offpeak_stop = datetime.datetime.strptime(offpeak_stop, '%H:%M')
-                            offpeak_stop = datetime.datetime.strftime(offpeak_stop, '%H:%M')
-                            result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
-                            if result == True:
-                                measure_type = "HC"
+                        debug(self.offpeak_hours)
+                        if self.offpeak_hours:
+                            for offpeak_hour in self.offpeak_hours:
+                                offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
+                                # FORMAT HOUR WITH 2 DIGIT
+                                offpeak_begin = datetime.datetime.strptime(offpeak_begin, '%H:%M')
+                                offpeak_begin = datetime.datetime.strftime(offpeak_begin, '%H:%M')
+                                offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
+                                # FORMAT HOUR WITH 2 DIGIT
+                                offpeak_stop = datetime.datetime.strptime(offpeak_stop, '%H:%M')
+                                offpeak_stop = datetime.datetime.strftime(offpeak_stop, '%H:%M')
+                                result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
+                                if result == True:
+                                    measure_type = "HC"
                         self.cache.insert_consumption_detail(
                             usage_point_id=self.usage_point_id,
                             date=date, value=value,
                             interval=interval,
                             measure_type=measure_type,
-                            count=0
+                            fail=0
                         )
                         debug(meter_reading)
                     return meter_reading["interval_reading"]
@@ -131,6 +139,7 @@ class ConsumptionDetail:
                           f" => {begin.strftime('%Y-%m-%d')} -> {end.strftime('%Y-%m-%d')}"])
 
             count += 1
+
 
 def is_between(time, time_range):
     if time_range[1] < time_range[0]:

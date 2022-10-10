@@ -203,3 +203,9 @@ class Config:
             return self.config["influxdb"]
         else:
             return False
+
+    def usage_point_id_config(self, usage_point_id):
+        if "myelectricaldata" in self.config and usage_point_id in self.config["myelectricaldata"]:
+            return self.config["myelectricaldata"][usage_point_id]
+        else:
+            return False
