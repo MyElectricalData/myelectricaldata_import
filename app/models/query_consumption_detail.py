@@ -9,7 +9,7 @@ import pytz
 from mergedeep import Strategy, merge
 
 import __main__
-from config import URL, DAILY_MAX_DAYS
+from config import URL, DETAIL_MAX_DAYS
 from dependencies import *
 from models.query import Query
 
@@ -30,14 +30,12 @@ class ConsumptionDetail:
         else:
             self.activation_date = activation_date
 
-        offpeak_hours = "HC (22h38-6h38;12h00-13h00)"
         if offpeak_hours:
             self.offpeak_hours = re.search('HC \((.*)\)', offpeak_hours).group(1).split(";")
         else:
             self.offpeak_hours = []
 
-
-        self.daily_max_days = DAILY_MAX_DAYS
+        self.daily_max_days = DETAIL_MAX_DAYS
         self.max_days_date = datetime.datetime.utcnow() - relativedelta(days=self.daily_max_days)
 
         self.base_price = self.config['consumption_price_base']
@@ -51,7 +49,7 @@ class ConsumptionDetail:
             endpoint += "/cache"
         try:
             current_data = self.cache.get_consumption_detail(usage_point_id=self.usage_point_id, begin=begin, end=end)
-            if not current_data["missing_data"]:
+            if not current_data["missing_data"] and cache:
                 log(" => Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
@@ -62,7 +60,6 @@ class ConsumptionDetail:
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 if data.status_code == 200:
                     meter_reading = json.loads(data.text)['meter_reading']
-                    debug(meter_reading["interval_reading"])
                     for interval_reading in meter_reading["interval_reading"]:
                         value = interval_reading["value"]
                         interval = re.findall(r'\d+', interval_reading['interval_length'])[0]
@@ -70,7 +67,6 @@ class ConsumptionDetail:
                         dateObject = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
                         dateHourMinute = dateObject.strftime('%H:%M')
                         measure_type = "HP"
-                        debug(self.offpeak_hours)
                         if self.offpeak_hours:
                             for offpeak_hour in self.offpeak_hours:
                                 offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
@@ -91,12 +87,12 @@ class ConsumptionDetail:
                             measure_type=measure_type,
                             fail=0
                         )
-                        debug(meter_reading)
                     return meter_reading["interval_reading"]
                 else:
                     return {
                         "error": True,
-                        "description": "Erreur lors de la récupération de la consommation détaillé."
+                        "description": "Erreur lors de la récupération de la consommation détaillé.",
+                        "result": data
                     }
         except Exception as e:
             logError(e)
@@ -129,14 +125,20 @@ class ConsumptionDetail:
                     response = self.run(begin, end, cache=False)
                 else:
                     response = self.run(begin, end)
-                debug(response)
                 result = [*result, *response]
                 begin = begin - relativedelta(days=self.max_detail)
                 end = end - relativedelta(days=self.max_detail)
 
             if "error" in response and response["error"]:
-                logError(["Echec de la récupération des données.", f' => {response["description"]}',
-                          f" => {begin.strftime('%Y-%m-%d')} -> {end.strftime('%Y-%m-%d')}"])
+                logError([
+                    "Echec de la récupération des données.",
+                    f' => {response["description"]}',
+                    f" => {begin.strftime('%Y-%m-%d')} -> {end.strftime('%Y-%m-%d')}",
+                    f"",
+                    f"Result :",
+                    f"{response['result']}",
+                    f"{response['result'].text}",
+                ])
 
             count += 1
 

@@ -8,3 +8,4 @@ fail_count = 50
 cycle_minimun = 3600
 
 DAILY_MAX_DAYS = 1095
+DETAIL_MAX_DAYS = 729

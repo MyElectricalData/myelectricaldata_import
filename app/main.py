@@ -96,8 +96,6 @@ if CYCLE < cycle_minimun:
 
 def get_data():
     for usage_point_id, config in CONFIG.get('myelectricaldata').items():
-        ha_discovery = {usage_point_id: {}}
-
         result = {}
 
         headers = {
@@ -157,6 +155,8 @@ def get_data():
                 offpeak_hours=offpeak_hours
             ).get()
 
+    finish()
+
 
 def usage_points_id_list(selected_usage_point=None, choice=False):
     usage_points_id_data = '<select name="usages_points_id" id="select_usage_point_id" class="right">'
@@ -165,7 +165,6 @@ def usage_points_id_list(selected_usage_point=None, choice=False):
     for pdl in CACHE.get_usage_points_id():
         usage_point = pdl[0]
         address_data = json.loads(CACHE.get_addresse(usage_point_id=usage_point)[1])
-        print(address_data)
         if address_data:
             street = address_data['usage_point']['usage_point_addresses']['street']
             postal_code = address_data['usage_point']['usage_point_addresses']['postal_code']
@@ -266,37 +265,30 @@ if __name__ == '__main__':
         with open(f'{APPLICATION_PATH}/html/usage_point_id.md') as file_:
             homepage_template = Template(file_.read())
 
-        usage_point_config = CONFIG.usage_point_id_config(usage_point_id)
-        if usage_point_config:
-            found = False
-            type_select = '<select name="type_select" id="select_type" class="wide">'
-            if "consumption" in usage_point_config and usage_point_config['consumption']:
-                found = True
-                type_select += '<option value="none">Ma consommation journalière</option>'
-            if "consumption_detail" in usage_point_config and usage_point_config['consumption_detail']:
-                found = True
-                type_select += '<option value="none">Ma consommation détaillée</option>'
-            if "production" in usage_point_config and usage_point_config['production']:
-                found = True
-                type_select += '<option value="none">Ma production journalière</option>'
-            if "production_detail" in usage_point_config and usage_point_config['production_detail']:
-                found = True
-                type_select += '<option value="none">Ma production journalière</option>'
-            if not found:
-                type_select = '<select name="type_select" id="select_type" class="wide" disabled>'
-                type_select += '<option value="none">--- Aucune collecte activée dans le config.yaml sur ce endpoint ---</option>'
-                type_select += "</select>"
-            else:
-                type_select += "</select>"
-        else:
-            type_select = '<select name="type_select" id="select_type" class="wide" disabled>'
-            type_select += "<option value="">--- Aucune donnée en cache ---</option>"
-            type_select += "</select>"
-
-        debug(type_select)
+        # usage_point_config = CONFIG.usage_point_id_config(usage_point_id)
+        # if usage_point_config:
+        #     found = False
+        #     type_select = '<select name="type_select" id="select_type" class="wide">'
+        #     if "consumption" in usage_point_config and usage_point_config['consumption']:
+        #         found = True
+        #         type_select += '<option value="none">Ma consommation journalière</option>'
+        #     if "production" in usage_point_config and usage_point_config['production']:
+        #         found = True
+        #         type_select += '<option value="none">Ma production journalière</option>'
+        #     if not found:
+        #         type_select = '<select name="type_select" id="select_type" class="wide" disabled>'
+        #         type_select += '<option value="none">--- Aucune collecte activée dans le config.yaml sur ce endpoint ---</option>'
+        #         type_select += "</select>"
+        #     else:
+        #         type_select += "</select>"
+        # else:
+        #     type_select = '<select name="type_select" id="select_type" class="wide" disabled>'
+        #     type_select += "<option value="">--- Aucune donnée en cache ---</option>"
+        #     type_select += "</select>"
 
         daily_consumption_data = """
-        <table id="dataTable" class="display">
+        <h2>Ma consommation journalière</h2>
+        <table id="dataTableConsumption" class="display">
             <thead>
                 <tr>
                     <th class="title">Date</th>
@@ -308,6 +300,7 @@ if __name__ == '__main__':
             </thead>
             <tbody>
         """
+
         for daily_consumption in CACHE.get_consumption_daily_all(usage_point_id=usage_point_id):
             daily_consumption_data += f"""
             <tr>
@@ -319,20 +312,45 @@ if __name__ == '__main__':
             </tr>
             """
         daily_consumption_data += "</tbody></table>"
+
+        daily_production_data = """
+        <h2>Ma production journalière</h2>
+        <table id="dataTableProduction" class="display">
+            <thead>
+                <tr>
+                    <th class="title">Date</th>
+                    <th class="title">Consommation (W)</th>
+                    <th class="title">Consommation (kW)</th>
+                    <th class="title">En cache</th>
+                    <th class="title">Reset cache</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        for daily_production in CACHE.get_production_daily_all(usage_point_id=usage_point_id):
+            daily_production_data += f"""
+            <tr>
+                <td>{daily_production[1]}</td>
+                <td>{daily_production[2]} W</td>
+                <td>{daily_production[2]/1000} kW</td>
+                <td></td>
+                <td></td>
+            </tr>
+            """
+        daily_production_data += "</tbody></table>"
         data = homepage_template.render(
             usage_points_id=usage_points_id_data,
             contract_data=contract_data,
             address_data=address_data,
-            type_select=type_select
+            # type_select=type_select
         )
         data = markdown.markdown(data, extensions=['fenced_code', 'codehilite'])
         data = f"""
         <h3 style="line-height: 45px; font-size: 25px;">Choix du point de livraison {usage_points_id_data}</h3>
         <div style="padding-right:50px; font-family: 'Inter UI',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';" id="accueil"> 
-        {data}      
-        <br>
-        <br>
-        {daily_consumption_data}      
+        {data}           
+        {daily_consumption_data}        
+        {daily_production_data}        
         </div>
         """
         html_content = html_return(body=data, url=f"/import/{usage_point_id}")

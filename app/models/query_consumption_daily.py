@@ -43,7 +43,6 @@ class ConsumptionDaily:
             endpoint += "/cache"
         try:
             current_data = self.cache.get_consumption_daily(usage_point_id=self.usage_point_id, begin=begin, end=end)
-            # debug(current_data)
             if not current_data["missing_data"]:
                 log(" => Toutes les données sont déjà en cache.")
                 output = []

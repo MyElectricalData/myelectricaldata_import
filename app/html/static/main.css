@@ -240,7 +240,10 @@ select{
     cursor: pointer;
 }
 
-#dataTable {
+#dataTableConsumption {
+    padding: 10px;
+}
+#dataTableProduction {
     padding: 10px;
 }
 

@@ -28,6 +28,3 @@ Seuil heures creuse / pleine : **{{ contract_data['offpeak_hours'] | default("Pa
 Status du contrat : **{{ contract_data['contract_status'] | default("Pas de données") }}**
 
 Dernière date de changement du tarif : **{{ contract_data['last_distribution_tariff_change_date'] | default("Pas de données") }}**
-
-## Mes données
-{{ type_select }}

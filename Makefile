@@ -2,7 +2,6 @@ COMPOSE=docker compose -f docker-compose.dev.yml
 
 ## Connect to EnedisGateway container : DEV
 debug:
-	set -x
 	$(call title,"Debug mode")
 	$(COMPOSE) run -p 5000:5000 myelectricaldata_import
 
