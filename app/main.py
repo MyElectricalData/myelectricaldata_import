@@ -94,7 +94,9 @@ if CYCLE < cycle_minimun:
     CONFIG.set("cycle", cycle_minimun)
 
 
+IMPORT_LOCK = False
 def get_data():
+    IMPORT_LOCK = True
     for usage_point_id, config in CONFIG.get('myelectricaldata').items():
         result = {}
 
@@ -156,6 +158,7 @@ def get_data():
             ).get()
 
     finish()
+    IMPORT_LOCK = False
 
 
 def usage_points_id_list(selected_usage_point=None, choice=False):
