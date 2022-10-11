@@ -1,11 +1,13 @@
 import os
 import json
 import sys
+import threading
 
 import datetime
 from datetime import timedelta
 
 import sqlite3
+import sqlalchemy as db
 
 from dependencies import *
 from config import fail_count
@@ -18,21 +20,94 @@ class Cache:
         self.path = path
         self.db_name = "cache.db"
         self.db_path = f"{self.path}/{self.db_name}"
+
+        new_db = False
         if not os.path.exists(f'{self.db_path}'):
-            self.sqlite = sqlite3.connect(f'{self.db_path}', timeout=10, check_same_thread=False)
-            self.sqlite_ro = sqlite3.connect(f'file:{self.db_path}?mode=ro', timeout=10, check_same_thread=False, uri=True)
-            self.cursor = self.sqlite.cursor()
-            self.cursor_ro = self.sqlite_ro.cursor()
+            new_db = True
+
+        self.engine = db.create_engine(f'sqlite:///{self.db_path}')
+        self.connection = self.engine.connect()
+        self.metadata = db.MetaData()
+
+        self.db_config = db.Table(
+            'config', self.metadata,
+            db.Column('key', db.String(255), primary_key=True, index=True, unique=True),
+            db.Column('value', db.String(2000), nullable=False),
+        )
+        self.db_addresses = db.Table(
+            'addresses', self.metadata,
+            db.Column('pdl', db.String(255), primary_key=True, index=True, unique=True),
+            db.Column('json', db.String(2000), nullable=False),
+            db.Column('count', db.Integer()),
+        )
+        self.db_contracts = db.Table(
+            'contracts', self.metadata,
+            db.Column('pdl', db.String(255), primary_key=True, index=True, unique=True),
+            db.Column('json', db.String(2000), nullable=False),
+            db.Column('count', db.Integer()),
+        )
+        self.db_consumption_daily = db.Table(
+            'consumption_daily', self.metadata,
+            db.Column('pdl', db.String(255), index=True, nullable=False),
+            db.Column('date', db.String(255), nullable=False),
+            db.Column('value', db.Integer(), nullable=False),
+            db.Column('fail', db.Integer()),
+        )
+        self.db_consumption_detail = db.Table(
+            'consumption_detail', self.metadata,
+            db.Column('pdl', db.String(255), index=True, nullable=False),
+            db.Column('date', db.String(255), nullable=False),
+            db.Column('value', db.Integer(), nullable=False),
+            db.Column('interval', db.Integer(), nullable=False),
+            db.Column('measure_type', db.String(255), nullable=False),
+            db.Column('fail', db.Integer()),
+        )
+        self.db_production_daily = db.Table(
+            'production_daily', self.metadata,
+            db.Column('pdl', db.String(255), index=True, nullable=False),
+            db.Column('date', db.String(255), nullable=False),
+            db.Column('value', db.Integer(), nullable=False),
+            db.Column('fail', db.Integer()),
+        )
+        self.db_production_detail = db.Table(
+            'production_detail', self.metadata,
+            db.Column('pdl', db.String(255), index=True, nullable=False),
+            db.Column('date', db.String(255), nullable=False),
+            db.Column('value', db.Integer(), nullable=False),
+            db.Column('interval', db.Integer(), nullable=False),
+            db.Column('measure_type', db.String(255), nullable=False),
+            db.Column('fail', db.Integer()),
+        )
+
+        self.metadata.create_all(self.engine)
+
+        if new_db:
             self.init_database()
-        else:
-            self.sqlite = sqlite3.connect(f'{self.db_path}', timeout=10, check_same_thread=False)
-            self.sqlite_ro = sqlite3.connect(f'file:{self.db_path}?mode=ro', timeout=10, check_same_thread=False, uri=True)
-            self.cursor = self.sqlite.cursor()
-            self.cursor_ro = self.sqlite_ro.cursor()
-        self.check()
 
     def close(self):
         self.sqlite.close()
+
+
+    def query(self, query, data=None, fetch="commit"):
+        if data is None:
+            data = []
+        lock = threading.Lock()
+        try:
+            lock.acquire(True)
+            _query = query
+            for word in data:
+                _query = _query.replace('(?)', str(word), 1)
+            # logDebug(_query)
+            self.cursor.execute(query, data)
+            if fetch == "fetchall":
+                return self.cursor.fetchall()
+            elif fetch == "fetchone":
+                return self.cursor.fetchone()
+            else:
+                return self.sqlite.commit()
+        finally:
+            lock.release()
+
 
     def init_database(self):
         logSep()
@@ -40,14 +115,16 @@ class Cache:
         try:
             self.cursor.executescript(open("/app/init_cache.sql").read())
             ## Default Config
-            config_query = "INSERT OR REPLACE INTO config VALUES (?, ?)"
-            self.cursor.execute(config_query, ["config", json.dumps({
-                "day": datetime.datetime.now().strftime('%Y-%m-%d'),
-                "call_number": 0,
-                "max_call": 500,
-                "version": get_version()
-            })])
-            self.sqlite.commit()
+            # config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
+            # info = json.dumps(
+            #     {
+            #         "day": datetime.datetime.now().strftime('%Y-%m-%d'),
+            #         "call_number": 0,
+            #         "max_call": 500,
+            #         "version": get_version()
+            #     })
+            # data = ["config", info]
+            # self.query(config_query, data, "commit")
             log(" => Initialization success")
         except Exception as e:
             msg = [
@@ -56,20 +133,20 @@ class Cache:
             ]
             logging.critical(msg)
 
+
     def check(self):
         logSep()
         log("Connect to SQLite Database")
         try:
             config_query = "INSERT OR REPLACE INTO config VALUES (?, ?)"
-            self.cursor.execute(config_query, ["lastUpdate", datetime.datetime.now()])
-            self.sqlite.commit()
+            data = ["lastUpdate", datetime.datetime.now()]
+            self.query(config_query, data, "commit")
 
             list_tables = ["config", "addresses", "contracts", "consumption_daily", "consumption_detail",
                            "production_daily", "production_detail"]
 
             query = "SELECT name FROM sqlite_master WHERE type='table';"
-            self.cursor.execute(query)
-            query_result = self.cursor.fetchall()
+            query_result = self.query(query=query, data=[], fetch="fetchall")
             tables = []
             for table in query_result:
                 tables.append(str(table).replace("('", "").replace("',)", ''))
@@ -78,26 +155,25 @@ class Cache:
                     msg = f"Table {tab} is missing"
                     log(msg)
                     raise msg
-            self.cursor.execute("INSERT OR REPLACE INTO config VALUES (?,?)", [0, 0])
-            self.cursor.execute("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
-            self.cursor.execute("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
-            self.cursor.execute("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-            self.cursor.execute("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)",
-                                [0, '1970-01-01', 0, 0, "", 0])
-            self.cursor.execute("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-            self.cursor.execute("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?,?)",
-                                [0, '1970-01-01', 0, 0, "", 0])
-            self.cursor.execute("DELETE FROM config WHERE key = 0")
-            self.cursor.execute("DELETE FROM addresses WHERE pdl = 0")
-            self.cursor.execute("DELETE FROM contracts WHERE pdl = 0")
-            self.cursor.execute("DELETE FROM consumption_daily WHERE pdl = 0")
-            self.cursor.execute("DELETE FROM consumption_detail WHERE pdl = 0")
-            self.cursor.execute("DELETE FROM production_daily WHERE pdl = 0")
-            self.cursor.execute("DELETE FROM production_detail WHERE pdl = 0")
-            self.cursor.execute("DELETE FROM production_detail WHERE pdl = 0")
+            self.query("INSERT OR REPLACE INTO config VALUES (?,?)", [0, 0])
+            self.query("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
+            self.query("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
+            self.query("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
+            self.query("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)",
+                       [0, '1970-01-01', 0, 0, "", 0])
+            self.query("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
+            self.query("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?,?)",
+                       [0, '1970-01-01', 0, 0, "", 0])
+            self.query("DELETE FROM config WHERE key = 0")
+            self.query("DELETE FROM addresses WHERE pdl = 0")
+            self.query("DELETE FROM contracts WHERE pdl = 0")
+            self.query("DELETE FROM consumption_daily WHERE pdl = 0")
+            self.query("DELETE FROM consumption_detail WHERE pdl = 0")
+            self.query("DELETE FROM production_daily WHERE pdl = 0")
+            self.query("DELETE FROM production_detail WHERE pdl = 0")
+            self.query("DELETE FROM production_detail WHERE pdl = 0")
             config_query = "SELECT * FROM config WHERE key = 'config'"
-            self.cursor.execute(config_query)
-            query_result = self.cursor.fetchall()
+            query_result = self.query(query=config_query, data=[], fetch="fetchall")
             json.loads(query_result[0][1])
             log(" => Connection success")
         except Exception as e:
@@ -110,12 +186,11 @@ class Cache:
             log(" => Reconnect")
             self.init_database()
 
+
     def get_usage_points_id(self):
         query = "SELECT pdl FROM contracts"
-        logDebug(query)
-        self.cursor.execute(query)
-        query_result = self.cursor.fetchall()
-        return query_result
+        return self.query(query=query, data=[], fetch="fetchall")
+
 
     def purge_cache(self):
         logWarn()
@@ -126,41 +201,38 @@ class Cache:
         else:
             log(" => Not cache detected")
 
+
     def get_contract(self, usage_point_id):
         query = "SELECT * FROM contracts WHERE pdl = (?)"
-        logDebug(query)
-        self.cursor_ro.execute(query, [usage_point_id])
-        query_result = self.cursor_ro.fetchone()
-        return query_result
+        data = [usage_point_id]
+        return self.query(query, data, "fetchone")
+
 
     def insert_contract(self, usage_point_id, contract, count=0):
         query = "INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
-        logDebug(query)
-        self.cursor.execute(query, [usage_point_id, str(contract), count])
-        return self.sqlite.commit()
+        data = [usage_point_id, str(contract), count]
+        return self.query(query, data, "commit")
+
 
     def get_addresse(self, usage_point_id):
         query = "SELECT * FROM addresses WHERE pdl = (?)"
-        logDebug(query)
-        self.cursor_ro.execute(query, [usage_point_id])
-        query_result = self.cursor_ro.fetchone()
-        return query_result
+        data = [usage_point_id]
+        return self.query(query, data, "fetchone")
+
 
     def insert_addresse(self, usage_point_id, addresse, count=0):
         query = "INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
-        logDebug(query)
-        self.cursor.execute(query, [usage_point_id, str(addresse), count])
-        return self.sqlite.commit()
+        data = [usage_point_id, str(addresse), count]
+        return self.query(query, data, "commit")
+
 
     def get_consumption_daily_all(self, usage_point_id):
         query = "SELECT * FROM consumption_daily WHERE pdl = (?) ORDER BY date DESC"
-        logDebug(query)
-        self.cursor_ro.execute(query, [usage_point_id])
-        query_result = self.cursor_ro.fetchall()
-        return query_result
+        data = [usage_point_id]
+        return self.query(query, data, "fetchall")
+
 
     def get_consumption_daily(self, usage_point_id, begin, end):
-
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
         dateEnded = datetime.datetime.strptime(end, '%Y-%m-%d')
 
@@ -175,9 +247,7 @@ class Cache:
             checkDate = checkDate.strftime('%Y-%m-%d')
             query = "SELECT * FROM consumption_daily WHERE pdl = (?) AND date = (?) ORDER BY date DESC"
             data = [usage_point_id, checkDate]
-            # logDebug([query, data])
-            self.cursor.execute(query, data)
-            query_result = self.cursor.fetchone()
+            query_result = self.query(query, data, "fetchone")
             if query_result is None:
                 result["date"][checkDate] = {
                     "status": False,
@@ -208,11 +278,11 @@ class Cache:
                 }
         return result
 
+
     def insert_consumption_daily(self, usage_point_id, date, value, fail=0):
         query = "SELECT * FROM consumption_daily WHERE pdl = (?) and date = (?)"
         data = [usage_point_id, date]
-        self.cursor.execute(query, data)
-        query_result = self.cursor.fetchone()
+        query_result = self.query(query, data, "fetchone")
         if query_result is None:
             # INSERT
             query = "INSERT INTO consumption_daily VALUES (?,?,?,?)"
@@ -221,16 +291,14 @@ class Cache:
             # UPDATE
             query = "UPDATE consumption_daily SET pdl=?, date=?, value=?, fail=? WHERE pdl = (?) AND date = (?)"
             data = [usage_point_id, date, value, fail, usage_point_id, date]
-        # logDebug([query, data])
-        self.cursor.execute(query, data)
-        return self.sqlite.commit()
+        return self.query(query, data, "commit")
+
 
     def get_consumption_detail_all(self, usage_point_id):
         query = "SELECT * FROM consumption_detail WHERE pdl = (?) ORDER BY date DESC"
-        # logDebug(query)
-        self.cursor_ro.execute(query, [usage_point_id])
-        query_result = self.cursor_ro.fetchall()
-        return query_result
+        data = [usage_point_id]
+        return self.query(query, data, "commit")
+
 
     def get_consumption_detail(self, usage_point_id, begin, end):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
@@ -246,9 +314,7 @@ class Cache:
         for i in range(delta.days + 1):
             query = "SELECT * FROM consumption_detail WHERE pdl = (?) AND date BETWEEN (?) AND (?)"
             data = [usage_point_id, begin, end]
-            # logDebug([query, data])
-            self.cursor.execute(query, data)
-            query_result = self.cursor.fetchall()
+            query_result = self.query(query, data, "fetchall")
             if len(query_result) < 160:
                 result["missing_data"] = True
             else:
@@ -266,11 +332,11 @@ class Cache:
                     }
             return result
 
+
     def insert_consumption_detail(self, usage_point_id, date, value, interval, measure_type, fail=0):
         query = "SELECT * FROM consumption_detail WHERE pdl = (?) and date = (?)"
         data = [usage_point_id, date]
-        self.cursor.execute(query, data)
-        query_result = self.cursor.fetchone()
+        query_result = self.query(query, data, "fetchone")
         if query_result is None:
             # INSERT
             query = "INSERT INTO consumption_detail VALUES (?,?,?,?,?,?)"
@@ -279,13 +345,10 @@ class Cache:
             # UPDATE
             query = "UPDATE consumption_detail SET pdl=(?), date=(?), value=(?), fail=(?) WHERE pdl = (?) AND date = (?)"
             data = [usage_point_id, date, value, fail, usage_point_id, date]
-        # logDebug([query, data])
-        self.cursor.execute(query, data)
-        return self.sqlite.commit()
+        return self.query(query, data, "commit")
+
 
     def get_production_daily_all(self, usage_point_id):
         query = "SELECT * FROM production_daily WHERE pdl = (?) ORDER BY date DESC"
-        # logDebug(query)
-        self.cursor_ro.execute(query, [usage_point_id])
-        query_result = self.cursor_ro.fetchall()
-        return query_result
+        data = [usage_point_id]
+        return self.query(query, data, "fetchall")

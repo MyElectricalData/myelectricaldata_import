@@ -26,7 +26,7 @@ class Query(object):
         try:
             response = requests.request('GET', headers=self.headers, params=params, url=self.endpoint)
             logDebug(f"[RESPONSE] : status_code {response.status_code}")
-            logDebug(f" => {response.text}")
+            logDebug(f" => {response.text[:150]}...")
         except Exception as e:
             logging.error(e)
             print(str(e))
@@ -42,7 +42,7 @@ class Query(object):
         try:
             response = requests.request('POST', headers=self.headers, params=params, data=data, url=self.endpoint)
             logDebug(f"[RESPONSE] : status_code {response.status_code}")
-            logDebug(f" => {response.text}")
+            logDebug(f" => {response.text[:150]}...")
         except Exception as e:
             logging.error(response)
             print(str(e))
@@ -57,7 +57,7 @@ class Query(object):
         try:
             response = requests.request('DELETE', headers=self.headers, params=params, data=data, url=self.endpoint)
             logDebug(f"[RESPONSE] : status_code {response.status_code}")
-            logDebug(f" => {response.text}")
+            logDebug(f" => {response.text[:150]}...")
             return response
         except Exception as e:
             logging.error(response)
@@ -73,7 +73,7 @@ class Query(object):
         try:
             response = requests.request('UPDATE', headers=self.headers, params=params, data=data, url=self.endpoint)
             logDebug(f"[RESPONSE] : status_code {response.status_code}")
-            logDebug(f" => {response.text}")
+            logDebug(f" => {response.text[:150]}...")
             return response
         except Exception as e:
             logging.error(response)
@@ -89,7 +89,7 @@ class Query(object):
         try:
             response = requests.request('PUT', headers=self.headers, params=params, data=data, url=self.endpoint)
             logDebug(f"[RESPONSE] : status_code {response.status_code}")
-            logDebug(f" => {response.text}")
+            logDebug(f" => {response.text[:150]}...")
         except Exception as e:
             logging.error(response)
             print(str(e))

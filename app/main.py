@@ -189,9 +189,7 @@ if __name__ == '__main__':
     APP = Flask(__name__,
                 static_url_path='/static',
                 static_folder='html/static', )
-
-    APP.debug = True
-    threading.Thread(target=lambda: APP.run(host="0.0.0.0", port="5000", debug=True, use_reloader=False)).start()
+    threading.Thread(target=lambda: APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)).start()
 
 
     @APP.route("/status")
