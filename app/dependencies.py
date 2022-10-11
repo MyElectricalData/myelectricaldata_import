@@ -12,9 +12,9 @@ def debug(message):
     logWarn()
     if type(message) is list:
         for msg in message:
-            logging.debug(f" {msg}")
+            logging.info(f" {msg}")
     else:
-        logging.debug(f" {message}")
+        logging.info(f" {message}")
     logWarn()
 
 def log(message):

@@ -25,7 +25,7 @@ class Cache:
         if not os.path.exists(f'{self.db_path}'):
             new_db = True
 
-        self.engine = db.create_engine(f'sqlite:///{self.db_path}')
+        self.engine = db.create_engine(f'sqlite:///{self.db_path}', echo=True)
         self.connection = self.engine.connect()
         self.metadata = db.MetaData()
 
@@ -84,9 +84,10 @@ class Cache:
         if new_db:
             self.init_database()
 
+        self.check()
+
     def close(self):
         self.sqlite.close()
-
 
     def query(self, query, data=None, fetch="commit"):
         if data is None:
@@ -97,7 +98,7 @@ class Cache:
             _query = query
             for word in data:
                 _query = _query.replace('(?)', str(word), 1)
-            # logDebug(_query)
+            log(_query)
             self.cursor.execute(query, data)
             if fetch == "fetchall":
                 return self.cursor.fetchall()
@@ -108,24 +109,20 @@ class Cache:
         finally:
             lock.release()
 
-
     def init_database(self):
         logSep()
         log("Initialise new SQLite Database")
         try:
-            self.cursor.executescript(open("/app/init_cache.sql").read())
-            ## Default Config
-            # config_query = f"INSERT OR REPLACE INTO config VALUES (?, ?)"
-            # info = json.dumps(
-            #     {
-            #         "day": datetime.datetime.now().strftime('%Y-%m-%d'),
-            #         "call_number": 0,
-            #         "max_call": 500,
-            #         "version": get_version()
-            #     })
-            # data = ["config", info]
-            # self.query(config_query, data, "commit")
+            self.connection.execute(
+                self.db_config.insert().values(key='day', value=datetime.datetime.now().strftime('%Y-%m-%d')))
+            self.connection.execute(
+                self.db_config.insert().values(key='call_number', value=0))
+            self.connection.execute(
+                self.db_config.insert().values(key='max_call', value=500))
+            self.connection.execute(
+                self.db_config.insert().values(key='version', value=get_version()))
             log(" => Initialization success")
+            sys.exit()
         except Exception as e:
             msg = [
                 "=====> ERROR : Exception <======", e,
@@ -133,48 +130,50 @@ class Cache:
             ]
             logging.critical(msg)
 
-
     def check(self):
         logSep()
         log("Connect to SQLite Database")
         try:
-            config_query = "INSERT OR REPLACE INTO config VALUES (?, ?)"
-            data = ["lastUpdate", datetime.datetime.now()]
-            self.query(config_query, data, "commit")
-
+            self.connection.execute(
+                self.db_config.update().where(self.db_config.c.key == 'lastUpdate').values(
+                    value=datetime.datetime.now()))
             list_tables = ["config", "addresses", "contracts", "consumption_daily", "consumption_detail",
                            "production_daily", "production_detail"]
-
-            query = "SELECT name FROM sqlite_master WHERE type='table';"
-            query_result = self.query(query=query, data=[], fetch="fetchall")
             tables = []
-            for table in query_result:
+            for table in self.metadata.sorted_tables:
                 tables.append(str(table).replace("('", "").replace("',)", ''))
             for tab in list_tables:
                 if not tab in tables:
                     msg = f"Table {tab} is missing"
                     log(msg)
                     raise msg
-            self.query("INSERT OR REPLACE INTO config VALUES (?,?)", [0, 0])
-            self.query("INSERT OR REPLACE INTO addresses VALUES (?,?,?)", [0, 0, 0])
-            self.query("INSERT OR REPLACE INTO contracts VALUES (?,?,?)", [0, 0, 0])
-            self.query("INSERT OR REPLACE INTO consumption_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-            self.query("INSERT OR REPLACE INTO consumption_detail VALUES (?,?,?,?,?,?)",
-                       [0, '1970-01-01', 0, 0, "", 0])
-            self.query("INSERT OR REPLACE INTO production_daily VALUES (?,?,?,?)", [0, '1970-01-01', 0, 0])
-            self.query("INSERT OR REPLACE INTO production_detail VALUES (?,?,?,?,?,?)",
-                       [0, '1970-01-01', 0, 0, "", 0])
-            self.query("DELETE FROM config WHERE key = 0")
-            self.query("DELETE FROM addresses WHERE pdl = 0")
-            self.query("DELETE FROM contracts WHERE pdl = 0")
-            self.query("DELETE FROM consumption_daily WHERE pdl = 0")
-            self.query("DELETE FROM consumption_detail WHERE pdl = 0")
-            self.query("DELETE FROM production_daily WHERE pdl = 0")
-            self.query("DELETE FROM production_detail WHERE pdl = 0")
-            self.query("DELETE FROM production_detail WHERE pdl = 0")
-            config_query = "SELECT * FROM config WHERE key = 'config'"
-            query_result = self.query(query=config_query, data=[], fetch="fetchall")
-            json.loads(query_result[0][1])
+
+            self.connection.execute(self.db_config.insert().values(
+                key=0, value=0))
+            self.connection.execute(self.db_addresses.insert().values(
+                pdl=0, json=0, count=0))
+            self.connection.execute(self.db_contracts.insert().values(
+                pdl=0, json=0, count=0))
+            self.connection.execute(self.db_consumption_daily.insert().values(
+                pdl=0, date='1970-01-01', value=0, fail=0))
+            self.connection.execute(self.db_consumption_detail.insert().values(
+                pdl=0, date='1970-01-01', value=0, interval=0, measure_type="", fail=0))
+            self.connection.execute(self.db_production_daily.insert().values(
+                pdl=0, date='1970-01-01', value=0, fail=0))
+            self.connection.execute(self.db_production_detail.insert().values(
+                pdl=0, date='1970-01-01', value=0, interval=0, measure_type="", fail=0))
+
+            self.connection.execute(self.db_config.delete().where(self.db_config.c.key == 0))
+            self.connection.execute(self.db_addresses.delete().where(self.db_addresses.c.pdl == 0))
+            self.connection.execute(self.db_contracts.delete().where(self.db_contracts.c.pdl == 0))
+            self.connection.execute(self.db_consumption_daily.delete().where(self.db_consumption_daily.c.pdl == 0))
+            self.connection.execute(self.db_consumption_detail.delete().where(self.db_consumption_detail.c.pdl == 0))
+            self.connection.execute(self.db_production_daily.delete().where(self.db_production_daily.c.pdl == 0))
+            self.connection.execute(self.db_production_detail.delete().where(self.db_production_detail.c.pdl == 0))
+
+            # config_query = "SELECT * FROM config WHERE key = 'config'"
+            # query_result = self.query(query=config_query, data=[], fetch="fetchall")
+            # json.loads(query_result[0][1])
             log(" => Connection success")
         except Exception as e:
             log("=====> ERROR : Exception <======")
@@ -186,11 +185,8 @@ class Cache:
             log(" => Reconnect")
             self.init_database()
 
-
     def get_usage_points_id(self):
-        query = "SELECT pdl FROM contracts"
-        return self.query(query=query, data=[], fetch="fetchall")
-
+        return self.connection.execute(self.db_contracts.select(self.db_contracts.c.pdl)).fetchall()
 
     def purge_cache(self):
         logWarn()
@@ -201,36 +197,51 @@ class Cache:
         else:
             log(" => Not cache detected")
 
-
     def get_contract(self, usage_point_id):
-        query = "SELECT * FROM contracts WHERE pdl = (?)"
-        data = [usage_point_id]
-        return self.query(query, data, "fetchone")
-
+        result = self.connection.execute(
+            self.db_contracts.select(self.db_contracts.c.json).
+            where(self.db_contracts.c.pdl == usage_point_id)
+        ).fetchone()
+        return result
 
     def insert_contract(self, usage_point_id, contract, count=0):
-        query = "INSERT OR REPLACE INTO contracts VALUES (?,?,?)"
-        data = [usage_point_id, str(contract), count]
-        return self.query(query, data, "commit")
-
+        if self.connection.execute(
+                self.db_contracts.select().
+                        where(self.db_contracts.c.pdl == usage_point_id)
+        ).fetchone() is None:
+            # INSERT
+            self.connection.execute(self.db_contracts.insert().
+                                    values(pdl=usage_point_id, json=contract, count=count))
+        else:
+            # UPDATE
+            self.connection.execute(self.db_contracts.update().
+                                    where(self.db_contracts.c.pdl == usage_point_id).
+                                    values(pdl=usage_point_id, json=contract, count=count))
 
     def get_addresse(self, usage_point_id):
-        query = "SELECT * FROM addresses WHERE pdl = (?)"
-        data = [usage_point_id]
-        return self.query(query, data, "fetchone")
-
+        return self.connection.execute(
+            self.db_addresses.select().where(self.db_contracts.c.pdl == usage_point_id)).fetchone()
 
     def insert_addresse(self, usage_point_id, addresse, count=0):
-        query = "INSERT OR REPLACE INTO addresses VALUES (?,?,?)"
-        data = [usage_point_id, str(addresse), count]
-        return self.query(query, data, "commit")
-
+        if self.connection.execute(
+                self.db_contracts.select().
+                        where(self.db_contracts.c.pdl == usage_point_id)
+        ).fetchone() is None:
+            # INSERT
+            self.connection.execute(self.db_contracts.insert().
+                                    values(pdl=usage_point_id, json=addresse, count=count))
+        else:
+            # UPDATE
+            self.connection.execute(self.db_contracts.update().
+                                    where(self.db_contracts.c.pdl == usage_point_id).
+                                    values(pdl=usage_point_id, json=addresse, count=count))
 
     def get_consumption_daily_all(self, usage_point_id):
-        query = "SELECT * FROM consumption_daily WHERE pdl = (?) ORDER BY date DESC"
-        data = [usage_point_id]
-        return self.query(query, data, "fetchall")
-
+        return self.connection.execute(
+            self.db_consumption_daily.select().
+                where(self.db_consumption_daily.c.pdl == usage_point_id).
+                order_by(self.db_consumption_daily.c.date)
+        ).fetchone()
 
     def get_consumption_daily(self, usage_point_id, begin, end):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
@@ -245,9 +256,12 @@ class Cache:
         for i in range(delta.days + 1):
             checkDate = dateBegin + timedelta(days=i)
             checkDate = checkDate.strftime('%Y-%m-%d')
-            query = "SELECT * FROM consumption_daily WHERE pdl = (?) AND date = (?) ORDER BY date DESC"
-            data = [usage_point_id, checkDate]
-            query_result = self.query(query, data, "fetchone")
+            query_result = self.connection.execute(
+                self.db_consumption_daily.select(). \
+                    where(self.db_consumption_daily.c.pdl == usage_point_id). \
+                    where(self.db_consumption_daily.c.date == checkDate). \
+                    order_by(self.db_consumption_daily.c.date)). \
+                fetchone()
             if query_result is None:
                 result["date"][checkDate] = {
                     "status": False,
@@ -278,27 +292,27 @@ class Cache:
                 }
         return result
 
-
     def insert_consumption_daily(self, usage_point_id, date, value, fail=0):
-        query = "SELECT * FROM consumption_daily WHERE pdl = (?) and date = (?)"
-        data = [usage_point_id, date]
-        query_result = self.query(query, data, "fetchone")
-        if query_result is None:
-            # INSERT
-            query = "INSERT INTO consumption_daily VALUES (?,?,?,?)"
-            data = [usage_point_id, date, value, fail]
+        if self.connection.execute(
+                self.db_consumption_daily.select().
+                        where(self.db_consumption_daily.c.pdl == usage_point_id).
+                        where(self.db_consumption_daily.c.date == date)).fetchone():
+            return self.connection.execute(
+                self.db_consumption_daily.insert().
+                    values(pdl=usage_point_id, date=date, value=value, fail=fail))
         else:
-            # UPDATE
-            query = "UPDATE consumption_daily SET pdl=?, date=?, value=?, fail=? WHERE pdl = (?) AND date = (?)"
-            data = [usage_point_id, date, value, fail, usage_point_id, date]
-        return self.query(query, data, "commit")
-
+            return self.connection.execute(
+                self.db_consumption_daily.update().
+                    where(self.db_consumption_daily.c.pdl == usage_point_id).
+                    where(self.db_consumption_daily.c.date == date).
+                    values(pdl=usage_point_id, date=date, value=value, fail=fail))
 
     def get_consumption_detail_all(self, usage_point_id):
-        query = "SELECT * FROM consumption_detail WHERE pdl = (?) ORDER BY date DESC"
-        data = [usage_point_id]
-        return self.query(query, data, "commit")
-
+        return self.connection.execute(
+            self.db_consumption_detail.select(). \
+                where(self.db_consumption_detail.c.pdl == usage_point_id). \
+                order_by(self.db_consumption_detail.c.date)). \
+            fetchall()
 
     def get_consumption_detail(self, usage_point_id, begin, end):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
@@ -312,9 +326,13 @@ class Cache:
         }
 
         for i in range(delta.days + 1):
-            query = "SELECT * FROM consumption_detail WHERE pdl = (?) AND date BETWEEN (?) AND (?)"
-            data = [usage_point_id, begin, end]
-            query_result = self.query(query, data, "fetchall")
+            query_result = self.connection.execute(
+                self.db_consumption_detail.select(). \
+                    where(self.db_consumption_detail.c.pdl == usage_point_id). \
+                    filter(self.db_consumption_detail.c.date <= end). \
+                    filter(self.db_consumption_detail.c.date >= begin) \
+                ).fetchall()
+
             if len(query_result) < 160:
                 result["missing_data"] = True
             else:
@@ -332,23 +350,24 @@ class Cache:
                     }
             return result
 
-
     def insert_consumption_detail(self, usage_point_id, date, value, interval, measure_type, fail=0):
-        query = "SELECT * FROM consumption_detail WHERE pdl = (?) and date = (?)"
-        data = [usage_point_id, date]
-        query_result = self.query(query, data, "fetchone")
-        if query_result is None:
-            # INSERT
-            query = "INSERT INTO consumption_detail VALUES (?,?,?,?,?,?)"
-            data = [usage_point_id, date, value, interval, measure_type, fail]
+        if self.connection.execute(
+                self.db_consumption_detail.select().
+                        where(self.db_consumption_detail.c.pdl == usage_point_id).
+                        where(self.db_consumption_detail.c.date == date)).fetchone():
+            return self.connection.execute(
+                self.db_consumption_detail.insert().
+                values(pdl=usage_point_id, date=date, value=value, interval=interval, measure_type=measure_type, fail=fail))
         else:
-            # UPDATE
-            query = "UPDATE consumption_detail SET pdl=(?), date=(?), value=(?), fail=(?) WHERE pdl = (?) AND date = (?)"
-            data = [usage_point_id, date, value, fail, usage_point_id, date]
-        return self.query(query, data, "commit")
-
+            return self.connection.execute(
+                self.db_consumption_detail.update().
+                where(self.db_consumption_detail.c.pdl == usage_point_id).
+                where(self.db_consumption_detail.c.date == date).
+                values(pdl=usage_point_id, date=date, value=value, interval=interval, measure_type=measure_type,  fail=fail))
 
     def get_production_daily_all(self, usage_point_id):
-        query = "SELECT * FROM production_daily WHERE pdl = (?) ORDER BY date DESC"
-        data = [usage_point_id]
-        return self.query(query, data, "fetchall")
+        return self.connection.execute(
+            self.db_production_daily.select(). \
+                where(self.db_production_daily.c.pdl == usage_point_id). \
+                order_by(self.db_production_daily.c.date)). \
+            fetchall()
