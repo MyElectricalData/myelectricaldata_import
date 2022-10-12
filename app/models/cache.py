@@ -25,7 +25,8 @@ class Cache:
         if not os.path.exists(f'{self.db_path}'):
             new_db = True
 
-        self.engine = db.create_engine(f'sqlite:///{self.db_path}', echo=True)
+        self.engine = db.create_engine(f'sqlite:///{self.db_path}?check_same_thread=False', echo=True)
+        # self.engine = db.create_engine(f'sqlite:///{self.db_path}?check_same_thread=False')
         self.connection = self.engine.connect()
         self.metadata = db.MetaData()
 
@@ -88,26 +89,6 @@ class Cache:
 
     def close(self):
         self.sqlite.close()
-
-    def query(self, query, data=None, fetch="commit"):
-        if data is None:
-            data = []
-        lock = threading.Lock()
-        try:
-            lock.acquire(True)
-            _query = query
-            for word in data:
-                _query = _query.replace('(?)', str(word), 1)
-            log(_query)
-            self.cursor.execute(query, data)
-            if fetch == "fetchall":
-                return self.cursor.fetchall()
-            elif fetch == "fetchone":
-                return self.cursor.fetchone()
-            else:
-                return self.sqlite.commit()
-        finally:
-            lock.release()
 
     def init_database(self):
         logSep()
@@ -186,7 +167,7 @@ class Cache:
             self.init_database()
 
     def get_usage_points_id(self):
-        return self.connection.execute(self.db_contracts.select(self.db_contracts.c.pdl)).fetchall()
+        return self.connection.execute(self.db_contracts.select()).fetchall()
 
     def purge_cache(self):
         logWarn()
@@ -199,49 +180,52 @@ class Cache:
 
     def get_contract(self, usage_point_id):
         result = self.connection.execute(
-            self.db_contracts.select(self.db_contracts.c.json).
+            self.db_contracts.select().
             where(self.db_contracts.c.pdl == usage_point_id)
         ).fetchone()
+        debug(result)
         return result
 
     def insert_contract(self, usage_point_id, contract, count=0):
         if self.connection.execute(
-                self.db_contracts.select().
-                        where(self.db_contracts.c.pdl == usage_point_id)
+                self.db_contracts.select()
+                        .where(self.db_contracts.c.pdl == usage_point_id)
         ).fetchone() is None:
             # INSERT
-            self.connection.execute(self.db_contracts.insert().
-                                    values(pdl=usage_point_id, json=contract, count=count))
+            self.connection.execute(self.db_contracts.insert()
+                                    .values(pdl=usage_point_id, json=contract, count=count))
         else:
             # UPDATE
-            self.connection.execute(self.db_contracts.update().
-                                    where(self.db_contracts.c.pdl == usage_point_id).
-                                    values(pdl=usage_point_id, json=contract, count=count))
+            self.connection.execute(self.db_contracts.update()
+                                    .where(self.db_contracts.c.pdl == usage_point_id)
+                                    .values(pdl=usage_point_id, json=contract, count=count))
 
     def get_addresse(self, usage_point_id):
         return self.connection.execute(
-            self.db_addresses.select().where(self.db_contracts.c.pdl == usage_point_id)).fetchone()
+            self.db_addresses.select()
+            .where(self.db_addresses.c.pdl == usage_point_id)
+        ).fetchone()
 
     def insert_addresse(self, usage_point_id, addresse, count=0):
         if self.connection.execute(
-                self.db_contracts.select().
-                        where(self.db_contracts.c.pdl == usage_point_id)
+                self.db_addresses.select()
+                        .where(self.db_addresses.c.pdl == usage_point_id)
         ).fetchone() is None:
             # INSERT
-            self.connection.execute(self.db_contracts.insert().
-                                    values(pdl=usage_point_id, json=addresse, count=count))
+            self.connection.execute(self.db_addresses.insert()
+                                    .values(pdl=usage_point_id, json=addresse, count=count))
         else:
             # UPDATE
-            self.connection.execute(self.db_contracts.update().
-                                    where(self.db_contracts.c.pdl == usage_point_id).
-                                    values(pdl=usage_point_id, json=addresse, count=count))
+            self.connection.execute(self.db_addresses.update()
+                                    .where(self.db_addresses.c.pdl == usage_point_id)
+                                    .values(pdl=usage_point_id, json=addresse, count=count))
 
     def get_consumption_daily_all(self, usage_point_id):
         return self.connection.execute(
-            self.db_consumption_daily.select().
-                where(self.db_consumption_daily.c.pdl == usage_point_id).
-                order_by(self.db_consumption_daily.c.date)
-        ).fetchone()
+            self.db_consumption_daily.select()
+            .where(self.db_consumption_daily.c.pdl == usage_point_id)
+            .order_by(self.db_consumption_daily.c.date)
+        ).fetchall()
 
     def get_consumption_daily(self, usage_point_id, begin, end):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
@@ -257,11 +241,11 @@ class Cache:
             checkDate = dateBegin + timedelta(days=i)
             checkDate = checkDate.strftime('%Y-%m-%d')
             query_result = self.connection.execute(
-                self.db_consumption_daily.select(). \
-                    where(self.db_consumption_daily.c.pdl == usage_point_id). \
-                    where(self.db_consumption_daily.c.date == checkDate). \
-                    order_by(self.db_consumption_daily.c.date)). \
-                fetchone()
+                self.db_consumption_daily.select()
+                .where(self.db_consumption_daily.c.pdl == usage_point_id)
+                .where(self.db_consumption_daily.c.date == checkDate)
+                .order_by(self.db_consumption_daily.c.date)
+            ).fetchone()
             if query_result is None:
                 result["date"][checkDate] = {
                     "status": False,
@@ -293,26 +277,28 @@ class Cache:
         return result
 
     def insert_consumption_daily(self, usage_point_id, date, value, fail=0):
-        if self.connection.execute(
-                self.db_consumption_daily.select().
-                        where(self.db_consumption_daily.c.pdl == usage_point_id).
-                        where(self.db_consumption_daily.c.date == date)).fetchone():
+        current_data = self.connection.execute(
+            self.db_consumption_daily.select()
+            .where(self.db_consumption_daily.c.pdl == usage_point_id)
+            .where(self.db_consumption_daily.c.date == date)
+        ).fetchone()
+        if current_data is None:
             return self.connection.execute(
-                self.db_consumption_daily.insert().
-                    values(pdl=usage_point_id, date=date, value=value, fail=fail))
+                self.db_consumption_daily.insert()
+                .values(pdl=usage_point_id, date=date, value=value, fail=fail))
         else:
             return self.connection.execute(
-                self.db_consumption_daily.update().
-                    where(self.db_consumption_daily.c.pdl == usage_point_id).
-                    where(self.db_consumption_daily.c.date == date).
-                    values(pdl=usage_point_id, date=date, value=value, fail=fail))
+                self.db_consumption_daily.update()
+                .where(self.db_consumption_daily.c.pdl == usage_point_id)
+                .where(self.db_consumption_daily.c.date == date)
+                .values(pdl=usage_point_id, date=date, value=value, fail=fail))
 
     def get_consumption_detail_all(self, usage_point_id):
         return self.connection.execute(
-            self.db_consumption_detail.select(). \
-                where(self.db_consumption_detail.c.pdl == usage_point_id). \
-                order_by(self.db_consumption_detail.c.date)). \
-            fetchall()
+            self.db_consumption_detail.select()
+            .where(self.db_consumption_detail.c.pdl == usage_point_id)
+            .order_by(self.db_consumption_detail.c.date)
+        ).fetchall()
 
     def get_consumption_detail(self, usage_point_id, begin, end):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
@@ -327,11 +313,11 @@ class Cache:
 
         for i in range(delta.days + 1):
             query_result = self.connection.execute(
-                self.db_consumption_detail.select(). \
-                    where(self.db_consumption_detail.c.pdl == usage_point_id). \
-                    filter(self.db_consumption_detail.c.date <= end). \
-                    filter(self.db_consumption_detail.c.date >= begin) \
-                ).fetchall()
+                self.db_consumption_detail.select()
+                .where(self.db_consumption_detail.c.pdl == usage_point_id)
+                .filter(self.db_consumption_detail.c.date <= end)
+                .filter(self.db_consumption_detail.c.date >= begin)
+            ).fetchall()
 
             if len(query_result) < 160:
                 result["missing_data"] = True
@@ -351,23 +337,39 @@ class Cache:
             return result
 
     def insert_consumption_detail(self, usage_point_id, date, value, interval, measure_type, fail=0):
-        if self.connection.execute(
-                self.db_consumption_detail.select().
-                        where(self.db_consumption_detail.c.pdl == usage_point_id).
-                        where(self.db_consumption_detail.c.date == date)).fetchone():
+        current_data = self.connection.execute(
+            self.db_consumption_detail.select()
+            .where(self.db_consumption_detail.c.pdl == usage_point_id)
+            .where(self.db_consumption_detail.c.date == date)
+        ).fetchone()
+        if current_data is None:
             return self.connection.execute(
-                self.db_consumption_detail.insert().
-                values(pdl=usage_point_id, date=date, value=value, interval=interval, measure_type=measure_type, fail=fail))
+                self.db_consumption_detail.insert()
+                .values(
+                    pdl=usage_point_id,
+                    date=date,
+                    value=value,
+                    interval=interval,
+                    measure_type=measure_type,
+                    fail=fail)
+            )
         else:
             return self.connection.execute(
-                self.db_consumption_detail.update().
-                where(self.db_consumption_detail.c.pdl == usage_point_id).
-                where(self.db_consumption_detail.c.date == date).
-                values(pdl=usage_point_id, date=date, value=value, interval=interval, measure_type=measure_type,  fail=fail))
+                self.db_consumption_detail.update()
+                .where(self.db_consumption_detail.c.pdl == usage_point_id)
+                .where(self.db_consumption_detail.c.date == date)
+                .values(
+                    pdl=usage_point_id,
+                    date=date,
+                    value=value,
+                    interval=interval,
+                    measure_type=measure_type,
+                    fail=fail)
+            )
 
     def get_production_daily_all(self, usage_point_id):
         return self.connection.execute(
-            self.db_production_daily.select(). \
-                where(self.db_production_daily.c.pdl == usage_point_id). \
-                order_by(self.db_production_daily.c.date)). \
-            fetchall()
+            self.db_production_daily.select()
+            .where(self.db_production_daily.c.pdl == usage_point_id)
+            .order_by(self.db_production_daily.c.date)
+        ).fetchall()

@@ -1,3 +1,4 @@
+import sys
 import threading
 import time
 import markdown
@@ -94,9 +95,7 @@ if CYCLE < cycle_minimun:
     CONFIG.set("cycle", cycle_minimun)
 
 
-IMPORT_LOCK = False
 def get_data():
-    IMPORT_LOCK = True
     for usage_point_id, config in CONFIG.get('myelectricaldata').items():
         result = {}
 
@@ -158,7 +157,6 @@ def get_data():
             ).get()
 
     finish()
-    IMPORT_LOCK = False
 
 
 def usage_points_id_list(selected_usage_point=None, choice=False):
@@ -167,8 +165,9 @@ def usage_points_id_list(selected_usage_point=None, choice=False):
         usage_points_id_data += '<option value="none">--- Choix du point de livraison ---</option>'
     for pdl in CACHE.get_usage_points_id():
         usage_point = pdl[0]
-        address_data = json.loads(CACHE.get_addresse(usage_point_id=usage_point)[1])
-        if address_data:
+        address_data = CACHE.get_addresse(usage_point_id=usage_point)
+        if address_data is not None:
+            address_data = json.loads(address_data[1])
             street = address_data['usage_point']['usage_point_addresses']['street']
             postal_code = address_data['usage_point']['usage_point_addresses']['postal_code']
             city = address_data['usage_point']['usage_point_addresses']['city']
@@ -238,6 +237,7 @@ if __name__ == '__main__':
     def usage_point_id(usage_point_id):
         usage_points_id_data = usage_points_id_list(selected_usage_point=usage_point_id)
         contract = CACHE.get_contract(usage_point_id=usage_point_id)
+        debug(contract)
         contract_data = {}
         if contract is not None:
             _tmp = json.loads(contract[1])
