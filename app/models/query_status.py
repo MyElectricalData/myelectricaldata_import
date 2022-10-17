@@ -1,14 +1,18 @@
+import __main__ as app
 import json
 
-import __main__
-from config import URL
 from dependencies import *
+from models.log import Log
 from models.query import Query
+
+from config import URL
+
 
 class Status:
 
     def __init__(self, headers):
-        self.cache = __main__.CACHE
+        self.log = Log()
+        self.cache = app.CACHE
         self.url = URL
 
         self.endpoint = "ping"
@@ -23,7 +27,7 @@ class Status:
             try:
                 status = json.loads(response.text)
                 for key, value in status.items():
-                    log(f"{key}: {value}")
+                    self.log.log(f"{key}: {value}")
                 return status
             except LookupError:
                 return {
@@ -44,7 +48,7 @@ class Status:
             try:
                 status = json.loads(response.text)
                 for key, value in status.items():
-                    log(f"{key}: {value}")
+                    self.log.log(f"{key}: {value}")
                 return status
             except LookupError:
                 return {

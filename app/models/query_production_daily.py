@@ -9,9 +9,9 @@ from models.query import Query
 from config import URL, DAILY_MAX_DAYS
 
 
-class ConsumptionDaily:
+class ProductionDaily:
 
-    def __init__(self, headers, usage_point_id, config, activation_date=False):
+    def __init__(self, headers, usage_point_id, config, activation_date=None):
 
         self.cache = app.CACHE
         self.url = URL
@@ -21,7 +21,7 @@ class ConsumptionDaily:
         self.usage_point_id = usage_point_id
         self.config = config
 
-        if activation_date:
+        if activation_date is not None:
             self.activation_date = datetime.datetime.strptime(activation_date, "%Y-%m-%d%z").replace(tzinfo=None)
         else:
             self.activation_date = activation_date
@@ -29,17 +29,17 @@ class ConsumptionDaily:
         self.daily_max_days = DAILY_MAX_DAYS
         self.max_days_date = datetime.datetime.utcnow() - relativedelta(days=self.daily_max_days)
 
-        self.base_price = self.config['consumption_price_base']
+        self.base_price = self.config['production_price']
 
     def run(self, begin, end, cache=True):
         begin = begin.strftime('%Y-%m-%d')
         end = end.strftime('%Y-%m-%d')
         app.LOG.log(f"Récupération des données : {begin} => {end}")
-        endpoint = f"daily_consumption/{self.usage_point_id}/start/{begin}/end/{end}"
+        endpoint = f"daily_production/{self.usage_point_id}/start/{begin}/end/{end}"
         if "cache" in self.config and self.config["cache"] and cache:
             endpoint += "/cache"
         try:
-            current_data = self.cache.get_consumption_daily(usage_point_id=self.usage_point_id, begin=begin, end=end)
+            current_data = self.cache.get_production_daily(usage_point_id=self.usage_point_id, begin=begin, end=end)
             if not current_data["missing_data"]:
                 app.LOG.log(" => Toutes les données sont déjà en cache.")
                 output = []
@@ -56,9 +56,9 @@ class ConsumptionDaily:
                         for interval_reading in meter_reading["interval_reading"]:
                             value = interval_reading["value"]
                             date = interval_reading["date"]
-                            self.cache.insert_consumption_daily(usage_point_id=self.usage_point_id, date=date,
-                                                                value=value,
-                                                                blacklist=blacklist)
+                            self.cache.insert_production_daily(usage_point_id=self.usage_point_id, date=date,
+                                                               value=value,
+                                                               blacklist=blacklist)
                         return meter_reading["interval_reading"]
                     else:
                         return {
@@ -123,7 +123,7 @@ class ConsumptionDaily:
         return result
 
     def reset(self, date):
-        self.cache.delete_consumption_daily(usage_point_id=self.usage_point_id, date=date)
+        self.cache.delete_production_daily(usage_point_id=self.usage_point_id, date=date)
         return True
 
     def fetch(self, date):
@@ -144,5 +144,5 @@ class ConsumptionDaily:
         }
 
     def blacklist(self, date, action):
-        app.LOG.show(self.cache.blacklist_consumption_daily(self.usage_point_id, date, action))
+        app.LOG.show(self.cache.blacklist_production_daily(self.usage_point_id, date, action))
         return True

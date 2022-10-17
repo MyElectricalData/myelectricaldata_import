@@ -1,15 +1,17 @@
+import __main__ as app
 import json
 
-import __main__
-from config import URL
 from dependencies import *
 from models.query import Query
+from models.log import Log
+
+from config import URL
 
 
 class Contract:
 
     def __init__(self, headers, usage_point_id, config):
-        self.cache = __main__.CACHE
+        self.cache = app.CACHE
         self.url = URL
 
         self.headers = headers
@@ -47,22 +49,21 @@ class Contract:
 
     def get(self):
         current_cache = self.cache.get_contract(usage_point_id=self.usage_point_id)
-        if current_cache is None:
+        if not current_cache:
             # No cache
-            log(f" => No cache")
+            app.LOG.log(f" => No cache")
             result = self.run()
         else:
             # Refresh cache
             if "refresh_contract" in self.config and self.config["refresh_contract"]:
-                log(f" => Refresh Cache")
+                app.LOG.log(f" => Refresh Cache")
                 result = self.run()
             else:
                 # Get data in cache
-                log(f" => Query Cache")
-                value = current_cache[1]
-                logDebug(f" => {value}")
-                result = json.loads(value)
+                app.LOG.log(f" => Query Cache")
+                app.LOG.debug(f" => {current_cache}")
+                result = json.loads(current_cache)
         if "error" not in result:
             for key, value in result["contracts"].items():
-                log(f"{key}: {value}")
+                app.LOG.log(f"{key}: {value}")
         return result

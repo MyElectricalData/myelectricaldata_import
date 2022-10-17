@@ -1,202 +1,352 @@
 <html>
 <head>
     <title>MyElectricalData</title>
-<!--	JQUERY-->
+    <!--	JQUERY-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-	<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
-	<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-	<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-<!--	JQUERY CONFIRM-->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
-<!--	LOADING PAGE-->
-	<script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
-<!--	DATATABLE-->
-	<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.js"></script>
-	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.css">
-<!--    NOTIFY-->
-	<script src="https://rawgit.com/notifyjs/notifyjs/master/dist/notify.js"></script>
-	<script src="/static/notif.js"></script>
-	<link rel="stylesheet" href="/static/notif.css">
-<!--	GOOGLE FONT-->
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
-<!--	NICE SELECT-->
-	<script src="/static/nice-select.js"></script>
-	<link rel="stylesheet" href="/static/nice-select.css">
-<!--	MENU-->
-	<script src="/static/menu.js"></script>
-	<link rel="stylesheet" href="/static/menu.css">
-<!--	STATIC-->
-	<link rel="stylesheet" href="/static/main.css">
-	<link rel="stylesheet" href="/static/logo.css">
-	<script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <!--	JQUERY CONFIRM-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
+    <!--	LOADING PAGE-->
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <!--	DATATABLE-->
+    <script type="text/javascript" charset="utf8"
+            src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8"
+            src="https://cdn.datatables.net/plug-ins/1.12.1/sorting/custom-data-source/dom-text.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.css">
+    <!--    NOTIFY-->
+    <script src="https://rawgit.com/notifyjs/notifyjs/master/dist/notify.js"></script>
+    <script src="/static/notif.js"></script>
+    <link rel="stylesheet" href="/static/notif.css">
+    <!--	GOOGLE FONT-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
+    <!--	NICE SELECT-->
+    <script src="/static/nice-select.js"></script>
+    <link rel="stylesheet" href="/static/nice-select.css">
+    <!--	MENU-->
+    <script src="/static/menu.js"></script>
+    <link rel="stylesheet" href="/static/menu.css">
+    <!--	STATIC-->
+    <link rel="stylesheet" href="/static/main.css">
+    <link rel="stylesheet" href="/static/logo.css">
 
-		$(document).ready(function(){
+    <script>
 
-			$( ".paypal_link" ).click(function() {
-			  $("#paypal_form").first().submit();
-			});
+        $(document).ready(function () {
 
-			$('code').on('click', (e) => {
-			  var content = e.target.innerText
-			  copyToClipboard(content);
-			  $.notify(" Copie : "+ content.slice(0, 30) + "..." + content.slice(-30), { style: 'enedis', className: 'success'});
-			});
+            $(".datatable_button").click(function () {
+                let name = $(this).attr("name");
+                let tag = $(this).attr("id").split("_")[0];
+                let type = name.split("_")[0]
+                let usage_point_id = name.split("_")[1]
+                let date = name.split("_")[2]
+                if (type === "import" || type === "reset") {
+                    // IMPORT OR RESET
+                    $(this).css("display", "none");
+                    $.ajax({
+                        type: 'GET',
+                        url: '/usage_point_id/' + usage_point_id + '/' + tag + '/' + type + '/' + date
+                    })
+                        .done(function (data) {
+                            data = $.parseJSON(JSON.stringify(data))
+                            if (data.hasOwnProperty('notif')) {
+                                $.notify(data["notif"], {style: 'enedis', className: 'error'});
+                            }
+                            if (data.hasOwnProperty('error') && data['error'] === "true") {
+                                $('#' + tag + '_' + type + '_' + date).css("display", "block");
+                            } else {
+                                if (type === "reset") {
+                                    $('#' + tag + '_reset_' + date).css("display", "none");
+                                    $('#' + tag + '_import_' + date).css("display", "block");
+                                    $('#' + tag + '_icon_' + date).removeClass("icon_success");
+                                    $('#' + tag + '_icon_' + date).addClass("icon_failed");
+                                    $('#' + tag + '_conso_w_' + date).html("0 W");
+                                    $('#' + tag + '_conso_kw_' + date).html("0 kW");
+                                    $('#' + tag + '_blacklist_' + date).css("display", "block");
+                                    $('#' + tag + '_whitelist_' + date).css("display", "none")
+                                    $('#' + tag + '_blacklist_' + date).removeClass("datatable_button_disable");
+                                } else {
+                                    console.log(data['result']["date"])
+                                    if (data["result"]["date"] === date) {
+                                        $('#' + tag + '_reset_' + date).css("display", "block");
+                                        $('#' + tag + '_import_' + date).css("display", "none");
+                                        $('#' + tag + '_icon_' + date).removeClass("icon_failed");
+                                        $('#' + tag + '_icon_' + date).addClass("icon_success");
+                                        $('#' + tag + '_conso_w_' + date).html(data["result"]['value'] + " W");
+                                        $('#' + tag + '_conso_kw_' + date).html(data["result"]['value'] / 1000 + " kW");
+                                        $('#' + tag + '_blacklist_' + date).css("display", "block");
+                                        $('#' + tag + '_whitelist_' + date).css("display", "none");
+                                        $('#' + tag + '_blacklist_' + date).addClass("datatable_button_disable");
+                                    } else {
+                                        $.notify("La donnée n'est pas disponible chez Enedis.", {
+                                            style: 'enedis',
+                                            className: 'error'
+                                        });
+                                        $('#' + tag + '_' + type + '_' + date).css("display", "block");
+                                    }
+                                }
+                            }
 
-			$.notify.addStyle('enedis', {
-			  html: "<div><span data-notify-text/></div>"
-			});
-
-			$( "#bouton_enedis").click(function() {
-			  $.LoadingOverlay("show");
-			});
-
-			$( ".alert_redirect" ).click(function(e) {
-				var url = $(this).attr("about")
-				$.confirm({
-					columnClass: 'col-md-4 col-md-offset-8 col-xs-4 col-xs-offset-8',
-					containerFluid: true, // this will add 'container-fluid' instead of 'container'
-					boxWidth: '600px',
-					useBootstrap: false,
-					title: 'Confirmation',
-					content: 'Vous allez être rediriger vers '+url,
-					buttons: {
-						confirm: {
-							text: 'OK!',
-							btnClass: 'btn-blue',
-							action: function () {
-								location.href = url;
-							}
-						},
-						cancel: {
-							text: 'Non merci',
-							btnClass: 'btn-blue',
-						},
-					}
-				});
-			});
-
-			$("#select_usage_point_id").niceSelect()
-			$("#select_type").niceSelect()
-
-			$("#select_usage_point_id").change(function() {
-				location.href = "/usage_point_id/"+$("#select_usage_point_id").val();
-			});
-
-			let french = {
-				processing:     "Traitement en cours...",
-				search:         "Rechercher&nbsp;:",
-				lengthMenu:    "Afficher _MENU_ &eacute;l&eacute;ments",
-				info:           "Affichage de l'&eacute;lement _START_ &agrave; _END_ sur _TOTAL_ &eacute;l&eacute;ments",
-				infoEmpty:      "Affichage de l'&eacute;lement 0 &agrave; 0 sur 0 &eacute;l&eacute;ments",
-				infoFiltered:   "(filtr&eacute; de _MAX_ &eacute;l&eacute;ments au total)",
-				infoPostFix:    "",
-				loadingRecords: "Chargement en cours...",
-				zeroRecords:    "Aucun &eacute;l&eacute;ment &agrave; afficher",
-				emptyTable:     "Aucune donnée disponible dans le tableau",
-				paginate: {
-					first:      "Premier",
-					previous:   "Pr&eacute;c&eacute;dent",
-					next:       "Suivant",
-					last:       "Dernier"
-				},
-				aria: {
-					sortAscending:  ": activer pour trier la colonne par ordre croissant",
-					sortDescending: ": activer pour trier la colonne par ordre décroissant"
-				}
-			}
-
-			$('#dataTableConsumption').DataTable( {
-				order: [[ 0, 'desc' ]],
-				language: french
-			});
-			$('#dataTableProduction').DataTable( {
-				order: [[ 0, 'desc' ]],
-				language: french
-			});
-		});
+                        });
+                } else {
+                    // BLACKLIST
+                    if (!$('#' + tag + '_' + type + '_' + date).hasClass("datatable_button_disable")) {
+                        $.ajax({
+                            type: 'GET',
+                            url: '/usage_point_id/' + usage_point_id + '/' + tag + '/' + type + '/' + date
+                        })
+                            .done(function (data) {
+                                data = JSON.parse(JSON.stringify(data))
+                                if (data.hasOwnProperty('notif')) {
+                                    $.notify(data["notif"], {style: 'enedis', className: 'error'});
+                                }
+                                if (data.hasOwnProperty('error') && data['error'] === "true") {
+                                    $('#' + tag + '_' + type + '_' + date).css("display", "block");
+                                } else {
+                                    if (type === "blacklist") {
+                                        $('#' + tag + '_blacklist_' + date).css("display", "none");
+                                        $('#' + tag + '_whitelist_' + date).css("display", "block");
+                                        $('#' + tag + '_icon_' + date).removeClass("icon_failed");
+                                        $('#' + tag + '_icon_' + date).addClass("icon_success");
+                                        $('#' + tag + '_conso_w_' + date).html("0 W");
+                                        $('#' + tag + '_conso_kw_' + date).html("0 kW");
+                                        $('#' + tag + '_reset_' + date).css("display", "block");
+                                        $('#' + tag + '_import_' + date).css("display", "none");
+                                    } else {
+                                        $('#' + tag + '_blacklist_' + date).css("display", "block");
+                                        $('#' + tag + '_whitelist_' + date).css("display", "none");
+                                        $('#' + tag + '_icon_' + date).removeClass("icon_success");
+                                        $('#' + tag + '_icon_' + date).addClass("icon_failed");
+                                        $('#' + tag + '_reset_' + date).css("display", "none");
+                                        $('#' + tag + '_import_' + date).css("display", "block");
+                                        $('#' + tag + '_blacklist_' + date).removeClass("datatable_button_disable");
+                                    }
+                                }
+                            });
+                    }
+                }
+            });
 
 
-		function copyToClipboard(text) {
-			var dummy = document.createElement("textarea");
-			document.body.appendChild(dummy);
-			dummy.value = text;
-			dummy.select();
-			document.execCommand("copy");
-			document.body.removeChild(dummy);
-		}
+            $(".paypal_link").click(function () {
+                $("#paypal_form").first().submit();
+            });
 
-	</script>
+            $('code').on('click', (e) => {
+                var content = e.target.innerText
+                copyToClipboard(content);
+                $.notify(" Copie : " + content.slice(0, 30) + "..." + content.slice(-30), {
+                    style: 'enedis',
+                    className: 'success'
+                });
+            });
+            $.notify.addStyle('enedis', {
+                html: "<div><span data-notify-text/></div>"
+            });
+            let searchParams = new URLSearchParams(window.location.search)
+            if (searchParams.has('notif') == true) {
+                $.notify(message, {style: 'enedis', className: 'error'});
+            }
+
+            $("#bouton_enedis").click(function () {
+                $.LoadingOverlay("show");
+                let usage_point_id = $("#usage_point_id").val()
+                $.ajax({
+                    type: 'GET',
+                    url: '/import/' + usage_point_id
+                })
+                .done(function (data) {
+                    $.LoadingOverlay("hide");
+                })
+            });
+
+            $(".alert_redirect").click(function (e) {
+                var url = $(this).attr("about")
+                $.confirm({
+                    columnClass: 'col-md-4 col-md-offset-8 col-xs-4 col-xs-offset-8',
+                    containerFluid: true, // this will add 'container-fluid' instead of 'container'
+                    boxWidth: '600px',
+                    useBootstrap: false,
+                    title: 'Confirmation',
+                    content: 'Vous allez être rediriger vers ' + url,
+                    buttons: {
+                        confirm: {
+                            text: 'OK!',
+                            btnClass: 'btn-blue',
+                            action: function () {
+                                location.href = url;
+                            }
+                        },
+                        cancel: {
+                            text: 'Non merci',
+                            btnClass: 'btn-blue',
+                        },
+                    }
+                });
+            });
+
+            $("#select_usage_point_id").niceSelect()
+            $("#select_type").niceSelect()
+            $("#select_usage_point_id").change(function () {
+                location.href = "/usage_point_id/" + $("#select_usage_point_id").val();
+            });
+
+            let french = {
+                processing: "Traitement en cours...",
+                search: "Rechercher&nbsp;:",
+                lengthMenu: "Afficher _MENU_ &eacute;l&eacute;ments",
+                info: "Affichage de l'&eacute;lement _START_ &agrave; _END_ sur _TOTAL_ &eacute;l&eacute;ments",
+                infoEmpty: "Affichage de l'&eacute;lement 0 &agrave; 0 sur 0 &eacute;l&eacute;ments",
+                infoFiltered: "(filtr&eacute; de _MAX_ &eacute;l&eacute;ments au total)",
+                infoPostFix: "",
+                loadingRecords: "Chargement en cours...",
+                zeroRecords: "Aucun &eacute;l&eacute;ment &agrave; afficher",
+                emptyTable: "Aucune donnée disponible dans le tableau",
+                paginate: {
+                    first: "Premier",
+                    previous: "Pr&eacute;c&eacute;dent",
+                    next: "Suivant",
+                    last: "Dernier"
+                },
+                aria: {
+                    sortAscending: ": activer pour trier la colonne par ordre croissant",
+                    sortDescending: ": activer pour trier la colonne par ordre décroissant"
+                }
+            }
+            let datatable_config = {
+                columnDefs: [
+                    {
+                        targets: -1,
+                        className: 'dt-body-center dt-head-center',
+                        orderDataType: "dom-select"
+                    },
+                    {
+                        targets: -2,
+                        className: 'dt-head-center'
+                    }
+                ],
+                columns: [
+                    {"width": "30%"},
+                    {"width": "30%"},
+                    {"width": "30%"},
+                    {"width": "50px"},
+                    {"width": "50px"},
+                    {"width": "50px"},
+                ],
+                order: [[0, 'desc']],
+                language: french
+            }
+
+            $('#dataTableConsommation').DataTable(datatable_config);
+            $('#dataTableProduction').DataTable(datatable_config);
+
+            // $(window).on('resize', function(){
+            //     dataTableConsumption.fnDraw();
+            //     dataTableProduction.fnDraw();
+            // });
+
+            // $(".datatable_button").click(function() {
+            // 	$.LoadingOverlay("show");
+            // 	let name = $(this).attr("name");
+            // 	let type = name.split("_")[0]
+            // 	let usage_point_id = name.split("_")[1]
+            // 	let date = name.split("_")[2]
+            // 	location.href = "/usage_point_id/"+usage_point_id+"/"+type+"/"+date;
+            // });
+        });
+
+
+        function copyToClipboard(text) {
+            var dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+        }
+
+    </script>
 </head>
 <body style="margin: 0px">
 <div class="side_menu">
-<div class="burger_box">
-	<div class="menu-icon-container">
-		<a href="#" class="menu-icon js-menu_toggle closed">
+    <div class="burger_box">
+        <div class="menu-icon-container">
+            <a href="#" class="menu-icon js-menu_toggle closed">
 			<span class="menu-icon_box">
 				<span class="menu-icon_line menu-icon_line--1"></span>
 				<span class="menu-icon_line menu-icon_line--2"></span>
 				<span class="menu-icon_line menu-icon_line--3"></span>
 			</span>
-		</a>
-	</div>
-</div>
-	<div class="container">
-		<h2 class="menu_title">Menu</h2>
-		<ul class="list_load">
-			<li class="list_item"><a href="/">Accueil</a></li>
-			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ concent_url }}">Consentement</a></li>
-			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ doc_url }}">Documentation</a></li>
-			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ swagger_url }}">Swagger</a></li>
-			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ redoc_url }}">Redoc</a></li>
-			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ code_url }}">Codes d'erreurs</a></li>
-			<li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ faq_url }}">FAQ</a></li>
-		</ul>
-		<div class="spacer_box"><p>Liens</p></div>
-		<ul id="menu_link" class="list_load">
-			<li class="list_item"><a href="https://discord.gg/DfVJZme" style="display: inline-block;">
-				<div>
-				  <img style="vertical-align:middle; width: 18px" src="/static/discord.png" alt="Discord">
-				  <span style="padding-left: 10px;">Discord</span>
-				</div></a>
-			</li>
-			<li class="list_item"><a href="https://mon-compte-client.enedis.fr" style="display: inline-block;">
-				<div>
-				  <img style="vertical-align:middle; width: 18px" src="/static/enedis.png" alt="Enedis">
-				  <span style="padding-left: 10px;">Enedis</span>
-				</div></a>
-			</li>
-		</ul>
-		<ul class="list_load">
-			<li class="list_item">
-				<div style="text-align: center" id="paypal" class="paypal_link">
-					<form action="https://www.paypal.com/donate" method="post" target="_top" style="height: 40px;" id="paypal_form">
-						<input type="hidden" name="business" value="FY25JLXDYLXAJ" />
-						<input type="hidden" name="no_recurring" value="0" />
-						<input type="hidden" name="currency_code" value="EUR" />
-						<input type="image" id="paypal_img"
-							   src="/static/paypal.png"
-							   border="0"
-							   name="submit"
-							   title="PayPal - The safer, easier way to pay online!"
-							   alt="Bouton Faites un don avec PayPal"/>
-						<img alt="" border="0" src="https://www.paypal.com/fr_FR/i/scr/pixel.gif" width="1" height="1" />
-					</form>
-				</div>
-			</li>
-		</ul>
-	</div>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <h2 class="menu_title">Menu</h2>
+        <ul class="list_load">
+            <li class="list_item"><a href="/">Accueil</a></li>
+            <li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ concent_url }}">Consentement</a>
+            </li>
+            <li class="list_item"><a style="cursor: pointer" class="alert_redirect"
+                                     about="{{ doc_url }}">Documentation</a></li>
+            <li class="list_item"><a style="cursor: pointer" class="alert_redirect"
+                                     about="{{ swagger_url }}">Swagger</a></li>
+            <li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ redoc_url }}">Redoc</a>
+            </li>
+            <li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ code_url }}">Codes
+                d'erreurs</a></li>
+            <li class="list_item"><a style="cursor: pointer" class="alert_redirect" about="{{ faq_url }}">FAQ</a></li>
+        </ul>
+        <div class="spacer_box"><p>Liens</p></div>
+        <ul id="menu_link" class="list_load">
+            <li class="list_item"><a href="https://discord.gg/DfVJZme" style="display: inline-block;">
+                <div>
+                    <img style="vertical-align:middle; width: 18px" src="/static/discord.png" alt="Discord">
+                    <span style="padding-left: 10px;">Discord</span>
+                </div>
+            </a>
+            </li>
+            <li class="list_item"><a href="https://mon-compte-client.enedis.fr" style="display: inline-block;">
+                <div>
+                    <img style="vertical-align:middle; width: 18px" src="/static/enedis.png" alt="Enedis">
+                    <span style="padding-left: 10px;">Enedis</span>
+                </div>
+            </a>
+            </li>
+        </ul>
+        <ul class="list_load">
+            <li class="list_item">
+                <div style="text-align: center" id="paypal" class="paypal_link">
+                    <form action="https://www.paypal.com/donate" method="post" target="_top" style="height: 40px;"
+                          id="paypal_form">
+                        <input type="hidden" name="business" value="FY25JLXDYLXAJ"/>
+                        <input type="hidden" name="no_recurring" value="0"/>
+                        <input type="hidden" name="currency_code" value="EUR"/>
+                        <input type="image" id="paypal_img"
+                               src="/static/paypal.png"
+                               border="0"
+                               name="submit"
+                               title="PayPal - The safer, easier way to pay online!"
+                               alt="Bouton Faites un don avec PayPal"/>
+                        <img alt="" border="0" src="https://www.paypal.com/fr_FR/i/scr/pixel.gif" width="1" height="1"/>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </div>
 </div>
 <div id="content" style="padding-left: 50px;">
-	<div id="header">
-		<div id="header_logo" style="float: left;">
-			<div id="logo" onClick="parent.location='/'">&nbsp;</div>
-		</div>
-	</div>
-	<div id="body" style="padding-bottom: 100px;">{{ body }}</div>
-	<div id="footer">{{ footer }}</div>
+    <div id="header">
+        <div id="header_logo" style="float: left;">
+            <div id="logo" onClick="parent.location='/'">&nbsp;</div>
+        </div>
+    </div>
+    <div id="body" style="padding-bottom: 100px;">{{ body }}</div>
+    <div id="footer">{{ import_button }}</div>
 </div>
 </body>
 </html>

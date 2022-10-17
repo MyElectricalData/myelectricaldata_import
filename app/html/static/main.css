@@ -3,7 +3,7 @@
     --main-bg-color: #FFFFFF;
 	--sde-bg-color: #1b5bb4;
 	--text-color: #2a2a2a;
-	--text-title: #FFFFFF;
+	--text-title: #1b5bb4;
 	--strong-color: #000;
 	--code-color: #0024a9;
 	--text-warning: #c53e3e;
@@ -59,7 +59,7 @@ h1 {
 }
 
 h2 {
-    color: var(--text-title);
+    color: var(--main-bg-color);
     letter-spacing: 2px;
     font-size: 17px;
     background: var(--sde-bg-color);
@@ -89,7 +89,7 @@ h3 {
     text-decoration: none;
     padding: 10px;
     font-size: 1em;
-    color: var(--text-title);
+    color: var(--main-bg-color);
     background-color: var(--sde-bg-color);
     border-radius: 24px;
     -webkit-border-radius: 24px;
@@ -240,7 +240,7 @@ select{
     cursor: pointer;
 }
 
-#dataTableConsumption {
+#dataTableConsommation {
     padding: 10px;
 }
 #dataTableProduction {
@@ -251,9 +251,193 @@ table .title {
     font-weight: bolder;
     /*text-align: center;*/
     background: var(--sde-bg-color);
-    color: var(--text-title);
+    color: var(--main-bg-color);
 }
 
 table td {
     border: 1px solid var(--code-color);
+}
+
+.icon_success {
+    background-color: var(--success-bg);
+    background-size: auto;
+    mask: url(/static/success.svg) no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url(/static/success.svg) no-repeat center;
+    -webkit-mask-size: contain;
+    background-repeat: no-repeat no-repeat;
+    height: 30px;
+}
+
+.icon_failed {
+    background-color: var(--text-warning);
+    background-size: auto;
+    mask: url(/static/failed.svg) no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url(/static/failed.svg) no-repeat center;
+    -webkit-mask-size: contain;
+    background-repeat: no-repeat no-repeat;
+    height: 30px;
+}
+
+.recap_wrap {
+    float: left;
+    position: relative;
+    left: 50%;
+}
+
+.recap_content {
+    float: left;
+    position: relative;
+    left: -50%;
+    text-align: center;
+    width: 200px;
+    height: 50px;
+}
+
+.recap_main {
+    height: 4em;
+}
+
+.recap_years_title {
+    font-weight: bolder;
+    color: var(--text-title);
+}
+
+.recap_years_value {
+    color: var(--text-color);
+}
+
+.recap_years_percent {
+    color: var(--text-color);
+}
+
+.table_recap {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table_recap_header{
+    text-align: center;
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+    padding: 10px;
+    border: 1px solid var(--sde-bg-color);
+    width: 150px;
+}
+
+.table_recap_data{
+    text-align: center;
+    padding: 10px;
+}
+
+.green {
+    color: var(--success-bg);
+}
+.red {
+    color: var(--text-warning);
+}
+.blue {
+    color: var(--sde-bg-color);
+}
+
+.datatable_button {
+    background-color: var(--text-warning);
+    color: var(--main-bg-color);
+    border: 2px solid var(--text-warning);
+    border-radius: 15px;
+    width: 125px;
+    height: 30px;
+    font-weight: bolder;
+    cursor: pointer;
+}
+.datatable_blacklist {
+    background-color: var(--text-color);
+    color: var(--main-bg-color);
+    border: 2px solid var(--text-color);
+    border-radius: 15px;
+    width: 125px;
+    height: 30px;
+    font-weight: bolder;
+    cursor: pointer;
+}
+.datatable_whitelist {
+    background-color: var(--success-bg);
+    color: var(--main-bg-color);
+    border: 2px solid var(--success-bg);
+    border-radius: 15px;
+    width: 125px;
+    height: 30px;
+    font-weight: bolder;
+    cursor: pointer;
+}
+.datatable_button_import {
+    background-color: var(--success-bg);
+    color: var(--main-bg-color);
+    border: 2px solid var(--success-bg);
+    border-radius: 15px;
+    width: 125px;
+    height: 30px;
+    font-weight: bolder;
+    cursor: pointer;
+}
+.datatable_button_disable {
+    background-color: white;
+    color: gray;
+    border: 2px solid var(--sde-bg-color);
+    border-radius: 15px;
+    width: 125px;
+    height: 30px;
+    font-weight: bolder;
+    cursor: auto;
+}
+.datatable_button:hover {
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+}
+.datatable_blacklist:hover {
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+}
+.datatable_unblacklist:hover {
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+}
+.datatable_button_import:hover {
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+}
+.datatable_button_disable:hover {
+    background-color: white;
+    color: gray;
+    border: 2px solid var(--sde-bg-color);
+    border-radius: 15px;
+    width: 125px;
+    height: 30px;
+    font-weight: bolder;
+    cursor: auto;
+}
+.datatable_button:active {
+    transform: scale(0.98);
+    box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+}
+.datatable_blacklist:active {
+    transform: scale(0.98);
+    box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+}
+.datatable_unblacklist:active {
+    transform: scale(0.98);
+    box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+}
+.datatable_button_import:active {
+    transform: scale(0.98);
+    box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+}
+.datatable_button_disable:active {
+    transform: scale(1);
+    box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0);
+}
+
+.loading_bg {
+    background: url('/static/loading.gif') no-repeat center;
 }

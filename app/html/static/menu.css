@@ -24,7 +24,7 @@ a,
     display: block;
     float: right;
     margin-right: -45px;
-    background: var(--text-title);
+    /*background: var(--text-title);*/
     border-top-right-radius: 10px ;
     border-bottom-right-radius: 10px ;
 }
@@ -38,7 +38,7 @@ a,
     z-index: 100;
     border-top-right-radius: 10px ;
     border-bottom-right-radius: 10px ;
-    background: var(--text-title);
+    /*background: var(--text-title);*/
 }
 .burger_box a.menu-icon:hover,
 .burger_box a.menu-icon.opened {
@@ -124,7 +124,7 @@ a,
     transition: all 200ms ease-in-out;
 }
 .list_item a {
-    color: var(--text-title);
+    color: var(--main-bg-color);
     display: block;
     padding: 5px 10px;
     text-decoration: none;

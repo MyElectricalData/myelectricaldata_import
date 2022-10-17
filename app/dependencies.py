@@ -1,136 +1,24 @@
+import datetime
 import logging
 import os
 import sys
-import json
 
-from jinja2 import Template
-from art import *
-
-from config import *
-
-def debug(message):
-    logWarn()
-    if type(message) is list:
-        for msg in message:
-            logging.info(f" {msg}")
-    else:
-        logging.info(f" {message}")
-    logWarn()
-
-def log(message):
-    if type(message) is list:
-        for msg in message:
-            logging.info(f" {msg}")
-    else:
-        logging.info(f" {message}")
-
-
-def logTitle(message):
-    logSep()
-    logging.info(f" {message.upper()}")
-    logSep()
-
-
-def logDebug(message):
-    if type(message) is list:
-        for msg in message:
-            logging.debug(f" {msg}")
-    else:
-        logging.debug(f" {message}")
-
-
-def logWarning(message):
-    if type(message) is list:
-        for msg in message:
-            logging.warning(f" {msg}")
-    else:
-        logging.warning(f" {message}")
-
-
-def logError(message):
-    logging.error("═════════════════════════════════════════•°• :ERREUR: •°•══════════════════════════════════════════")
-    logging.error("")
-    if type(message) is list:
-        for msg in message:
-            logging.error(f" {msg}")
-    else:
-        logging.error(f" {message}")
-    logging.error("")
-    logging.error("═══════════════════════════════════════════════════════════════════════════════════════════════════")
-
-
-def logCritical(message):
-    if type(message) is list:
-        for msg in message:
-            logging.critical(f" {msg}")
-    else:
-        logging.critical(f" {message}")
-    sys.exit()
-
-
-def logSep():
-    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-
-def logWarn():
-    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-
-def logo(version):
-    Art = text2art("MyElectricalData")
-    logging.info(f"""
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{Art}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                                VERSION : {version}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━""")
-
-def finish():
-    finish = text2art("Import Finish!!!")
-    logging.info(f"""
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{finish}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━""")
+import __main__ as app
+from models.log import Log
+from models.config import get_version
+from models.query_status import Status
+from models.query_contract import Contract
+from models.query_address import Address
+from models.query_consumption_daily import ConsumptionDaily
+from models.query_consumption_detail import ConsumptionDetail
+from models.query_production_daily import ProductionDaily
+from models.query_production_detail import ProductionDetail
 
 
 if os.environ.get("APPLICATION_PATH") is None:
     APPLICATION_PATH = "/app"
 else:
     APPLICATION_PATH = os.environ.get('APPLICATION_PATH')
-
-
-def html_return(body, url="/import/0"):
-    links = ["Forcer l'importation"]
-    footer = ""
-    for i, comment in enumerate(links):
-        footer += f"""
-            <div id="bouton_enedis" style="">
-                <a style="text-decoration: none" href="{url}"><div class="btn">{comment}</div></a>
-            </div>
-        """
-
-    with open(f'{APPLICATION_PATH}/html/footer.html') as file_:
-        footer_template = Template(file_.read())
-    footer = footer_template.render(footer=footer)
-
-    with open(f'{APPLICATION_PATH}/html/index.html') as file_:
-        index_template = Template(file_.read())
-
-    html = index_template.render(
-        body=body,
-        fullscreen=True,
-        footer=footer,
-        homepage_link="/",
-        footer_height=80,
-        concent_url=f'{URL}',
-        swagger_url=f"{URL}/docs/",
-        redoc_url=f"{URL}/redoc/",
-        faq_url=f"{URL}/faq/",
-        code_url=f"{URL}/error_code/",
-        doc_url=f"{URL}/documentation/",
-    )
-    return html
-
 
 paypal_footer = """
 <div style="text-align: center" id="paypal" class="paypal_link">
@@ -150,101 +38,96 @@ paypal_footer = """
 </div>
 """
 
-# def is_json(myjson):
-#     try:
-#         json.loads(myjson)
-#     except ValueError as e:
-#         return False
-#     return True
-#
-#
-# def splitLog(msg):
-#     format_log = ""
-#     i = 1
-#     nb_col = 12
-#     msg_length = len(msg)
-#     cur_length = 1
-#     for log_msg in msg:
-#         format_log += f" | {log_msg}"
-#         if i == nb_col:
-#             i = 1
-#             format_log += f" |"
-#             log(format_log)
-#             format_log = ""
-#         elif cur_length == msg_length:
-#             format_log += f" |"
-#             log(format_log)
-#         else:
-#             i = i + 1
-#         cur_length = cur_length + 1
-#
-#
-# def apiRequest(cur, con, pdl, type="POST", url=None, headers=None, data=None):
-#     config_query = f"SELECT * FROM config WHERE key = 'config'"
-#     cur.execute(config_query)
-#     query_result = cur.fetchall()
-#     query_result = json.loads(query_result[0][1])
-#     if not f"call_nb_{pdl}" in query_result:
-#         query_result[f"call_nb_{pdl}"] = 0
-#
-#     log(f"call_number : {query_result[f'call_nb_{pdl}']} (max : {query_result['max_call']})", "DEBUG")
-#     if query_result["day"] == datetime.now().strftime('%Y-%m-%d'):
-#         if query_result[f"call_nb_{pdl}"] > query_result["max_call"]:
-#             return {
-#                 "error_code": 2,
-#                 "description": f"API Call number per day is reached ({query_result['max_call']}), please wait until tomorrow to load the rest of data"
-#             }
-#         else:
-#             query_result[f"call_nb_{pdl}"] = int(query_result[f"call_nb_{pdl}"]) + 1
-#             query_result["day"] = datetime.now().strftime('%Y-%m-%d')
-#     else:
-#         query_result[f"call_nb_{pdl}"] = 0
-#         query_result["day"] = datetime.now().strftime('%Y-%m-%d')
-#
-#     query = f"UPDATE config SET key = 'config', value = '{json.dumps(query_result)}' WHERE key = 'config'"
-#     cur.execute(query)
-#     con.commit()
-#
-#     log(f"Call API : {url}", "DEBUG")
-#     log(f"Data : {data}", "DEBUG")
-#     try:
-#         retour = requests.request(type, url=f"{url}", timeout=240, headers=headers, data=data)
-#
-#         if retour.status_code != 200:
-#             retour = {
-#                 "error_code": retour.status_code,
-#                 "description": retour.text
-#             }
-#         else:
-#             if is_json(str(retour.text)):
-#                 retour = retour.json()
-#             else:
-#                 retour = {
-#                     "error_code": 500,
-#                     "description": "Enedis return is not json"
-#                 }
-#     except requests.exceptions.Timeout:
-#         log(" !! Query Timeout !!")
-#         retour = {
-#             "error_code": "timeout",
-#             "description": "Query Timeout"
-#         }
-#     except requests.exceptions.TooManyRedirects:
-#         log(" !! Too Many Redirection !!")
-#         retour = {
-#             "error_code": "TooManyRedirects",
-#             "description": "TooManyRedirects"
-#         }
-#     except requests.exceptions.RequestException as e:
-#         log(" !! Critical error !!")
-#         retour = {
-#             "error_code": "RequestException",
-#             "description": "RequestException",
-#             "exception": e
-#         }
-#
-#     if "debug" in main.config and main.config["debug"] == True:
-#         log(f"API Return :", "ERROR")
-#         log(retour, "ERROR")
-#
-#     return retour
+
+def daterange(start_date, end_date):
+    for n in range(int((end_date - start_date).days)):
+        yield start_date + datetime.timedelta(n)
+
+
+def get_data():
+    if not app.CACHE.lock_status():
+        app.CACHE.lock()
+        for usage_point_id, config in app.CONFIG.get('myelectricaldata').items():
+            app.CACHE.save_config(usage_point_id, config)
+            app.LOG.log_usage_point_id(usage_point_id)
+            result = {}
+
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': config['token'],
+                'call-service': "myelectricaldata",
+                'version': get_version()
+            }
+
+            app.LOG.title(f"[{usage_point_id}] Status de la passerelle :")
+            result["status_gateway"] = Status(
+                headers=headers,
+            ).ping()
+
+            app.LOG.title(f"[{usage_point_id}] Check account status :")
+            result["status_account"] = Status(
+                headers=headers,
+            ).status(usage_point_id=usage_point_id)
+
+            app.LOG.title(f"[{usage_point_id}] Récupération du contrat :")
+            result["contract"] = Contract(
+                headers=headers,
+                usage_point_id=usage_point_id,
+                config=config
+            ).get()
+
+            activation_date = False
+            if result.get('contract', {}).get('contracts', {}).get('last_activation_date', {}):
+                activation_date = result["contract"]["contracts"]["last_activation_date"]
+            offpeak_hours = False
+            if result.get('contract', {}).get('contracts', {}).get('offpeak_hours', {}):
+                offpeak_hours = result["contract"]["contracts"]["offpeak_hours"]
+
+            app.LOG.title(f"[{usage_point_id}] Récupération de coordonnée :")
+            result["addresses"] = Address(
+                headers=headers,
+                usage_point_id=usage_point_id,
+                config=config
+            ).get()
+
+            if config["consumption"]:
+                app.LOG.title(f"[{usage_point_id}] Récupération de la consommation journalière :")
+                result["consumption_daily"] = ConsumptionDaily(
+                    headers=headers,
+                    usage_point_id=usage_point_id,
+                    config=config,
+                    activation_date=activation_date,
+                ).get()
+
+            if config["consumption_detail"]:
+                app.LOG.title(f"[{usage_point_id}] Récupération de la consommation détaillé :")
+                result["consumption_detail"] = ConsumptionDetail(
+                    headers=headers,
+                    usage_point_id=usage_point_id,
+                    config=config,
+                    activation_date=activation_date,
+                    offpeak_hours=offpeak_hours
+                ).get()
+
+            if config["production"]:
+                app.LOG.title(f"[{usage_point_id}] Récupération de la production journalière :")
+                result["production_daily"] = ProductionDaily(
+                    headers=headers,
+                    usage_point_id=usage_point_id,
+                    config=config,
+                    activation_date=activation_date,
+                ).get()
+
+            if config["production_detail"]:
+                app.LOG.title(f"[{usage_point_id}] Récupération de la production détaillé :")
+                result["production_detail"] = ProductionDetail(
+                    headers=headers,
+                    usage_point_id=usage_point_id,
+                    config=config,
+                    activation_date=activation_date,
+                    offpeak_hours=offpeak_hours
+                ).get()
+        app.CACHE.unlock()
+        app.LOG.finish()
+    else:
+        app.LOG.warning("Skip, import in progress!!")

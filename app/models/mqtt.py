@@ -1,6 +1,8 @@
-from paho.mqtt import client as mqtt
+import __main__ as app
 
 from dependencies import *
+from paho.mqtt import client as mqtt
+from models.log import Log
 
 
 class Mqtt:
@@ -29,17 +31,17 @@ class Mqtt:
         self.connect()
 
     def connect(self):
-        logSep()
-        log(f"Connect to MQTT broker {self.hostname}:{self.port}")
+        app.LOG.separator()
+        app.LOG.log(f"Connect to MQTT broker {self.hostname}:{self.port}")
         try:
             self.client = mqtt.Client(self.client_id)
             if self.username != "" and self.password != "":
                 self.client.username_pw_set(self.username, self.password)
             self.client.connect(self.hostname, self.port)
             self.client.loop_start()
-            log(" => Connection success")
+            app.LOG.log(" => Connection success")
         except Exception as e:
-            logging.critical(["MQTT Connexion failed", e])
+            app.LOG.critical(["MQTT Connexion failed", e])
 
     def publish(self, topic, msg, prefix=None):
         if prefix is None:
@@ -53,9 +55,9 @@ class Mqtt:
         )
         status = result[0]
         if status == 0:
-            log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
+            app.LOG.log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
         else:
-            log(f" - Failed to send message to topic {prefix}/{topic}")
+            app.LOG.log(f" - Failed to send message to topic {prefix}/{topic}")
         msg_count += 1
 
     # def subscribe(self, client, topic, prefix=None):

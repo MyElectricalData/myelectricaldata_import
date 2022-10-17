@@ -1,12 +1,10 @@
 import os
 import re
-import sys
+
 import yaml
-import json
 
-from pathlib import Path
+import __main__ as app
 
-from dependencies import *
 
 def get_version():
     f = open("/app/VERSION", "r")
@@ -92,15 +90,15 @@ class Config:
             return {
                 "error": True,
                 "message": ["Impossible de charger le fichier de configuration.",
-                    "",
-                    "Vous pouvez récupérer un exemple ici :",
-                    "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
-                ]
+                            "",
+                            "Vous pouvez récupérer un exemple ici :",
+                            "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
+                            ]
             }
 
     def check(self):
-        logSep()
-        log(f"Check {self.file} :")
+        app.LOG.separator()
+        app.LOG.log(f"Check {self.file} :")
         lost_params = []
         # CHECK HOME ASSISTANT CONFIGURATION
         config_name = "home_assistant"
@@ -146,32 +144,32 @@ class Config:
             msg.append("")
             msg.append("You can get list of parameters here :")
             msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
-            logCritical(msg)
+            app.LOG.critical(msg)
         else:
-            log(" => Config valid")
+            app.LOG.log(" => Config valid")
 
         return lost_params
 
     def display(self):
-        log("Display configuration :")
+        app.LOG.log("Display configuration :")
         for key, value in self.config.items():
             if type(value) is dict:
-                log(f"  {key}:")
+                app.LOG.log(f"  {key}:")
                 for dic_key, dic_value in value.items():
                     if type(dic_value) is dict:
-                        log(f"    {dic_key}:")
+                        app.LOG.log(f"    {dic_key}:")
                         for dic1_key, dic1_value in dic_value.items():
                             if dic1_key == "password" or dic1_key == "token":
                                 dic1_value = "** hidden **"
-                            log(f"      {dic1_key}: {dic1_value}")
+                            app.LOG.log(f"      {dic1_key}: {dic1_value}")
                     else:
                         if dic_key == "password" or dic_key == "token":
                             dic_value = "** hidden **"
-                        log(f"    {dic_key}: {dic_value}")
+                        app.LOG.log(f"    {dic_key}: {dic_value}")
             else:
                 if key == "password" or key == "token":
                     value = "** hidden **"
-                log(f"  {key}: {value}")
+                app.LOG.log(f"  {key}: {value}")
 
     def get(self, path=None):
         if path:
@@ -183,7 +181,7 @@ class Config:
             return self.config
 
     def set(self, path, value):
-        log(f" => Switch {path} to {value}")
+        app.LOG.log(f" => Switch {path} to {value}")
         with open(f'{self.path_file}', 'r+') as f:
             text = f.read()
             text = re.sub(fr'(?<={path}: ).*', str(value).lower(), text)

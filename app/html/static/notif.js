@@ -1,20 +1,25 @@
 let searchParams = new URLSearchParams(window.location.search)
 
-if (searchParams.has('notif_body') == true) {
-    var notif_title = atob(searchParams.get('notif_title'));
-    var notif_body = atob(searchParams.get('notif_body'));
+$.notify.addStyle('enedis', {
+  html: "<div><span data-notify-text/></div>"
+});
 
-    jQuery(document).ready(function () {
-        $.notify.addStyle('error', {
-            html:
-                "<div>" +
-                "<div class='title'>" + notif_title + "</div>" +
-                "<div class='body'/>" + notif_body + "</div>" +
-                "</div>"
-        });
-        $.notify({title: notif_title}, {
-            style: 'error',
-            position: 'top-right'
-        })
-    });
+if (searchParams.has('notif') == true) {
+    var message = atob(searchParams.get('notif'));
+
+    // jQuery(document).ready(function () {
+    //     $.notify.addStyle('error', {
+    //         html:
+    //             "<div>" +
+    //             "<div class='title'>" + "ERROR" + "</div>" +
+    //             "<div class='body'/>" + message + "</div>" +
+    //             "</div>"
+    //     });
+    //     $.notify({title: message}, {
+    //         style: 'error',
+    //         position: 'top-right'
+    //     })
+    // });
+    //
+    $.notify(message, { style: 'enedis', className: 'error'});
 }
