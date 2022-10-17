@@ -29,7 +29,10 @@ class ProductionDaily:
         self.daily_max_days = DAILY_MAX_DAYS
         self.max_days_date = datetime.datetime.utcnow() - relativedelta(days=self.daily_max_days)
 
-        self.base_price = self.config['production_price']
+        if "production_price" in self.config:
+            self.base_price = self.config['production_price']
+        else:
+            self.base_price = 0
 
     def run(self, begin, end, cache=True):
         begin = begin.strftime('%Y-%m-%d')

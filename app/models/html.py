@@ -6,6 +6,7 @@ import markdown
 from dependencies import daterange
 from jinja2 import Template
 from models.config import get_version
+from dateutil.relativedelta import relativedelta
 
 from config import URL
 
@@ -25,6 +26,8 @@ class Html:
             'version': get_version()
         }
         self.list_usage_points_id = ""
+        self.max_history = 4
+        self.max_history_chart = 6
 
     def select_usage_points_id(self, selected_usage_point=None, choice=False):
         self.list_usage_points_id = '<select name="usages_points_id" id="select_usage_point_id" class="right">'
@@ -48,7 +51,7 @@ class Html:
             self.list_usage_points_id += f'<option value="{usage_point}" {select}>{text}</option>'
         self.list_usage_points_id += '</select>'
 
-    def html_return(self, body, usage_point_id=0):
+    def html_return(self, body, head="", usage_point_id=0):
         import_button = f"""
         <div>
             <div id="bouton_enedis">
@@ -57,12 +60,13 @@ class Html:
                     <div class="btn">Lancez la récupération</div>
                 </a>
             </div>
-        </div>'
+        </div>
         """
         with open(f'{self.application_path}/html/index.html') as file_:
             index_template = Template(file_.read())
 
         html = index_template.render(
+            head=head,
             body=body,
             fullscreen=True,
             import_button=import_button,
@@ -97,6 +101,7 @@ class Html:
         return self.html_return(body=data)
 
     def page_usage_point_id(self):
+        head = ""
         config = self.cache.get_config(self.usage_point_id)
         contract = self.cache.get_contract(self.usage_point_id)
         contract_data = {}
@@ -127,23 +132,151 @@ class Html:
         with open(f'{self.application_path}/html/usage_point_id.md') as file_:
             homepage_template = Template(file_.read())
 
+        current_years = int(datetime.datetime.now().strftime("%Y"))
+
         if config["consumption"]:
-            daily_consumption_data = self.generate_datatable(
+            daily_consumption_result = self.generate_datatable(
                 title="Consommation",
                 daily_data=self.cache.get_consumption_daily_all(self.usage_point_id),
                 cache_last_date=self.cache.get_consumption_daily_last_date(self.usage_point_id)
             )
-            recap_consumption = self.recap(title="Consommation", data=daily_consumption_data['recap'])
-            daily_consumption_data = daily_consumption_data["datatable"]
+            recap_consumption = self.recap(title="Consommation", data=daily_consumption_result['recap'])
+            daily_consumption_data = daily_consumption_result["datatable"]
+            head += """            
+            google.charts.load("current", {packages:["corechart"]});
+            google.charts.setOnLoadCallback(drawChartConsumption);
+            function drawChartConsumption() {
+                var data = google.visualization.arrayToDataTable(["""
+
+            format_table = {}
+            years_array = ""
+            max_history = current_years - self.max_history_chart
+            for years, data in daily_consumption_result['recap'].items():
+                if years > str(max_history):
+                    years_array += f"'{years}', "
+                    for month, value in data['month'].items():
+                        if month not in format_table:
+                            format_table[month] = []
+                        format_table[month].append(value)
+            head += f"['Month', {years_array}],"
+            for month, val in format_table.items():
+                table_value = ""
+                for idx, c in enumerate(val):
+                    table_value += str(c / 1000)
+                    if idx + 1 < len(val):
+                        table_value += ", "
+                head += f"['{month}', {table_value}],"
+            head += """]);
+                var options = {
+                  title : 'Consummation journalière',
+                  vAxis: {title: 'Consommation (kWh)'},
+                  hAxis: {title: 'Mois'},
+                  seriesType: 'bars',
+                  series: {5: {type: 'line'}}
+                };
+    
+                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption'));
+                chart.draw(data, options);
+            }
+                """
 
         if config["production"]:
-            daily_production_data = self.generate_datatable(
+            daily_production_result = self.generate_datatable(
                 title="Production",
                 daily_data=self.cache.get_production_daily_all(self.usage_point_id),
                 cache_last_date=self.cache.get_production_daily_last_date(self.usage_point_id)
             )
-            recap_production = self.recap(title="Production", data=daily_production_data['recap'])
-            daily_production_data = daily_production_data["datatable"]
+            recap_production = self.recap(title="Production", data=daily_production_result['recap'])
+            daily_production_data = daily_production_result["datatable"]
+            daily_consumption_data = daily_production_result["datatable"]
+            head += """            
+                        google.charts.load("current", {packages:["corechart"]});
+                        google.charts.setOnLoadCallback(drawChartProduction);
+                        function drawChartProduction() {
+                            var data = google.visualization.arrayToDataTable(["""
+
+            format_table = {}
+            years_array = ""
+            max_history = current_years - self.max_history_chart
+            for years, data in daily_production_result['recap'].items():
+                if years > str(max_history):
+                    years_array += f"'{years}', "
+                    for month, value in data['month'].items():
+                        if month not in format_table:
+                            format_table[month] = []
+                        format_table[month].append(value)
+            head += f"['Month', {years_array}],"
+            for month, val in format_table.items():
+                table_value = ""
+                for idx, c in enumerate(val):
+                    table_value += str(c / 1000)
+                    if idx + 1 < len(val):
+                        table_value += ", "
+                head += f"['{month}', {table_value}],"
+            head += """]);
+                    var options = {
+                      title : 'Production journalière',
+                      vAxis: {title: 'Consommation (kWh)'},
+                      hAxis: {title: 'Mois'},
+                      seriesType: 'bars',
+                      series: {5: {type: 'line'}}
+                    };
+    
+                    var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production'));
+                    chart.draw(data, options);
+                }
+                """
+
+        if config["consumption"] and config["production"]:
+            compare_compsuption_production = {}
+            max_year = 1
+            max_history = current_years - max_year
+            for years, data in daily_consumption_result['recap'].items():
+                if int(years) > max_history:
+                    for month, value in data['month'].items():
+                        if month not in compare_compsuption_production:
+                            compare_compsuption_production[month] = []
+                        compare_compsuption_production[month].append(float(value)/1000)
+
+            for years, data in daily_production_result['recap'].items():
+                if int(years) >= max_history:
+                    for month, value in data['month'].items():
+                        if month not in compare_compsuption_production:
+                            compare_compsuption_production[month] = []
+                        compare_compsuption_production[month].append(float(value)/1000)
+
+
+            head += """            
+                google.charts.load("current", {packages:["corechart"]});
+                google.charts.setOnLoadCallback(drawChartProductionVsConsumption);
+                function drawChartProductionVsConsumption() {
+                    var data = google.visualization.arrayToDataTable([
+                    ['Année', 'Consommation', 'Production'],"""
+
+            app.LOG.show(compare_compsuption_production)
+
+            for month, data in compare_compsuption_production.items():
+                table_value = ""
+                for idx, value in enumerate(data):
+                    if value == "":
+                        value = 0
+                    table_value += f"{value}"
+                    if idx + 1 < len(data):
+                        table_value += ", "
+                head += f"['{month}', {table_value}],"
+            head += """]);
+                    var options = {
+                      title : 'Consommation VS Production',
+                      vAxis: {title: 'Consommation (kWh)'},
+                      hAxis: {title: 'Mois'},
+                      seriesType: 'bars',
+                      series: {5: {type: 'line'}}
+                    };
+
+                    var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare'));
+                    chart.draw(data, options);
+                }
+                """
 
         data = homepage_template.render(
             contract_data=contract_data,
@@ -158,8 +291,13 @@ class Html:
         <h1>Récapitulatif</h1>"""
         if config["consumption"]:
             data += recap_consumption
+            data += '<div id="chart_daily_consumption"></div>'
         if config["production"]:
             data += recap_production
+            data += '<div id="chart_daily_production"></div>'
+        if config["consumption"] and config["production"]:
+            data += "<h2>Consommation VS Production</h2>"
+            data += '<div id="chart_daily_production_compare"></div>'
         data += "<h1>Mes données journalières</h1>"
         if config["consumption"]:
             data += daily_consumption_data
@@ -167,7 +305,7 @@ class Html:
             data += daily_production_data
         data += "</div>"
 
-        return self.html_return(body=data, usage_point_id=self.usage_point_id)
+        return self.html_return(body=data, head=head, usage_point_id=self.usage_point_id)
 
     def generate_datatable(self, title, daily_data, cache_last_date):
         tag = title.lower()
@@ -267,6 +405,7 @@ class Html:
         result = f"""<h2>{title}</h2>"""
         current_years = int(datetime.datetime.now().strftime("%Y"))
         current_month = int(datetime.datetime.now().strftime("%m"))
+        max_history = current_years - self.max_history
         linear_years = {}
         mount_count = 0
         for linear_year, linear_data in reversed(sorted(data.items())):
@@ -283,37 +422,41 @@ class Html:
         result += '<table class="table_recap"><tr>'
         result += '<th class="table_recap_header">Annuel</th>'
         for year, data in reversed(sorted(data.items())):
-            result += f"""
-        <td class="table_recap_data">                    
-            <div class='recap_years_title'>{year}</div>
-            <div class='recap_years_value'>{round(data['value'] / 1000)} kWh</div>
-        </td>    
-        """
+            if int(year) > max_history:
+                result += f"""
+            <td class="table_recap_data">                    
+                <div class='recap_years_title'>{year}</div>
+                <div class='recap_years_value'>{round(data['value'] / 1000)} kWh</div>
+            </td>    
+            """
+                current_years = current_years - 1
         result += "</tr><tr>"
+
         result += '<th class="table_recap_header">Annuel linéaire</th>'
         current_years = int(datetime.datetime.now().strftime("%Y"))
         for year, data in linear_years.items():
-            data_last_years_class = ""
-            data_last_years = "---"
-            key = f"{current_month}/{current_years - 1} => {current_month}/{current_years - 2}"
-            if str(key) in linear_years:
-                data_last_years = linear_years[str(key)]
-                data_last_years = 100 - (round((data_last_years / data) * 100))
-                current_years = current_years - 1
-                if data_last_years >= 0:
-                    if data_last_years == 0:
-                        data_last_years_class = "blue"
+            if current_years > max_history:
+                data_last_years_class = ""
+                data_last_years = "---"
+                key = f"{current_month}/{current_years - 1} => {current_month}/{current_years - 2}"
+                if str(key) in linear_years:
+                    data_last_years = linear_years[str(key)]
+                    data_last_years = 100 - (round((data_last_years / data) * 100))
+                    current_years = current_years - 1
+                    if data_last_years >= 0:
+                        if data_last_years == 0:
+                            data_last_years_class = "blue"
+                        else:
+                            data_last_years_class = "red"
+                            data_last_years = f"+{data_last_years}"
                     else:
-                        data_last_years_class = "red"
-                        data_last_years = f"+{data_last_years}"
-                else:
-                    data_last_years_class = "green"
-            result += f"""
-        <td class="table_recap_data">                    
-            <div class='recap_years_title'>{year}</div>
-            <div class='recap_years_value'>{round(data / 1000)} kWh</div>
-            <div class='recap_years_value {data_last_years_class}'><b>{data_last_years}%</b></div>
-        </td>    
-        """
+                        data_last_years_class = "green"
+                result += f"""
+            <td class="table_recap_data">                    
+                <div class='recap_years_title'>{year}</div>
+                <div class='recap_years_value'>{round(data / 1000)} kWh</div>
+                <div class='recap_years_value {data_last_years_class}'><b>{data_last_years}%</b></div>
+            </td>    
+            """
         result += "</tr></table>"
         return result

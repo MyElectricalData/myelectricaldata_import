@@ -2,7 +2,7 @@ import json
 import threading
 import time
 
-from flask import Flask
+from flask import Flask, send_file
 
 from config import cycle_minimun
 from dependencies import *
@@ -95,6 +95,9 @@ if __name__ == '__main__':
     def status():
         return "ok"
 
+    @APP.route("/favicon.ico")
+    def favicon():
+        return send_file("html/favicon.ico", mimetype='image/gif')
 
     @APP.route("/")
     def main():
