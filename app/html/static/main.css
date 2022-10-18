@@ -1,17 +1,39 @@
 :root {
-	--logo: #e5c723;
+    --logo: #F1C40F;
     --main-bg-color: #FFFFFF;
-	--sde-bg-color: #1b5bb4;
-	--text-color: #2a2a2a;
-	--text-title: #1b5bb4;
-	--strong-color: #000;
-	--code-color: #0024a9;
-	--text-warning: #c53e3e;
-	--success-bg: #39af3f;
+    --sde-bg-color: #3498DB;
+    --text-color: #2C3E50;
+    --text-title: #3498DB;
+    --strong-color: #000;
+    --code-color: #2980B9;
+    --text-warning: #C0392B;
+    --success-bg: #2ECC71;
 }
 
 * {
     font-family: 'Roboto', sans-serif;
+}
+
+::-webkit-scrollbar {
+    width: 15px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--main-bg-color);
+    border-radius: 15px;
+    border: 5px solid var(--sde-bg-color);
+    cursor: pointer;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 0px;
+    background: var(--sde-bg-color);
+    cursor: pointer;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--main-bg-color);
+    cursor: pointer;
 }
 
 strong em {
@@ -35,6 +57,7 @@ body {
     padding: 0;
     width: 100%;
 }
+
 a {
     color: var(--text-title);
     font-weight: bold;
@@ -64,9 +87,10 @@ h2 {
     font-size: 17px;
     background: var(--sde-bg-color);
     border: 1px solid var(--main-bg-color);
-    border-radius: 15px;
+    border-radius: 10px;
     padding: 10px;
 }
+
 h3 {
     color: var(--text-color);
     font-size: 15px;
@@ -78,28 +102,55 @@ h3 {
 
 #footer {
     position: fixed;
-    left: 50%;
+    left: 0;
     bottom: 0px;
-    transform: translate(-50%, -25%);
+    transform: translate(0, 0%);
     margin: 0 auto;
-    width: 500px;
+    width: 100%;
     text-align: center;
 }
+
 .btn {
     text-decoration: none;
     padding: 10px;
     font-size: 1em;
     color: var(--main-bg-color);
     background-color: var(--sde-bg-color);
-    border-radius: 24px;
-    -webkit-border-radius: 24px;
+    /* border-radius: 24px; */
+    /* -webkit-border-radius: 24px; */
     -moz-border-radius: 24px;
-    border: 4px solid var(--sde-bg-color);
+    /* border: 4px solid var(--sde-bg-color); */
     box-shadow: 3px 3px 12px var(--text-color);
     -webkit-box-shadow: 3px 3px 12px var(--text-color);
     -moz-box-shadow: 3px 3px 12px var(--text-color);
     cursor: pointer;
+    width: 100%;
 }
+
+/*#footer {*/
+/*    position: fixed;*/
+/*    left: 50%;*/
+/*    bottom: 0px;*/
+/*    transform: translate(-50%, -25%);*/
+/*    margin: 0 auto;*/
+/*    width: 500px;*/
+/*    text-align: center;*/
+/*}*/
+/*.btn {*/
+/*    text-decoration: none;*/
+/*    padding: 10px;*/
+/*    font-size: 1em;*/
+/*    color: var(--main-bg-color);*/
+/*    background-color: var(--sde-bg-color);*/
+/*    border-radius: 24px;*/
+/*    -webkit-border-radius: 24px;*/
+/*    -moz-border-radius: 24px;*/
+/*    border: 4px solid var(--sde-bg-color);*/
+/*    box-shadow: 3px 3px 12px var(--text-color);*/
+/*    -webkit-box-shadow: 3px 3px 12px var(--text-color);*/
+/*    -moz-box-shadow: 3px 3px 12px var(--text-color);*/
+/*    cursor: pointer;*/
+/*}*/
 
 .btn_sandbox {
     text-decoration: none;
@@ -156,6 +207,7 @@ code {
     border-radius: 10px;
     padding: 10px
 }
+
 #header {
     height: 140px;
 }
@@ -168,6 +220,7 @@ code {
     width: 98%;
     color: var(--sde-bg-color);
 }
+
 #paypal_img {
     width: 170px;
     background: var(--main-bg-color);
@@ -176,13 +229,12 @@ code {
 }
 
 
-
 blockquote {
-  background: var(--main-bg-color);
-  border: 3px var(--text-warning) solid;
-  border-left: 10px var(--text-warning) solid;
-  padding: 5px 12px 5px 12px;
-  color: var(--text-warning);
+    background: var(--main-bg-color);
+    border: 3px var(--text-warning) solid;
+    border-left: 10px var(--text-warning) solid;
+    padding: 5px 12px 5px 12px;
+    color: var(--text-warning);
 }
 
 #stat {
@@ -230,7 +282,7 @@ blockquote {
     padding: 4px;
 }
 
-select{
+select {
     padding: 3px;
     border-radius: 15px;
     border: 1px solid var(--code-color);
@@ -243,6 +295,7 @@ select{
 #dataTableConsommation {
     padding: 10px;
 }
+
 #dataTableProduction {
     padding: 10px;
 }
@@ -317,7 +370,7 @@ table td {
     border-collapse: collapse;
 }
 
-.table_recap_header{
+.table_recap_header {
     text-align: center;
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
@@ -326,7 +379,7 @@ table td {
     width: 150px;
 }
 
-.table_recap_data{
+.table_recap_data {
     text-align: center;
     padding: 10px;
 }
@@ -334,9 +387,11 @@ table td {
 .green {
     color: var(--success-bg);
 }
+
 .red {
     color: var(--text-warning);
 }
+
 .blue {
     color: var(--sde-bg-color);
 }
@@ -351,6 +406,7 @@ table td {
     font-weight: bolder;
     cursor: pointer;
 }
+
 .datatable_blacklist {
     background-color: var(--text-color);
     color: var(--main-bg-color);
@@ -361,6 +417,7 @@ table td {
     font-weight: bolder;
     cursor: pointer;
 }
+
 .datatable_whitelist {
     background-color: var(--success-bg);
     color: var(--main-bg-color);
@@ -371,6 +428,7 @@ table td {
     font-weight: bolder;
     cursor: pointer;
 }
+
 .datatable_button_import {
     background-color: var(--success-bg);
     color: var(--main-bg-color);
@@ -381,6 +439,7 @@ table td {
     font-weight: bolder;
     cursor: pointer;
 }
+
 .datatable_button_disable {
     background-color: white;
     color: gray;
@@ -391,22 +450,27 @@ table td {
     font-weight: bolder;
     cursor: auto;
 }
+
 .datatable_button:hover {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
+
 .datatable_blacklist:hover {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
+
 .datatable_unblacklist:hover {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
+
 .datatable_button_import:hover {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
+
 .datatable_button_disable:hover {
     background-color: white;
     color: gray;
@@ -417,22 +481,27 @@ table td {
     font-weight: bolder;
     cursor: auto;
 }
+
 .datatable_button:active {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
+
 .datatable_blacklist:active {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
+
 .datatable_unblacklist:active {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
+
 .datatable_button_import:active {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
+
 .datatable_button_disable:active {
     transform: scale(1);
     box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0);
@@ -440,4 +509,14 @@ table td {
 
 .loading_bg {
     background: url('/static/loading.gif') no-repeat center;
+}
+
+#delete_data {
+    background-color: var(--text-warning);
+}
+#import_data {
+    background-color: var(--sde-bg-color);
+}
+#config_data {
+    background-color: var(--success-bg);
 }

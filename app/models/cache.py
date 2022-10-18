@@ -392,15 +392,20 @@ class Cache:
                 .where(self.db_consumption_daily.c.date == date)
                 .values(pdl=usage_point_id, date=date, value=value, blacklist=blacklist))
 
-    def delete_consumption_daily(self, usage_point_id, date):
-        current_data = self.get_consumption_daily_cache_state(usage_point_id, date)
-        if not current_data:
-            return False
+    def delete_consumption_daily(self, usage_point_id, date=None):
+        if date is not None:
+            current_data = self.get_consumption_daily_cache_state(usage_point_id, date)
+            if not current_data:
+                return False
+            else:
+                return self.connection.execute(
+                    self.db_consumption_daily.delete()
+                    .where(self.db_consumption_daily.c.pdl == usage_point_id)
+                    .where(self.db_consumption_daily.c.date == date))
         else:
             return self.connection.execute(
                 self.db_consumption_daily.delete()
-                .where(self.db_consumption_daily.c.pdl == usage_point_id)
-                .where(self.db_consumption_daily.c.date == date))
+                .where(self.db_consumption_daily.c.pdl == usage_point_id))
 
     def blacklist_consumption_daily(self, usage_point_id, date, action=True):
         current_data = self.get_consumption_daily_cache_state(usage_point_id, date)
@@ -499,6 +504,21 @@ class Cache:
                     blacklist=blacklist)
             )
 
+    def delete_consumption_detail(self, usage_point_id, date=None):
+        if date is not None:
+            current_data = self.get_consumption_detail_cache_state(usage_point_id, date)
+            if not current_data:
+                return False
+            else:
+                return self.connection.execute(
+                    self.db_consumption_detail.delete()
+                    .where(self.db_consumption_detail.c.pdl == usage_point_id)
+                    .where(self.db_consumption_detail.c.date == date))
+        else:
+            return self.connection.execute(
+                self.db_consumption_detail.delete()
+                .where(self.db_consumption_detail.c.pdl == usage_point_id))
+
     ## -----------------------------------------------------------------------------------------------------------------
     ## DAILY PRODUCTION
     ## -----------------------------------------------------------------------------------------------------------------
@@ -594,15 +614,20 @@ class Cache:
                 .where(self.db_production_daily.c.date == date)
                 .values(pdl=usage_point_id, date=date, value=value, blacklist=blacklist))
 
-    def delete_production_daily(self, usage_point_id, date):
-        current_data = self.get_production_daily_cache_state(usage_point_id, date)
-        if not current_data:
-            return False
+    def delete_production_daily(self, usage_point_id, date=None):
+        if date is not None:
+            current_data = self.get_production_daily_cache_state(usage_point_id, date)
+            if not current_data:
+                return False
+            else:
+                return self.connection.execute(
+                    self.db_production_daily.delete()
+                    .where(self.db_production_daily.c.pdl == usage_point_id)
+                    .where(self.db_production_daily.c.date == date))
         else:
             return self.connection.execute(
                 self.db_production_daily.delete()
-                .where(self.db_production_daily.c.pdl == usage_point_id)
-                .where(self.db_production_daily.c.date == date))
+                .where(self.db_production_daily.c.pdl == usage_point_id))
 
     def blacklist_production_daily(self, usage_point_id, date, action=True):
         current_data = self.get_production_daily_cache_state(usage_point_id, date)
@@ -700,3 +725,18 @@ class Cache:
                     measure_type=measure_type,
                     blacklist=blacklist)
             )
+
+    def delete_production_detail(self, usage_point_id, date=None):
+        if date is not None:
+            current_data = self.get_production_detail_cache_state(usage_point_id, date)
+            if not current_data:
+                return False
+            else:
+                return self.connection.execute(
+                    self.db_production_detail.delete()
+                    .where(self.db_production_detail.c.pdl == usage_point_id)
+                    .where(self.db_production_detail.c.date == date))
+        else:
+            return self.connection.execute(
+                self.db_production_detail.delete()
+                .where(self.db_production_detail.c.pdl == usage_point_id))

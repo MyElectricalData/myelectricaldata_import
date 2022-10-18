@@ -52,25 +52,47 @@ class Html:
         self.list_usage_points_id += '</select>'
 
     def html_return(self, body, head="", usage_point_id=0):
-        import_button = f"""
-        <div>
-            <div id="bouton_enedis">
-                <input type="text" id="usage_point_id" value="{usage_point_id}" style="display: none">
-                <a style="text-decoration: none">
-                    <div class="btn">Lancez la récupération</div>
-                </a>
-            </div>
-        </div>
-        """
         with open(f'{self.application_path}/html/index.html') as file_:
             index_template = Template(file_.read())
+
+        config = self.cache.get_config(usage_point_id)
+        key_mapping = {
+            "token": "Token",
+            "cache": "Cache ?",
+            "plan": "Type de plan",
+            "consumption": "Consommation journalière",
+            "consumption_detail": "Consommation détaillée",
+            "consumption_price_hc": "Prix TTC HC",
+            "consumption_price_hp": "Prix TTC HP",
+            "consumption_price_base": "Prix TTC BASE",
+            "production": "Production journalière",
+            "production_detail": "Production détaillée",
+            "production_price": "Prix de revente TTC",
+            "offpeak_hours": "Forcer les heures HC/HP",
+        }
+        configuration = "<table>"
+        for key, value in config.items():
+            if key in key_mapping:
+                key_name = key_mapping[key]
+            else:
+                key_name = key
+            if type(value) == bool:
+                # Bool
+                checked = ""
+                if value:
+                    checked = "checked"
+                configuration += f'<tr><td>{key_name}</td><td><input type="checkbox" id="configuration_{key}" name="{key}" {checked}></td></tr>'
+            elif type(value) == str or type(value) == float:
+                configuration += f'<tr><td>{key_name}</td><td><input type="text" id="configuration_{key}" name="{key}" value="{value}"></td></tr>'
+        configuration += "</table>"
 
         html = index_template.render(
             head=head,
             body=body,
             fullscreen=True,
-            import_button=import_button,
             homepage_link="/",
+            usage_point_id=usage_point_id,
+            configuration=configuration.strip(),
             footer_height=80,
             concent_url=f'{URL}',
             swagger_url=f"{URL}/docs/",
@@ -188,7 +210,6 @@ class Html:
             )
             recap_production = self.recap(title="Production", data=daily_production_result['recap'])
             daily_production_data = daily_production_result["datatable"]
-            daily_consumption_data = daily_production_result["datatable"]
             head += """            
                         google.charts.load("current", {packages:["corechart"]});
                         google.charts.setOnLoadCallback(drawChartProduction);
@@ -245,15 +266,12 @@ class Html:
                             compare_compsuption_production[month] = []
                         compare_compsuption_production[month].append(float(value)/1000)
 
-
             head += """            
                 google.charts.load("current", {packages:["corechart"]});
                 google.charts.setOnLoadCallback(drawChartProductionVsConsumption);
                 function drawChartProductionVsConsumption() {
                     var data = google.visualization.arrayToDataTable([
                     ['Année', 'Consommation', 'Production'],"""
-
-            app.LOG.show(compare_compsuption_production)
 
             for month, data in compare_compsuption_production.items():
                 table_value = ""
@@ -282,11 +300,12 @@ class Html:
             contract_data=contract_data,
             address_data=address_data,
         )
-        self.select_usage_points_id()
+        self.select_usage_points_id(selected_usage_point=self.usage_point_id)
         data = markdown.markdown(data, extensions=['fenced_code', 'codehilite'])
         data = f"""
+        <input type="text" id="usage_point_id" value="{self.usage_point_id}" style="display: none">
         <h3 style="line-height: 45px; font-size: 25px;">Choix du point de livraison {self.list_usage_points_id}</h3>
-        <div style="padding-right:50px; font-family: 'Inter UI',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';" id="accueil"> 
+        <div id="accueil"> 
         {data}
         <h1>Récapitulatif</h1>"""
         if config["consumption"]:
@@ -402,6 +421,7 @@ class Html:
         }
 
     def recap(self, title, data):
+        app.LOG.show(data)
         result = f"""<h2>{title}</h2>"""
         current_years = int(datetime.datetime.now().strftime("%Y"))
         current_month = int(datetime.datetime.now().strftime("%m"))
@@ -410,15 +430,17 @@ class Html:
         mount_count = 0
         for linear_year, linear_data in reversed(sorted(data.items())):
             for linear_month, linear_value in reversed(sorted(linear_data["month"].items())):
-                if linear_value != 0:
-                    key = f"{current_month}/{current_years} => {current_month}/{current_years - 1}"
-                    if key not in linear_years:
-                        linear_years[key] = 0
-                    linear_years[key] = linear_years[key] + linear_value
-                    mount_count = mount_count + 1
-                    if mount_count >= 12:
-                        current_years = current_years - 1
-                        mount_count = 0
+                key = f"{current_month}/{current_years} => {current_month}/{current_years - 1}"
+                if key not in linear_years:
+                    linear_years[key] = 0
+                linear_years[key] = linear_years[key] + linear_value
+                mount_count = mount_count + 1
+                if mount_count >= 12:
+                    current_years = current_years - 1
+                    mount_count = 0
+
+        app.LOG.show(linear_years)
+
         result += '<table class="table_recap"><tr>'
         result += '<th class="table_recap_header">Annuel</th>'
         for year, data in reversed(sorted(data.items())):

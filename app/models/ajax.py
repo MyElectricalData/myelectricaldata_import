@@ -2,7 +2,9 @@ import __main__ as app
 
 from models.config import get_version
 from models.query_consumption_daily import ConsumptionDaily
+from models.query_consumption_detail import ConsumptionDetail
 from models.query_production_daily import ProductionDaily
+from models.query_production_detail import ProductionDetail
 
 class Ajax:
 
@@ -12,6 +14,8 @@ class Ajax:
         self.usage_point_id = usage_point_id
         if self.usage_point_id is not None:
             self.config = self.cache.get_config(self.usage_point_id)
+        print(self.usage_point_id)
+        print(self.config)
         self.headers = {
             'Content-Type': 'application/json',
             'Authorization': self.config['token'],
@@ -19,6 +23,37 @@ class Ajax:
             'version': get_version()
         }
         self.usage_points_id_list = ""
+
+    def reset_all_data(self):
+        app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation journalière.")
+        ConsumptionDaily(
+            headers=self.headers,
+            usage_point_id=self.usage_point_id,
+            config=self.config,
+        ).reset()
+        app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée.")
+        ConsumptionDetail(
+            headers=self.headers,
+            usage_point_id=self.usage_point_id,
+            config=self.config,
+        ).reset()
+        app.LOG.title(f"[{self.usage_point_id}] Reset de la production journalière.")
+        ProductionDaily(
+            headers=self.headers,
+            usage_point_id=self.usage_point_id,
+            config=self.config,
+        ).reset()
+        app.LOG.title(f"[{self.usage_point_id}] Reset de la production détaillée.")
+        ProductionDetail(
+            headers=self.headers,
+            usage_point_id=self.usage_point_id,
+            config=self.config,
+        ).reset()
+        return {
+            "error": "false",
+            "notif": "Toutes les données ont était supprimées.",
+        }
+
 
     def reset_data(self, target, date):
         app.LOG.title(f"[{self.usage_point_id}] Reset de la {target} journalière du {date}:")
@@ -43,7 +78,7 @@ class Ajax:
         if result:
             return {
                 "error": "false",
-                "notif": "",
+                "notif": f"Reset de la {target} journalière du {date}",
                 "result": result
             }
         else:
@@ -86,7 +121,7 @@ class Ajax:
         else:
             return {
                 "error": "false",
-                "notif": "",
+                "notif": f"Importation de la {target} journalière du {date}",
                 "result": {
                     "value": result["value"],
                     "date": result["date"]
@@ -122,7 +157,7 @@ class Ajax:
         else:
             return {
                 "error": "false",
-                "notif": "",
+                "notif": f"Blacklist de la {target} journalière du {date}",
                 "result": result
             }
 
@@ -155,7 +190,7 @@ class Ajax:
         else:
             return {
                 "error": "false",
-                "notif": "",
+                "notif": f"Whitelist de la {target} journalière du {date}",
                 "result": result
             }
 
@@ -175,6 +210,6 @@ class Ajax:
         else:
             return {
                 "error": "false",
-                "notif": "",
+                "notif": "Récupération de la consommation journalière",
                 "result": result
             }

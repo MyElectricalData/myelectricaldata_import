@@ -118,6 +118,11 @@ if __name__ == '__main__':
     def import_data(usage_point_id):
         return Ajax(usage_point_id).import_data()
 
+    @APP.route("/reset/<usage_point_id>")
+    @APP.route("/reset/<usage_point_id>/")
+    def reset_all_data(usage_point_id):
+        return Ajax(usage_point_id).reset_all_data()
+
 
     @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>")
     @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>/")

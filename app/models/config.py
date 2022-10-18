@@ -43,9 +43,8 @@ class Config:
                     "consumption_price_base": 0,
                     "production": False,
                     "production_detail": False,
+                    "production_price": 0,
                     "offpeak_hours": None,
-                    "refresh_contract": False,
-                    "refresh_addresses": False
                 }
             },
             "mqtt": {

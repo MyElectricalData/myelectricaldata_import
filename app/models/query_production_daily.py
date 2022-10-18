@@ -125,7 +125,7 @@ class ProductionDaily:
             count += 1
         return result
 
-    def reset(self, date):
+    def reset(self, date=None):
         self.cache.delete_production_daily(usage_point_id=self.usage_point_id, date=date)
         return True
 

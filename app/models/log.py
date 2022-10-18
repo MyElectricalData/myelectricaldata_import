@@ -4,6 +4,7 @@ import sys
 
 import yaml
 from art import text2art, decor
+from pprint import pprint
 
 if "DEBUG" in os.environ and os.getenv("DEBUG"):
     logging.basicConfig(
@@ -30,9 +31,9 @@ class Log:
         self.separator_warning()
         if type(message) is list:
             for msg in message:
-                logging.info(f" {msg}")
+                pprint(f" {msg}")
         else:
-            logging.info(f" {message}")
+            pprint(f" {message}")
         self.separator_warning()
 
     def log(self, message):

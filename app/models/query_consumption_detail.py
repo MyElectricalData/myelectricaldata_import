@@ -12,7 +12,7 @@ from config import URL, DETAIL_MAX_DAYS
 
 class ConsumptionDetail:
 
-    def __init__(self, headers, usage_point_id, config, offpeak_hours, activation_date=None):
+    def __init__(self, headers, usage_point_id, config, offpeak_hours=None, activation_date=None):
 
         self.cache = app.CACHE
         self.url = URL
@@ -151,6 +151,9 @@ class ConsumptionDetail:
             count += 1
         return result
 
+    def reset(self, date=None):
+        self.cache.delete_consumption_daily(usage_point_id=self.usage_point_id, date=date)
+        return True
 
 def is_between(time, time_range):
     if time_range[1] < time_range[0]:
