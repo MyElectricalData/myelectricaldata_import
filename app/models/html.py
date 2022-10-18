@@ -150,12 +150,12 @@ class Html:
                 "city": _tmp['usage_point']['usage_point_addresses']['city'],
                 "country": _tmp['usage_point']['usage_point_addresses']['country'],
             }
-
         with open(f'{self.application_path}/html/usage_point_id.md') as file_:
             homepage_template = Template(file_.read())
-
         current_years = int(datetime.datetime.now().strftime("%Y"))
-
+        # -----------------------------------------
+        # CONSUMPTION
+        # -----------------------------------------
         if config["consumption"]:
             daily_consumption_result = self.generate_datatable(
                 title="Consommation",
@@ -201,7 +201,9 @@ class Html:
                 chart.draw(data, options);
             }
                 """
-
+        # -----------------------------------------
+        # PRODUCTION
+        # -----------------------------------------
         if config["production"]:
             daily_production_result = self.generate_datatable(
                 title="Production",
@@ -247,7 +249,9 @@ class Html:
                     chart.draw(data, options);
                 }
                 """
-
+        # -----------------------------------------
+        # CONSUMPTION VS PRODUCTION
+        # -----------------------------------------
         if config["consumption"] and config["production"]:
             compare_compsuption_production = {}
             max_year = 1
@@ -421,25 +425,26 @@ class Html:
         }
 
     def recap(self, title, data):
-        app.LOG.show(data)
         result = f"""<h2>{title}</h2>"""
         current_years = int(datetime.datetime.now().strftime("%Y"))
         current_month = int(datetime.datetime.now().strftime("%m"))
         max_history = current_years - self.max_history
         linear_years = {}
         mount_count = 0
+        first_occurance = False
         for linear_year, linear_data in reversed(sorted(data.items())):
             for linear_month, linear_value in reversed(sorted(linear_data["month"].items())):
                 key = f"{current_month}/{current_years} => {current_month}/{current_years - 1}"
-                if key not in linear_years:
-                    linear_years[key] = 0
-                linear_years[key] = linear_years[key] + linear_value
-                mount_count = mount_count + 1
-                if mount_count >= 12:
-                    current_years = current_years - 1
-                    mount_count = 0
-
-        app.LOG.show(linear_years)
+                if not first_occurance and linear_value != 0:
+                    first_occurance = True
+                if first_occurance:
+                    if key not in linear_years:
+                        linear_years[key] = 0
+                    linear_years[key] = linear_years[key] + linear_value
+                    mount_count = mount_count + 1
+                    if mount_count >= 12:
+                        current_years = current_years - 1
+                        mount_count = 0
 
         result += '<table class="table_recap"><tr>'
         result += '<th class="table_recap_header">Annuel</th>'

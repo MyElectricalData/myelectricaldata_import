@@ -511,6 +511,9 @@ table td {
     background: url('/static/loading.gif') no-repeat center;
 }
 
+#menu {
+    background-color: var(--sde-bg-color);
+}
 #delete_data {
     background-color: var(--text-warning);
 }

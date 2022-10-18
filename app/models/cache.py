@@ -96,6 +96,7 @@ class Cache:
                 db.Column('date', db.String(255), nullable=False),
                 db.Column('value', db.Integer(), nullable=False),
                 db.Column('blacklist', db.Integer()),
+                db.Column('fail_count', db.Integer()),
             )
             app.LOG.log(" => consumption_daily")
             self.db_consumption_detail = db.Table(
@@ -106,6 +107,7 @@ class Cache:
                 db.Column('interval', db.Integer(), nullable=False),
                 db.Column('measure_type', db.String(255), nullable=False),
                 db.Column('blacklist', db.Integer()),
+                db.Column('fail_count', db.Integer(), nullable=False),
             )
             app.LOG.log(" => consumption_detail")
             self.db_production_daily = db.Table(
@@ -114,6 +116,7 @@ class Cache:
                 db.Column('date', db.String(255), nullable=False),
                 db.Column('value', db.Integer(), nullable=False),
                 db.Column('blacklist', db.Integer()),
+                db.Column('fail_count', db.Integer(), nullable=False),
             )
             app.LOG.log(" => production_daily")
             self.db_production_detail = db.Table(
@@ -124,6 +127,7 @@ class Cache:
                 db.Column('interval', db.Integer(), nullable=False),
                 db.Column('measure_type', db.String(255), nullable=False),
                 db.Column('blacklist', db.Integer()),
+                db.Column('fail_count', db.Integer(), nullable=False),
             )
             app.LOG.log(" => production_detail")
             self.metadata.create_all(self.engine)
@@ -167,13 +171,13 @@ class Cache:
             self.connection.execute(self.db_contracts.insert().values(
                 pdl=0, json=0, count=0))
             self.connection.execute(self.db_consumption_daily.insert().values(
-                pdl=0, date='1970-01-01', value=0, blacklist=0))
+                pdl=0, date='1970-01-01', value=0, fail_count=0, blacklist=0))
             self.connection.execute(self.db_consumption_detail.insert().values(
-                pdl=0, date='1970-01-01', value=0, interval=0, measure_type="", blacklist=0))
+                pdl=0, date='1970-01-01', value=0, interval=0, measure_type="", fail_count=0, blacklist=0))
             self.connection.execute(self.db_production_daily.insert().values(
-                pdl=0, date='1970-01-01', value=0, blacklist=0))
+                pdl=0, date='1970-01-01', value=0, fail_count=0, blacklist=0))
             self.connection.execute(self.db_production_detail.insert().values(
-                pdl=0, date='1970-01-01', value=0, interval=0, measure_type="", blacklist=0))
+                pdl=0, date='1970-01-01', value=0, interval=0, measure_type="", fail_count=0, blacklist=0))
 
             self.connection.execute(self.db_config.delete().where(self.db_config.c.key == 0))
             self.connection.execute(self.db_addresses.delete().where(self.db_addresses.c.pdl == 0))
@@ -314,7 +318,7 @@ class Cache:
             .where(self.db_consumption_daily.c.date == date)
         ).fetchone()
 
-    def get_consumption_daily_cache_state(self, usage_point_id, date):
+    def get_consumption_daily_cache_state(self, date, usage_point_id):
         current_data = self.connection.execute(
             self.db_consumption_daily.select()
             .where(self.db_consumption_daily.c.pdl == usage_point_id)
@@ -336,6 +340,20 @@ class Cache:
         else:
             return current_data[1]
 
+    def consumption_daily_fail_increment(self, usage_point_id, date):
+        result = self.get_consumption_daily_cache_state(usage_point_id, date)
+        if not result:
+            return self.connection.execute(
+                self.db_consumption_daily.insert()
+                .values(pdl=usage_point_id, date=date, value=0, blacklist=0, fail_count=1))
+        else:
+            return self.connection.execute(
+                self.db_consumption_daily.update()
+                .where(self.db_consumption_daily.c.pdl == usage_point_id)
+                .where(self.db_consumption_daily.c.date == date)
+                .values(pdl=usage_point_id, date=date, value=0, blacklist=0, fail_count=int(result[3])+1))
+
+
     def get_consumption_daily(self, usage_point_id, begin, end):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
         dateEnded = datetime.datetime.strptime(end, '%Y-%m-%d')
@@ -356,41 +374,50 @@ class Cache:
                 .order_by(self.db_consumption_daily.c.date)
             ).fetchone()
             if query_result is None:
+                # NEVER QUERY
                 result["date"][checkDate] = {
                     "status": False,
                     "blacklist": 0,
                     "value": 0
                 }
                 result["missing_data"] = True
-                result["count"] = result["count"] + 1
+                self.consumption_daily_fail_increment(usage_point_id, checkDate)
+            elif query_result[3] == 1:
+                # IN BLACKLIST ?
+                result["date"][checkDate] = {
+                    "status": True,
+                    "blacklist": query_result[3],
+                    "value": query_result[2]
+                }
             elif query_result[2] == 0:
+                # ENEDIS RETURN NO DATA
                 result["date"][checkDate] = {
                     "status": False,
                     "blacklist": query_result[3],
                     "value": query_result[2]
                 }
                 result["missing_data"] = True
-                result["count"] = result["count"] + 1
+                self.consumption_daily_fail_increment(usage_point_id, checkDate)
             else:
+                # SUCCESS
                 result["date"][checkDate] = {
                     "status": True,
-                    "blacklist": 0,
+                    "blacklist": query_result[3],
                     "value": query_result[2]
                 }
         return result
 
     def insert_consumption_daily(self, usage_point_id, date, value, blacklist=0):
-        current_data = self.get_consumption_daily_cache_state(usage_point_id, date)
-        if not current_data:
+        if not self.get_consumption_daily_cache_state(usage_point_id, date):
             return self.connection.execute(
                 self.db_consumption_daily.insert()
-                .values(pdl=usage_point_id, date=date, value=value, blacklist=blacklist))
+                .values(pdl=usage_point_id, date=date, value=value, fail_count=0, blacklist=blacklist))
         else:
             return self.connection.execute(
                 self.db_consumption_daily.update()
                 .where(self.db_consumption_daily.c.pdl == usage_point_id)
                 .where(self.db_consumption_daily.c.date == date)
-                .values(pdl=usage_point_id, date=date, value=value, blacklist=blacklist))
+                .values(pdl=usage_point_id, date=date, value=value, fail_count=0, blacklist=blacklist))
 
     def delete_consumption_daily(self, usage_point_id, date=None):
         if date is not None:
