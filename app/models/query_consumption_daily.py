@@ -59,10 +59,12 @@ class ConsumptionDaily:
                             value = interval_reading["value"]
                             date = interval_reading["date"]
                             if str(date) != str(next_date):
-                                while str(date) != str(next_date):
+                                i = 0
+                                while str(date) != str(next_date) or i == 10:
                                     app.LOG.show(f"|{date}| != |{next_date.strftime(self.date_format)}|")
                                     date = datetime.datetime.strptime(date, self.date_format) + relativedelta(days=1)
                                     date = date.strftime(self.date_format)
+                                    i = i + 1
                             self.cache.insert_consumption_daily(usage_point_id=self.usage_point_id, date=date,
                                                                 value=value,
                                                                 blacklist=blacklist)
