@@ -4,7 +4,6 @@ services:
     build: .
     environment:
       TZ: Europe/Paris
-      DEBUG: true
     ports:
       - '5000:5000'
     links:

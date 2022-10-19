@@ -80,14 +80,14 @@ class Cache:
                 'addresses', self.metadata,
                 db.Column('pdl', db.String(255), primary_key=True, index=True, unique=True),
                 db.Column('json', db.String(2000), nullable=False),
-                db.Column('count', db.Integer()),
+                db.Column('count', db.Integer(), default=0),
             )
             app.LOG.log(" => addresses")
             self.db_contracts = db.Table(
                 'contracts', self.metadata,
                 db.Column('pdl', db.String(255), primary_key=True, index=True, unique=True),
                 db.Column('json', db.String(2000), nullable=False),
-                db.Column('count', db.Integer()),
+                db.Column('count', db.Integer(), default=0),
             )
             app.LOG.log(" => contracts")
             self.db_consumption_daily = db.Table(
@@ -95,8 +95,8 @@ class Cache:
                 db.Column('pdl', db.String(255), index=True, nullable=False),
                 db.Column('date', db.String(255), nullable=False),
                 db.Column('value', db.Integer(), nullable=False),
-                db.Column('blacklist', db.Integer()),
-                db.Column('fail_count', db.Integer()),
+                db.Column('blacklist', db.Integer(), nullable=False, default=0),
+                db.Column('fail_count', db.Integer(), nullable=False, default=0),
             )
             app.LOG.log(" => consumption_daily")
             self.db_consumption_detail = db.Table(
@@ -106,8 +106,8 @@ class Cache:
                 db.Column('value', db.Integer(), nullable=False),
                 db.Column('interval', db.Integer(), nullable=False),
                 db.Column('measure_type', db.String(255), nullable=False),
-                db.Column('blacklist', db.Integer()),
-                db.Column('fail_count', db.Integer(), nullable=False),
+                db.Column('blacklist', db.Integer(), nullable=False, default=0),
+                db.Column('fail_count', db.Integer(), nullable=False, default=0),
             )
             app.LOG.log(" => consumption_detail")
             self.db_production_daily = db.Table(
@@ -115,8 +115,8 @@ class Cache:
                 db.Column('pdl', db.String(255), index=True, nullable=False),
                 db.Column('date', db.String(255), nullable=False),
                 db.Column('value', db.Integer(), nullable=False),
-                db.Column('blacklist', db.Integer()),
-                db.Column('fail_count', db.Integer(), nullable=False),
+                db.Column('blacklist', db.Integer(), nullable=False, default=0),
+                db.Column('fail_count', db.Integer(), nullable=False, default=0),
             )
             app.LOG.log(" => production_daily")
             self.db_production_detail = db.Table(
@@ -126,8 +126,8 @@ class Cache:
                 db.Column('value', db.Integer(), nullable=False),
                 db.Column('interval', db.Integer(), nullable=False),
                 db.Column('measure_type', db.String(255), nullable=False),
-                db.Column('blacklist', db.Integer()),
-                db.Column('fail_count', db.Integer(), nullable=False),
+                db.Column('blacklist', db.Integer(), nullable=False, default=0),
+                db.Column('fail_count', db.Integer(), nullable=False, default=0),
             )
             app.LOG.log(" => production_detail")
             self.metadata.create_all(self.engine)
@@ -353,7 +353,6 @@ class Cache:
                 .where(self.db_consumption_daily.c.date == date)
                 .values(pdl=usage_point_id, date=date, value=0, blacklist=0, fail_count=int(result[3])+1))
 
-
     def get_consumption_daily(self, usage_point_id, begin, end):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
         dateEnded = datetime.datetime.strptime(end, '%Y-%m-%d')
@@ -381,34 +380,41 @@ class Cache:
                     "value": 0
                 }
                 result["missing_data"] = True
-                self.consumption_daily_fail_increment(usage_point_id, checkDate)
-            elif query_result[3] == 1:
-                # IN BLACKLIST ?
-                result["date"][checkDate] = {
-                    "status": True,
-                    "blacklist": query_result[3],
-                    "value": query_result[2]
-                }
-            elif query_result[2] == 0:
-                # ENEDIS RETURN NO DATA
-                result["date"][checkDate] = {
-                    "status": False,
-                    "blacklist": query_result[3],
-                    "value": query_result[2]
-                }
-                result["missing_data"] = True
-                self.consumption_daily_fail_increment(usage_point_id, checkDate)
             else:
-                # SUCCESS
-                result["date"][checkDate] = {
-                    "status": True,
-                    "blacklist": query_result[3],
-                    "value": query_result[2]
-                }
+                # pdl = query_result[0]
+                # date = query_result[1]
+                consumption = query_result[2]
+                blacklist = query_result[3]
+                # fail_count = query_result[4]
+                if blacklist == 1:
+                    # IN BLACKLIST ?
+                    result["date"][checkDate] = {
+                        "status": True,
+                        "blacklist": blacklist,
+                        "value": consumption
+                    }
+                elif consumption == 0:
+                    # ENEDIS RETURN NO DATA
+                    result["date"][checkDate] = {
+                        "status": False,
+                        "blacklist": blacklist,
+                        "value": consumption
+                    }
+                    result["missing_data"] = True
+                    self.consumption_daily_fail_increment(usage_point_id, checkDate)
+                else:
+                    # SUCCESS
+                    result["date"][checkDate] = {
+                        "status": True,
+                        "blacklist": blacklist,
+                        "value": consumption
+                    }
         return result
 
     def insert_consumption_daily(self, usage_point_id, date, value, blacklist=0):
-        if not self.get_consumption_daily_cache_state(usage_point_id, date):
+        result = self.get_consumption_daily_cache_state(usage_point_id, date)
+        app.LOG.show(result)
+        if not result:
             return self.connection.execute(
                 self.db_consumption_daily.insert()
                 .values(pdl=usage_point_id, date=date, value=value, fail_count=0, blacklist=blacklist))
@@ -439,7 +445,7 @@ class Cache:
         if not current_data:
             return self.connection.execute(
                 self.db_consumption_daily.insert()
-                .values(pdl=usage_point_id, date=date, value=0, blacklist=action))
+                .values(pdl=usage_point_id, date=date, value=0, fail_count=0, blacklist=action))
         else:
             return self.connection.execute(
                 self.db_consumption_daily.update()

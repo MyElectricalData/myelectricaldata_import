@@ -1,7 +1,7 @@
 import datetime
 import logging
 import os
-import sys
+import time
 
 import __main__ as app
 from models.log import Log
@@ -44,7 +44,12 @@ def daterange(start_date, end_date):
         yield start_date + datetime.timedelta(n)
 
 
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
+
 def get_data():
+
     if not app.CACHE.lock_status():
         app.CACHE.lock()
         for usage_point_id, config in app.CONFIG.get('myelectricaldata').items():

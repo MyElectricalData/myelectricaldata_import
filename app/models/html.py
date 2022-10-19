@@ -354,7 +354,8 @@ class Html:
         for data in daily_data:
             all_data[data[1]] = {
                 "value": data[2],
-                "blacklist": data[3]
+                "blacklist": data[3],
+                "fail_count": data[4],
             }
         start_date = cache_last_date
         end_date = datetime.datetime.now()
@@ -384,6 +385,7 @@ class Html:
                 if date_text in all_data:
                     value = all_data[date_text]["value"]
                     blacklist_state = all_data[date_text]["blacklist"]
+                    fail_count = all_data[date_text]["fail_count"]
                     recap[year]["value"] = recap[year]["value"] + value
                     recap[year]['month'][month] = recap[year]['month'][month] + value
                     conso_w = f"{value}"

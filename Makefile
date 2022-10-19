@@ -3,6 +3,11 @@ COMPOSE=docker compose -f docker-compose.dev.yml
 ## Connect to EnedisGateway container : DEV
 debug:
 	$(call title,"Debug mode")
+	$(COMPOSE) run -p 5000:5000 -e DEBUG=true myelectricaldata_import
+
+## Connect to EnedisGateway container : DEV
+run:
+	$(call title,"Start")
 	$(COMPOSE) run -p 5000:5000 myelectricaldata_import
 
 ## Start docker conatiners for dev

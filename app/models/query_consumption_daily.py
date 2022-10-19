@@ -21,7 +21,7 @@ class ConsumptionDaily:
         self.usage_point_id = usage_point_id
         self.config = config
 
-        if activation_date:
+        if activation_date is not None and activation_date:
             self.activation_date = datetime.datetime.strptime(activation_date, "%Y-%m-%d%z").replace(tzinfo=None)
         else:
             self.activation_date = activation_date
@@ -56,6 +56,7 @@ class ConsumptionDaily:
                         for interval_reading in meter_reading["interval_reading"]:
                             value = interval_reading["value"]
                             date = interval_reading["date"]
+                            app.LOG.show(date)
                             self.cache.insert_consumption_daily(usage_point_id=self.usage_point_id, date=date,
                                                                 value=value,
                                                                 blacklist=blacklist)

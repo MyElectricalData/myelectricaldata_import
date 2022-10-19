@@ -1,8 +1,5 @@
-import json
-import threading
-import time
-
 from flask import Flask, send_file
+from flask_apscheduler import APScheduler
 
 from config import cycle_minimun
 from dependencies import *
@@ -36,7 +33,7 @@ CACHE.unlock()
 if CONFIG.get("wipe_cache"):
     CACHE.purge_cache()
     CONFIG.set("wipe_cache", False)
-    LOG.warning()
+    LOG.separator_warning()
 
 MQTT_CONFIG = CONFIG.mqtt_config()
 MQTT_ENABLE = False
@@ -77,12 +74,32 @@ if CYCLE < cycle_minimun:
     CYCLE = cycle_minimun
     CONFIG.set("cycle", cycle_minimun)
 
-if __name__ == '__main__':
 
+class FetchAllDataScheduler(object):
+    JOBS = [
+        {
+            "id": f"fetch_data_boot",
+            "func": get_data,
+        }, {
+            "id": f"fetch_data",
+            "func": get_data,
+            "trigger": "interval",
+            "seconds": CYCLE,
+        }
+    ]
+    SCHEDULER_API_ENABLED = True
+
+
+if __name__ == '__main__':
     APP = Flask(__name__,
                 static_url_path='/static',
                 static_folder='html/static', )
-    threading.Thread(target=lambda: APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)).start()
+    APP.config.from_object(FetchAllDataScheduler())
+    scheduler = APScheduler()
+    scheduler.init_app(APP)
+    scheduler.start()
+    APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)
+
 
     # ------------------------------------------------------------------------------------------------------------------
     # HTML RETURN
@@ -92,12 +109,15 @@ if __name__ == '__main__':
     @APP.route("/status/")
     @APP.route("/ping")
     @APP.route("/ping/")
+    @APP.route("/ping/d")
     def status():
         return "ok"
+
 
     @APP.route("/favicon.ico")
     def favicon():
         return send_file("html/favicon.ico", mimetype='image/gif')
+
 
     @APP.route("/")
     def main():
@@ -109,6 +129,7 @@ if __name__ == '__main__':
     def usage_point_id(usage_point_id):
         return Html(usage_point_id).page_usage_point_id()
 
+
     # ------------------------------------------------------------------------------------------------------------------
     # BACKGROUND HTML TASK (AJAX)
     # ------------------------------------------------------------------------------------------------------------------
@@ -117,6 +138,7 @@ if __name__ == '__main__':
     @APP.route("/import/<usage_point_id>/")
     def import_data(usage_point_id):
         return Ajax(usage_point_id).import_data()
+
 
     @APP.route("/reset/<usage_point_id>")
     @APP.route("/reset/<usage_point_id>/")
@@ -146,8 +168,3 @@ if __name__ == '__main__':
     @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>/")
     def fetch_data(usage_point_id, target, date):
         return Ajax(usage_point_id).fetch(target, date)
-
-
-    while True:
-        get_data()
-        time.sleep(CYCLE)

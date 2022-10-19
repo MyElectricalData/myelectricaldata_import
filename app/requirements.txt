@@ -6,6 +6,7 @@ influxdb-client==1.24.0
 PyYAML==6.0
 mergedeep==1.3.4
 Flask==2.2.2
+Flask-APScheduler==1.12.4
 jinja2==3.1.2
 art==5.7
 SQLAlchemy==1.4.41

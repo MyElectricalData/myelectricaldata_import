@@ -22,7 +22,7 @@ class ConsumptionDetail:
         self.usage_point_id = usage_point_id
         self.config = config
 
-        if activation_date is not None:
+        if activation_date is not None and activation_date:
             self.activation_date = datetime.datetime.strptime(activation_date, "%Y-%m-%d%z").replace(tzinfo=None)
         else:
             self.activation_date = activation_date
