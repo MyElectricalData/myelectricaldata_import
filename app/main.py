@@ -78,9 +78,9 @@ if CYCLE < cycle_minimun:
 class FetchAllDataScheduler(object):
     JOBS = [
         {
-            "id": f"fetch_data_boot",
-            "func": get_data,
-        }, {
+            # "id": f"fetch_data_boot",
+            # "func": get_data,
+        # }, {
             "id": f"fetch_data",
             "func": get_data,
             "trigger": "interval",
@@ -98,7 +98,6 @@ if __name__ == '__main__':
     scheduler = APScheduler()
     scheduler.init_app(APP)
     scheduler.start()
-    APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)
 
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -109,7 +108,6 @@ if __name__ == '__main__':
     @APP.route("/status/")
     @APP.route("/ping")
     @APP.route("/ping/")
-    @APP.route("/ping/d")
     def status():
         return "ok"
 
@@ -168,3 +166,5 @@ if __name__ == '__main__':
     @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>/")
     def fetch_data(usage_point_id, target, date):
         return Ajax(usage_point_id).fetch(target, date)
+
+    APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)

@@ -19,7 +19,8 @@ class Cache:
         self.db_path = f"{self.path}/{self.db_name}"
         self.uri = f'sqlite:///{self.db_path}?check_same_thread=False'
 
-        self.engine = db.create_engine(self.uri)
+        # self.engine = db.create_engine(self.uri, echo=True)
+        self.engine = db.create_engine(self.uri, echo=False)
         self.connection = self.engine.connect()
         self.metadata = db.MetaData()
 
@@ -318,7 +319,7 @@ class Cache:
             .where(self.db_consumption_daily.c.date == date)
         ).fetchone()
 
-    def get_consumption_daily_cache_state(self, date, usage_point_id):
+    def get_consumption_daily_cache_state(self, usage_point_id, date):
         current_data = self.connection.execute(
             self.db_consumption_daily.select()
             .where(self.db_consumption_daily.c.pdl == usage_point_id)
@@ -401,6 +402,7 @@ class Cache:
                         "value": consumption
                     }
                     result["missing_data"] = True
+                    app.LOG.show(result)
                     self.consumption_daily_fail_increment(usage_point_id, checkDate)
                 else:
                     # SUCCESS
@@ -413,7 +415,7 @@ class Cache:
 
     def insert_consumption_daily(self, usage_point_id, date, value, blacklist=0):
         result = self.get_consumption_daily_cache_state(usage_point_id, date)
-        app.LOG.show(result)
+        # app.LOG.show(result)
         if not result:
             return self.connection.execute(
                 self.db_consumption_daily.insert()

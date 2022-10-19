@@ -148,5 +148,5 @@ class ProductionDaily:
         }
 
     def blacklist(self, date, action):
-        app.LOG.show(self.cache.blacklist_production_daily(self.usage_point_id, date, action))
+        self.cache.blacklist_production_daily(self.usage_point_id, date, action)
         return True

@@ -16,13 +16,14 @@ class ConsumptionDaily:
         self.cache = app.CACHE
         self.url = URL
         self.max_daily = 36
+        self.date_format = '%Y-%m-%d'
 
         self.headers = headers
         self.usage_point_id = usage_point_id
         self.config = config
 
         if activation_date is not None and activation_date:
-            self.activation_date = datetime.datetime.strptime(activation_date, "%Y-%m-%d%z").replace(tzinfo=None)
+            self.activation_date = datetime.datetime.strptime(activation_date, f"{self.date_format}%z").replace(tzinfo=None)
         else:
             self.activation_date = activation_date
 
@@ -32,8 +33,8 @@ class ConsumptionDaily:
         self.base_price = self.config['consumption_price_base']
 
     def run(self, begin, end, cache=True):
-        begin = begin.strftime('%Y-%m-%d')
-        end = end.strftime('%Y-%m-%d')
+        begin = begin.strftime(self.date_format)
+        end = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin} => {end}")
         endpoint = f"daily_consumption/{self.usage_point_id}/start/{begin}/end/{end}"
         if "cache" in self.config and self.config["cache"] and cache:
@@ -53,13 +54,19 @@ class ConsumptionDaily:
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
+                        next_date = meter_reading["interval_reading"][0]["date"]
                         for interval_reading in meter_reading["interval_reading"]:
                             value = interval_reading["value"]
                             date = interval_reading["date"]
-                            app.LOG.show(date)
+                            if str(date) != str(next_date):
+                                while str(date) != str(next_date):
+                                    app.LOG.show(f"|{date}| != |{next_date.strftime(self.date_format)}|")
+                                    date = datetime.datetime.strptime(date, self.date_format) + relativedelta(days=1)
+                                    date = date.strftime(self.date_format)
                             self.cache.insert_consumption_daily(usage_point_id=self.usage_point_id, date=date,
                                                                 value=value,
                                                                 blacklist=blacklist)
+                            next_date = datetime.datetime.strptime(date, self.date_format) + relativedelta(days=1)
                         return meter_reading["interval_reading"]
                     else:
                         return {
@@ -116,7 +123,7 @@ class ConsumptionDaily:
                 error = [
                     "Echec de la récupération des données.",
                     f' => {response["description"]}',
-                    f" => {begin.strftime('%Y-%m-%d')} -> {end.strftime('%Y-%m-%d')}",
+                    f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
                 ]
                 app.LOG.error(error)
 
@@ -128,9 +135,8 @@ class ConsumptionDaily:
         return True
 
     def fetch(self, date):
-        result = self.run(datetime.datetime.strptime(date, "%Y-%m-%d") - relativedelta(days=1),
-                          datetime.datetime.strptime(date, "%Y-%m-%d") + relativedelta(days=1), True)
-        print(result)
+        result = self.run(datetime.datetime.strptime(date, self.date_format) - relativedelta(days=1),
+                          datetime.datetime.strptime(date, self.date_format) + relativedelta(days=1), False)
         if "error" in result and result["error"]:
             return {
                 "error": True,
@@ -145,5 +151,5 @@ class ConsumptionDaily:
         }
 
     def blacklist(self, date, action):
-        app.LOG.show(self.cache.blacklist_consumption_daily(self.usage_point_id, date, action))
+        self.cache.blacklist_consumption_daily(self.usage_point_id, date, action)
         return True

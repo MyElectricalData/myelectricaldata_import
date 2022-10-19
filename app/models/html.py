@@ -19,12 +19,12 @@ class Html:
         self.usage_point_id = usage_point_id
         if self.usage_point_id is not None:
             self.config = self.cache.get_config(self.usage_point_id)
-        self.headers = {
-            'Content-Type': 'application/json',
-            'Authorization': self.config['token'],
-            'call-service': "myelectricaldata",
-            'version': get_version()
-        }
+            self.headers = {
+                'Content-Type': 'application/json',
+                'Authorization': self.config['token'],
+                'call-service': "myelectricaldata",
+                'version': get_version()
+            }
         self.list_usage_points_id = ""
         self.max_history = 4
         self.max_history_chart = 6
@@ -55,7 +55,7 @@ class Html:
         with open(f'{self.application_path}/html/index.html') as file_:
             index_template = Template(file_.read())
 
-        config = self.cache.get_config(usage_point_id)
+        config = app.CONFIG.list_usage_point()
         key_mapping = {
             "token": "Token",
             "cache": "Cache ?",
@@ -71,6 +71,7 @@ class Html:
             "offpeak_hours": "Forcer les heures HC/HP",
         }
         configuration = "<table>"
+        print(config)
         for key, value in config.items():
             if key in key_mapping:
                 key_name = key_mapping[key]
@@ -86,6 +87,33 @@ class Html:
                 configuration += f'<tr><td>{key_name}</td><td><input type="text" id="configuration_{key}" name="{key}" value="{value}"></td></tr>'
         configuration += "</table>"
 
+        bottom_menu = ""
+        if usage_point_id != 0:
+            bottom_menu = """
+            <div id="bottom_menu" class="fixed-action-btn horizontal" style="bottom: 20px; right: 25px;">
+                <a id="menu" class="btn-floating btn-large red" >
+                    <i class="large material-icons">menu</i>
+                </a>
+                <ul>
+                    <li>
+                        <a id="delete_data" class="btn-floating" title="Supprimer le cache">
+                            <i class="material-icons">delete</i>
+                        </a>
+                    </li>
+                    <li>
+                        <a id="config_data" class="btn-floating" title="Configuration">
+                            <i class="material-icons">settings_applications</i>
+                        </a>
+                    </li>
+                    <li>
+                        <a id="import_data" class="btn-floating" title="Importer les données depuis Enedis">
+                            <i class="material-icons">file_download</i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            """
+
         html = index_template.render(
             head=head,
             body=body,
@@ -100,6 +128,7 @@ class Html:
             faq_url=f"{URL}/faq/",
             code_url=f"{URL}/error_code/",
             doc_url=f"{URL}/documentation/",
+            bottom_menu=bottom_menu,
         )
         return html
 

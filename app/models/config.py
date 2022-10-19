@@ -206,3 +206,6 @@ class Config:
             return self.config["myelectricaldata"][usage_point_id]
         else:
             return False
+
+    def list_usage_point(self):
+        return self.config["myelectricaldata"]
