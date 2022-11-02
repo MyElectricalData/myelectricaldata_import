@@ -1,15 +1,19 @@
-from flask import Flask, send_file
+import sys
+
+from flask import Flask, request, send_file
 from flask_apscheduler import APScheduler
 
 from config import cycle_minimun
 from dependencies import *
-from models.ajax import Ajax
-from models.cache import Cache
 from models.config import Config, get_version
-from models.html import Html
+from models.jobs import Job
+from models.ajax import Ajax
+from models.database import Database
 from models.influxdb import InfluxDB
 from models.log import Log
 from models.mqtt import Mqtt
+from templates.index import Index
+from templates.usage_point_id import UsagePointId
 
 LOG = Log()
 
@@ -26,12 +30,16 @@ LOG.logo(get_version())
 
 CONFIG.display()
 CONFIG.check()
+DB = Database()
 
-CACHE = Cache()
-CACHE.unlock()
+LOG.title("Loading configuration...")
+for usage_point_id, data in CONFIG.list_usage_point().items():
+    LOG.log(f"{usage_point_id}")
+    DB.set_usage_point(usage_point_id, data)
+    LOG.log("  => Success")
 
 if CONFIG.get("wipe_cache"):
-    CACHE.purge_cache()
+    DB.purge_database()
     CONFIG.set("wipe_cache", False)
     LOG.separator_warning()
 
@@ -78,11 +86,11 @@ if CYCLE < cycle_minimun:
 class FetchAllDataScheduler(object):
     JOBS = [
         {
-            # "id": f"fetch_data_boot",
-            # "func": get_data,
-        # }, {
+            "id": f"fetch_data_boot",
+            "func": Job().job_import_data
+        }, {
             "id": f"fetch_data",
-            "func": get_data,
+            "func": Job().job_import_data,
             "trigger": "interval",
             "seconds": CYCLE,
         }
@@ -90,10 +98,10 @@ class FetchAllDataScheduler(object):
     SCHEDULER_API_ENABLED = True
 
 
+logging.basicConfig(format='%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s')
+
 if __name__ == '__main__':
-    APP = Flask(__name__,
-                static_url_path='/static',
-                static_folder='html/static', )
+    APP = Flask(__name__)
     APP.config.from_object(FetchAllDataScheduler())
     scheduler = APScheduler()
     scheduler.init_app(APP)
@@ -103,7 +111,6 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
     # HTML RETURN
     # ------------------------------------------------------------------------------------------------------------------
-
     @APP.route("/status")
     @APP.route("/status/")
     @APP.route("/ping")
@@ -114,57 +121,89 @@ if __name__ == '__main__':
 
     @APP.route("/favicon.ico")
     def favicon():
-        return send_file("html/favicon.ico", mimetype='image/gif')
+        return send_file("static/favicon.ico", mimetype='image/gif')
 
 
-    @APP.route("/")
+    @APP.route("/", methods=['GET'])
     def main():
-        return Html().page_index()
+        # return Html().page_index()
+        return Index().display()
 
 
     @APP.route('/usage_point_id/<usage_point_id>', methods=['GET'])
     @APP.route('/usage_point_id/<usage_point_id>/', methods=['GET'])
     def usage_point_id(usage_point_id):
-        return Html(usage_point_id).page_usage_point_id()
+        # return Html(usage_point_id).page_usage_point_id()
+        return UsagePointId(usage_point_id).display()
 
 
     # ------------------------------------------------------------------------------------------------------------------
     # BACKGROUND HTML TASK (AJAX)
     # ------------------------------------------------------------------------------------------------------------------
 
-    @APP.route("/import/<usage_point_id>")
-    @APP.route("/import/<usage_point_id>/")
-    def import_data(usage_point_id):
+    @APP.route("/gateway_status", methods=['GET'])
+    @APP.route("/gateway_status/", methods=['GET'])
+    def gateway_status():
+        return Ajax().gateway_status()
+
+
+    @APP.route("/configuration/<usage_point_id>", methods=['POST'])
+    @APP.route("/configuration/<usage_point_id>/", methods=['POST'])
+    def configuration(usage_point_id):
+        return Ajax(usage_point_id).configuration(request.form)
+
+
+    @APP.route("/new_account", methods=['POST'])
+    @APP.route("/new_account/", methods=['POST'])
+    def new_account():
+        return Ajax().new_account(request.form)
+
+
+    @APP.route("/account_status/<usage_point_id>", methods=['GET'])
+    @APP.route("/account_status/<usage_point_id>/", methods=['GET'])
+    def account_status(usage_point_id):
+        return Ajax(usage_point_id).account_status()
+
+
+    @APP.route("/import/<usage_point_id>", methods=['GET'])
+    @APP.route("/import/<usage_point_id>/", methods=['GET'])
+    def import_all_data(usage_point_id):
         return Ajax(usage_point_id).import_data()
 
+    @APP.route("/import/<usage_point_id>/<target>", methods=['GET'])
+    @APP.route("/import/<usage_point_id>/<target>", methods=['GET'])
+    def import_data(usage_point_id, target):
+        return Ajax(usage_point_id).import_data(target)
 
-    @APP.route("/reset/<usage_point_id>")
-    @APP.route("/reset/<usage_point_id>/")
+
+    @APP.route("/reset/<usage_point_id>", methods=['GET'])
+    @APP.route("/reset/<usage_point_id>/", methods=['GET'])
     def reset_all_data(usage_point_id):
         return Ajax(usage_point_id).reset_all_data()
 
 
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>")
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>/")
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>", methods=['GET'])
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>/", methods=['GET'])
     def reset_data(usage_point_id, target, date):
         return Ajax(usage_point_id).reset_data(target, date)
 
 
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/blacklist/<date>")
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/blacklist/<date>/")
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/blacklist/<date>", methods=['GET'])
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/blacklist/<date>/", methods=['GET'])
     def blacklist_data(usage_point_id, target, date):
         return Ajax(usage_point_id).blacklist(target, date)
 
 
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/whitelist/<date>")
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/whitelist/<date>/")
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/whitelist/<date>", methods=['GET'])
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/whitelist/<date>/", methods=['GET'])
     def whitelist_data(usage_point_id, target, date):
-        return Ajax(usage_point_id).reset_data(target, date)
+        return Ajax(usage_point_id).whitelist(target, date)
 
 
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>")
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>/")
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>", methods=['GET'])
+    @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>/", methods=['GET'])
     def fetch_data(usage_point_id, target, date):
         return Ajax(usage_point_id).fetch(target, date)
+
 
     APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)

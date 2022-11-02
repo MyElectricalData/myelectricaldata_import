@@ -1,22 +1,17 @@
-import __main__ as app
 import json
 
+import __main__ as app
+from config import URL
 from dependencies import *
 from models.log import Log
 from models.query import Query
 
-from config import URL
-
 
 class Status:
 
-    def __init__(self, headers):
+    def __init__(self, headers=None):
         self.log = Log()
-        self.cache = app.CACHE
         self.url = URL
-
-        self.endpoint = "ping"
-
         self.headers = headers
 
     def ping(self):
@@ -48,7 +43,7 @@ class Status:
             try:
                 status = json.loads(response.text)
                 for key, value in status.items():
-                    self.log.log(f"{key}: {value}")
+                    app.LOG.log(f"{key}: {value}")
                 return status
             except LookupError:
                 return {

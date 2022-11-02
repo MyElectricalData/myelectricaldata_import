@@ -1,9 +1,9 @@
 #logo {
     background-color: var(--logo);
 	background-size: auto;
-	mask: url(/static/icon.svg) no-repeat 20px 0px ;
+	mask: url('/static/img/icon.svg') no-repeat 20px 0px ;
 	mask-size:contain;
-	-webkit-mask: url(/static/icon.svg) no-repeat 20px 0px ;
+	-webkit-mask: url('/static/img/icon.svg') no-repeat 20px 0px ;
 	-webkit-mask-size: contain ;
 	background-repeat: no-repeat no-repeat;
 	height: 50px;

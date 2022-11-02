@@ -4,7 +4,7 @@ import sys
 from pprint import pprint
 
 import yaml
-from art import text2art, decor
+from art import decor, text2art
 
 
 def str2bool(v):
@@ -16,7 +16,7 @@ class Log:
         self.message = None
         if os.path.exists("/data/config.yaml"):
             with open(f'/data/config.yaml') as file:
-                self.config = yaml.load(file, Loader=yaml.FullLoader)
+                self.usage_point_config = yaml.load(file, Loader=yaml.FullLoader)
 
         logging.basicConfig(
             format='%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s',
@@ -62,6 +62,9 @@ class Log:
                 self.logging.warning(f" {msg}")
         else:
             self.logging.warning(f" {message}")
+
+    def exception(self, message):
+        self.logging.exception(message)
 
     def error(self, message):
         self.logging.error(

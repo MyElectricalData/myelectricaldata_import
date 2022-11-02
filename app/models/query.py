@@ -1,6 +1,6 @@
 import requests
-import __main__ as app
 
+import __main__ as app
 from dependencies import *
 
 

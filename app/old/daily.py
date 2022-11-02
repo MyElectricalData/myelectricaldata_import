@@ -1,12 +1,13 @@
-import requests
 import json
-from datetime import datetime, timedelta
-from dateutil.relativedelta import *
-from pprint import pprint
 import locale
-import pytz
-
+from datetime import datetime, timedelta
 from importlib import import_module
+from pprint import pprint
+
+import pytz
+import requests
+from dateutil.relativedelta import *
+
 main = import_module("main")
 f = import_module("function")
 

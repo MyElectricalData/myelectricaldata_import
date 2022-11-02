@@ -19,15 +19,15 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--main-bg-color);
+    background: var(--sde-bg-color);
     border-radius: 15px;
-    border: 5px solid var(--sde-bg-color);
+    border: 5px solid var(--main-bg-color);
     cursor: pointer;
 }
 
 ::-webkit-scrollbar-track {
     border-radius: 0px;
-    background: var(--sde-bg-color);
+    background: var(--main-bg-color);
     cursor: pointer;
 }
 
@@ -62,14 +62,6 @@ a {
     color: var(--text-title);
     font-weight: bold;
 }
-
-/*p {*/
-/*    text-shadow: 1px 1px 7px var(--main-bg-color);*/
-/*}*/
-
-/*li {*/
-/*    text-shadow: 1px 1px 7px var(--main-bg-color);*/
-/*}*/
 
 h1 {
     font-size: 24px;
@@ -197,7 +189,7 @@ code {
     width: 99%;
     box-sizing: border-box;
     cursor: pointer;
-    background-image: url('/static/paste.png');
+    background-image: url('/static/img/paste.png');
     background-repeat: no-repeat;
     background-position-x: 99.5%;
     background-size: 24px;
@@ -221,6 +213,9 @@ code {
     color: var(--sde-bg-color);
 }
 
+#paypal_form {
+    height: 55px;
+}
 #paypal_img {
     width: 170px;
     background: var(--main-bg-color);
@@ -284,12 +279,96 @@ blockquote {
 
 select {
     padding: 3px;
-    border-radius: 15px;
-    border: 1px solid var(--code-color);
+    font-weight: bolder;
+    width: 100%;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 3px solid var(--sde-bg-color);
+    -webkit-transition: 0.5s;
+    transition: 0.5s;
+    outline: none;
+}
+
+select option {
+  /*margin: 40px;*/
+  /*background: rgba(0, 0, 0, 0.3);*/
+  /*color: #fff;*/
+  /*text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);*/
+    border-radius: 0px;
+    padding: 3px;
+    font-weight: bolder;
+    width: 100%;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 3px solid var(--sde-bg-color);
+    -webkit-transition: 0.5s;
+    transition: 0.5s;
+    outline: none;
+}
+
+.table_configuration input {
+    padding: 3px;
+    font-weight: normal;
+    width: 100%;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 3px solid var(--sde-bg-color);
+    -webkit-transition: 0.5s;
+    transition: 0.5s;
+    outline: none;
+}
+
+.table_configuration input[type=text]:focus {
+  border: 3px solid #555;
+}
+
+
+.table_configuration .key {
+    /*padding: 3px;*/
+    /*font-weight: bold;*/
+    /*width: 60%;*/
+    /*border-collapse: collapse;*/
+    font-size: 16px;
+    text-align: left;
+}
+
+.table_configuration .value {
+    padding: 3px;
     font-weight: bold;
-    width: 200px;
-    text-align: center;
-    cursor: pointer;
+    width: 60%;
+    border-collapse: collapse;
+}
+
+.table_configuration .value select {
+    padding: 3px;
+    font-weight: normal;
+    width: 100%;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 3px solid var(--sde-bg-color);
+    -webkit-transition: 0.5s;
+    transition: 0.5s;
+    outline: none;
+    font-size: 16px;
+}
+
+.table_configuration .value input {
+    font-size: 16px;
+}
+
+.btn-blue {
+    padding: 6px;
+    font-weight: bold;
+    border: 3px solid var(--sde-bg-color);
+    background: var(--main-bg-color);
+    color: var(--sde-bg-color);
+}
+.btn-blue:hover {
+    padding: 6px;
+    font-weight: bold;
+    border: 3px solid var(--sde-bg-color);
+    color: var(--text-color);
+    background: var(--main-bg-color);
 }
 
 #dataTableConsommation {
@@ -314,9 +393,9 @@ table td {
 .icon_success {
     background-color: var(--success-bg);
     background-size: auto;
-    mask: url(/static/success.svg) no-repeat center;
+    mask: url("/static/img/success.svg") no-repeat center;
     mask-size: contain;
-    -webkit-mask: url(/static/success.svg) no-repeat center;
+    -webkit-mask: url("/static/img/success.svg") no-repeat center;
     -webkit-mask-size: contain;
     background-repeat: no-repeat no-repeat;
     height: 30px;
@@ -325,9 +404,9 @@ table td {
 .icon_failed {
     background-color: var(--text-warning);
     background-size: auto;
-    mask: url(/static/failed.svg) no-repeat center;
+    mask: url("/static/img/failed.svg") no-repeat center;
     mask-size: contain;
-    -webkit-mask: url(/static/failed.svg) no-repeat center;
+    -webkit-mask: url("/static/img/failed.svg") no-repeat center;
     -webkit-mask-size: contain;
     background-repeat: no-repeat no-repeat;
     height: 30px;
@@ -396,7 +475,7 @@ table td {
     color: var(--sde-bg-color);
 }
 
-.datatable_button {
+.datatable_button input[type="button"] {
     background-color: var(--text-warning);
     color: var(--main-bg-color);
     border: 2px solid var(--text-warning);
@@ -407,7 +486,7 @@ table td {
     cursor: pointer;
 }
 
-.datatable_blacklist {
+.datatable_blacklist input[type="button"] {
     background-color: var(--text-color);
     color: var(--main-bg-color);
     border: 2px solid var(--text-color);
@@ -418,7 +497,7 @@ table td {
     cursor: pointer;
 }
 
-.datatable_whitelist {
+.datatable_whitelist input[type="button"] {
     background-color: var(--success-bg);
     color: var(--main-bg-color);
     border: 2px solid var(--success-bg);
@@ -429,7 +508,7 @@ table td {
     cursor: pointer;
 }
 
-.datatable_button_import {
+.datatable_button_import input[type="button"] {
     background-color: var(--success-bg);
     color: var(--main-bg-color);
     border: 2px solid var(--success-bg);
@@ -440,7 +519,7 @@ table td {
     cursor: pointer;
 }
 
-.datatable_button_disable {
+.datatable_button_disable input[type="button"] {
     background-color: white;
     color: gray;
     border: 2px solid var(--sde-bg-color);
@@ -451,27 +530,27 @@ table td {
     cursor: auto;
 }
 
-.datatable_button:hover {
+.datatable_button:hover input[type="button"] {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
 
-.datatable_blacklist:hover {
+.datatable_blacklist:hover input[type="button"] {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
 
-.datatable_unblacklist:hover {
+.datatable_unblacklist:hover input[type="button"] {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
 
-.datatable_button_import:hover {
+.datatable_button_import:hover input[type="button"] {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
 }
 
-.datatable_button_disable:hover {
+.datatable_button_disable:hover input[type="button"] {
     background-color: white;
     color: gray;
     border: 2px solid var(--sde-bg-color);
@@ -482,44 +561,162 @@ table td {
     cursor: auto;
 }
 
-.datatable_button:active {
+.datatable_button:active input[type="button"] {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
 
-.datatable_blacklist:active {
+.datatable_blacklist:active input[type="button"] {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
 
-.datatable_unblacklist:active {
+.datatable_unblacklist:active input[type="button"] {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
 
-.datatable_button_import:active {
+.datatable_button_import:active input[type="button"] {
     transform: scale(0.98);
     box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
 }
 
-.datatable_button_disable:active {
+.datatable_button_disable:active input[type="button"] {
     transform: scale(1);
     box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0);
 }
 
 .loading_bg {
-    background: url('/static/loading.gif') no-repeat center;
+    background: url('/static/img/loading.gif') no-repeat center;
 }
 
 #menu {
     background-color: var(--sde-bg-color);
 }
-#delete_data {
-    background-color: var(--text-warning);
+
+
+#stat {
+    text-align: right;
+    width: 350px;
+    padding: 2px;
+    background: var(--main-bg-color);;
+    border-radius: 0 0 0 10px;
+    color: var(--sde-bg-color);
+    border: 1px solid var(--sde-bg-color);
+    top: 0px;
+    position: absolute;
+    right: 0px;
 }
-#import_data {
-    background-color: var(--sde-bg-color);
+
+.stat_table {
+    border-collapse: collapse;
+    border: none;
 }
-#config_data {
-    background-color: var(--success-bg);
+
+.stat_key {
+    border: none;
+    color: var(--text-title);
+    text-align: right;
+    font-weight: bolder;
+    width: 320px;
+    padding-right: 5px;
+}
+
+.stat_value {
+    border: none;
+    color: var(--text-title);
+    text-align: center;
+    font-weight: bolder;
+}
+
+.stat_value_warning {
+    border: none;
+    color: var(--text-warning);
+    text-align: center;
+    font-weight: bolder;
+}
+
+.table_hchp {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table_hp_hc_recap {
+    border-collapse: collapse;
+    text-align: center;
+    border: none;
+}
+
+.table_configuration {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table_configuration td {
+    border: none;
+}
+
+.table_configuration h2 {
+    color: var(--main-bg-color);
+    letter-spacing: 2px;
+    font-size: 17px;
+    background: var(--sde-bg-color);
+    border: 1px solid var(--main-bg-color);
+    border-radius: 10px;
+    padding: 3px 0px 3px 20px;
+}
+
+
+.fixed-dialog {
+    position: fixed;
+    top: 50px;
+    left: 50px;
+    overflow-y: auto;
+}
+
+.ui-dialog-titlebar {
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+}
+
+.ui-dialog .ui-dialog-buttonpane {
+    background: var(--sde-bg-color);
+    margin-top: unset;
+}
+
+.help {
+    cursor: pointer;
+}
+
+ div#pop-up {
+   display: none;
+   position: absolute;
+   width: 10px;
+   padding: 10px;
+   background: #eeeeee;
+   color: #000000;
+   border: 1px solid #1a1a1a;
+   font-size: 90%;
+ }
+
+.error {
+  color: red;
+  /*background-color: #acf;*/
+}
+
+.dataTables_wrapper .dataTables_length {
+    white-space: nowrap;
+}
+
+.table_offpeak_hours {
+    width: 100%;
+    text-align: center;
+    border-collapse: collapse;
+}
+.table_offpeak_hours th {
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+    border: 1px solid var(--sde-bg-color);
+    text-align: center;
+    border-collapse: collapse;
 }

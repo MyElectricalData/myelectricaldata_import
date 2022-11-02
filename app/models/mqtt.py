@@ -1,7 +1,7 @@
-import __main__ as app
-
-from dependencies import *
 from paho.mqtt import client as mqtt
+
+import __main__ as app
+from dependencies import *
 from models.log import Log
 
 
@@ -55,7 +55,7 @@ class Mqtt:
         )
         status = result[0]
         if status == 0:
-            app.LOG.log(f" MQTT Send : {prefix}/{topic} => {msg}", "debug")
+            app.LOG.debug(f" MQTT Send : {prefix}/{topic} => {msg}")
         else:
             app.LOG.log(f" - Failed to send message to topic {prefix}/{topic}")
         msg_count += 1

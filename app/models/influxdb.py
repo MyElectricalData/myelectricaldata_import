@@ -1,13 +1,14 @@
 import datetime
 
-import __main__ as app
 import influxdb_client
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
-from dependencies import *
 from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
 from influxdb_client.client.write_api import ASYNCHRONOUS
+
+import __main__ as app
+from dependencies import *
 from models.log import Log
 
 

@@ -1,10 +1,10 @@
-import requests
 import json
-from dateutil.relativedelta import *
-from pprint import pprint
 from datetime import datetime
-
 from importlib import import_module
+from pprint import pprint
+
+import requests
+from dateutil.relativedelta import *
 
 main = import_module("main")
 f = import_module("function")
@@ -31,7 +31,6 @@ def getContract(headers, client, cur, con, pdl, pdl_config):
     query = f"SELECT * FROM contracts WHERE pdl = '{pdl}'"
     cur.execute(query)
     query_result = cur.fetchone()
-    pprint(query_result)
     if query_result is None:
         f.log(" => Query API")
         contract = queryApi(url, headers, data)

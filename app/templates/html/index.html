@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MyElectricalData</title>
+    {{ javascript_loader }}
+    <style>
+    {{ css }}
+    </style>
+    <script>
+        $(document).ready(function () {
+            {{ javascript }}
+        });
+    </script>
+</head>
+<body style="margin: 0px">
+{{ configuration }}
+{{ side_menu }}
+<div id="content" style="padding: 0 95px 0 95px">
+    <div id="header">
+        <div id="header_logo" style="float: left;">
+            <div id="logo" onClick="parent.location='/'">&nbsp;</div>
+        </div>
+    </div>
+    <div id="stat" style="float: right">
+        <div style="text-align: center"><img src="/static/img/loading.gif"></div>
+    </div>
+    <div id="body" style="padding-bottom: 100px;">
+        {{ select_usage_points }}
+        {{ body }}
+    </div>
+</div>
+{{ menu }}
+</body>
+</html>

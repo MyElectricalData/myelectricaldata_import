@@ -1,11 +1,11 @@
-import requests
 import json
-from datetime import datetime, timedelta
-from dateutil.relativedelta import *
-from pprint import pprint
 import re
-
+from datetime import datetime, timedelta
 from importlib import import_module
+from pprint import pprint
+
+import requests
+from dateutil.relativedelta import *
 
 main = import_module("main")
 f = import_module("function")
@@ -289,7 +289,6 @@ def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, date
                 f.log(f"  => Import {len(new_date)} entry")
 
             elif detail['error_code'] == 2:
-                pprint(detail)
                 f.log(f"Fetch data error detected beetween {dateBegin} / {dateEnded}", "ERROR")
                 f.log(f" => {detail['description']}", "ERROR")
                 # cur.execute(f"UPDATE {mode}_detail SET fail = {date_data['fail'] + 1} WHERE pdl = '{pdl}' and date = '{date}'")

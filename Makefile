@@ -8,6 +8,8 @@ debug:
 ## Connect to EnedisGateway container : DEV
 run:
 	$(call title,"Start")
+	$(COMPOSE) stop myelectricaldata_import
+	$(COMPOSE) rm -f myelectricaldata_import
 	$(COMPOSE) run -p 5000:5000 myelectricaldata_import
 
 ## Start docker conatiners for dev

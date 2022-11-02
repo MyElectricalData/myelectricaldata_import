@@ -1,13 +1,13 @@
 import json
-from datetime import datetime, timedelta
-from dateutil.relativedelta import *
-from pprint import pprint
 import locale
-import influxdb_client
-from influxdb_client.client.write_api import SYNCHRONOUS
-import pytz
-
+from datetime import datetime, timedelta
 from importlib import import_module
+from pprint import pprint
+
+import influxdb_client
+import pytz
+from dateutil.relativedelta import *
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 main = import_module("main")
 f = import_module("function")
