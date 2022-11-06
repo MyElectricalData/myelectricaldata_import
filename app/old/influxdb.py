@@ -66,7 +66,7 @@ def influxdb_insert(cur, con, pdl, pdl_config, influxdb, influxdb_api):
         value_kwh = value_wh / 1000
         current_price = forceRound(value_kwh * price[measure_type], 4)
         dateObject = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-        date = dateObject - relativedelta(minutes=int(interval_length))
+        date = dateObject - datetime.timedelta(minutes=int(interval_length))
         f.log(f"Insert detail {date} => {value}", "DEBUG")
         p = influxdb_client.Point("enedisgateway_detail") \
             .tag("pdl", pdl) \

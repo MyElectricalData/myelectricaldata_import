@@ -72,3 +72,6 @@ help:
 			{lastLine = $$0;}' $(MAKEFILE_LIST)\
 			| sed  -e "s/\`/\\\\\`/g"
 	@echo ""
+
+generate-dependencies:
+	cd app; pip-compile -o requirements.txt pyproject.toml; cd -

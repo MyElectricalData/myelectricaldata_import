@@ -58,6 +58,7 @@ if MQTT_CONFIG and "enable" in MQTT_CONFIG and MQTT_CONFIG["enable"]:
         retain=MQTT_CONFIG["retain"],
         qos=MQTT_CONFIG["qos"]
     )
+    MQTT.connect()
 
 INFLUXDB_CONFIG = CONFIG.influxdb_config()
 INFLUXB_ENABLE = False
@@ -86,9 +87,9 @@ if CYCLE < cycle_minimun:
 class FetchAllDataScheduler(object):
     JOBS = [
         {
-            "id": f"fetch_data_boot",
-            "func": Job().job_import_data
-        }, {
+            # "id": f"fetch_data_boot",
+            # "func": Job().job_import_data
+        # }, {
             "id": f"fetch_data",
             "func": Job().job_import_data,
             "trigger": "interval",

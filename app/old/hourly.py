@@ -1,13 +1,11 @@
 import json
 import locale
-import time
+
 from datetime import datetime, timedelta
 from importlib import import_module
 from pprint import pprint
 
 import pytz
-import requests
-from dateutil.relativedelta import *
 
 main = import_module("main")
 f = import_module("function")
@@ -60,8 +58,8 @@ def Hourly(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(
     delta = 0
     deltaMax = 7
     notFound = False
-    while found == False and notFound == False:
-        yesterday_datetime = today - relativedelta(days=1 + delta)
+    while not found and not notFound:
+        yesterday_datetime = today - timedelta(days=1 + delta)
         yesterday = yesterday_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' AND date = (select max(date) from consumption_detail);"
         cur.execute(query)
@@ -75,7 +73,7 @@ def Hourly(cur, con, client, pdl, pdl_config, last_activation_date=datetime.now(
         f.log(" => No detail data found (skip HA Hourly Sensor)")
     else:
 
-        date_history_datetime = today - relativedelta(days=5)
+        date_history_datetime = today - timedelta(days=5)
         date_history = date_history_datetime.strftime('%Y-%m-%d')
 
         query = f"SELECT * FROM consumption_detail WHERE pdl = '{pdl}' AND date BETWEEN '{date_history}' AND '{yesterday}' ORDER BY DATE ASC;"

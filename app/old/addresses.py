@@ -1,10 +1,5 @@
-import base64
 import json
 from importlib import import_module
-from pprint import pprint
-
-import requests
-from dateutil.relativedelta import *
 
 main = import_module("main")
 f = import_module("function")

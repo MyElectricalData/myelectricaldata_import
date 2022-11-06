@@ -5,8 +5,6 @@ from importlib import import_module
 from pprint import pprint
 
 import pytz
-import requests
-from dateutil.relativedelta import *
 
 main = import_module("main")
 f = import_module("function")
@@ -65,7 +63,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
     deltaMax = 7
     notFound = False
     while found == False and notFound == False:
-        yesterday_datetime = today - relativedelta(days=1+delta)
+        yesterday_datetime = today - timedelta(days=1+delta)
         yesterday = yesterday_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday}';"
         cur.execute(query)
@@ -86,7 +84,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         state = attributes['yesterday']
 
         today = datetime.now(timezone)
-        yesterday_last_year_datetime = today - relativedelta(years=1, days=1+delta)
+        yesterday_last_year_datetime = today - timedelta(years=1, days=1+delta)
         yesterday_last_year = yesterday_last_year_datetime.strftime('%Y-%m-%d')
         attributes["yesterdayLastYearDate"] = yesterday_last_year
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date='{yesterday_last_year}';"
@@ -100,7 +98,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
 
         # CURRENT WEEK
         today = datetime.now(timezone)
-        last_week_datetime = today - relativedelta(days=7+delta)
+        last_week_datetime = today - timedelta(days=7+delta)
         last_week = last_week_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_week}' AND '{yesterday}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -133,7 +131,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
             attributes['current_week'] = -1
 
         today = datetime.now(timezone)
-        last_week_last_year_datetime = today - relativedelta(years=1, days=nbDayWeek)
+        last_week_last_year_datetime = today - timedelta(years=1, days=nbDayWeek)
         last_week_last_year = last_week_last_year_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_week_last_year}' AND '{yesterday_last_year}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -153,7 +151,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
 
         # CURRENT MONTH
         today = datetime.now(timezone)
-        last_month_datetime = today - relativedelta(months=1)
+        last_month_datetime = today - timedelta(months=1)
         last_month = last_month_datetime.strftime('%Y-%m')
         lastMonthNumber = last_month_datetime.strftime('%m')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_month}-01' AND '{yesterday}' ORDER BY DATE DESC;"
@@ -187,7 +185,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
             attributes['current_month'] = str(forceRound(attributes['current_month'], 2))
 
         today = datetime.now(timezone)
-        last_month_last_year_datetime = today - relativedelta(years=1, days=nbDayMonth)
+        last_month_last_year_datetime = today - timedelta(years=1, days=nbDayMonth)
         last_month_last_year = last_month_last_year_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_month_last_year}' AND '{yesterday_last_year}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -209,7 +207,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
 
         # CURRENT MONTH
         today = datetime.now(timezone)
-        last_month_last_year_datetime = today - relativedelta(years=1, months=1)
+        last_month_last_year_datetime = today - timedelta(years=1, months=1)
         last_month_last_year = last_month_last_year_datetime.strftime('%Y-%m')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_month_last_year}-01' AND '{yesterday_last_year}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -231,7 +229,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
 
         # CURRENT YEARS
         today = datetime.now(timezone)
-        last_year_datetime = today - relativedelta(years=1)
+        last_year_datetime = today - timedelta(years=1)
         last_year = last_year_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_year}' AND '{yesterday}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -256,7 +254,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
             attributes['current_year'] = str(forceRound(attributes['current_year'], 2))
 
         today = datetime.now(timezone)
-        last_year_last_year_datetime = today - relativedelta(years=1, days=nbDayYear)
+        last_year_last_year_datetime = today - timedelta(years=1, days=nbDayYear)
         last_year_last_year = last_year_last_year_datetime.strftime('%Y-%m-%d')
         query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{last_year_last_year}' AND '{yesterday_last_year}' ORDER BY DATE DESC;"
         cur.execute(query)
@@ -283,7 +281,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
                 attributes[f'dailyweek_cost{measure_type}'] = []
                 attributes[f'dailyweek_{measure_type}'] = []
             for day in [1, 2, 3, 4, 5, 6, 7]:
-                date = today - relativedelta(days=day)
+                date = today - timedelta(days=day)
                 dateBegin = date.replace(hour=0, minute=30, second=0).strftime('%Y-%m-%d %H:%M:%S')
                 dateEnd = date.replace(hour=23, minute=59, second=59).strftime('%Y-%m-%d %H:%M:%S')
                 attributes[f'dailyweek'].append(date.strftime('%Y-%m-%d'))
@@ -332,7 +330,7 @@ def myEnedis(cur, con, client, pdl, pdl_config, last_activation_date=datetime.no
         if attributes['dailyweek_cost'] == [0, 0, 0, 0, 0, 0, 0] and pdl_config['plan'] == "BASE":
             today = datetime.now(timezone)
             for day in [1, 2, 3, 4, 5, 6, 7]:
-                date = today - relativedelta(days=day)
+                date = today - timedelta(days=day)
                 dateBegin = date.strftime('%Y-%m-%d')
                 dateEnd = date.strftime('%Y-%m-%d')
                 query = f"SELECT * FROM consumption_daily WHERE pdl = '{pdl}' AND date BETWEEN '{dateBegin}' AND '{dateEnd}' ORDER BY DATE DESC;"

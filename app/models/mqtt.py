@@ -1,8 +1,12 @@
+import __main__ as app
+import datetime
+from pprint import pprint
+from mergedeep import Strategy, merge
+
+import paho.mqtt.publish as publish
+from dependencies import *
 from paho.mqtt import client as mqtt
 
-import __main__ as app
-from dependencies import *
-from models.log import Log
 
 
 class Mqtt:
@@ -10,8 +14,8 @@ class Mqtt:
     def __init__(
             self,
             hostname,
-            username,
-            password,
+            username="",
+            password="",
             client_id="myelectricaldata",
             prefix="myelectricaldata",
             retain=True,
@@ -46,9 +50,8 @@ class Mqtt:
     def publish(self, topic, msg, prefix=None):
         if prefix is None:
             prefix = self.prefix
-        msg_count = 0
         result = self.client.publish(
-            f'{prefix}/{topic}',
+            f'{self.prefix}/{prefix}/{topic}',
             str(msg),
             qos=self.qos,
             retain=self.retain
@@ -58,15 +61,24 @@ class Mqtt:
             app.LOG.debug(f" MQTT Send : {prefix}/{topic} => {msg}")
         else:
             app.LOG.log(f" - Failed to send message to topic {prefix}/{topic}")
-        msg_count += 1
 
-    # def subscribe(self, client, topic, prefix=None):
-    #     if prefix == None:
-    #         prefix = main.config["mqtt"]['prefix']
-    #
-    #     def on_message(client, userdata, msg):
-    #         print(f" MQTT Received : `{prefix}/{topic}` => `{msg.payload.decode()}`")
-    #
-    #     sub_topic = f"{prefix}/{topic}"
-    #     client.subscribe(client, sub_topic)
-    #     client.on_message = on_message
+    def publish_multiple(self, data, prefix=None):
+        if data:
+            payload = []
+            if prefix is None:
+                prefix = ""
+            else:
+                prefix = f"{prefix}"
+            for topics, value in data.items():
+                payload.append({
+                    "topic": f"{self.prefix}{prefix}/{topics}",
+                    "payload": value,
+                    "qos": self.qos,
+                    "retain": self.retain
+                })
+            # pprint(payload)
+            auth = None
+            if self.username == "" and self.password == "":
+                auth = {'username': self.username, 'password': self.password}
+            publish.multiple(payload, hostname=self.hostname, port=self.port, client_id=self.client_id, auth=auth)
+

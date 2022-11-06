@@ -1,12 +1,6 @@
 import json
-import locale
 from datetime import datetime, timedelta
 from importlib import import_module
-from pprint import pprint
-
-import pytz
-import requests
-from dateutil.relativedelta import *
 
 main = import_module("main")
 f = import_module("function")
@@ -17,7 +11,7 @@ f = import_module("function")
 
 def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", last_activation_date=datetime.utcnow()):
     max_days = 1095
-    max_days_date = datetime.utcnow() + relativedelta(days=-max_days)
+    max_days_date = datetime.utcnow() + datetime.timedelta(days=-max_days)
     base_price = pdl_config['consumption_price_base']
 
     url = main.url
@@ -30,9 +24,9 @@ def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", las
     last_activation_date = last_activation_date.split("+")[0]
     last_activation_date = datetime.strptime(last_activation_date, '%Y-%m-%d')
 
-    lastYears = datetime.utcnow() - relativedelta(years=1)
+    lastYears = datetime.utcnow() - datetime.timedelta(years=1)
     dateBegin = lastYears.strftime('%Y-%m-%d')
-    # dateEnded = datetime.now() - relativedelta(days=1)
+    # dateEnded = datetime.now() - datetime.timedelta(days=1)
     dateEnded = datetime.utcnow()
     dateEnded = dateEnded.strftime('%Y-%m-%d')
 
@@ -91,7 +85,7 @@ def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", las
 
     dateEnded = dateBegin
     dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
-    dateBegin = dateEndedDelta + relativedelta(years=-1)
+    dateBegin = dateEndedDelta + datetime.timedelta(years=-1)
     dateBegin = dateBegin.strftime('%Y-%m-%d')
     while max_days_date <= datetime.strptime(dateEnded, '%Y-%m-%d'):
         f.log(f"Year => {dateEndedDelta.strftime('%Y')}")
@@ -165,7 +159,7 @@ def getDaily(headers, cur, con, client, pdl, pdl_config, mode="consumption", las
 
         dateEnded = dateBegin
         dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
-        dateBegin = dateEndedDelta + relativedelta(years=-1)
+        dateBegin = dateEndedDelta + datetime.timedelta(years=-1)
         if dateBegin < max_days_date:
             dateBegin = max_days_date
         dateBegin = dateBegin.strftime('%Y-%m-%d')
@@ -177,7 +171,7 @@ def dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_a
     response = {}
 
     lastYears = datetime.strptime(dateEnded, '%Y-%m-%d')
-    lastYears = lastYears + relativedelta(years=-1)
+    lastYears = lastYears + datetime.timedelta(years=-1)
     if lastYears < last_activation_date:
         dateBegin = last_activation_date
         dateBegin = dateBegin.strftime('%Y-%m-%d')
@@ -252,22 +246,22 @@ def dailyBeetwen(headers, cur, con, url, pdl, mode, dateBegin, dateEnded, last_a
         list_date = list(reversed(sorted(mesures.keys())))
 
         dateEnded = datetime.strptime(dateEnded, '%Y-%m-%d')
-        dateWeek = dateEnded + relativedelta(days=-7)
-        dateMonths = dateEnded + relativedelta(months=-1)
-        dateYears = dateEnded + relativedelta(years=-1)
-        j1 = dateEnded + relativedelta(days=-1)
+        dateWeek = dateEnded + datetime.timedelta(days=-7)
+        dateMonths = dateEnded + datetime.timedelta(months=-1)
+        dateYears = dateEnded + datetime.timedelta(years=-1)
+        j1 = dateEnded + datetime.timedelta(days=-1)
         j1 = j1.replace(hour=0, minute=0, second=0, microsecond=0)
-        j2 = dateEnded + relativedelta(days=-2)
+        j2 = dateEnded + datetime.timedelta(days=-2)
         j2 = j2.replace(hour=0, minute=0, second=0, microsecond=0)
-        j3 = dateEnded + relativedelta(days=-3)
+        j3 = dateEnded + datetime.timedelta(days=-3)
         j3 = j3.replace(hour=0, minute=0, second=0, microsecond=0)
-        j4 = dateEnded + relativedelta(days=-4)
+        j4 = dateEnded + datetime.timedelta(days=-4)
         j4 = j4.replace(hour=0, minute=0, second=0, microsecond=0)
-        j5 = dateEnded + relativedelta(days=-5)
+        j5 = dateEnded + datetime.timedelta(days=-5)
         j5 = j5.replace(hour=0, minute=0, second=0, microsecond=0)
-        j6 = dateEnded + relativedelta(days=-6)
+        j6 = dateEnded + datetime.timedelta(days=-6)
         j6 = j6.replace(hour=0, minute=0, second=0, microsecond=0)
-        j7 = dateEnded + relativedelta(days=-7)
+        j7 = dateEnded + datetime.timedelta(days=-7)
         j7 = j7.replace(hour=0, minute=0, second=0)
 
         energyWeek = 0

@@ -23,12 +23,12 @@ class Datatable:
             </thead>
             <tbody>
         """
-        date_format = '%Y-%m-%d'
         all_data = {}
         recap = {}
         if daily_data:
             for data in daily_data:
-                all_data[data.date] = {
+                date_str = data.date.strftime("%Y-%m-%d")
+                all_data[date_str] = {
                     "value": data.value,
                     "blacklist": data.blacklist,
                     "fail_count": data.fail_count,
@@ -36,7 +36,6 @@ class Datatable:
             start_date = cache_last_date
             end_date = datetime.now()
             if start_date:
-                start_date = datetime.strptime(start_date, date_format)
                 for single_date in daterange(start_date, end_date):
                     year = single_date.strftime("%Y")
                     month = single_date.strftime("%m")

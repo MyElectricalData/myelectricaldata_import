@@ -337,6 +337,6 @@
 #     f.logLine()
 
 # logSep()
-# date = datetime.datetime.now() + relativedelta(seconds=CYCLE)
+# date = datetime.datetime.now() + datetime.timedelta(seconds=CYCLE)
 # log(f"Prochain import : {date}")
 # time.sleep(CYCLE)

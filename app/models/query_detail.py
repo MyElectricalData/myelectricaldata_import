@@ -3,7 +3,6 @@ import datetime
 import json
 import re
 
-from dateutil.relativedelta import relativedelta
 from dependencies import *
 from models.database import ConsumptionDetail, ProductionDetail
 from models.query import Query
@@ -29,10 +28,9 @@ class Detail:
         self.usage_point_config = config
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = int(DETAIL_MAX_DAYS)
-        self.max_days_date = datetime.datetime.utcnow() - relativedelta(days=self.daily_max_days)
+        self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
         if hasattr(self.contract, "last_activation_date"):
-            self.activation_date = datetime.datetime.strptime(self.contract.last_activation_date, f"{self.date_format}%z").replace(
-                tzinfo=None)
+            self.activation_date = self.contract.last_activation_date
         else:
             self.activation_date = self.max_days_date
         self.offpeak_hours = {
@@ -64,7 +62,7 @@ class Detail:
             endpoint += "/cache"
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
-            current_week = datetime.datetime.now() - relativedelta(days=self.max_detail + 1)
+            current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
             last_week = False
             if current_week <= datetime.datetime.strptime(begin, self.date_format):
                 last_week = True
@@ -86,6 +84,9 @@ class Detail:
                             interval = re.findall(r'\d+', interval_reading['interval_length'])[0]
                             date = interval_reading["date"]
                             dateObject = datetime.datetime.strptime(date, self.date_detail_format)
+                            # CHANGE DATE TO BEGIN RANGE
+                            date = dateObject - datetime.timedelta(minutes=int(interval))
+                            # date = date.strftime(self.date_detail_format)
                             # GET WEEKDAY
                             dateDays = dateObject.weekday()
                             dateHourMinute = dateObject.strftime('%H:%M')
@@ -132,7 +133,7 @@ class Detail:
     def get(self):
 
         # REMOVE TODAY
-        begin = datetime.datetime.now() - relativedelta(days=self.max_detail)
+        begin = datetime.datetime.now() - datetime.timedelta(days=self.max_detail)
         end = datetime.datetime.now()
         finish = True
         result = []
@@ -149,8 +150,8 @@ class Detail:
                 response = self.run(begin, end)
             else:
                 response = self.run(begin, end)
-                begin = begin - relativedelta(days=self.max_detail)
-                end = end - relativedelta(days=self.max_detail)
+                begin = begin - datetime.timedelta(days=self.max_detail)
+                end = end - datetime.timedelta(days=self.max_detail)
             if response is not None:
                 result = [*result, *response]
             else:
@@ -174,8 +175,8 @@ class Detail:
 
     def fetch(self, date):
         result = self.run(
-            datetime.datetime.strptime(date, self.date_format) - relativedelta(days=1),
-            datetime.datetime.strptime(date, self.date_format) + relativedelta(days=1),
+            datetime.datetime.strptime(date, self.date_format) - datetime.timedelta(days=1),
+            datetime.datetime.strptime(date, self.date_format) + datetime.timedelta(days=1),
         )
         if "error" in result and result["error"]:
             return {
@@ -191,6 +192,7 @@ class Detail:
             "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({date})",
             "fail_count": self.db.get_detail_fail_count(self.usage_point_id, date, self.measure_type)
         }
+
 
 def is_between(time, time_range):
     if time_range[1] < time_range[0]:

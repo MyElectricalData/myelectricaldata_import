@@ -2,10 +2,6 @@ import json
 import re
 from datetime import datetime, timedelta
 from importlib import import_module
-from pprint import pprint
-
-import requests
-from dateutil.relativedelta import *
 
 main = import_module("main")
 f = import_module("function")
@@ -17,7 +13,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
 
     max_days = 730
     max_days_per_demand = 7
-    max_days_date = datetime.utcnow() + relativedelta(days=-max_days)
+    max_days_date = datetime.utcnow() + timedelta(days=-max_days)
     price_base = pdl_config['consumption_price_base']
     price_hc = pdl_config['consumption_price_hc']
     price_hp = pdl_config['consumption_price_hp']
@@ -32,7 +28,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
     last_activation_date = last_activation_date.split("+")[0]
     last_activation_date = datetime.strptime(last_activation_date, '%Y-%m-%d')
 
-    lastYears = datetime.utcnow() + relativedelta(days=-max_days_per_demand)
+    lastYears = datetime.utcnow() + timedelta(days=-max_days_per_demand)
     dateBegin = lastYears.strftime('%Y-%m-%d')
     dateEnded = datetime.utcnow()
     dateEnded = dateEnded.strftime('%Y-%m-%d')
@@ -45,7 +41,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
     else:
         dateEnded = dateBegin
         dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
-        dateBegin = dateEndedDelta + relativedelta(weeks=-1)
+        dateBegin = dateEndedDelta - timedelta(weeks=1)
         dateBegin = dateBegin.strftime('%Y-%m-%d')
         current_week = 1
         finish = False
@@ -68,7 +64,7 @@ def getDetail(headers, cur, con, client, pdl, pdl_config, mode="consumption", la
                 else:
                     dateEnded = dateBegin
                     dateEndedDelta = datetime.strptime(dateEnded, '%Y-%m-%d')
-                    dateBegin = dateEndedDelta + relativedelta(weeks=-1)
+                    dateBegin = dateEndedDelta - timedelta(weeks=1)
                     if dateBegin < max_days_date:
                         dateBegin = max_days_date
                     dateBegin = dateBegin.strftime('%Y-%m-%d')
@@ -229,7 +225,7 @@ def detailBeetwen(headers, cur, con, url, pdl, pdl_config, mode, dateBegin, date
         return time_range[0] <= time <= time_range[1]
 
     lastYears = datetime.strptime(dateEnded, '%Y-%m-%d')
-    lastYears = lastYears + relativedelta(days=-max_days_per_demand)
+    lastYears = lastYears - timedelta(days=max_days_per_demand)
     if lastYears < last_activation_date:
         dateBegin = last_activation_date
         dateBegin = dateBegin.strftime('%Y-%m-%d')

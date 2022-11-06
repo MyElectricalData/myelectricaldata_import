@@ -6,7 +6,7 @@ from datetime import timedelta
 from dependencies import str2bool
 from models.config import get_version
 from models.log import Log
-from sqlalchemy import (Column, ForeignKey, Float, Integer, Text, Boolean, create_engine, delete, inspect, select)
+from sqlalchemy import (Column, ForeignKey, Float, Integer, Text, Boolean, create_engine, delete, inspect, select, DateTime)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -137,6 +137,7 @@ class Database:
             usage_points.consumption_detail = str2bool(data["consumption_detail"])
             usage_points.production = str2bool(data["production"])
             usage_points.production_detail = str2bool(data["production_detail"])
+            usage_points.production_price = data["production_price"]
             usage_points.consumption_price_base = data["consumption_price_base"]
             usage_points.consumption_price_hc = data["consumption_price_hc"]
             usage_points.consumption_price_hp = data["consumption_price_hp"]
@@ -161,6 +162,7 @@ class Database:
                     consumption_detail=str2bool(data["consumption_detail"]),
                     production=str2bool(data["production"]),
                     production_detail=str2bool(data["production_detail"]),
+                    production_price=data["production_price"],
                     consumption_price_base=data["consumption_price_base"],
                     consumption_price_hc=data["consumption_price_hc"],
                     consumption_price_hp=data["consumption_price_hp"],
@@ -337,6 +339,45 @@ class Database:
         else:
             return current_data.date
 
+    def get_daily_last(self, usage_point_id, mesure_type="consumption"):
+        if mesure_type == "consumption":
+            table = ConsumptionDaily
+            relation = UsagePoints.relation_consumption_daily
+        else:
+            table = ProductionDaily
+            relation = UsagePoints.relation_production_daily
+        current_data = self.session.scalars(
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .where(table.value != 0)
+            .order_by(table.date.desc())
+        ).first()
+        if current_data is None:
+            return False
+        else:
+            return current_data
+
+    def get_daily_first_date(self, usage_point_id, mesure_type="consumption"):
+        if mesure_type == "consumption":
+            table = ConsumptionDaily
+            relation = UsagePoints.relation_consumption_daily
+        else:
+            table = ProductionDaily
+            relation = UsagePoints.relation_production_daily
+        query = (
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .order_by(table.date.desc())
+        )
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        current_data = self.session.scalars(query).first()
+        if current_data is None:
+            return False
+        else:
+            return current_data.date
+
     def get_daily_fail_count(self, usage_point_id, date, mesure_type="consumption"):
         return self.get_daily_date(usage_point_id, date, mesure_type).fail_count
 
@@ -351,6 +392,7 @@ class Database:
                  .join(relation)
                  .where(table.usage_point_id == usage_point_id)
                  .where(table.date == date))
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
             fail_count = int(daily.fail_count) + 1
@@ -377,20 +419,41 @@ class Database:
             )
         return fail_count
 
-    def get_daily(self, usage_point_id, begin, end, mesure_type="consumption"):
-        dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
-        dateEnded = datetime.datetime.strptime(end, '%Y-%m-%d')
+    def get_daily_range(self, usage_point_id, begin, end, mesure_type="consumption"):
+        if mesure_type == "consumption":
+            table = ConsumptionDaily
+            relation = UsagePoints.relation_consumption_daily
+        else:
+            table = ProductionDaily
+            relation = UsagePoints.relation_production_daily
+        query = (
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .where(table.date >= begin)
+            .where(table.date <= end)
+            .order_by(table.date.desc())
+        )
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        current_data = self.session.scalars(query).all()
+        if current_data is None:
+            return False
+        else:
+            return current_data
 
-        delta = dateEnded - dateBegin
+
+    def get_daily(self, usage_point_id, begin, end, mesure_type="consumption"):
+        delta = end - begin
         result = {
             "missing_data": False,
             "date": {},
             "count": 0
         }
         for i in range(delta.days + 1):
-            checkDate = dateBegin + timedelta(days=i)
-            checkDate = checkDate.strftime('%Y-%m-%d')
+            checkDate = begin + timedelta(days=i)
+            checkDate = datetime.datetime.combine(checkDate, datetime.datetime.min.time())
             query_result = self.get_daily_date(usage_point_id, checkDate, mesure_type)
+            checkDate = checkDate.strftime('%Y-%m-%d')
             # print(query_result)
             if query_result is None:
                 # NEVER QUERY
@@ -491,6 +554,12 @@ class Database:
             )
         return True
 
+    def get_daily_date_range(self, usage_point_id):
+        return {
+            "begin": self.get_daily_last_date(usage_point_id),
+            "end": self.get_daily_first_date(usage_point_id)
+        }
+
     ## -----------------------------------------------------------------------------------------------------------------
     ## DETAIL CONSUMPTION
     ## -----------------------------------------------------------------------------------------------------------------
@@ -531,6 +600,28 @@ class Database:
             .where(table.usage_point_id == usage_point_id)
             .where(table.date == date)
         ).first()
+
+    def get_detail_range(self, usage_point_id, begin, end, mesure_type="consumption"):
+        if mesure_type == "consumption":
+            table = ConsumptionDetail
+            relation = UsagePoints.relation_consumption_detail
+        else:
+            table = ProductionDetail
+            relation = UsagePoints.relation_production_detail
+        query = (
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .where(table.date >= begin)
+            .where(table.date <= end)
+            .order_by(table.date.desc())
+        )
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        current_data = self.session.scalars(query).all()
+        if current_data is None:
+            return False
+        else:
+            return current_data
 
     def get_detail(self, usage_point_id, begin, end, mesure_type="consumption"):
         dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
@@ -688,6 +779,49 @@ class Database:
             )
         return fail_count
 
+    def get_detail_last_date(self, usage_point_id, mesure_type="consumption"):
+        if mesure_type == "consumption":
+            table = ConsumptionDetail
+            relation = UsagePoints.relation_consumption_detail
+        else:
+            table = ProductionDetail
+            relation = UsagePoints.relation_production_detail
+        current_data = self.session.scalars(
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .order_by(table.date)
+        ).first()
+        if current_data is None:
+            return False
+        else:
+            return current_data.date
+
+    def get_detail_first_date(self, usage_point_id, mesure_type="consumption"):
+        if mesure_type == "consumption":
+            table = ConsumptionDetail
+            relation = UsagePoints.relation_consumption_detail
+        else:
+            table = ProductionDetail
+            relation = UsagePoints.relation_production_detail
+        query = (
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .order_by(table.date.desc())
+        )
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        current_data = self.session.scalars(query).first()
+        if current_data is None:
+            return False
+        else:
+            return current_data.date
+
+    def get_detail_date_range(self, usage_point_id):
+        return {
+            "begin": self.get_detail_last_date(usage_point_id),
+            "end": self.get_detail_first_date(usage_point_id)
+        }
 
 class Config(Base):
     __tablename__ = 'config'
@@ -811,6 +945,7 @@ class UsagePoints(Base):
                f"consumption_detail={self.consumption_detail!r}, " \
                f"production={self.production!r}, " \
                f"production_detail={self.production_detail!r}, " \
+               f"production_price={self.production_price!r}, " \
                f"consumption_price_base={self.consumption_price_base!r}, " \
                f"consumption_price_hc={self.consumption_price_hc!r}, " \
                f"consumption_price_hp={self.consumption_price_hp!r}, " \
@@ -910,7 +1045,7 @@ class Contracts(Base):
     subscribed_power = Column(Text,
                               nullable=False
                               )
-    last_activation_date = Column(Text,
+    last_activation_date = Column(DateTime,
                                   nullable=False
                                   )
     distribution_tariff = Column(Text,
@@ -940,7 +1075,7 @@ class Contracts(Base):
     contract_status = Column(Text,
                              nullable=False
                              )
-    last_distribution_tariff_change_date = Column(Text,
+    last_distribution_tariff_change_date = Column(DateTime,
                                                   nullable=False
                                                   )
     count = Column(Integer,
@@ -986,7 +1121,7 @@ class ConsumptionDaily(Base):
                             nullable=False,
                             index=True
                             )
-    date = Column(Text,
+    date = Column(DateTime,
                   nullable=False
                   )
     value = Column(Integer,
@@ -1028,7 +1163,7 @@ class ConsumptionDetail(Base):
                             nullable=False,
                             index=True
                             )
-    date = Column(Text,
+    date = Column(DateTime,
                   nullable=False
                   )
     value = Column(Integer,
@@ -1078,7 +1213,7 @@ class ProductionDaily(Base):
                             nullable=False,
                             index=True
                             )
-    date = Column(Text,
+    date = Column(DateTime,
                   nullable=False
                   )
     value = Column(Integer,
@@ -1120,7 +1255,7 @@ class ProductionDetail(Base):
                             nullable=False,
                             index=True
                             )
-    date = Column(Text,
+    date = Column(DateTime,
                   nullable=False
                   )
     value = Column(Integer,

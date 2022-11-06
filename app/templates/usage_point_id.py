@@ -448,7 +448,7 @@ class UsagePointId:
     def generate_chart_hc_hp(self, data):
         recap = {}
         for detail in data:
-            year = datetime.strptime(detail.date, '%Y-%m-%d %H:%M:%S').strftime("%Y")
+            year = detail.date.strftime("%Y")
             value = detail.value
             mesure_type = detail.measure_type
             if not year in recap:
