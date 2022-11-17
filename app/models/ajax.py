@@ -35,7 +35,7 @@ class Ajax:
         return Status().ping()
 
     def account_status(self):
-        app.LOG.title(f"[{self.usage_point_id}] Check du stats du compte.")
+        app.LOG.title(f"[{self.usage_point_id}] Check du statut du compte.")
         return Status(headers=self.headers).status(self.usage_point_id)
 
     def reset_all_data(self):

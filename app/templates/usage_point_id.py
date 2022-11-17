@@ -52,7 +52,7 @@ class UsagePointId:
                 menu = merge(
                     {
                         "import_daily": {
-                            "title": "Importer la consommation journaliére",
+                            "title": "Importer la consommation journalière",
                             "icon": "electric_bolt",
                             "css": "background-color: var(--text-color);",
                             "loading_page": "loading_import",
@@ -68,7 +68,7 @@ class UsagePointId:
                 menu = merge(
                     {
                         "import_production_daily": {
-                            "title": "Importer la production journaliére",
+                            "title": "Importer la production journalière",
                             "icon": "solar_power",
                             "css": "background-color: #F1C40F;",
                             "loading_page": "loading_import",
@@ -84,7 +84,7 @@ class UsagePointId:
                 menu = merge(
                     {
                         "import_detail": {
-                            "title": "Importer la consommation détaillé",
+                            "title": "Importer la consommation détaillée",
                             "icon": "electric_bolt",
                             "css": "background-color: var(--text-color);",
                             "loading_page": "loading_import",
@@ -100,7 +100,7 @@ class UsagePointId:
                 menu = merge(
                     {
                         "import_production_detail": {
-                            "title": "Importer la production détaillé",
+                            "title": "Importer la production détaillée",
                             "icon": "solar_power",
                             "css": "background-color: #F1C40F;",
                             "loading_page": "loading_import",
@@ -140,9 +140,9 @@ class UsagePointId:
             self.javascript = ""
             self.recap_consumption_data = {}
             self.recap_production_data = {}
-            self.recap_hc_hp = "Pas de donnée."
-            self.comsumption_datatable = "Pas de donnée."
-            self.production_datatable = "Pas de donnée."
+            self.recap_hc_hp = "Pas de données."
+            self.comsumption_datatable = "Pas de données."
+            self.production_datatable = "Pas de données."
 
     def display(self):
         if app.DB.lock_status():
@@ -290,7 +290,7 @@ class UsagePointId:
                 else:
                     offpeak_hours += f"<td>{contract_offpeak_hours}</td>"
             else:
-                offpeak_hours += f"<td>Pas de donnée.</td>"
+                offpeak_hours += f"<td>Pas de données.</td>"
             day = day + 1
         offpeak_hours += "</tr></table>"
         return offpeak_hours
@@ -454,7 +454,7 @@ class UsagePointId:
             }
             """
         else:
-            return "Pas de donnée."
+            return "Pas de données."
 
     def generate_chart_hc_hp(self, data):
         recap = {}
@@ -469,7 +469,7 @@ class UsagePointId:
                 }
             recap[year][mesure_type] = recap[year][mesure_type] + value
         for year, data in recap.items():
-            if self.recap_hc_hp == "Pas de donnée.":
+            if self.recap_hc_hp == "Pas de données.":
                 self.recap_hc_hp = ""
             self.recap_hc_hp += f'<td class="table_hp_hc_recap" style="width: {100 / len(recap)}%" id="piChart{year}"></td>'
             self.javascript += "google.charts.load('current', {'packages':['corechart']});"
@@ -553,5 +553,5 @@ class UsagePointId:
             body += "</tr>"
             body += "</table>"
         else:
-            body = "Pas de donnée."
+            body = "Pas de données."
         return body
