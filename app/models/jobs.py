@@ -193,7 +193,7 @@ class Job:
         }
 
     def get_gateway_status(self):
-        LOG.title(f"[{self.usage_point_config.usage_point_id}] Status de la passerelle :")
+        LOG.title(f"[{self.usage_point_config.usage_point_id}] Statut de la passerelle :")
         result = Status(
             headers=self.header_generate(),
         ).ping()
@@ -218,7 +218,7 @@ class Job:
         return result
 
     def get_addresses(self):
-        LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de coordonnée :")
+        LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération des coordonnées :")
         result = Address(
             headers=self.header_generate(),
             usage_point_id=self.usage_point_config.usage_point_id,

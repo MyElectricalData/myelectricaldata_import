@@ -31,8 +31,8 @@ class Configuration:
                     "title": "Cache",
                     "help": "L'activation du cache sur <a href='https://myelectricaldata.fr/'>MyElectricalData</a> "
                             "va vous permettre de réduire fortement les temps de réponse lors de la récupération des "
-                            "données chez Enedis et également palier au soucis d'indisponibilité de leur API (Si la "
-                            "données à déjà était récupéré au moins une fois dans les 30 derniers jours).",
+                            "données chez Enedis et également palier au soucis d'indisponibilité de leur API (Si les "
+                            "données ont déjà été récupérées au moins une fois dans les 30 derniers jours).",
                     "type": True,
                     "default": True
                 },
@@ -44,13 +44,13 @@ class Configuration:
                 },
                 "refresh_addresse": {
                     "title": "Rafraichir vos coordonnées",
-                    "help": "Permet de forcer le rafraichissement de vos cordonnées postal.",
+                    "help": "Permet de forcer le rafraichissement de vos cordonnées postales.",
                     "type": True,
                     "default": False
                 },
                 "refresh_contract": {
                     "title": "Rafraichir votre contrat",
-                    "help": "Permet de forcer le rafraichissement de informations liée à votre contrat.",
+                    "help": "Permet de forcer le rafraichissement de informations liées à votre contrat.",
                     "type": True,
                     "default": False
                 },
@@ -65,7 +65,7 @@ class Configuration:
                 "consumption_detail": {
                     "title": "Consommation détaillée",
                     "help": "Active/Désactive la récupération de la consommation détaillé.<br><br></b>ATTENTION</b>, pour "
-                            "fonctionner il vous faut activer le relevé de consommation horaire du le site d'Enedis"
+                            "fonctionner il vous faut activer le relevé de consommation horaire sur le site d'Enedis"
                             "Plus d'informations sont disponible <a href='https://www.myelectricaldata.fr/faq'>ici</a>",
                     "type": True,
                     "default": True
@@ -91,10 +91,10 @@ class Configuration:
             },
             "Heures creuses / pleines": {
                 "title": {
-                    "title": "Permet de calculé le ratio HC/HP.<br>"
+                    "title": "Permet de calculer le ratio HC/HP.<br>"
                              "Si vous changez les plages horaires, il est nécessaire de vider le cache.<br>"
                              "<i>Format : 22h30-06h30;11h30-14h30</i>",
-                    "help": "Permet de forcer les horaires HC/HP si elle ne sont pas remontée via les API.<br>"
+                    "help": "Permet de forcer les horaires HC/HP si elles ne sont pas remontées via l'API.<br>"
                             "Si vous êtes en contrat BASE, il peut être intéressant de saisir vos HC/HP afin "
                             "d'avoir une estimation du coût si vous étiez en contrat HC/HP.<br><br>"
                             "<b>Si vous changez les plages horaires, il est nécessaire de vider le cache.</b><br><br>"
@@ -150,14 +150,14 @@ class Configuration:
                     "title": "Production détaillée",
                     "help": "Active/Désactive la récupération de la production détaillé via vos panneaux solaires."
                             "<br><br></b>ATTENTION</b>, pour fonctionner il vous faut activer le relevé de consommation horaire"
-                            "du le site d'Enedis<br>Plus d'informations sont disponible "
+                            "sur le site d'Enedis<br>Plus d'informations sont disponible "
                             "<a href='https://www.myelectricaldata.fr/faq'>ici</a>",
                     "type": True,
                     "default": False
                 },
                 "production_price": {
                     "title": "Prix de revente TTC",
-                    "help": "Permet de définir le prix du kWh en reventes si vous éte en revente total.",
+                    "help": "Permet de définir le prix du kWh en revente si vous étes en revente totale.",
                     "type": 0.1,
                     "default": 0
                 },
