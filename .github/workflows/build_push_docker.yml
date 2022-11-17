@@ -66,7 +66,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**EnedisGateway2MQTT** : Version **${{ steps.vars.outputs.version }}** is in building state...'
+          args: '**MyElectricalData** : Version **${{ steps.vars.outputs.version }}** is in building state...'
 
       ##################################################################################################################
       # VERSION
@@ -79,6 +79,7 @@ jobs:
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
+            m4dm4rtig4n/myelectricaldata:${{ steps.vars.outputs.version }}
 
       - name: Discord notification {{ steps.vars.outputs.version }} image version is up to date
         if: steps.check-build.outputs.nobuild == 'false'
@@ -86,7 +87,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**EnedisGateway2MQTT** : **${{ steps.vars.outputs.version }}** image version is up to date'
+          args: '**MyElectricalData** : **${{ steps.vars.outputs.version }}** image version is up to date'
 
       ##################################################################################################################
       # LATEST-DEV
@@ -99,6 +100,7 @@ jobs:
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:latest-dev
+            m4dm4rtig4n/myelectricaldata:latest-dev
 
       - name: Discord notification
         if: steps.check-build.outputs.nobuild == 'false'
@@ -106,7 +108,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**EnedisGateway2MQTT** : **latest-dev** image version is up to date'
+          args: '**MyElectricalData** : **latest-dev** image version is up to date'
 
       ##################################################################################################################
       # LATEST
@@ -120,6 +122,7 @@ jobs:
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:latest
+            m4dm4rtig4n/myelectricaldata:latest
 
       - name: Discord notification
 #        if: steps.check-tag.outputs.dev == 'false'
@@ -128,7 +131,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**EnedisGateway2MQTT** : **latest** image version is up to date'
+          args: '**MyElectricalData** : **latest** image version is up to date'
 
       ##################################################################################################################
       # FINISH
@@ -137,7 +140,6 @@ jobs:
         if: steps.check-tag.outputs.dev == 'false' && steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-#          DISCORD_EMBEDS: {color: 3447003, author: { name: client.user.username, icon_url: client.user.displayAvatarURL() }, title: "EnedisGateway2MQTT new version available => ${{ steps.vars.outputs.version }}", url: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt", fields: [{ name: "Github", value: "https://github.com/m4dm4rtig4n/enedisgateway2mqtt"}, {name: "Docker.io", value: "https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt"}], timestamp: new Date(), footer: {icon_url: client.user.displayAvatarURL(), text: "© m4dm4rtig4n"}}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**EnedisGateway2MQTT** : New version available **${{ steps.vars.outputs.version }}**'
+          args: '**MyElectricalData** : New version available **${{ steps.vars.outputs.version }}**'
