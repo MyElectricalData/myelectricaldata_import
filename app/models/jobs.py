@@ -143,7 +143,7 @@ class Job:
                     LOG.error(e)
                     LOG.error([
                         f"Erreur lors de l'exportation des données du point de livraison {self.usage_point_config.usage_point_id}",
-                        f"Un nouvel essaie aura lien dans {app.CYCLE}s"
+                        f"Un nouvel essai aura lien dans {app.CYCLE}s"
                     ])
             LOG.finish()
             DB.unlock()
@@ -161,7 +161,7 @@ class Job:
         }
 
     def get_gateway_status(self):
-        LOG.title(f"[{self.usage_point_config.usage_point_id}] Status de la passerelle :")
+        LOG.title(f"[{self.usage_point_config.usage_point_id}] Statut de la passerelle :")
         result = Status(
             headers=self.header_generate(),
         ).ping()
@@ -186,7 +186,7 @@ class Job:
         return result
 
     def get_addresses(self):
-        LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de coordonnée :")
+        LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de coordonnées :")
         result = Address(
             headers=self.header_generate(),
             usage_point_id=self.usage_point_config.usage_point_id,
