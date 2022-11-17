@@ -3,7 +3,7 @@ FROM python:3.9.7
 COPY ./app /app
 
 RUN apt-get update && \
-    apt-get install -y locales git sudo gcc && \
+    apt-get install -y locales git sudo && \
     sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     rm -rf /var/lib/apt/lists/*
