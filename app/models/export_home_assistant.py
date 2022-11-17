@@ -471,6 +471,7 @@ class HomeAssistant:
         }
 
         yesterdayLastYear = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
+        print(daily_obj)
         config = {
             f"attributes": json.dumps(
                 {
@@ -483,23 +484,23 @@ class HomeAssistant:
                     "yesterdayLastYearDate": (now - relativedelta(years=1)).strftime(self.date_format),
                     "yesterdayLastYear": convert_kw(yesterdayLastYear.value) if hasattr(yesterdayLastYear, "value") else 0,
                     "daily": [
-                        convert_kw(daily_obj[0]["value"]) if 0 in daily_obj else 0,
-                        convert_kw(daily_obj[1]["value"]) if 1 in daily_obj else 0,
-                        convert_kw(daily_obj[2]["value"]) if 2 in daily_obj else 0,
-                        convert_kw(daily_obj[3]["value"]) if 3 in daily_obj else 0,
-                        convert_kw(daily_obj[4]["value"]) if 4 in daily_obj else 0,
-                        convert_kw(daily_obj[5]["value"]) if 5 in daily_obj else 0,
-                        convert_kw(daily_obj[6]["value"]) if 6 in daily_obj else 0
+                        convert_kw(daily_obj[0]["value"]),
+                        convert_kw(daily_obj[1]["value"]),
+                        convert_kw(daily_obj[2]["value"]),
+                        convert_kw(daily_obj[3]["value"]),
+                        convert_kw(daily_obj[4]["value"]),
+                        convert_kw(daily_obj[5]["value"]),
+                        convert_kw(daily_obj[6]["value"])
                     ],
                     "current_week": convert_kw(current_week),
                     "last_week": convert_kw(last_week),
-                    "day_1": convert_kw(daily_obj[0]["value"]) if 0 in daily_obj else 0,
-                    "day_2": convert_kw(daily_obj[1]["value"]) if 1 in daily_obj else 0,
-                    "day_3": convert_kw(daily_obj[2]["value"]) if 2 in daily_obj else 0,
-                    "day_4": convert_kw(daily_obj[3]["value"]) if 3 in daily_obj else 0,
-                    "day_5": convert_kw(daily_obj[4]["value"]) if 4 in daily_obj else 0,
-                    "day_6": convert_kw(daily_obj[5]["value"]) if 5 in daily_obj else 0,
-                    "day_7": convert_kw(daily_obj[6]["value"]) if 6 in daily_obj else 0,
+                    "day_1": convert_kw(daily_obj[0]["value"]),
+                    "day_2": convert_kw(daily_obj[1]["value"]),
+                    "day_3": convert_kw(daily_obj[2]["value"]),
+                    "day_4": convert_kw(daily_obj[3]["value"]),
+                    "day_5": convert_kw(daily_obj[4]["value"]),
+                    "day_6": convert_kw(daily_obj[5]["value"]),
+                    "day_7": convert_kw(daily_obj[6]["value"]),
                     "current_week_last_year": convert_kw(current_week_last_year),
                     "last_month": convert_kw(last_month),
                     "current_month": convert_kw(current_month),
@@ -509,22 +510,22 @@ class HomeAssistant:
                     "current_year": convert_kw(current_year),
                     "current_year_last_year": convert_kw(current_year_last_year),
                     "dailyweek": [
-                        daily_obj[0]["date"].strftime(self.date_format) if 0 in daily_obj else 0,
-                        daily_obj[1]["date"].strftime(self.date_format) if 1 in daily_obj else 0,
-                        daily_obj[2]["date"].strftime(self.date_format) if 2 in daily_obj else 0,
-                        daily_obj[3]["date"].strftime(self.date_format) if 3 in daily_obj else 0,
-                        daily_obj[4]["date"].strftime(self.date_format) if 4 in daily_obj else 0,
-                        daily_obj[5]["date"].strftime(self.date_format) if 5 in daily_obj else 0,
-                        daily_obj[6]["date"].strftime(self.date_format) if 6 in daily_obj else 0,
+                        daily_obj[0]["date"].strftime(self.date_format),
+                        daily_obj[1]["date"].strftime(self.date_format),
+                        daily_obj[2]["date"].strftime(self.date_format),
+                        daily_obj[3]["date"].strftime(self.date_format),
+                        daily_obj[4]["date"].strftime(self.date_format),
+                        daily_obj[5]["date"].strftime(self.date_format),
+                        daily_obj[6]["date"].strftime(self.date_format),
                     ],
                     "dailyweek_cost": [
-                        convert_kw_to_euro(daily_obj[0]["value"], price_base) if 0 in daily_obj else 0,
-                        convert_kw_to_euro(daily_obj[1]["value"], price_base) if 1 in daily_obj else 0,
-                        convert_kw_to_euro(daily_obj[2]["value"], price_base) if 2 in daily_obj else 0,
-                        convert_kw_to_euro(daily_obj[3]["value"], price_base) if 3 in daily_obj else 0,
-                        convert_kw_to_euro(daily_obj[4]["value"], price_base) if 4 in daily_obj else 0,
-                        convert_kw_to_euro(daily_obj[5]["value"], price_base) if 5 in daily_obj else 0,
-                        convert_kw_to_euro(daily_obj[6]["value"], price_base) if 6 in daily_obj else 0,
+                        convert_kw_to_euro(daily_obj[0]["value"], price_base),
+                        convert_kw_to_euro(daily_obj[1]["value"], price_base),
+                        convert_kw_to_euro(daily_obj[2]["value"], price_base),
+                        convert_kw_to_euro(daily_obj[3]["value"], price_base),
+                        convert_kw_to_euro(daily_obj[4]["value"], price_base),
+                        convert_kw_to_euro(daily_obj[5]["value"], price_base),
+                        convert_kw_to_euro(daily_obj[6]["value"], price_base),
                     ],
                     "dailyweek_costHP": [
                         convert_kw_to_euro(dailyweek_hp[0]["value"], price_hp) if 0 in dailyweek_hp else 0,
