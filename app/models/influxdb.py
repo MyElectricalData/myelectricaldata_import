@@ -54,9 +54,35 @@ class InfluxDB:
         app.LOG.log(f"Wipe influxdb database {self.hostname}:{self.port}")
         start = "1970-01-01T00:00:00Z"
         stop = datetime.datetime.utcnow()
-        self.delete_api.delete(start, stop, '_measurement="enedis_daily"', self.bucket,
-                               org=self.org)
-        start = datetime.datetime.utcnow() - relativedelta(years=2)
-        self.delete_api.delete(start, stop, '_measurement="enedis_detail"', self.bucket,
-                               org=self.org)
+        measurement = [
+            "consumption",
+            "production",
+            "consumption_detail",
+            "production_detail",
+        ]
+        for mesure in measurement:
+            self.delete_api.delete(start, stop, f'_measurement="{mesure}"', self.bucket,
+                                   org=self.org)
+        # start = datetime.datetime.utcnow() - relativedelta(years=2)
+        # self.delete_api.delete(start, stop, '_measurement="consumption_detail"', self.bucket,
+        #                        org=self.org)
         app.LOG.log(f" => Data reset")
+
+    def write(self, tags, date=None, fields=None, measurement="log"):
+        if date is None:
+            date_object = datetime.datetime.now()
+        else:
+            date_object = date
+        record = {
+            "measurement": measurement,
+            "time": date_object,
+            "tags": {},
+            "fields": {}
+        }
+        if tags:
+            for key, value in tags.items():
+                record["tags"][key] = value
+        if fields is not None:
+            for key, value in fields.items():
+                record["fields"][key] = value
+        self.write_api.write(bucket=self.bucket, org=self.org, record=record)

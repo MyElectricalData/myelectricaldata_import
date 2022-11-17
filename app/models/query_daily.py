@@ -6,8 +6,6 @@ from config import DAILY_MAX_DAYS, URL
 from dependencies import *
 from models.query import Query
 
-from pprint import  pprint
-
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
@@ -44,8 +42,9 @@ class Daily:
         end_str = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"daily_{self.measure_type}/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
-            endpoint += "/cache"
+        if begin < datetime.datetime.now() - datetime.timedelta(days=7):
+            if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
+                endpoint += "/cache"
         try:
             current_data = self.db.get_daily(self.usage_point_id, begin, end, self.measure_type)
             if not current_data["missing_data"]:

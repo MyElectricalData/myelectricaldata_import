@@ -10,222 +10,233 @@ from templates.models.datatable import Datatable
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
-
+from templates.loading import Loading
 
 class UsagePointId:
 
     def __init__(self, usage_point_id):
-        self.db = app.DB
-        self.application_path = app.APPLICATION_PATH
-        self.usage_point_id = usage_point_id
-        self.current_years = int(datetime.now().strftime("%Y"))
-        self.max_history = 4
-        self.max_history_chart = 6
-        if self.usage_point_id is not None:
-            self.config = self.db.get_usage_point(self.usage_point_id)
-            self.headers = {
-                'Content-Type': 'application/json',
-                'Authorization': self.config.token,
-                'call-service': "myelectricaldata",
-                'version': get_version()
-            }
-        self.usage_point_select = UsagePointSelect(usage_point_id)
-        self.side_menu = SideMenu()
-        menu = {}
-        menu = merge(
-            {
-                "import_data": {
-                    "title": "Importer les données depuis Enedis",
-                    "icon": "file_download",
-                    "css": "background-color: var(--sde-bg-color);",
-                    "ajax": {
-                        "method": "GET",
-                        "url": f'/import/{self.usage_point_id}'
-                    },
+        if not app.DB.lock_status():
+            self.db = app.DB
+            self.application_path = app.APPLICATION_PATH
+            self.usage_point_id = usage_point_id
+            self.current_years = int(datetime.now().strftime("%Y"))
+            self.max_history = 4
+            self.max_history_chart = 6
+            if self.usage_point_id is not None:
+                self.config = self.db.get_usage_point(self.usage_point_id)
+                self.headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': self.config.token,
+                    'call-service': "myelectricaldata",
+                    'version': get_version()
                 }
-            },
-            menu,
-            strategy=Strategy.ADDITIVE)
-        if hasattr(self.config, "consumption") and self.config.consumption:
+            self.usage_point_select = UsagePointSelect(usage_point_id)
+            self.side_menu = SideMenu()
+            menu = {}
             menu = merge(
                 {
-                    "import_daily": {
-                        "title": "Importer la consommation journaliére",
-                        "icon": "electric_bolt",
-                        "css": "background-color: var(--text-color);",
+                    "import_data": {
+                        "title": "Importer les données depuis Enedis",
+                        "icon": "file_download",
+                        "css": "background-color: var(--sde-bg-color);",
+                        "loading_page": "loading_import",
                         "ajax": {
                             "method": "GET",
-                            "url": f'/import/{self.usage_point_id}/consumption'
-                        }
+                            "url": f'/import/{self.usage_point_id}'
+                        },
                     }
                 },
                 menu,
                 strategy=Strategy.ADDITIVE)
-        if hasattr(self.config, "production") and self.config.production:
-            menu = merge(
-                {
-                    "import_production_daily": {
-                        "title": "Importer la production journaliére",
-                        "icon": "solar_power",
-                        "css": "background-color: #F1C40F;",
-                        "ajax": {
-                            "method": "GET",
-                            "url": f'/import/{self.usage_point_id}/production'
+            if hasattr(self.config, "consumption") and self.config.consumption:
+                menu = merge(
+                    {
+                        "import_daily": {
+                            "title": "Importer la consommation journaliére",
+                            "icon": "electric_bolt",
+                            "css": "background-color: var(--text-color);",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/consumption'
+                            }
                         }
-                    }
-                },
-                menu,
-                strategy=Strategy.ADDITIVE)
-        if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
-            menu = merge(
-                {
-                    "import_detail": {
-                        "title": "Importer la consommation détaillé",
-                        "icon": "electric_bolt",
-                        "css": "background-color: var(--text-color);",
-                        "ajax": {
-                            "method": "GET",
-                            "url": f'/import/{self.usage_point_id}/consumption_detail'
-                        }
-                    }
-                },
-                menu,
-                strategy=Strategy.ADDITIVE)
-        if hasattr(self.config, "production_detail") and self.config.production_detail:
-            menu = merge(
-                {
-                    "import_production_detail": {
-                        "title": "Importer la production détaillé",
-                        "icon": "solar_power",
-                        "css": "background-color: #F1C40F;",
-                        "ajax": {
-                            "method": "GET",
-                            "url": f'/import/{self.usage_point_id}/production_detail'
-                        }
-                    }
-                },
-                menu,
-                strategy=Strategy.ADDITIVE)
-        menu = merge(
-            {
-                "delete_data": {
-                    "title": "Supprimer le cache",
-                    "icon": "delete",
-                    "css": "background-color: var(--text-warning);",
-                    "ajax": {
-                        "method": "GET",
-                        "url": f'/reset/{self.usage_point_id}'
                     },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
+            if hasattr(self.config, "production") and self.config.production:
+                menu = merge(
+                    {
+                        "import_production_daily": {
+                            "title": "Importer la production journaliére",
+                            "icon": "solar_power",
+                            "css": "background-color: #F1C40F;",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/production'
+                            }
+                        }
+                    },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
+            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                menu = merge(
+                    {
+                        "import_detail": {
+                            "title": "Importer la consommation détaillé",
+                            "icon": "electric_bolt",
+                            "css": "background-color: var(--text-color);",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/consumption_detail'
+                            }
+                        }
+                    },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
+            if hasattr(self.config, "production_detail") and self.config.production_detail:
+                menu = merge(
+                    {
+                        "import_production_detail": {
+                            "title": "Importer la production détaillé",
+                            "icon": "solar_power",
+                            "css": "background-color: #F1C40F;",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/production_detail'
+                            }
+                        }
+                    },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
+            menu = merge(
+                {
+                    "delete_data": {
+                        "title": "Supprimer le cache",
+                        "icon": "delete",
+                        "css": "background-color: var(--text-warning);",
+                        "loading_page": "loading",
+                        "ajax": {
+                            "method": "GET",
+                            "url": f'/reset/{self.usage_point_id}'
+                        },
+                    },
+                    "config_data": {
+                        "title": "Configuration",
+                        "css": "background-color: var(--success-bg);",
+                        "icon": "settings_applications"
+                    }
                 },
-                "config_data": {
-                    "title": "Configuration",
-                    "css": "background-color: var(--success-bg);",
-                    "icon": "settings_applications"
-                }
-            },
-            menu,
-            strategy=Strategy.ADDITIVE)
-        self.menu = Menu(menu)
-        self.configuration_div = Configuration(f"Modification du point de livraison {self.usage_point_id}",
-                                               self.usage_point_id)
-        self.contract = self.db.get_contract(self.usage_point_id)
-        self.address = self.db.get_addresse(self.usage_point_id)
-        self.javascript = ""
-        self.recap_consumption_data = {}
-        self.recap_production_data = {}
-        self.recap_hc_hp = "Pas de donnée."
-        self.comsumption_datatable = "Pas de donnée."
-        self.production_datatable = "Pas de donnée."
+                menu,
+                strategy=Strategy.ADDITIVE)
+            self.menu = Menu(menu)
+            self.configuration_div = Configuration(f"Modification du point de livraison {self.usage_point_id}",
+                                                   self.usage_point_id)
+            self.contract = self.db.get_contract(self.usage_point_id)
+            self.address = self.db.get_addresse(self.usage_point_id)
+            self.javascript = ""
+            self.recap_consumption_data = {}
+            self.recap_production_data = {}
+            self.recap_hc_hp = "Pas de donnée."
+            self.comsumption_datatable = "Pas de donnée."
+            self.production_datatable = "Pas de donnée."
 
     def display(self):
-
-        address = self.get_address()
-        if address is None:
-            address = "Inconnue"
-        if hasattr(self.config, "name"):
-            title = f"{self.usage_point_id} - {self.config.name}"
+        if app.DB.lock_status():
+            return Loading().display()
         else:
-            title = address
+            address = self.get_address()
+            if address is None:
+                address = "Inconnue"
+            if hasattr(self.config, "name"):
+                title = f"{self.usage_point_id} - {self.config.name}"
+            else:
+                title = address
 
-        with open(f'{self.application_path}/templates/md/usage_point_id.md') as file_:
-            homepage_template = Template(file_.read())
-        body = homepage_template.render(
-            title=title,
-            address=address,
-            contract_data=self.contract_data(),
-            address_data=address,
-        )
-        body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
-        body += self.offpeak_hours_table()
+            with open(f'{self.application_path}/templates/md/usage_point_id.md') as file_:
+                homepage_template = Template(file_.read())
+            body = homepage_template.render(
+                title=title,
+                address=address,
+                contract_data=self.contract_data(),
+                address_data=address,
+            )
+            body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
+            body += self.offpeak_hours_table()
 
-        self.consumption()
-        self.production()
+            self.consumption()
+            self.production()
 
-        body += "<h1>Récapitulatif</h1>"
-        # RECAP CONSUMPTION
-        if hasattr(self.config, "consumption") and self.config.consumption:
-            recap_consumption = self.recap(data=self.recap_consumption_data)
-            body += f"<h2>Consommation</h2>"
-            body += str(recap_consumption)
-            body += '<div id="chart_daily_consumption"></div>'
+            body += "<h1>Récapitulatif</h1>"
+            # RECAP CONSUMPTION
+            if hasattr(self.config, "consumption") and self.config.consumption:
+                recap_consumption = self.recap(data=self.recap_consumption_data)
+                body += f"<h2>Consommation</h2>"
+                body += str(recap_consumption)
+                body += '<div id="chart_daily_consumption"></div>'
 
-        # RATIO HP/HC
-        if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
-            self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id))
-            body += "<h2>Ratio HC/HP</h2>"
-            body += "<table class='table_hchp'><tr>"
-            body += str(self.recap_hc_hp)
-            body += "</tr></table>"
+            # RATIO HP/HC
+            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id))
+                body += "<h2>Ratio HC/HP</h2>"
+                body += "<table class='table_hchp'><tr>"
+                body += str(self.recap_hc_hp)
+                body += "</tr></table>"
 
-        # RECAP PRODUCTION
-        if hasattr(self.config, "production") and self.config.production:
-            recap_production = self.recap(data=self.recap_production_data)
-            body += f"<h2>Production</h2>"
-            body += str(recap_production)
-            body += '<div id="chart_daily_production"></div>'
+            # RECAP PRODUCTION
+            if hasattr(self.config, "production") and self.config.production:
+                recap_production = self.recap(data=self.recap_production_data)
+                body += f"<h2>Production</h2>"
+                body += str(recap_production)
+                body += '<div id="chart_daily_production"></div>'
 
-        # RECAP CONSUMPTION VS PRODUCTION
-        if (
-                hasattr(self.config, "consumption") and self.config.consumption and
-                hasattr(self.config, "production") and self.config.production
-        ):
-            body += "<h2>Consommation VS Production</h2>"
-            body += f'<div>{self.consumption_vs_production()}</div>'
-            body += '<div id="chart_daily_production_compare"></div>'
+            # RECAP CONSUMPTION VS PRODUCTION
+            if (
+                    hasattr(self.config, "consumption") and self.config.consumption and
+                    hasattr(self.config, "production") and self.config.production
+            ):
+                body += "<h2>Consommation VS Production</h2>"
+                body += f'<div>{self.consumption_vs_production()}</div>'
+                body += '<div id="chart_daily_production_compare"></div>'
 
-        body += "<h1>Mes données journalières</h1>"
-        # CONSUMPTION DATATABLE
-        if hasattr(self.config, "consumption") and self.config.consumption and self.comsumption_datatable:
-            body += f"<h2>Consommation</h2>"
-            body += str(self.comsumption_datatable)
+            body += "<h1>Mes données journalières</h1>"
+            # CONSUMPTION DATATABLE
+            if hasattr(self.config, "consumption") and self.config.consumption and self.comsumption_datatable:
+                body += f"<h2>Consommation</h2>"
+                body += str(self.comsumption_datatable)
 
-        # PRODUCTION DATATABLE
-        if hasattr(self.config, "production") and self.config.production and self.production_datatable:
-            body += f"<h2>Production</h2>"
-            body += str(self.production_datatable)
+            # PRODUCTION DATATABLE
+            if hasattr(self.config, "production") and self.config.production and self.production_datatable:
+                body += f"<h2>Production</h2>"
+                body += str(self.production_datatable)
 
-        with open(f'{self.application_path}/templates/html/usage_point_id.html') as file_:
-            index_template = Template(file_.read())
-        html = index_template.render(
-            select_usage_points=self.usage_point_select.html(),
-            javascript_loader=open(f'{self.application_path}/templates/html/head.html').read(),
-            body=body,
-            side_menu=self.side_menu.html(),
-            javascript=(
-                    self.configuration_div.javascript()
-                    + self.side_menu.javascript()
-                    + self.usage_point_select.javascript()
-                    + self.menu.javascript()
-                    + open(f'{self.application_path}/templates/js/notif.js').read()
-                    + open(f'{self.application_path}/templates/js/gateway_status.js').read()
-                    + open(f'{self.application_path}/templates/js/datatable.js').read()
-                    + self.javascript
-            ),
-            configuration=self.configuration_div.html().strip(),
-            menu=self.menu.html(),
-            css=self.menu.css()
-        )
-        return html
+            with open(f'{self.application_path}/templates/html/usage_point_id.html') as file_:
+                index_template = Template(file_.read())
+            html = index_template.render(
+                select_usage_points=self.usage_point_select.html(),
+                javascript_loader=open(f'{self.application_path}/templates/html/head.html').read(),
+                body=body,
+                side_menu=self.side_menu.html(),
+                javascript=(
+                        self.configuration_div.javascript()
+                        + self.side_menu.javascript()
+                        + self.usage_point_select.javascript()
+                        + self.menu.javascript()
+                        + open(f'{self.application_path}/templates/js/loading.js').read()
+                        + open(f'{self.application_path}/templates/js/notif.js').read()
+                        + open(f'{self.application_path}/templates/js/gateway_status.js').read()
+                        + open(f'{self.application_path}/templates/js/datatable.js').read()
+                        + open(f'{self.application_path}/templates/js/loading.js').read()
+                        + self.javascript
+                ),
+                configuration=self.configuration_div.html().strip(),
+                menu=self.menu.html(),
+                css=self.menu.css()
+            )
+            return html
 
     def contract_data(self):
         contract_data = {}
@@ -522,7 +533,7 @@ class UsagePointId:
                     key = f"{current_month}/{self.current_years - 1} => {current_month}/{self.current_years - 2}"
                     if str(key) in linear_years:
                         data_last_years = linear_years[str(key)]
-                        data_last_years = 100 - (round((data_last_years / data) * 100))
+                        data_last_years = round((100 * int(data)) / int(data_last_years) - 100, 2)
                         self.current_years = self.current_years - 1
                         if data_last_years >= 0:
                             if data_last_years == 0:

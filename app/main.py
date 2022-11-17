@@ -31,6 +31,7 @@ LOG.logo(get_version())
 CONFIG.display()
 CONFIG.check()
 DB = Database()
+DB.unlock()
 
 LOG.title("Loading configuration...")
 for usage_point_id, data in CONFIG.list_usage_point().items():
@@ -127,20 +128,23 @@ if __name__ == '__main__':
 
     @APP.route("/", methods=['GET'])
     def main():
-        # return Html().page_index()
         return Index().display()
 
 
     @APP.route('/usage_point_id/<usage_point_id>', methods=['GET'])
     @APP.route('/usage_point_id/<usage_point_id>/', methods=['GET'])
     def usage_point_id(usage_point_id):
-        # return Html(usage_point_id).page_usage_point_id()
         return UsagePointId(usage_point_id).display()
 
 
     # ------------------------------------------------------------------------------------------------------------------
     # BACKGROUND HTML TASK (AJAX)
     # ------------------------------------------------------------------------------------------------------------------
+
+    @APP.route("/lock_status", methods=['GET'])
+    @APP.route("/lock_status/", methods=['GET'])
+    def lock():
+        return str(DB.lock_status())
 
     @APP.route("/gateway_status", methods=['GET'])
     @APP.route("/gateway_status/", methods=['GET'])

@@ -32,7 +32,7 @@ class Mqtt:
         self.qos = qos
 
         self.client = {}
-        self.connect()
+        # self.connect()
 
     def connect(self):
         app.LOG.separator()

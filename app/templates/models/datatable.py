@@ -1,6 +1,9 @@
-from datetime import datetime
+import pytz
+
+from datetime import datetime, timezone
 from dependencies import daterange
 
+utc=pytz.UTC
 
 class Datatable:
 
@@ -33,8 +36,8 @@ class Datatable:
                     "blacklist": data.blacklist,
                     "fail_count": data.fail_count,
                 }
-            start_date = cache_last_date
-            end_date = datetime.now()
+            start_date = utc.localize(cache_last_date)
+            end_date = datetime.now(timezone.utc)
             if start_date:
                 for single_date in daterange(start_date, end_date):
                     year = single_date.strftime("%Y")
@@ -55,8 +58,8 @@ class Datatable:
                     reset = f"""
                     <div id="{tag}_import_{date_text}" name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import">
                         <input type="button" value="Importer"></div>
-                    <div id="{tag}_reset_{date_text}" name="reset_{self.usage_point_id}_{date_text}"  class="datatable_button">
-                        <input type="button" value="Vider" style="display: none"></div>
+                    <div id="{tag}_reset_{date_text}" name="reset_{self.usage_point_id}_{date_text}"  class="datatable_button" style="display: none">
+                        <input type="button" value="Vider"></div>
                     """
 
                     if date_text in all_data:

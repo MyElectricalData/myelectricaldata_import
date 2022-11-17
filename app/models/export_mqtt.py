@@ -20,20 +20,20 @@ class ExportMqtt:
         # DATA FORMATTING
         this_year_watt = 0
         this_year_euro = 0
-        this_year_begin = ""
-        this_year_end = ""
+        this_year_begin = datetime.now()
+        this_year_end = datetime.now()
         this_month_watt = 0
         this_month_euro = 0
-        this_month_begin = ""
-        this_month_end = ""
+        this_month_begin = datetime.now()
+        this_month_end = datetime.now()
         month_watt = {}
         month_euro = {}
         month_begin = {}
         month_end = {}
         week_watt = {}
         week_euro = {}
-        week_begin = ""
-        week_end = ""
+        week_begin = datetime.now()
+        week_end = datetime.now()
         week_idx = 0
         current_month_year = ""
         current_this_month_year = ""
@@ -122,51 +122,57 @@ class ExportMqtt:
     def daily_annual(self, price):
         app.LOG.log("Génération des données annuelles")
         date_range = app.DB.get_daily_date_range(self.usage_point_id)
-        date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-        date_end = datetime.combine(date_range["end"], datetime.max.time())
-        date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1),
-                                                       datetime.min.time())
-        finish = False
-        while not finish:
-            sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
-            self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
-            # CALCUL NEW DATE
-            if date_begin_current == date_begin:
-                finish = True
-            date_end = datetime.combine(
-                (date_end - relativedelta(years=1)).replace(month=12, day=31), datetime.max.time()
-            )
-            date_begin_current = date_begin_current - relativedelta(years=1)
-            if date_begin_current < date_begin:
-                date_begin_current = date_begin
-        app.LOG.log(" => Finish")
+        if date_range["begin"] and date_range["end"]:
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
+            date_end = datetime.combine(date_range["end"], datetime.max.time())
+            date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1),
+                                                           datetime.min.time())
+            finish = False
+            while not finish:
+                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
+                self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
+                # CALCUL NEW DATE
+                if date_begin_current == date_begin:
+                    finish = True
+                date_end = datetime.combine(
+                    (date_end - relativedelta(years=1)).replace(month=12, day=31), datetime.max.time()
+                )
+                date_begin_current = date_begin_current - relativedelta(years=1)
+                if date_begin_current < date_begin:
+                    date_begin_current = date_begin
+            app.LOG.log(" => Finish")
+        else:
+            app.LOG.log(" => No data")
 
     def daily_linear(self, price):
         app.LOG.log("Génération des données linéaires")
         date_range = app.DB.get_daily_date_range(self.usage_point_id)
-        date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-        date_end = datetime.combine(date_range["end"], datetime.max.time())
-        date_begin_current = date_end - relativedelta(years=1)
-        idx = 0
-        finish = False
-        while not finish:
-            if idx == 0:
-                key = "year"
-            else:
-                key = f"year-{idx}"
-            sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/linear/{key}"
-            self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
-            # CALCUL NEW DATE
-            if date_begin_current == date_begin:
-                finish = True
-            date_end = datetime.combine(
-                (date_end - relativedelta(years=1)), datetime.max.time()
-            )
-            date_begin_current = date_begin_current - relativedelta(years=1)
-            if date_begin_current < date_begin:
-                date_begin_current = datetime.combine(date_begin, datetime.min.time())
-            idx = idx + 1
-        app.LOG.log(" => Finish")
+        if date_range["begin"] and date_range["end"]:
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
+            date_end = datetime.combine(date_range["end"], datetime.max.time())
+            date_begin_current = date_end - relativedelta(years=1)
+            idx = 0
+            finish = False
+            while not finish:
+                if idx == 0:
+                    key = "year"
+                else:
+                    key = f"year-{idx}"
+                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/linear/{key}"
+                self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
+                # CALCUL NEW DATE
+                if date_begin_current == date_begin:
+                    finish = True
+                date_end = datetime.combine(
+                    (date_end - relativedelta(years=1)), datetime.max.time()
+                )
+                date_begin_current = date_begin_current - relativedelta(years=1)
+                if date_begin_current < date_begin:
+                    date_begin_current = datetime.combine(date_begin, datetime.min.time())
+                idx = idx + 1
+            app.LOG.log(" => Finish")
+        else:
+            app.LOG.log(" => No data")
 
     def load_detail_data(self, begin, end, price_hp, price_hc, sub_prefix):
         app.LOG.log(f" {begin.strftime(self.date_format)} => {end.strftime(self.date_format)}")
@@ -262,51 +268,57 @@ class ExportMqtt:
             # SEND TO MQTT
             app.MQTT.publish_multiple(mqtt_data, prefix)
 
-    def detail_annual(self, price_hp, price_hc):
+    def detail_annual(self, price_hp, price_hc=0):
         app.LOG.log("Génération des données annuelles détaillées")
         date_range = app.DB.get_detail_date_range(self.usage_point_id)
-        date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-        date_end = datetime.combine(date_range["end"], datetime.max.time())
-        date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1),
-                                                       datetime.min.time())
-        finish = False
-        while not finish:
-            sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
-            self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
-            # CALCUL NEW DATE
-            if date_begin_current == date_begin:
-                finish = True
-            date_end = datetime.combine(
-                (date_end - relativedelta(years=1)).replace(month=12, day=31), datetime.max.time()
-            )
-            date_begin_current = date_begin_current - relativedelta(years=1)
-            if date_begin_current < date_begin:
-                date_begin_current = date_begin
-        app.LOG.log(" => Finish")
+        if date_range["begin"] and date_range["end"]:
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
+            date_end = datetime.combine(date_range["end"], datetime.max.time())
+            date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1),
+                                                           datetime.min.time())
+            finish = False
+            while not finish:
+                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
+                self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
+                # CALCUL NEW DATE
+                if date_begin_current == date_begin:
+                    finish = True
+                date_end = datetime.combine(
+                    (date_end - relativedelta(years=1)).replace(month=12, day=31), datetime.max.time()
+                )
+                date_begin_current = date_begin_current - relativedelta(years=1)
+                if date_begin_current < date_begin:
+                    date_begin_current = date_begin
+            app.LOG.log(" => Finish")
+        else:
+            app.LOG.log(" => No data")
 
-    def detail_linear(self, price_hp, price_hc):
+    def detail_linear(self, price_hp, price_hc=0):
         app.LOG.log("Génération des données linéaires détaillées")
         date_range = app.DB.get_detail_date_range(self.usage_point_id)
-        date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-        date_end = datetime.combine(date_range["end"], datetime.max.time())
-        date_begin_current = date_end - relativedelta(years=1)
-        idx = 0
-        finish = False
-        while not finish:
-            if idx == 0:
-                key = "year"
-            else:
-                key = f"year-{idx}"
-            sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/linear/{key}"
-            self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
-            # CALCUL NEW DATE
-            if date_begin_current == date_begin:
-                finish = True
-            date_end = datetime.combine(
-                (date_end - relativedelta(years=1)), datetime.max.time()
-            )
-            date_begin_current = date_begin_current - relativedelta(years=1)
-            if date_begin_current < date_begin:
-                date_begin_current = datetime.combine(date_begin, datetime.min.time())
-            idx = idx + 1
-        app.LOG.log(" => Finish")
+        if date_range["begin"] and date_range["end"]:
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
+            date_end = datetime.combine(date_range["end"], datetime.max.time())
+            date_begin_current = date_end - relativedelta(years=1)
+            idx = 0
+            finish = False
+            while not finish:
+                if idx == 0:
+                    key = "year"
+                else:
+                    key = f"year-{idx}"
+                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/linear/{key}"
+                self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
+                # CALCUL NEW DATE
+                if date_begin_current == date_begin:
+                    finish = True
+                date_end = datetime.combine(
+                    (date_end - relativedelta(years=1)), datetime.max.time()
+                )
+                date_begin_current = date_begin_current - relativedelta(years=1)
+                if date_begin_current < date_begin:
+                    date_begin_current = datetime.combine(date_begin, datetime.min.time())
+                idx = idx + 1
+            app.LOG.log(" => Finish")
+        else:
+            app.LOG.log(" => No data")

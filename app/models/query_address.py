@@ -64,6 +64,8 @@ class Address:
             if hasattr(self.usage_point_config, "refresh_addresse") and self.usage_point_config.refresh_addresse:
                 app.LOG.log(f" => Refresh Cache")
                 result = self.run()
+                self.usage_point_config.refresh_addresse = False
+                app.DB.set_usage_point(self.usage_point_id, self.usage_point_config.__dict__)
             else:
                 # Get data in cache
                 app.LOG.log(f" => Query Cache")

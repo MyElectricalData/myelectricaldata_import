@@ -200,6 +200,9 @@ class Config:
             f.truncate()
         self.usage_point_config = yaml.load(text, Loader=yaml.FullLoader)
 
+    # def reload(self):
+
+
     def mqtt_config(self):
         if "mqtt" in self.usage_point_config:
             return self.usage_point_config["mqtt"]
@@ -234,7 +237,6 @@ class Config:
             if value is None or value == "None":
                 value = ""
             self.usage_point_config["myelectricaldata"][usage_point_id][key] = str(value)
-            app.DB.set_config(usage_point_id, self.usage_point_config["myelectricaldata"][usage_point_id])
             with open(self.path_file, 'w') as outfile:
                 yaml.dump(self.usage_point_config, outfile, default_flow_style=False)
         else:

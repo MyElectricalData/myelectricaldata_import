@@ -87,6 +87,8 @@ class Contract:
             if hasattr(self.usage_point_config, "refresh_contract") and self.usage_point_config.refresh_contract:
                 app.LOG.log(f" => Refresh Cache")
                 result = self.run()
+                self.usage_point_config.refresh_contract = False
+                app.DB.set_usage_point(self.usage_point_id, self.usage_point_config.__dict__)
             else:
                 # Get data in cache
                 app.LOG.log(f" => Query Cache")

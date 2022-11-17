@@ -63,6 +63,11 @@ class Log:
         else:
             self.logging.warning(f" {message}")
 
+    def title_warning(self, message):
+        self.separator_warning()
+        self.logging.warning(f" {message.upper()}")
+        self.separator_warning()
+
     def exception(self, message):
         self.logging.exception(message)
 
@@ -92,7 +97,7 @@ class Log:
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
     def separator_warning(self):
-        self.logging.info(
+        self.logging.warning(
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
     def logo(self, version):

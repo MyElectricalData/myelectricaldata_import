@@ -180,13 +180,13 @@ class Configuration:
                 strategy=Strategy.ADDITIVE)
 
     def html(self):
-        configuration = f"""
-<div id="configuration" title="{self.title}" style="display: none">
-    <form id="formConfiguration" action="/configuration/{self.usage_point_id}" method="POST"> 
-        <table class="table_configuration">     
-"""
         current_cat = ""
         if self.usage_point_id != 0:
+            configuration = f"""
+            <div id="configuration" title="{self.title}" style="display: none">
+                <form id="formConfiguration" action="/configuration/{self.usage_point_id}" method="POST"> 
+                    <table class="table_configuration">     
+            """
             config = app.DB.get_usage_point(self.usage_point_id)
             contract = app.DB.get_contract(self.usage_point_id)
             current_cat = ""
@@ -246,6 +246,11 @@ class Configuration:
                             <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>'''
                         configuration += '</tr>'
         else:
+            configuration = f"""
+            <div id="configuration" title="{self.title}" style="display: none">
+                <form id="formConfiguration" action="/new_account" method="POST"> 
+                    <table class="table_configuration">     
+            """
             for cat, cat_data in self.config.items():
                 for key, data in cat_data.items():
                     if current_cat != cat:

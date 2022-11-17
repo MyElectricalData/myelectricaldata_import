@@ -32,14 +32,20 @@ class Menu:
                 javascript += f'''
 $("#{id}").click(function () {{
     $("#bottom_menu").removeClass("active")
-    $.LoadingOverlay("show", loadingOption);
+    $.LoadingOverlay("show", {items['loading_page']});
     $.ajax({{
         type: '{items["ajax"]["method"]}',
         url: '{items["ajax"]["url"]}'
     }})
         .done(function (data) {{
             $.LoadingOverlay("hide");
-            location.reload();
+            data = JSON.parse(JSON.stringify(data))
+            let status = data["result"]["status"];
+            if (status == false) {{
+                
+            }}else{{
+                location.reload();
+            }}
         }})
 }});            
 '''

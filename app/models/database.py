@@ -1,12 +1,14 @@
 import datetime
 import json
 import os
-from datetime import timedelta
+import sys
+from datetime import datetime, timedelta
 
 from dependencies import str2bool
 from models.config import get_version
 from models.log import Log
-from sqlalchemy import (Column, ForeignKey, Float, Integer, Text, Boolean, create_engine, delete, inspect, select, DateTime)
+from sqlalchemy import (Column, ForeignKey, Float, Integer, Text, Boolean, create_engine, delete, inspect, select,
+                        DateTime)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -16,7 +18,6 @@ Base = declarative_base()  # Required
 
 LOG = Log()
 
-
 class Database:
     def __init__(self, path="/data"):
         self.path = path
@@ -24,30 +25,100 @@ class Database:
         self.db_path = f"{self.path}/{self.db_name}"
         self.uri = f'sqlite:///{self.db_path}?check_same_thread=False'
 
-        self.engine = create_engine(self.uri, echo=False)
+        self.engine = create_engine(self.uri, echo=False, query_cache_size=0)
         Base.metadata.create_all(self.engine, checkfirst=True)
-        Session = sessionmaker(self.engine)
-        self.session = Session(autocommit=True, autoflush=True)
+        self.session = sessionmaker(self.engine)(autocommit=True, autoflush=True)
         self.inspector = inspect(self.engine)
-        self.init_database()
-        # print(self.get_consumption_daily_state("01234567891234", "2010-04-09"))
+
+        # MIGRATE v7 to v8
+        if os.path.isfile(f"{self.path}/enedisgateway.db"):
+            LOG.title_warning("Migration de l'ancienne base de données vers la nouvelle structure.")
+            self.migratev7tov8()
+
+    def migratev7tov8(self):
+        uri = f'sqlite:///{self.path}/enedisgateway.db'
+        engine = create_engine(uri, echo=False, query_cache_size=0)
+        session = sessionmaker(engine)(autocommit=True, autoflush=True)
+
+        for mesure_type in ["consumption", "production"]:
+            LOG.warning(f'Migration des "{mesure_type}_daily"')
+            if mesure_type == "consumption":
+                table = ConsumptionDaily
+            else:
+                table = ProductionDaily
+            daily_data = session.execute(f"select * from {mesure_type}_daily order by date").all()
+            current_date = ""
+            year_value = 0
+            bulk_insert = []
+            for daily in daily_data:
+                usage_point_id = daily[0]
+                date = datetime.strptime(daily[1], "%Y-%m-%d")
+                value = daily[2]
+                year_value = year_value + value
+                bulk_insert.append(table(
+                    usage_point_id=usage_point_id,
+                    date=date,
+                    value=value,
+                    blacklist=0,
+                    fail_count=0
+                ))
+                if current_date != date.strftime("%Y"):
+                    LOG.warning(f" - {date.strftime('%Y')} => {round(year_value/1000, 2)}kW")
+                    current_date = date.strftime("%Y")
+                    year_value = 0
+            self.session.add_all(bulk_insert)
+
+            LOG.warning(f'Migration des "{mesure_type}_detail"')
+            if mesure_type == "consumption":
+                table = ConsumptionDetail
+            else:
+                table = ProductionDetail
+            detail_data = session.execute(f"select * from {mesure_type}_detail order by date").all()
+            current_date = ""
+            day_value = 0
+            bulk_insert = []
+            for detail in detail_data:
+                usage_point_id = detail[0]
+                date = datetime.strptime(detail[1], "%Y-%m-%d %H:%M:%S") - timedelta(minutes=30)
+                value = detail[2]
+                interval = detail[3]
+                measure_type = detail[4]
+                day_value = day_value + value / (60 / interval)
+                bulk_insert.append(table(
+                    usage_point_id=usage_point_id,
+                    date=date,
+                    value=value,
+                    interval=interval,
+                    measure_type=measure_type,
+                    blacklist=0,
+                    fail_count=0
+                ))
+                if current_date != date.strftime("%m"):
+                    LOG.warning(f" - {date.strftime('%Y-%m')} => {round(day_value/1000,2)}kW")
+                    current_date = date.strftime("%m")
+                    day_value = 0
+            self.session.add_all(bulk_insert)
+
+        os.replace(f"{self.path}/enedisgateway.db", f"{self.path}/enedisgateway.db.migrate")
+
+        # sys.exit()
 
     def init_database(self):
         LOG.log("Configure Databases")
         query = select(Config).where(Config.key == "day")
         day = self.session.scalars(query).one_or_none()
         if day:
-            day.value = datetime.datetime.now().strftime('%Y-%m-%d')
+            day.value = datetime.now().strftime('%Y-%m-%d')
         else:
-            self.session.add(Config(key="day", value=datetime.datetime.now().strftime('%Y-%m-%d')))
+            self.session.add(Config(key="day", value=datetime.now().strftime('%Y-%m-%d')))
         LOG.log(" => day")
         query = select(Config).where(Config.key == "call_number")
         if not self.session.scalars(query).one_or_none():
-            self.session.add(Config(key="call_number", value=0))
+            self.session.add(Config(key="call_number", value="0"))
         LOG.log(" => call_number")
         query = select(Config).where(Config.key == "max_call")
         if not self.session.scalars(query).one_or_none():
-            self.session.add(Config(key="max_call", value=500))
+            self.session.add(Config(key="max_call", value="500"))
         LOG.log(" => max_call")
         query = select(Config).where(Config.key == "version")
         version = self.session.scalars(query).one_or_none()
@@ -58,11 +129,11 @@ class Database:
         LOG.log(" => version")
         query = select(Config).where(Config.key == "lock")
         if not self.session.scalars(query).one_or_none():
-            self.session.add(Config(key="lock", value=0))
+            self.session.add(Config(key="lock", value="0"))
         LOG.log(" => lock")
         query = select(Config).where(Config.key == "lastUpdate")
         if not self.session.scalars(query).one_or_none():
-            self.session.add(Config(key="lastUpdate", value=str(datetime.datetime.now())))
+            self.session.add(Config(key="lastUpdate", value=str(datetime.now())))
         LOG.log(" => lastUpdate")
         LOG.log(" Success")
 
@@ -77,7 +148,7 @@ class Database:
 
     def lock_status(self):
         query = select(Config).where(Config.key == "lock")
-        if self.session.scalars(query).one_or_none() == "1":
+        if str(self.session.scalars(query).one_or_none()) == "1":
             return True
         else:
             return False
@@ -94,10 +165,6 @@ class Database:
         lock.value = "0"
         return self.lock_status()
 
-    # def get_usage_points_id(self):
-    #     query = select(Contracts)
-    #     return self.session.scalars(query).one_or_none()
-
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONFIG
     ## ----------------------------------------------------------------------------------------------------------------
@@ -112,6 +179,7 @@ class Database:
             config.value = json.dumps(value)
         else:
             self.session.add(Config(key=key, value=json.dumps(value)))
+        self.session.expire_all()
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## USAGE POINTS
@@ -179,6 +247,14 @@ class Database:
                     token=data["token"]
                 )
             )
+
+    def progress(self, usage_point_id, increment):
+        query = (
+            select(UsagePoints)
+            .where(UsagePoints.usage_point_id == usage_point_id)
+        )
+        usage_points = self.session.scalars(query).one_or_none()
+        usage_points.progress = usage_points.progress + increment
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## ADDRESSES
@@ -283,7 +359,6 @@ class Database:
                     count=count
                 )
             )
-
     ## ----------------------------------------------------------------------------------------------------------------
     ## DAILY
     ## ----------------------------------------------------------------------------------------------------------------
@@ -379,7 +454,11 @@ class Database:
             return current_data.date
 
     def get_daily_fail_count(self, usage_point_id, date, mesure_type="consumption"):
-        return self.get_daily_date(usage_point_id, date, mesure_type).fail_count
+        result = self.get_daily_date(usage_point_id, date, mesure_type)
+        if hasattr(result, "fail_count"):
+            return result.fail_count
+        else:
+            return 0
 
     def daily_fail_increment(self, usage_point_id, date, mesure_type="consumption"):
         if mesure_type == "consumption":
@@ -441,7 +520,6 @@ class Database:
         else:
             return current_data
 
-
     def get_daily(self, usage_point_id, begin, end, mesure_type="consumption"):
         delta = end - begin
         result = {
@@ -451,7 +529,7 @@ class Database:
         }
         for i in range(delta.days + 1):
             checkDate = begin + timedelta(days=i)
-            checkDate = datetime.datetime.combine(checkDate, datetime.datetime.min.time())
+            checkDate = datetime.combine(checkDate, datetime.min.time())
             query_result = self.get_daily_date(usage_point_id, checkDate, mesure_type)
             checkDate = checkDate.strftime('%Y-%m-%d')
             # print(query_result)
@@ -624,9 +702,7 @@ class Database:
             return current_data
 
     def get_detail(self, usage_point_id, begin, end, mesure_type="consumption"):
-        dateBegin = datetime.datetime.strptime(begin, '%Y-%m-%d')
-        dateEnded = datetime.datetime.strptime(end, '%Y-%m-%d')
-        delta = dateEnded - dateBegin
+        delta = begin - begin
 
         result = {
             "missing_data": False,
@@ -680,6 +756,7 @@ class Database:
         self.session.execute(
             table.__table__.delete().filter(ConsumptionDetail.date.between(begin, end))
         )
+        print(data)
         self.session.add_all(data)
 
     def insert_detail(self, usage_point_id, date, value, interval, measure_type, blacklist=0, fail_count=0,
@@ -823,6 +900,7 @@ class Database:
             "end": self.get_detail_first_date(usage_point_id)
         }
 
+
 class Config(Base):
     __tablename__ = 'config'
 
@@ -928,6 +1006,10 @@ class UsagePoints(Base):
     token = Column(Text,
                    nullable=False
                    )
+    progress = Column(Integer,
+                      nullable=False,
+                      default="0"
+                      )
 
     relation_addressess = relationship("Addresses", back_populates="usage_point")
     relation_contract = relationship("Contracts", back_populates="usage_point")
@@ -961,7 +1043,6 @@ class UsagePoints(Base):
                f"refresh_contract={self.refresh_contract!r}, " \
                f"token={self.token!r}, " \
                f")"
-
 
 class Addresses(Base):
     __tablename__ = 'addresses'
@@ -1321,3 +1402,6 @@ class Statistique(Base):
                f"key={self.key!r}," \
                f"value={self.value!r}, " \
                f")"
+
+
+Database().init_database()

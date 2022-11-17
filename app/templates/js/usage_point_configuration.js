@@ -65,24 +65,20 @@ $("#formConfiguration").validate({
     }
 });
 
-var loadingOption = {
-    imageColor: "#3498DB",
-    fontawesomeColor: "#3498DB",
-    textColor: "#3498DB",
-    imageOrder: 3,
-    text: "Chargement...",
-    textOrder: 2,
-    progress: true
-};
-
 function sendForm() {
     console.log($('#usage_point_id').val())
     if ($('#formConfiguration').valid()) {
-        $.LoadingOverlay("show", loadingOption);
+        $.LoadingOverlay("show", loading);
         var formData = { {{configurationInput}} };
+        var usage_poind_id = $('#usage_point_id').val()
+        if (usage_poind_id == undefined) {
+            var url = "/new_account"
+        }else{
+            var url = "/configuration/"+$('#usage_point_id').val()
+        }
         $.ajax({
             type: "POST",
-            url: "/configuration/"+$('#usage_point_id').val(),
+            url: url,
             data: formData,
             dataType: "json",
             encode: true,

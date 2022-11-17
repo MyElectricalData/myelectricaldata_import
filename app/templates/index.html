@@ -175,7 +175,7 @@
             let usage_point_id = $("#usage_point_id").val()
             $("#import_data").click(function () {
                 $("#bottom_menu").removeClass("active")
-                $.LoadingOverlay("show", loadingOption);
+                $.LoadingOverlay("show", loading);
                 $.ajax({
                     type: 'GET',
                     url: '/import/' + usage_point_id
@@ -187,7 +187,7 @@
             });
             $("#delete_data").click(function () {
                 $("#bottom_menu").removeClass("active")
-                $.LoadingOverlay("show", loadingOption);
+                $.LoadingOverlay("show", loading);
                 $.ajax({
                     type: 'GET',
                     url: '/reset/' + usage_point_id
@@ -223,19 +223,8 @@
                     }
                 });
             });
-            // $("#select_usage_point_id").niceSelect()
-            // $("#select_type").niceSelect()
-            var loadingOption  = {
-                imageColor: "#3498DB",
-                fontawesomeColor: "#3498DB",
-                textColor: "#3498DB",
-                imageOrder: 3,
-                text: "Chargement...",
-                textOrder: 2,
-                progress: true
-            }
             $("#select_usage_point_id").change(function () {
-                $.LoadingOverlay("show", loadingOption);
+                $.LoadingOverlay("show", loading);
                 location.href = "/usage_point_id/" + $("#select_usage_point_id").val();
             });
             let french = {
@@ -377,7 +366,7 @@
             function sendForm() {
                 console.log($('#configuration').data('url'))
                 if ($('#formConfiguration').valid()) {
-                    $.LoadingOverlay("show", loadingOption);
+                    $.LoadingOverlay("show", loading);
                     var formData = { {{configurationInput}} };
                     $.ajax({
                         type: "POST",

@@ -15,12 +15,19 @@ class Ajax:
         self.usage_point_id = usage_point_id
         if self.usage_point_id is not None:
             self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
-            self.headers = {
-                'Content-Type': 'application/json',
-                'Authorization': self.usage_point_config.token,
-                'call-service': "myelectricaldata",
-                'version': get_version()
-            }
+            if hasattr(self.usage_point_config, "token"):
+                self.headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': self.usage_point_config.token,
+                    'call-service': "myelectricaldata",
+                    'version': get_version()
+                }
+            else:
+                self.headers = {
+                    'Content-Type': 'application/json',
+                    'call-service': "myelectricaldata",
+                    'version': get_version()
+                }
         self.usage_points_id_list = ""
 
     def gateway_status(self):
@@ -303,15 +310,16 @@ class Ajax:
             }
 
     def new_account(self, configs):
-        app.LOG.title(f"[{configs['usage_point_id']}] Ajout d'un nouveau point de livraison:")
         self.usage_point_id = configs['usage_point_id']
+        app.LOG.title(f"[{self.usage_point_id}] Ajout d'un nouveau point de livraison:")
         output = {}
         for key, value in configs.items():
-            if value is None or value == "None":
-                value = ""
-            app.LOG.log(f"{str(key)} => {str(value)}")
-            output[key] = value
-            app.CONFIG.set_usage_point_config(self.usage_point_id, key, value)
+            if key != "usage_point_id":
+                if value is None or value == "None":
+                    value = ""
+                app.LOG.log(f"{str(key)} => {str(value)}")
+                output[key] = value
+                app.CONFIG.set_usage_point_config(self.usage_point_id, key, value)
         app.DB.set_usage_point(self.usage_point_id, output)
         return output
 
