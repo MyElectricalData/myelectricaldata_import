@@ -4,7 +4,7 @@ var loading_import = {
     fontawesomeColor: "#F1C40F",
     textColor: "#F1C40F",
     imageOrder: 1,
-    text: "Importation des données en cours",
+    text: "Import des données en cours...",
     textOrder: 2,
     custom: "<div style='color: #F1C40F; font-size: 20px'>Merci&nbsp;d'attendre&nbsp;la&nbsp;fin&nbsp;du&nbsp;traitement...</div>",
     customOrder: 3,

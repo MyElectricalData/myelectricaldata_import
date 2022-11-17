@@ -42,7 +42,7 @@ class HomeAssistant:
         else:
             self.hourly = self.config_ha_config["hourly"]
 
-        self.topic = f"{self.discovery_prefix}/myelectricaldata/{self.usage_point_id}"
+        self.topic = f"{self.discovery_prefix}/sensor/myelectricaldata/{self.usage_point_id}"
 
     def export(self, price_base, price_hp, price_hc):
 
@@ -55,7 +55,7 @@ class HomeAssistant:
             return round(value / 1000 * price, 1)
 
         config = {
-            f"{self.topic}/config": json.dumps(
+            f"config": json.dumps(
                 {
                     "name": f"myelectricaldata_{self.usage_point_id}",
                     "uniq_id": f"myelectricaldata.{self.usage_point_id}",
@@ -72,7 +72,7 @@ class HomeAssistant:
                     }
                 })
         }
-        app.MQTT.publish_multiple(config)
+        app.MQTT.publish_multiple(config, self.topic)
         state = app.DB.get_daily_last(self.usage_point_id, self.mesure_type)
         if state:
             state = state.value
@@ -80,8 +80,8 @@ class HomeAssistant:
             state = 0
 
         app.MQTT.publish_multiple({
-            f"{self.topic}/state": convert_kw(state)
-        })
+            f"state": convert_kw(state)
+        }, self.topic)
 
         now = datetime.now(timezone.utc)
         contract = app.DB.get_contract(self.usage_point_id)
@@ -472,7 +472,7 @@ class HomeAssistant:
 
         yesterdayLastYear = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
         config = {
-            f"{self.topic}/attributes": json.dumps(
+            f"attributes": json.dumps(
                 {
                     "numPDL": self.usage_point_id,
                     "activationDate": contract.last_activation_date.strftime(self.date_format_detail),
@@ -483,23 +483,23 @@ class HomeAssistant:
                     "yesterdayLastYearDate": (now - relativedelta(years=1)).strftime(self.date_format),
                     "yesterdayLastYear": convert_kw(yesterdayLastYear.value) if hasattr(yesterdayLastYear, "value") else 0,
                     "daily": [
-                        convert_kw(daily_obj[0]["value"]),
-                        convert_kw(daily_obj[1]["value"]),
-                        convert_kw(daily_obj[2]["value"]),
-                        convert_kw(daily_obj[3]["value"]),
-                        convert_kw(daily_obj[4]["value"]),
-                        convert_kw(daily_obj[5]["value"]),
-                        convert_kw(daily_obj[6]["value"])
+                        convert_kw(daily_obj[0]["value"]) if 0 in daily_obj else 0,
+                        convert_kw(daily_obj[1]["value"]) if 1 in daily_obj else 0,
+                        convert_kw(daily_obj[2]["value"]) if 2 in daily_obj else 0,
+                        convert_kw(daily_obj[3]["value"]) if 3 in daily_obj else 0,
+                        convert_kw(daily_obj[4]["value"]) if 4 in daily_obj else 0,
+                        convert_kw(daily_obj[5]["value"]) if 5 in daily_obj else 0,
+                        convert_kw(daily_obj[6]["value"]) if 6 in daily_obj else 0
                     ],
                     "current_week": convert_kw(current_week),
                     "last_week": convert_kw(last_week),
-                    "day_1": convert_kw(daily_obj[0]["value"]),
-                    "day_2": convert_kw(daily_obj[1]["value"]),
-                    "day_3": convert_kw(daily_obj[2]["value"]),
-                    "day_4": convert_kw(daily_obj[3]["value"]),
-                    "day_5": convert_kw(daily_obj[4]["value"]),
-                    "day_6": convert_kw(daily_obj[5]["value"]),
-                    "day_7": convert_kw(daily_obj[6]["value"]),
+                    "day_1": convert_kw(daily_obj[0]["value"]) if 0 in daily_obj else 0,
+                    "day_2": convert_kw(daily_obj[1]["value"]) if 1 in daily_obj else 0,
+                    "day_3": convert_kw(daily_obj[2]["value"]) if 2 in daily_obj else 0,
+                    "day_4": convert_kw(daily_obj[3]["value"]) if 3 in daily_obj else 0,
+                    "day_5": convert_kw(daily_obj[4]["value"]) if 4 in daily_obj else 0,
+                    "day_6": convert_kw(daily_obj[5]["value"]) if 5 in daily_obj else 0,
+                    "day_7": convert_kw(daily_obj[6]["value"]) if 6 in daily_obj else 0,
                     "current_week_last_year": convert_kw(current_week_last_year),
                     "last_month": convert_kw(last_month),
                     "current_month": convert_kw(current_month),
@@ -509,78 +509,78 @@ class HomeAssistant:
                     "current_year": convert_kw(current_year),
                     "current_year_last_year": convert_kw(current_year_last_year),
                     "dailyweek": [
-                        daily_obj[0]["date"].strftime(self.date_format),
-                        daily_obj[1]["date"].strftime(self.date_format),
-                        daily_obj[2]["date"].strftime(self.date_format),
-                        daily_obj[3]["date"].strftime(self.date_format),
-                        daily_obj[4]["date"].strftime(self.date_format),
-                        daily_obj[5]["date"].strftime(self.date_format),
-                        daily_obj[6]["date"].strftime(self.date_format),
+                        daily_obj[0]["date"].strftime(self.date_format) if 0 in daily_obj else 0,
+                        daily_obj[1]["date"].strftime(self.date_format) if 1 in daily_obj else 0,
+                        daily_obj[2]["date"].strftime(self.date_format) if 2 in daily_obj else 0,
+                        daily_obj[3]["date"].strftime(self.date_format) if 3 in daily_obj else 0,
+                        daily_obj[4]["date"].strftime(self.date_format) if 4 in daily_obj else 0,
+                        daily_obj[5]["date"].strftime(self.date_format) if 5 in daily_obj else 0,
+                        daily_obj[6]["date"].strftime(self.date_format) if 6 in daily_obj else 0,
                     ],
                     "dailyweek_cost": [
-                        convert_kw_to_euro(daily_obj[0]["value"], price_base),
-                        convert_kw_to_euro(daily_obj[1]["value"], price_base),
-                        convert_kw_to_euro(daily_obj[2]["value"], price_base),
-                        convert_kw_to_euro(daily_obj[3]["value"], price_base),
-                        convert_kw_to_euro(daily_obj[4]["value"], price_base),
-                        convert_kw_to_euro(daily_obj[5]["value"], price_base),
-                        convert_kw_to_euro(daily_obj[6]["value"], price_base),
+                        convert_kw_to_euro(daily_obj[0]["value"], price_base) if 0 in daily_obj else 0,
+                        convert_kw_to_euro(daily_obj[1]["value"], price_base) if 1 in daily_obj else 0,
+                        convert_kw_to_euro(daily_obj[2]["value"], price_base) if 2 in daily_obj else 0,
+                        convert_kw_to_euro(daily_obj[3]["value"], price_base) if 3 in daily_obj else 0,
+                        convert_kw_to_euro(daily_obj[4]["value"], price_base) if 4 in daily_obj else 0,
+                        convert_kw_to_euro(daily_obj[5]["value"], price_base) if 5 in daily_obj else 0,
+                        convert_kw_to_euro(daily_obj[6]["value"], price_base) if 6 in daily_obj else 0,
                     ],
                     "dailyweek_costHP": [
-                        convert_kw_to_euro(dailyweek_hp[0]["value"], price_hp),
-                        convert_kw_to_euro(dailyweek_hp[1]["value"], price_hp),
-                        convert_kw_to_euro(dailyweek_hp[2]["value"], price_hp),
-                        convert_kw_to_euro(dailyweek_hp[3]["value"], price_hp),
-                        convert_kw_to_euro(dailyweek_hp[4]["value"], price_hp),
-                        convert_kw_to_euro(dailyweek_hp[5]["value"], price_hp),
-                        convert_kw_to_euro(dailyweek_hp[6]["value"], price_hp),
+                        convert_kw_to_euro(dailyweek_hp[0]["value"], price_hp) if 0 in dailyweek_hp else 0,
+                        convert_kw_to_euro(dailyweek_hp[1]["value"], price_hp) if 1 in dailyweek_hp else 0,
+                        convert_kw_to_euro(dailyweek_hp[2]["value"], price_hp) if 2 in dailyweek_hp else 0,
+                        convert_kw_to_euro(dailyweek_hp[3]["value"], price_hp) if 3 in dailyweek_hp else 0,
+                        convert_kw_to_euro(dailyweek_hp[4]["value"], price_hp) if 4 in dailyweek_hp else 0,
+                        convert_kw_to_euro(dailyweek_hp[5]["value"], price_hp) if 5 in dailyweek_hp else 0,
+                        convert_kw_to_euro(dailyweek_hp[6]["value"], price_hp) if 6 in dailyweek_hp else 0,
                     ],
                     "dailyweek_HP": [
-                        convert_kw(dailyweek_hp[0]["value"]),
-                        convert_kw(dailyweek_hp[1]["value"]),
-                        convert_kw(dailyweek_hp[2]["value"]),
-                        convert_kw(dailyweek_hp[3]["value"]),
-                        convert_kw(dailyweek_hp[4]["value"]),
-                        convert_kw(dailyweek_hp[5]["value"]),
-                        convert_kw(dailyweek_hp[6]["value"]),
+                        convert_kw(dailyweek_hp[0]["value"]) if 0 in dailyweek_hp else 0,
+                        convert_kw(dailyweek_hp[1]["value"]) if 1 in dailyweek_hp else 0,
+                        convert_kw(dailyweek_hp[2]["value"]) if 2 in dailyweek_hp else 0,
+                        convert_kw(dailyweek_hp[3]["value"]) if 3 in dailyweek_hp else 0,
+                        convert_kw(dailyweek_hp[4]["value"]) if 4 in dailyweek_hp else 0,
+                        convert_kw(dailyweek_hp[5]["value"]) if 5 in dailyweek_hp else 0,
+                        convert_kw(dailyweek_hp[6]["value"]) if 6 in dailyweek_hp else 0,
                     ],
                     "daily_cost": convert_kw_to_euro(daily_obj[0]["value"], price_base),
                     "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp, price_hp),
                     "yesterday_HP": convert_kw(yesterday_hp),
-                    "day_1_HP": dailyweek_hp[0]["value"],
-                    "day_2_HP": dailyweek_hp[1]["value"],
-                    "day_3_HP": dailyweek_hp[2]["value"],
-                    "day_4_HP": dailyweek_hp[3]["value"],
-                    "day_5_HP": dailyweek_hp[4]["value"],
-                    "day_6_HP": dailyweek_hp[5]["value"],
-                    "day_7_HP": dailyweek_hp[6]["value"],
+                    "day_1_HP": dailyweek_hp[0]["value"] if 0 in dailyweek_hp else 0,
+                    "day_2_HP": dailyweek_hp[1]["value"] if 1 in dailyweek_hp else 0,
+                    "day_3_HP": dailyweek_hp[2]["value"] if 2 in dailyweek_hp else 0,
+                    "day_4_HP": dailyweek_hp[3]["value"] if 3 in dailyweek_hp else 0,
+                    "day_5_HP": dailyweek_hp[4]["value"] if 4 in dailyweek_hp else 0,
+                    "day_6_HP": dailyweek_hp[5]["value"] if 5 in dailyweek_hp else 0,
+                    "day_7_HP": dailyweek_hp[6]["value"] if 6 in dailyweek_hp else 0,
                     "dailyweek_costHC": [
-                        convert_kw_to_euro(dailyweek_hc[0]["value"], price_hc),
-                        convert_kw_to_euro(dailyweek_hc[1]["value"], price_hc),
-                        convert_kw_to_euro(dailyweek_hc[2]["value"], price_hc),
-                        convert_kw_to_euro(dailyweek_hc[3]["value"], price_hc),
-                        convert_kw_to_euro(dailyweek_hc[4]["value"], price_hc),
-                        convert_kw_to_euro(dailyweek_hc[5]["value"], price_hc),
-                        convert_kw_to_euro(dailyweek_hc[6]["value"], price_hc),
+                        convert_kw_to_euro(dailyweek_hc[0]["value"], price_hc) if 0 in dailyweek_hc else 0,
+                        convert_kw_to_euro(dailyweek_hc[1]["value"], price_hc) if 1 in dailyweek_hc else 0,
+                        convert_kw_to_euro(dailyweek_hc[2]["value"], price_hc) if 2 in dailyweek_hc else 0,
+                        convert_kw_to_euro(dailyweek_hc[3]["value"], price_hc) if 3 in dailyweek_hc else 0,
+                        convert_kw_to_euro(dailyweek_hc[4]["value"], price_hc) if 4 in dailyweek_hc else 0,
+                        convert_kw_to_euro(dailyweek_hc[5]["value"], price_hc) if 5 in dailyweek_hc else 0,
+                        convert_kw_to_euro(dailyweek_hc[6]["value"], price_hc) if 6 in dailyweek_hc else 0,
                     ],
                     "dailyweek_HC": [
-                        convert_kw(dailyweek_hc[0]["value"]),
-                        convert_kw(dailyweek_hc[1]["value"]),
-                        convert_kw(dailyweek_hc[2]["value"]),
-                        convert_kw(dailyweek_hc[3]["value"]),
-                        convert_kw(dailyweek_hc[4]["value"]),
-                        convert_kw(dailyweek_hc[5]["value"]),
-                        convert_kw(dailyweek_hc[6]["value"]),
+                        convert_kw(dailyweek_hc[0]["value"] if 0 in dailyweek_hc else 0),
+                        convert_kw(dailyweek_hc[1]["value"] if 1 in dailyweek_hc else 0),
+                        convert_kw(dailyweek_hc[2]["value"] if 2 in dailyweek_hc else 0),
+                        convert_kw(dailyweek_hc[3]["value"] if 3 in dailyweek_hc else 0),
+                        convert_kw(dailyweek_hc[4]["value"] if 4 in dailyweek_hc else 0),
+                        convert_kw(dailyweek_hc[5]["value"] if 5 in dailyweek_hc else 0),
+                        convert_kw(dailyweek_hc[6]["value"] if 6 in dailyweek_hc else 0),
                     ],
                     "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc, price_hc),
                     "yesterday_HC": convert_kw(yesterday_hc),
-                    "day_1_HC": dailyweek_hc[0]["value"],
-                    "day_2_HC": dailyweek_hc[1]["value"],
-                    "day_3_HC": dailyweek_hc[2]["value"],
-                    "day_4_HC": dailyweek_hc[3]["value"],
-                    "day_5_HC": dailyweek_hc[4]["value"],
-                    "day_6_HC": dailyweek_hc[5]["value"],
-                    "day_7_HC": dailyweek_hc[6]["value"],
+                    "day_1_HC": dailyweek_hc[0]["value"] if 0 in dailyweek_hc else 0,
+                    "day_2_HC": dailyweek_hc[1]["value"] if 1 in dailyweek_hc else 0,
+                    "day_3_HC": dailyweek_hc[2]["value"] if 2 in dailyweek_hc else 0,
+                    "day_4_HC": dailyweek_hc[3]["value"] if 3 in dailyweek_hc else 0,
+                    "day_5_HC": dailyweek_hc[4]["value"] if 4 in dailyweek_hc else 0,
+                    "day_6_HC": dailyweek_hc[5]["value"] if 5 in dailyweek_hc else 0,
+                    "day_7_HC": dailyweek_hc[6]["value"] if 6 in dailyweek_hc else 0,
                     "peak_offpeak_percent": round(peak_offpeak_percent, 2),
                     "monthly_evolution":  round(monthly_evolution, 2),
                     "current_week_evolution": round(current_week_evolution, 2),
@@ -597,5 +597,5 @@ class HomeAssistant:
         }
 
         for key, value in info.items():
-            config[f"{self.topic}/info/{key}"] = json.dumps(value)
-        app.MQTT.publish_multiple(config)
+            config[f"info/{key}"] = json.dumps(value)
+        app.MQTT.publish_multiple(config, self.topic)

@@ -10,13 +10,39 @@ class ExportMqtt:
         self.mesure_type = mesure_type
         self.date_format = "%Y-%m-%d"
 
+    def contract(self):
+        app.LOG.title(f"[{self.usage_point_id}] Exportation de données dans MQTT.")
+
+        app.LOG.log("Génération des messages du contrat")
+        contract_data = app.DB.get_contract(self.usage_point_id)
+        if hasattr(contract_data, "__table__"):
+            output = {}
+            for column in contract_data.__table__.columns:
+                output[f"{self.usage_point_id}/contract/{column.name}"] = str(getattr(contract_data, column.name))
+            app.MQTT.publish_multiple(output)
+            app.LOG.log(" => Finish")
+        else:
+            app.LOG.log(" => Failed")
+
+    def address(self):
+        app.LOG.log(f"[{self.usage_point_id}] Génération des messages d'addresse")
+        address_data = app.DB.get_addresse(self.usage_point_id)
+        if hasattr(address_data, "__table__"):
+            output = {}
+            for column in address_data.__table__.columns:
+                output[f"{self.usage_point_id}/address/{column.name}"] = str(getattr(address_data, column.name))
+            app.MQTT.publish_multiple(output)
+            app.LOG.log(" => Finish")
+        else:
+            app.LOG.log(" => Failed")
+
     def load_daily_data(self, begin, end, price, sub_prefix):
         app.LOG.log(f" {begin.strftime(self.date_format)} => {end.strftime(self.date_format)}")
         prefix = f"{sub_prefix}"
         app.MQTT.publish_multiple({
-            f"dateBegin": begin.strftime(self.date_format),
-            f"dateEnded": end.strftime(self.date_format)
-        }, prefix)
+            f"{prefix}/dateBegin": begin.strftime(self.date_format),
+            f"{prefix}/dateEnded": end.strftime(self.date_format)
+        })
         # DATA FORMATTING
         this_year_watt = 0
         this_year_euro = 0
@@ -86,38 +112,38 @@ class ExportMqtt:
             week_idx = week_idx + 1
         # MQTT FORMATTING
         mqtt_data = {
-            f"thisYear/dateBegin": this_year_begin.strftime(self.date_format),
-            f"thisYear/dateEnd": this_year_end.strftime(self.date_format),
-            f"thisYear/base/Wh": this_year_watt,
-            f"thisYear/base/kWh": round(this_year_watt / 1000, 2),
-            f"thisYear/base/euro": round(this_year_euro, 2),
-            f"thisMonth/dateBegin": this_month_begin.strftime(self.date_format),
-            f"thisMonth/dateEnd": this_month_end.strftime(self.date_format),
-            f"thisMonth/base/Wh": this_month_watt,
-            f"thisMonth/base/kWh": round(this_month_watt / 1000, 2),
-            f"thisMonth/base/euro": round(this_month_euro, 2),
-            f"thisWeek/dateBegin": week_begin.strftime(self.date_format),
-            f"thisWeek/dateEnd": week_end.strftime(self.date_format),
+            f"{prefix}/thisYear/dateBegin": this_year_begin.strftime(self.date_format),
+            f"{prefix}/thisYear/dateEnd": this_year_end.strftime(self.date_format),
+            f"{prefix}/thisYear/base/Wh": this_year_watt,
+            f"{prefix}/thisYear/base/kWh": round(this_year_watt / 1000, 2),
+            f"{prefix}/thisYear/base/euro": round(this_year_euro, 2),
+            f"{prefix}/thisMonth/dateBegin": this_month_begin.strftime(self.date_format),
+            f"{prefix}/thisMonth/dateEnd": this_month_end.strftime(self.date_format),
+            f"{prefix}/thisMonth/base/Wh": this_month_watt,
+            f"{prefix}/thisMonth/base/kWh": round(this_month_watt / 1000, 2),
+            f"{prefix}/thisMonth/base/euro": round(this_month_euro, 2),
+            f"{prefix}/thisWeek/dateBegin": week_begin.strftime(self.date_format),
+            f"{prefix}/thisWeek/dateEnd": week_end.strftime(self.date_format),
         }
         for date, watt in month_watt.items():
-            mqtt_data[f"months/{date}/base/Wh"] = watt
-            mqtt_data[f"months/{date}/base/kWh"] = round(watt / 1000, 2)
+            mqtt_data[f"{prefix}/months/{date}/base/Wh"] = watt
+            mqtt_data[f"{prefix}/months/{date}/base/kWh"] = round(watt / 1000, 2)
         for date, euro in month_euro.items():
-            mqtt_data[f"months/{date}/base/euro"] = round(euro, 2)
+            mqtt_data[f"{prefix}/months/{date}/base/euro"] = round(euro, 2)
         for date, value in month_begin.items():
-            mqtt_data[f"months/{date}/dateBegin"] = value.strftime(self.date_format)
+            mqtt_data[f"{prefix}/months/{date}/dateBegin"] = value.strftime(self.date_format)
         for date, value in month_end.items():
-            mqtt_data[f"months/{date}/dateEnd"] = value.strftime(self.date_format)
+            mqtt_data[f"{prefix}/months/{date}/dateEnd"] = value.strftime(self.date_format)
 
         for date, watt in week_watt.items():
-            mqtt_data[f"thisWeek/{date.strftime('%A')}/date"] = date.strftime(self.date_format)
-            mqtt_data[f"thisWeek/{date.strftime('%A')}/base/Wh"] = watt
-            mqtt_data[f"thisWeek/{date.strftime('%A')}/base/kWh"] = round(watt / 1000, 2)
+            mqtt_data[f"{prefix}/thisWeek/{date.strftime('%A')}/date"] = date.strftime(self.date_format)
+            mqtt_data[f"{prefix}/thisWeek/{date.strftime('%A')}/base/Wh"] = watt
+            mqtt_data[f"{prefix}/thisWeek/{date.strftime('%A')}/base/kWh"] = round(watt / 1000, 2)
         for date, euro in week_euro.items():
-            mqtt_data[f"thisWeek/{date.strftime('%A')}/base/euro"] = round(euro, 2)
+            mqtt_data[f"{prefix}/thisWeek/{date.strftime('%A')}/base/euro"] = round(euro, 2)
 
         # SEND TO MQTT
-        app.MQTT.publish_multiple(mqtt_data, prefix)
+        app.MQTT.publish_multiple(mqtt_data)
 
     def daily_annual(self, price):
         app.LOG.log("Génération des données annuelles")
@@ -129,7 +155,7 @@ class ExportMqtt:
                                                            datetime.min.time())
             finish = False
             while not finish:
-                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
+                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
                 self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:
@@ -158,7 +184,7 @@ class ExportMqtt:
                     key = "year"
                 else:
                     key = f"year-{idx}"
-                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/linear/{key}"
+                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/linear/{key}"
                 self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:
@@ -246,27 +272,27 @@ class ExportMqtt:
         # MQTT FORMATTING
         for measure_type, data in output.items():
             mqtt_data = {
-                f"thisYear/{measure_type}/Wh": output[measure_type]["this_year_watt"],
-                f"thisYear/{measure_type}/kWh": round(output[measure_type]["this_year_watt"] / 1000, 2),
-                f"thisYear/{measure_type}/euro": round(output[measure_type]["this_year_euro"], 2),
-                f"thisMonth/{measure_type}/Wh": output[measure_type]["this_month_watt"],
-                f"thisMonth/{measure_type}/kWh": round(output[measure_type]["this_month_watt"] / 1000, 2),
-                f"thisMonth/{measure_type}/euro": round(output[measure_type]["this_month_euro"], 2),
+                f"{prefix}/thisYear/{measure_type}/Wh": output[measure_type]["this_year_watt"],
+                f"{prefix}/thisYear/{measure_type}/kWh": round(output[measure_type]["this_year_watt"] / 1000, 2),
+                f"{prefix}/thisYear/{measure_type}/euro": round(output[measure_type]["this_year_euro"], 2),
+                f"{prefix}/thisMonth/{measure_type}/Wh": output[measure_type]["this_month_watt"],
+                f"{prefix}/thisMonth/{measure_type}/kWh": round(output[measure_type]["this_month_watt"] / 1000, 2),
+                f"{prefix}/thisMonth/{measure_type}/euro": round(output[measure_type]["this_month_euro"], 2),
             }
             for date, watt in output[measure_type]["month_watt"].items():
-                mqtt_data[f"months/{date}/{measure_type}/Wh"] = watt
-                mqtt_data[f"months/{date}/{measure_type}/kWh"] = round(watt / 1000, 2)
+                mqtt_data[f"{prefix}/months/{date}/{measure_type}/Wh"] = watt
+                mqtt_data[f"{prefix}/months/{date}/{measure_type}/kWh"] = round(watt / 1000, 2)
             for date, euro in output[measure_type]["month_euro"].items():
-                mqtt_data[f"months/{date}/{measure_type}/euro"] = round(euro, 2)
+                mqtt_data[f"{prefix}/months/{date}/{measure_type}/euro"] = round(euro, 2)
 
             for date, watt in output[measure_type]["week_watt"].items():
-                mqtt_data[f"thisWeek/{date.strftime('%A')}/{measure_type}/Wh"] = watt
-                mqtt_data[f"thisWeek/{date.strftime('%A')}/{measure_type}/kWh"] = round(watt / 1000, 2)
+                mqtt_data[f"{prefix}/thisWeek/{date.strftime('%A')}/{measure_type}/Wh"] = watt
+                mqtt_data[f"{prefix}/thisWeek/{date.strftime('%A')}/{measure_type}/kWh"] = round(watt / 1000, 2)
             for date, euro in output[measure_type]["week_euro"].items():
-                mqtt_data[f"thisWeek/{date.strftime('%A')}/{measure_type}/euro"] = round(euro, 2)
+                mqtt_data[f"{prefix}/thisWeek/{date.strftime('%A')}/{measure_type}/euro"] = round(euro, 2)
 
             # SEND TO MQTT
-            app.MQTT.publish_multiple(mqtt_data, prefix)
+            app.MQTT.publish_multiple(mqtt_data)
 
     def detail_annual(self, price_hp, price_hc=0):
         app.LOG.log("Génération des données annuelles détaillées")
@@ -278,7 +304,7 @@ class ExportMqtt:
                                                            datetime.min.time())
             finish = False
             while not finish:
-                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
+                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
                 self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:
@@ -307,7 +333,7 @@ class ExportMqtt:
                     key = "year"
                 else:
                     key = f"year-{idx}"
-                sub_prefix = f"/{self.usage_point_id}/{self.mesure_type}/linear/{key}"
+                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/linear/{key}"
                 self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:

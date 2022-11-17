@@ -66,19 +66,18 @@ class Mqtt:
         if data:
             payload = []
             if prefix is None:
-                prefix = ""
+                prefix = self.prefix
             else:
                 prefix = f"{prefix}"
             for topics, value in data.items():
                 payload.append({
-                    "topic": f"{self.prefix}{prefix}/{topics}",
+                    "topic": f"{prefix}/{topics}",
                     "payload": value,
                     "qos": self.qos,
                     "retain": self.retain
                 })
-            # pprint(payload)
             auth = None
-            if self.username == "" and self.password == "":
+            if self.username is not None and self.password is not None:
                 auth = {'username': self.username, 'password': self.password}
             publish.multiple(payload, hostname=self.hostname, port=self.port, client_id=self.client_id, auth=auth)
 

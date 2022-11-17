@@ -756,7 +756,6 @@ class Database:
         self.session.execute(
             table.__table__.delete().filter(ConsumptionDetail.date.between(begin, end))
         )
-        print(data)
         self.session.add_all(data)
 
     def insert_detail(self, usage_point_id, date, value, interval, measure_type, blacklist=0, fail_count=0,
