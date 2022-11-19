@@ -78,10 +78,9 @@ def create_release(prerelease=False):
     commit = cmd("git status --porcelain").stdout.decode()
     if commit != "":
         app.LOG.warning("Your code it's not commit!!")
-        if not inquirer.confirm(
-                message="Would you create release without this code?",
-        ).execute():
-            app.LOG.critical("No problem!! :)")
+        commit_msg = inquirer.text(message="Commit message").execute()
+        os.system("git add --all")
+        os.system(f"git commit -m \"{commit_msg}\"")
 
     app.LOG.title("Get remote tag")
     remote_tag = cmd(f"git ls-remote --tags origin").stdout.decode()
