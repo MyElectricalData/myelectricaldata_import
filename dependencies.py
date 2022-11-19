@@ -129,7 +129,7 @@ def create_release(prerelease=False):
             message="It's prerelease ? (deploy in sandbox)",
         ).execute()
         if prerelease:
-            version = f"{version}-pre"
+            version = f"{version}-dev"
 
     if version in tags:
         app.LOG.warning("Tag already exist on Github")
@@ -158,7 +158,7 @@ def create_release(prerelease=False):
     app.LOG.log("  => Success")
     app.LOG.title(f"Create release {version}")
     prerelease_txt = ""
-    if version.endswith("-pre"):
+    if version.endswith("-dev"):
         prerelease_txt = "--prerelease"
     os.system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")
