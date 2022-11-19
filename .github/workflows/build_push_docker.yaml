@@ -30,7 +30,7 @@ jobs:
           if [ "${{ github.event.release.prerelease }}" = "false" ]; then
             echo "::set-output name=version::${{ github.event.release.tag_name }}"
           else
-            echo "::set-output name=version::${{ github.event.release.tag_name }}-dev"
+            echo "::set-output name=version::${{ github.event.release.tag_name }}"
           fi
     outputs:
       version: ${{ steps.set_env.outputs.version }}
