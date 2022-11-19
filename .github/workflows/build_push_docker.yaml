@@ -69,7 +69,7 @@ jobs:
           build-args: ARCH=arm32v6 ARCH=arm32v7 ARCH=amd64
           file: Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
-#          context: .
+          context: .
 #          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: true
           tags: |
