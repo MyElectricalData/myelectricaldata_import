@@ -1,16 +1,21 @@
 COMPOSE=docker compose -f docker-compose.dev.yml
 
+.DEFAULT_GOAL := wizard
+## Run wizard
+wizard:
+	python3 main.py action=wizard
+
 ## Connect to EnedisGateway container : DEV
 debug:
-	$(call title,"Debug mode")
-	$(COMPOSE) run -p 5000:5000 -e DEBUG=true myelectricaldata_import
+	$(COMPOSE) stop myelectricaldata_import
+	$(COMPOSE) rm -f myelectricaldata_import
+	python3 main.py action=debug
 
 ## Connect to EnedisGateway container : DEV
 run:
-	$(call title,"Start")
 	$(COMPOSE) stop myelectricaldata_import
 	$(COMPOSE) rm -f myelectricaldata_import
-	$(COMPOSE) run -p 5000:5000 myelectricaldata_import
+	python3 main.py action=run
 
 ## Start docker conatiners for dev
 up:
@@ -54,24 +59,15 @@ git_push:
 	@(echo "git push origin $(current_version)")
 	git push origin $(current_version)
 
-.DEFAULT_GOAL := help
-.PHONY: help
-help:
-	@echo "\033[0;33mUsage:\033[0m"
-	@echo "     make [var_name=value ...] [target]\n"
-	@echo "\033[0;33mAvailable variables:\033[0m"
-	@echo ""
-	@awk '/^[a-zA-Z\-_0-9\.@]+:/ {\
-				helpMessage = match(lastLine, /^## (.*)/); \
-				if (helpMessage) { \
-					helpCommand = substr($$1, 0, index($$1, ":")); \
-					helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
-					printf "%s     \033[0;32m%-22s\033[0m   %s\n", key, helpCommand, helpMessage; \
-				} \
-			} \
-			{lastLine = $$0;}' $(MAKEFILE_LIST)\
-			| sed  -e "s/\`/\\\\\`/g"
-	@echo ""
 
+## Generate requirements.txt
 generate-dependencies:
 	cd app; pip-compile -o requirements.txt pyproject.toml; cd -
+
+## Create github pre release (dev)
+create-release-dev:
+	python3 main.py action=create_pre_release
+
+## Create github release (prod)
+create-release:
+	python3 main.py action=create_release

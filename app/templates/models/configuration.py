@@ -21,6 +21,13 @@ class Configuration:
                     "type": "",
                     "default": ""
                 },
+                "enable": {
+                    "title": "Actif ?",
+                    "help": "Active ou non le lancement du job de récupération des données tous X secondes<br/>"
+                            "L'interval de récupération est défini par le \"cycle\" dans le config.yaml",
+                    "type": True,
+                    "default": True
+                },
                 "token": {
                     "title": "Token",
                     "help": "Votre token généré sur <a href='https://myelectricaldata.fr/'>MyElectricalData</a>.",

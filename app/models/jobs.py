@@ -42,141 +42,144 @@ class Job:
             for self.usage_point_config in self.usage_points:
                 self.usage_point_id = self.usage_point_config.usage_point_id
                 LOG.log_usage_point_id(self.usage_point_id)
-                try:
-                    if target == "gateway_status" or target is None:
-                        self.get_gateway_status()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de la récupération des information de la passerelle")
-                try:
-                    if target == "account_status" or target is None:
-                        self.get_account_status()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de la récupération du status de votre compte")
-                try:
-                    if target == "contract" or target is None:
-                        self.get_contract()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.critical(f"Erreur lors de la récupération des information du contract")
-                try:
-                    if target == "addresses" or target is None:
-                        self.get_addresses()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de la récupération de vos coordonnées")
-                try:
-                    if target == "consumption" or target is None:
-                        self.get_consumption()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de la récupération de votre consommation journalière")
-                try:
-                    if target == "consumption_detail" or target is None:
-                        self.get_consumption_detail()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de la récupération de votre consommation détaillé")
-                try:
-                    if target == "production" or target is None:
-                        self.get_production()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de la récupération de votre production journalière")
-                try:
-                    if target == "production_detail" or target is None:
-                        self.get_production_detail()
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de la récupération de votre production détaillé")
+                if self.usage_point_config.enable:
+                    try:
+                        if target == "gateway_status" or target is None:
+                            self.get_gateway_status()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de la récupération des information de la passerelle")
+                    try:
+                        if target == "account_status" or target is None:
+                            self.get_account_status()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de la récupération du status de votre compte")
+                    try:
+                        if target == "contract" or target is None:
+                            self.get_contract()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.critical(f"Erreur lors de la récupération des information du contract")
+                    try:
+                        if target == "addresses" or target is None:
+                            self.get_addresses()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de la récupération de vos coordonnées")
+                    try:
+                        if target == "consumption" or target is None:
+                            self.get_consumption()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de la récupération de votre consommation journalière")
+                    try:
+                        if target == "consumption_detail" or target is None:
+                            self.get_consumption_detail()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de la récupération de votre consommation détaillé")
+                    try:
+                        if target == "production" or target is None:
+                            self.get_production()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de la récupération de votre production journalière")
+                    try:
+                        if target == "production_detail" or target is None:
+                            self.get_production_detail()
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de la récupération de votre production détaillé")
 
-                try:
-                    # #######################################################################################################
-                    # # MQTT
-                    if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
-                        if target == "mqtt" or target is None:
-                            ExportMqtt(self.usage_point_id, "consumption").contract()
-                            ExportMqtt(self.usage_point_id, "consumption").address()
-                            if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-                                ExportMqtt(self.usage_point_id, "consumption").daily_annual(
-                                    self.usage_point_config.consumption_price_base
-                                )
-                                ExportMqtt(self.usage_point_id, "consumption").daily_linear(
-                                    self.usage_point_config.consumption_price_base
-                                )
-                            if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-                                ExportMqtt(self.usage_point_id, "production").daily_annual(
-                                    self.usage_point_config.production_price
-                                )
-                                ExportMqtt(self.usage_point_id, "production").daily_linear(
-                                    self.usage_point_config.production_price
-                                )
-                            if hasattr(self.usage_point_config,
-                                       "consumption_detail") and self.usage_point_config.consumption_detail:
-                                ExportMqtt(self.usage_point_id, "consumption").detail_annual(
-                                    self.usage_point_config.consumption_price_hp,
-                                    self.usage_point_config.consumption_price_hc
-                                )
-                                ExportMqtt(self.usage_point_id, "consumption").detail_linear(
-                                    self.usage_point_config.consumption_price_hp,
-                                    self.usage_point_config.consumption_price_hc
-                                )
-                            if hasattr(self.usage_point_config,
-                                       "production_detail") and self.usage_point_config.production_detail:
-                                ExportMqtt("production").detail_annual(self.usage_point_config.production_price)
-                                ExportMqtt("production").detail_linear(self.usage_point_config.production_price)
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de l'exportation des données dans MQTT")
-
-                #######################################################################################################
-                # HOME ASSISTANT
-                try:
-                    if "enable" in self.home_assistant_config and self.home_assistant_config["enable"]:
+                    try:
+                        # #######################################################################################################
+                        # # MQTT
                         if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
-                            if target == "home_assistant" or target is None:
-                                HomeAssistant(self.usage_point_id).export(
-                                    self.usage_point_config.consumption_price_base,
-                                    self.usage_point_config.consumption_price_hp,
-                                    self.usage_point_config.consumption_price_hc
-                                )
-                        else:
-                            app.LOG.critical("L'export Home Assistant est dépendant de MQTT, "
-                                             "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
-                except Exception as e:
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de l'exportation des données dans Home Assistant")
+                            if target == "mqtt" or target is None:
+                                ExportMqtt(self.usage_point_id, "consumption").contract()
+                                ExportMqtt(self.usage_point_id, "consumption").address()
+                                if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
+                                    ExportMqtt(self.usage_point_id, "consumption").daily_annual(
+                                        self.usage_point_config.consumption_price_base
+                                    )
+                                    ExportMqtt(self.usage_point_id, "consumption").daily_linear(
+                                        self.usage_point_config.consumption_price_base
+                                    )
+                                if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
+                                    ExportMqtt(self.usage_point_id, "production").daily_annual(
+                                        self.usage_point_config.production_price
+                                    )
+                                    ExportMqtt(self.usage_point_id, "production").daily_linear(
+                                        self.usage_point_config.production_price
+                                    )
+                                if hasattr(self.usage_point_config,
+                                           "consumption_detail") and self.usage_point_config.consumption_detail:
+                                    ExportMqtt(self.usage_point_id, "consumption").detail_annual(
+                                        self.usage_point_config.consumption_price_hp,
+                                        self.usage_point_config.consumption_price_hc
+                                    )
+                                    ExportMqtt(self.usage_point_id, "consumption").detail_linear(
+                                        self.usage_point_config.consumption_price_hp,
+                                        self.usage_point_config.consumption_price_hc
+                                    )
+                                if hasattr(self.usage_point_config,
+                                           "production_detail") and self.usage_point_config.production_detail:
+                                    ExportMqtt("production").detail_annual(self.usage_point_config.production_price)
+                                    ExportMqtt("production").detail_linear(self.usage_point_config.production_price)
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de l'exportation des données dans MQTT")
 
-                #######################################################################################################
-                # INFLUXDB
-                try:
-                    if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
-                        # app.INFLUXDB.purge_influxdb()
-                        if target == "influxdb" or target is None:
-                            if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-                                ExportInfluxDB(self.usage_point_id).daily(
-                                    self.usage_point_config.consumption_price_base,
-                                )
-                            if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-                                ExportInfluxDB(self.usage_point_id).daily(
-                                    self.usage_point_config.production_price,
-                                    "production"
-                                )
-                            if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                                ExportInfluxDB(self.usage_point_id).detail(
-                                    self.usage_point_config.consumption_price_hp,
-                                    self.usage_point_config.consumption_price_hc
-                                )
-                            if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                                ExportInfluxDB(self.usage_point_id).detail(
-                                    self.usage_point_config.production_price,
-                                    "production_detail"
-                                )
-                except Exception as e:
-                    traceback.print_exc()
-                    LOG.error(e)
-                    LOG.error(f"Erreur lors de l'exportation des données dans InfluxDB")
+                    #######################################################################################################
+                    # HOME ASSISTANT
+                    try:
+                        if "enable" in self.home_assistant_config and self.home_assistant_config["enable"]:
+                            if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+                                if target == "home_assistant" or target is None:
+                                    HomeAssistant(self.usage_point_id).export(
+                                        self.usage_point_config.consumption_price_base,
+                                        self.usage_point_config.consumption_price_hp,
+                                        self.usage_point_config.consumption_price_hc
+                                    )
+                            else:
+                                app.LOG.critical("L'export Home Assistant est dépendant de MQTT, "
+                                                 "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
+                    except Exception as e:
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de l'exportation des données dans Home Assistant")
+
+                    #######################################################################################################
+                    # INFLUXDB
+                    try:
+                        if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
+                            # app.INFLUXDB.purge_influxdb()
+                            if target == "influxdb" or target is None:
+                                if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
+                                    ExportInfluxDB(self.usage_point_id).daily(
+                                        self.usage_point_config.consumption_price_base,
+                                    )
+                                if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
+                                    ExportInfluxDB(self.usage_point_id).daily(
+                                        self.usage_point_config.production_price,
+                                        "production"
+                                    )
+                                if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
+                                    ExportInfluxDB(self.usage_point_id).detail(
+                                        self.usage_point_config.consumption_price_hp,
+                                        self.usage_point_config.consumption_price_hc
+                                    )
+                                if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
+                                    ExportInfluxDB(self.usage_point_id).detail(
+                                        self.usage_point_config.production_price,
+                                        "production_detail"
+                                    )
+                    except Exception as e:
+                        traceback.print_exc()
+                        LOG.error(e)
+                        LOG.error(f"Erreur lors de l'exportation des données dans InfluxDB")
+                else:
+                    app.LOG.log(f" => Point de livraison désactivé.")
             LOG.finish()
             DB.unlock()
             return {

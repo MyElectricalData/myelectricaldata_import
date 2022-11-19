@@ -27,8 +27,8 @@ class Config:
                 }
             }
         }
+        # TODO : CHANGE DEFAULT
         self.default = {
-            "wipe_cache": False,
             "cycle": 3600,
             "debug": False,
             "myelectricaldata": {
@@ -199,6 +199,7 @@ class Config:
             f.write(text)
             f.truncate()
         self.usage_point_config = yaml.load(text, Loader=yaml.FullLoader)
+        app.DB.set_config(path, value)
 
     # def reload(self):
 

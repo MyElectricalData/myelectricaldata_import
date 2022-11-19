@@ -51,7 +51,7 @@ class InfluxDB:
 
     def purge_influxdb(self):
         app.LOG.separator_warning()
-        app.LOG.log(f"Wipe influxdb database {self.hostname}:{self.port}")
+        app.LOG.warning(f"Wipe influxdb database {self.hostname}:{self.port}")
         start = "1970-01-01T00:00:00Z"
         stop = datetime.datetime.utcnow()
         measurement = [
@@ -63,10 +63,8 @@ class InfluxDB:
         for mesure in measurement:
             self.delete_api.delete(start, stop, f'_measurement="{mesure}"', self.bucket,
                                    org=self.org)
-        # start = datetime.datetime.utcnow() - relativedelta(years=2)
-        # self.delete_api.delete(start, stop, '_measurement="consumption_detail"', self.bucket,
-        #                        org=self.org)
-        app.LOG.log(f" => Data reset")
+        # app.CONFIG.set("wipe_influxdb", False)
+        app.LOG.warning(f" => Data reset")
 
     def write(self, tags, date=None, fields=None, measurement="log"):
         if date is None:

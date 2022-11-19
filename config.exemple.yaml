@@ -1,6 +1,5 @@
 cycle: 14400  # 2H
 debug: true
-wipe_cache: false
 wipe_influxdb: false
 home_assistant:
   enable: true
@@ -25,6 +24,7 @@ mqtt:
   qos: 0
 myelectricaldata:
   "MON_PDL_1":
+    enable: 'true'
     token: TOKEN_DE_MON_PDL_1
     name: "Maison"
     addresses: 'true'
@@ -48,8 +48,9 @@ myelectricaldata:
     refresh_addresse: 'false'
     refresh_contract: 'false'
   "MON_PDL_2_AVEC_PRODUCTION":
+    enable: 'true'
     token: TOKEN_DE_MON_PDL_2
-    name: "Maison de vacance"
+    name: "Maison de vacances"
     cache: 'true'
     consumption: 'true'
     consumption_detail: 'true'

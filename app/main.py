@@ -39,11 +39,6 @@ for usage_point_id, data in CONFIG.list_usage_point().items():
     DB.set_usage_point(usage_point_id, data)
     LOG.log("  => Success")
 
-if CONFIG.get("wipe_cache"):
-    DB.purge_database()
-    CONFIG.set("wipe_cache", False)
-    LOG.separator_warning()
-
 MQTT_CONFIG = CONFIG.mqtt_config()
 MQTT_ENABLE = False
 MQTT = None
@@ -75,8 +70,9 @@ if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]
     )
     if CONFIG.get("wipe_influxdb"):
         INFLUXDB.purge_influxdb()
-        CONFIG = CONFIG.set("wipe_influxdb", False)
+        CONFIG.set("wipe_influxdb", False)
         LOG.separator_warning()
+        time.sleep(1)
 
 CYCLE = CONFIG.get('cycle')
 if CYCLE < cycle_minimun:

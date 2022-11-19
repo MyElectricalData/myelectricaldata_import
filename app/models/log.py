@@ -46,7 +46,11 @@ class Log:
 
     def title(self, message):
         self.separator()
-        self.logging.info(f" {message.upper()}")
+        if type(message) is list:
+            for msg in message:
+                self.logging.info(f" {msg.upper()}")
+        else:
+            self.logging.info(f" {message.upper()}")
         self.separator()
 
     def debug(self, message):

@@ -1,43 +1,45 @@
 name: Push latest
 
+#on:
+#  push:
+#    branches:
+#      - '*'
+#      - '**'
+#      - '*/*'
+#      - '!master'
+
 on:
-  push:
-    branches:
-      - '*'
-      - '**'
-      - '*/*'
-      - '!master'
+  release:
+    types:
+      - published
 
 jobs:
-  install:
+
+  informations:
+    timeout-minutes: 20
+    env:
+      APP_VERSION: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set environment from branch
+        id: set_env
+        run: |
+          echo "Running on branch ${{ github.ref }}"
+          if [ "${{ github.event.release.prerelease }}" = "false" ]; then
+            echo "::set-output name=version::${{ github.event.release.tag_name }}"
+          else
+            echo "::set-output name=version::${{ github.event.release.tag_name }}-dev"
+          fi
+    outputs:
+      version: ${{ steps.set_env.outputs.version }}
+
+  build_push:
+    needs: [informations]
     name: Build & Deploy in docker.io
     runs-on: [ ubuntu-latest ]
     steps:
-
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Get version
-        id: vars
-        run: echo ::set-output name=version::$(cat app/VERSION)
-
-      - name: Check Tag
-        id: check-tag
-        run: |
-          if [[ ${{ steps.vars.outputs.version }} =~ .*\-dev$ ]]; then
-            echo "::set-output name=dev::true"
-          else
-            echo "::set-output name=dev::false"
-          fi
-
-      - name: Check Build
-        id: check-build
-        run: |
-          if [[ ${{ steps.vars.outputs.version }} =~ .*\-nobuild$ ]]; then
-            echo "::set-output name=nobuild::true"
-          else
-            echo "::set-output name=nobuild::false"
-          fi
 
       - name: Set up QEMU
         if: steps.check-build.outputs.nobuild == 'false'
@@ -54,46 +56,36 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract branch name
-        if: steps.check-build.outputs.nobuild == 'false'
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
-
       - name: Discord notification building state
-        if: steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**MyElectricalData** : Version **${{ steps.vars.outputs.version }}** is in building state...'
+          args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
 
       ##################################################################################################################
       # VERSION
-      - name: Build and push ${{ steps.vars.outputs.version }}
+      - name: Build and push ${{ needs.informations.outputs.version }}
         uses: docker/build-push-action@v2
-        if: steps.check-build.outputs.nobuild == 'false'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: true
           tags: |
-            m4dm4rtig4n/enedisgateway2mqtt:${{ steps.vars.outputs.version }}
-            m4dm4rtig4n/myelectricaldata:${{ steps.vars.outputs.version }}
+            m4dm4rtig4n/enedisgateway2mqtt:${{ needs.informations.outputs.version }}
+            m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}
 
-      - name: Discord notification {{ steps.vars.outputs.version }} image version is up to date
-        if: steps.check-build.outputs.nobuild == 'false'
+      - name: Discord notification {{ needs.informations.outputs.version }} image version is up to date
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**MyElectricalData** : **${{ steps.vars.outputs.version }}** image version is up to date'
+          args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}** image version is up to date'
 
       ##################################################################################################################
       # LATEST-DEV
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: steps.check-build.outputs.nobuild == 'false'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -103,7 +95,6 @@ jobs:
             m4dm4rtig4n/myelectricaldata:latest-dev
 
       - name: Discord notification
-        if: steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
@@ -114,8 +105,6 @@ jobs:
       # LATEST
       - name: Build and push
         uses: docker/build-push-action@v2
-#        if: steps.check-tag.outputs.dev == 'false'
-        if: steps.check-tag.outputs.dev == 'false' && steps.check-build.outputs.nobuild == 'false'
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -125,8 +114,6 @@ jobs:
             m4dm4rtig4n/myelectricaldata:latest
 
       - name: Discord notification
-#        if: steps.check-tag.outputs.dev == 'false'
-        if: steps.check-tag.outputs.dev == 'false' && steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
@@ -136,10 +123,8 @@ jobs:
       ##################################################################################################################
       # FINISH
       - name: Discord notification
-#        if: steps.check-tag.outputs.dev == 'false'
-        if: steps.check-tag.outputs.dev == 'false' && steps.check-build.outputs.nobuild == 'false'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
-          args: '**MyElectricalData** : New version available **${{ steps.vars.outputs.version }}**'
+          args: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'

@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import sys
 from datetime import datetime, timedelta
 
 from dependencies import str2bool
@@ -17,6 +16,7 @@ from config import MAX_IMPORT_TRY
 Base = declarative_base()  # Required
 
 LOG = Log()
+
 
 class Database:
     def __init__(self, path="/data"):
@@ -63,7 +63,7 @@ class Database:
                     fail_count=0
                 ))
                 if current_date != date.strftime("%Y"):
-                    LOG.warning(f" - {date.strftime('%Y')} => {round(year_value/1000, 2)}kW")
+                    LOG.warning(f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW")
                     current_date = date.strftime("%Y")
                     year_value = 0
             self.session.add_all(bulk_insert)
@@ -94,7 +94,7 @@ class Database:
                     fail_count=0
                 ))
                 if current_date != date.strftime("%m"):
-                    LOG.warning(f" - {date.strftime('%Y-%m')} => {round(day_value/1000,2)}kW")
+                    LOG.warning(f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW")
                     current_date = date.strftime("%m")
                     day_value = 0
             self.session.add_all(bulk_insert)
@@ -198,6 +198,13 @@ class Database:
             .where(UsagePoints.usage_point_id == usage_point_id)
         )
         usage_points = self.session.scalars(query).one_or_none()
+        progress = 0
+        if "progress" in data:
+            progress = data["progress"]
+        progress_status = ""
+        if "progress_status" in data:
+            progress = data["progress_status"]
+        # progress_status = data["progress_status"] if "progress_status" in data else progress_status = 0
         if usage_points is not None:
             usage_points.name = data["name"]
             usage_points.cache = str2bool(data["cache"])
@@ -220,6 +227,9 @@ class Database:
             usage_points.refresh_addresse = str2bool(data["refresh_addresse"])
             usage_points.refresh_contract = str2bool(data["refresh_contract"])
             usage_points.token = data["token"]
+            usage_points.progress = progress
+            usage_points.progress_status = progress_status
+            usage_points.enable = str2bool(data["enable"])
         else:
             self.session.add(
                 UsagePoints(
@@ -245,7 +255,10 @@ class Database:
                     plan=data["plan"],
                     refresh_addresse=str2bool(data["refresh_addresse"]),
                     refresh_contract=str2bool(data["refresh_contract"]),
-                    token=data["token"]
+                    token=data["token"],
+                    progress=progress,
+                    progress_status=progress_status,
+                    enable=str2bool(data["enable"])
                 )
             )
 
@@ -360,6 +373,7 @@ class Database:
                     count=count
                 )
             )
+
     ## ----------------------------------------------------------------------------------------------------------------
     ## DAILY
     ## ----------------------------------------------------------------------------------------------------------------
@@ -1010,6 +1024,14 @@ class UsagePoints(Base):
                       nullable=False,
                       default="0"
                       )
+    progress_status = Column(Text,
+                             nullable=False,
+                             default=""
+                             )
+    enable = Column(Boolean,
+                    nullable=False,
+                    default=False
+                    )
 
     relation_addressess = relationship("Addresses", back_populates="usage_point")
     relation_contract = relationship("Contracts", back_populates="usage_point")
@@ -1042,7 +1064,11 @@ class UsagePoints(Base):
                f"refresh_addresse={self.refresh_addresse!r}, " \
                f"refresh_contract={self.refresh_contract!r}, " \
                f"token={self.token!r}, " \
+               f"progress={self.progress!r}, " \
+               f"progress_status={self.progress_status!r}, " \
+               f"enable={self.enable!r}, " \
                f")"
+
 
 class Addresses(Base):
     __tablename__ = 'addresses'
