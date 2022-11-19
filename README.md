@@ -97,7 +97,7 @@ Un template est disponible sur le repo [config.yaml](https://github.com/m4dm4rti
 | Champs           | Information                                                                  | Défaut        |
 |------------------|------------------------------------------------------------------------------|---------------|
 | enable           | Activation ou non des exports MQTT au format Home Assistant (auto-discovery) | False         |
-| discovery_prefix | Prefix configuré dans Home Assistant pour l'auto-discovery                  | homeassistant |
+| discovery_prefix | Préfixe configuré dans Home Assistant pour l'auto-discovery                  | homeassistant |
 
 ### influxdb
 | Champs   | Information                                        | Défaut           |
