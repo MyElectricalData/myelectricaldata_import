@@ -152,6 +152,7 @@ def create_release(prerelease=False):
         os.system(f"git tag -d {version}")
         app.LOG.log("  => Success")
         app.LOG.log(f"Delete tag {version} on remote")
+        print(f"git push --delete origin {version}")
         os.system(f"git push --delete origin {version}")
         app.LOG.log("  => Success")
 
