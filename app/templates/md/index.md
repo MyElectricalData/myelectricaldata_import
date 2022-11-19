@@ -6,7 +6,7 @@ Afin d'utiliser MyElectricalData, il est nécessaire de réaliser vos consenteme
 
 # Les données
 
-La totalité des données récupérer par cette intégration sont stockées dans une base de données locale (NoSQL)
+La totalité des données récupérées par cette intégration est stockée dans une base de données locale (NoSQL)
 
 Enedis met à disposition les données en J+1 à partir de 0h UTC minumun à savoir :
 
