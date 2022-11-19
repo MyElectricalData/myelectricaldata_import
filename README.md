@@ -1,4 +1,4 @@
-# EnedisGateway2MQTT
+# MyElectricalData
 
 [![Donate][donation-badge]](https://www.buymeacoffee.com/m4dm4rtig4n)
 
@@ -6,191 +6,110 @@
 
 ![Supports aarch64 Architecture][aarch64-shield] ![Supports amd64 Architecture][amd64-shield] ![Supports armhf Architecture][armhf-shield] ![Supports armv7 Architecture][armv7-shield]
 
-**Best french discord community about "Domotique & Diy" :**
+**Vous recherchez un Discord Francais autour de la "Domotique & Diy" ?**
 
-[![https://discord.gg/DfVJZme](discord.png 'Best french discord community about "Domotique & Diy"')](https://discord.gg/DfVJZme)
+[![https://discord.gg/DfVJZme](discord.png 'Vous recherchez un Discord Francais autour de la "Domotique & Diy" ?')](https://discord.gg/DfVJZme)
 
 ****
 
 ## IMPORTANT !
-**The tool is still under development.
-It is possible that various functions disappear or be modified**
+**EnedisGateway2MQTT** devient **MyElectricalData** !
+
+La dépendance à MQTT n'est plus obligatoire et je supporte :
+- MQTT
+- Home Assistant (Via MQTT Auto Discovery)
+- InfluxDB
 
 # Links
 
-* Github Repository : https://github.com/m4dm4rtig4n/enedisgateway2mqtt
-* Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/enedisgateway2mqtt
-* Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/enedisgateway2mqtt
-* Saniho Card for Home Assistant : https://github.com/saniho/content-card-linky
+* Github Repository : https://github.com/m4dm4rtig4n/myelectricaldata
+* Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/myelectricaldata
+* Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/myelectricaldata
+* Saniho Card pour Home Assistant : https://github.com/saniho/content-card-linky
 
 ## Informations
 
-EnedisGateway2MQTT use [Enedis Gateway](https://enedisgateway.tech/) API to send data in your MQTT Broker.
+MyElectricalData utilise une [API](https://myelectricaldata.fr/) dédié afin de récupérer toutes les informations auprès d'Enedis.
 
-### Generate ACCESS_TOKEN
+Avant d'utiliser l'outil, il est nécessaire de réaliser votre parcours de consentements.
 
-#### 1st Step - Enedis Website
+Tout est expliqué directement sur la passerelle [https://myelectricaldata.fr/](https://myelectricaldata.fr/).
 
-- Go to [Enedis Website](https://mon-compte.enedis.fr/alex-gdc/identity/manageexternalaccount)
-- Log or create account
-- Link your Linky
-- Go in page "Gérer l’accès à mes données" and enable all collect. (The boxes at the bottom right of the page.)
+Une fois les consentements effectuée et récupéré votre "point de livraison" & "token", vous avez toutes les informations nécéssaire au fonctionnement de l'outils.
 
-**Sometimes it takes several days for Enedis to activate the collection.**
+> Pour récupérer votre consommation détaillée, il est nécessaire d'activer la "collecte horaire sur Enedis"
+>
+> Voir [F.A.Q](https://www.myelectricaldata.fr/faq) pour plus de détail.
+> 
+> **Attention, la collecte horaire est valide pendant 1 an maximum.**
 
-**Activation is only valid for 1 year.**
+## MyElectricalData limitation
 
-#### 2sde Step - Enedis Gateway
+Les API d'Enedis limites le nombre d'appels par société, à savoir :
+- 5 appels par seconde 
+- 10 000 appels par heure
 
-- Go to [Enedis Gateway](https://enedisgateway.tech/) and clic on "*Faire la demande de consentement*"
-- Approuve your concentment
-- At the end, your are redirect to [Enedis Gateway](https://enedisgateway.tech/) and you can found your access_token
-and curl test command.
+Cette limitation est pour la totalité des utilisateurs !
 
-**WARNING, The enedis website has some issues with chrome / chromium based browsers.
-The easiest way is to use Firefox in the consent process** 
+Afin d'éviter d'atteindre cette limite, j'ai mis en place plusieurs fonctionnalités :
+- Sans activation du cache, 50 appels / jours et par point de livraison.
+- Avec activation du cache, 150 appels / jours et par point de livraison (en cours d'intégration).
 
+> L'activation du cache, m'oblige à stocker vos données (chiffrés) sur ma passerelle pendant une certaine période.
+> 
+> Voir [F.A.Q](https://www.myelectricaldata.fr/faq) pour plus de détail.
 
-## EnedisGateway2MQTT limit
+De part ces limitations, il est possible que la récupération des données prennent plusieurs jours si vous n'activez par le cache car :
+- ~= 105 appels pour les données horaires sur 2 ans d'historique.
+- ~= 36 appels pour les données journalières sur 3 ans.
+- 1 appel pour le contrat.
+- 1 appel pour les coordonnées.
 
-In order to avoid saturation of Enedis Gateway services, the number of API calls is limited to 15 per day.
-Most of the information will be collected during the first launch.
-You will just need a few days to report all "detailed" consumption over 2 years (about 1 week)
+Un 1er lancement consomme donc environ 150 appels.
 
-## Enedis Gateway limit
+> Si vous avez également de la production, vous pouvez doubler le nombres.
 
-Enedis Gateway limit to 50 call per day / per pdl.
+L'activation de la persistance des données est donc quasiment obligatoire si vous ne voulez pas dépasser les quotas.
 
-If you reach this limit, you will be banned for 24 hours!
-
-**API call number by parameters :**
-
-| Parameters  | Call number |
-|:---------------|:---------------:|
-| GET_CONSUMPTION | 3 |
-| GET_CONSUMPTION_DETAIL | 105 |
-| GET_PRODUCTION | 3 |
-| GET_PRODUCTION_DETAIL | 105 |
-| ADDRESSES | 1 |
-| CONTRACT | 1 |
-
-See chapter [persistance](#persistance), to reduce API call number.
+Cf. [persistance](#persistance)
 
 
-## Configuration File
+## Fichier de configuration
 
-Filename : config.yaml
+Nom du ficher : [config.yaml](https://github.com/m4dm4rtig4n/myelectricaldata/blob/master/config.exemple.yaml)
 
-Container path : /data/config.yaml
+Chemin dans le conteneur docker : _/data/config.yaml_
 
-The easiest is to map the "/data" in local because it is also this folder that contains the cache.
+Un template est disponible sur le repo [config.yaml](https://github.com/m4dm4rtig4n/myelectricaldata/blob/master/config.exemple.yaml)
 
-3 parameters is mandatory :
-- MQTT Hostname
-- At least one PDL 
-- PDL token
+| Champs           | Information                                                                                                                                                                            | Défaut |
+|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
+| cycle            | Permet de définir l'interval d'execution du job d'importation des données (minimun 3600)<br/>Plus vous baisser cette valeur, plus vous avez de chance d'atteindre les quota rapidement | 14400 |
+| debug            | Affichage des logs en mode Debug                                                                                                                                                       | False |
+| wipe_cache       | Permet de faire une purge des données du cache                                                                                                                                         | False |
+| wipe_influxdb    | Permet de faire une purge des données dans InfluxDB                                                                                                                                    | False |
+| home_assistant   | Voir block home_assistant                                                                                                                                                              | {}    |
+| influxdb         | Voir block influxdb                                                                                                                                                                    | {}    |
+| mqtt             | Voir block mqtt                                                                                                                                                                        | {}    |
+| myelectricaldata | Voir block myelectricaldata                                                                                                                                                            | {}    |
 
-> All other variables have default values
+### home_assistant
+| Champs           | Information                                                                  | Défaut        |
+|------------------|------------------------------------------------------------------------------|---------------|
+| enable           | Activation ou non des exports MQTT au format Home Assistant (auto-discovery) | False         |
+| discovery_prefix | Prefix configurer dans Home Assistant pour l'auto-discovery                  | homeassistant |
 
-Exemple :
+### influxdb
+| Champs   | Information                                        | Défaut           |
+|----------|----------------------------------------------------|------------------|
+| enable   | Activation ou non des exports vers InfluxDB        | False            |
+| hostname | Addresse IP ou domaine vers votre serveur InfluxDB | influxdb         |
+| port     | Port du serveur InfluxDB                           | 8086             |
+| token    | Token en V2 & USERNAME:PASSWORD pour la V1         | myelectricaldata |
+| org      | Nom de l'organisation V2, en V1 mettre "-"         | myelectricaldata |
+| bucket   | Nom du bucket en V2 et "DATABASE/RETENTION" en V1  | myelectricaldata |
 
-```yaml
-##########
-# GLOBAL #
-##########
-debug: false
-
-####################
-##      MQTT      ##
-####################
-mqtt:
-  host: MOSQUITO_SERVER       # MANDATORY
-  port: 1883
-  username: ""
-  password: ""
-  prefix: enedis_gateway
-  client_id: enedis_gateway
-  retain: true
-  qos: 0
-
-####################
-## Home assistant ##
-####################
-home_assistant:
-  discovery: false
-  discovery_prefix: homeassistant
-  card_myenedis: false
-  hourly: false
-
-###############
-## Influx DB ##
-###############
-#influxdb: 
-#  scheme: http    # or https
-#  host: MY_INFLUXDB_SERVER
-#  port: 8086
-#  token: MY_TOKEN
-#  org: MY_ORG
-#  bucket: MY_BUCKET
-
-####################
-## ENEDIS GATEWAY ##
-####################
-enedis_gateway:
-  "XXXXXXXXXXXXXX":              # Replace XXXXXXXXXXXXXX by your PDL Number. MANDATORY
-    token: "YOUR_TOKEN"          # MANDATORY
-    plan: BASE                 # BASE or HP/HC
-    consumption: true                 
-    consumption_detail: true         
-    consumption_price_hc: 0           
-    consumption_price_hp: 0           
-    consumption_price_base: 0         
-    production: false                 
-    production_detail: false          
-    offpeak_hours: ""         # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-06h00;11h30-14h30
-    addresses: true
-#  YYYYYYYYYYYYYY:            # Replace YYYYYYYYYYYYYY by your other PDL Number
-#    token: YOUR_TOKEN
-#    plan: HP/HC
-#    consumption: true
-#    consumption_detail: true
-#    consumption_price_hc: 0.1781
-#    consumption_price_hp: 0.1337
-#    consumption_price_base: 0.1781
-#    production: false
-#    production_detail: false
-#    addresses: true
-```
-> offpeak_hours : I automatically retrieve the information via the Enedis APIs, but it happens that some account does not upload it.
-This parameter will allow you to fill in your HP / HC ranges yourself in order to be able to compare your consumption according to the 2 subscriptions. 
-
-## Cache
-
-Since v0.3, Enedis Gateway use SQLite database to store all data and reduce API call number.
-> **Don't forget to mount /data to keep database persistance !!**
-
-If you wan wipe cache, just delete enedisgateway.db and restat container.
-
-**WARNING, if you wipe all data you generate lot of API Call (don't forget [Enedis Gateway limit](#Enedis Gateway limit))**
-
-> It doesn't forget that it takes several days to recover consumption/production in detail mode.
-
-## Consumption BASE vs HP/HC
-
-Even if you are on a basic plan (and not HP / HC), it is interesting to enter the prices of each plan.
-The tool will do calculation for you and tell you which plan is the most advantageous for you based on your consumption.
-
-### Blacklist
-
-Sometimes there are holes in the Enedis consumption records. So I set up a blacklist system for certain dates.
-
-If date does not return information after 7 try (7 x CYCLE), I blacklist this date and will no longer generate an API call
-
-## InfluxDB
-
-Gateway is work with influxDB version 1.X & 2.X
-
-### v1.X :
+#### v1.X :
 ```yaml
 influxdb:
     host: influxdb
@@ -200,7 +119,7 @@ influxdb:
     bucket: "DATABASE/RETENTION"
 ```
 
-### v2.X :
+#### v2.X :
 ```yaml
 influxdb:
     host: influxdb
@@ -210,75 +129,179 @@ influxdb:
     bucket: MY_BUCKET
 ```
 
+### mqtt
+| Champs     | Information                                                       | Défaut           |
+|------------|-------------------------------------------------------------------|------------------|
+| enable     | Activation ou non des exports vers MQTT                           | False            |
+| hostname   | Addresse IP ou domaine vers votre serveur MQTT                    | influxdb         |
+| port       | Port du serveur MQTT                                              | 8086             |
+| username   | Mettre "null" si pas d'authentification                           | myelectricaldata |
+| password   | Mettre "null" si pas d'authentification                           | myelectricaldata |
+| prefix     | Prefix de la queue dans MQTT                                      | myelectricaldata |
+| client_id  | ID de connexion UNIQUE sur la totalité des clients                | myelectricaldata |
+| retain     | Activation de la persistance dans MQTT                            | True             |
+| qos        | Inutile de mettre plus de 0 (a part pour surcharger votre réseau) | 0                |
+
+
+### myelectricaldata
+
+Dictionnaire avec comme clef votre Point de livraison (entre double quote) contenant toute sa configuration.
+
+| Champs                 | Information                                                                    | Défaut |
+|------------------------|--------------------------------------------------------------------------------|--------|
+| token                  | Activation ou non des exports vers MQTT                                        | ""     |
+| name                   | Alias de votre point livraison pour facilité la navigation                     | ""     |
+| addresses              | Récupération des coordonnées du point de livraison                             | False  |
+| cache                  | Activation du cache sur la passerelle                                          | True   |
+| consumption            | ctivation de la collecte de consommation journalière                           | True   |
+| consumption_detail     | ctivation de la collecte de consommation horaire                               | True   |
+| consumption_price_base | Prix d'achat du kW sans forfait HP/HC                                          | 0      |
+| consumption_price_hc   | Prix d'achat du kW en Heure Creuse                                             | 0      |
+| consumption_price_hp   | Prix d'achat du kW en Heure Pleine                                             | 0      |
+| offpeak_hours_0        | Heure creuse du Lundi                                                          | ""     |
+| offpeak_hours_1        | Heure creuse du Mardi                                                          | ""     |
+| offpeak_hours_2        | Heure creuse du Mercredi                                                       | ""     |
+| offpeak_hours_3        | Heure creuse du Jeudi                                                          | ""     |
+| offpeak_hours_4        | Heure creuse du Vendredi                                                       | ""     |
+| offpeak_hours_5        | Heure creuse du Samedi                                                         | ""     |
+| offpeak_hours_6        | Heure creuse du Dimanche                                                       | ""     |
+| plan                   | Votre type de plan BASE ou HP/HC                                               | BASE   |
+| production             | Activation de la collecte de production journalière                            | False  |
+| production_detail      | Activation de la collecte de production horaire                                | False  |
+| production_price       | Prix de revente à Enedis (Inutile pour l'instant)                              | 0      |
+| refresh_addresse       | Permet de forcer un rafraichissement des informations "postale" dans le cache  | False  |
+| refresh_contract       | Permet de forcer un rafraichissement des informations du contrat dans le cache | False  |
+
+#### offpeak_hours
+
+Les champs offpeak_hours_X vont vous permettre de définir vos seuils d'heure creuse/pleine de votre point de livraison si Enedis
+ne renvoie pas l'information.
+
+Même si votre forfait est en BASE, je vous recommande de saisir vos HC/HP afin de savoir si votre mode de consommation est
+plus adapté au forfait BASE ou HP/HC.
+
+#### Plusieurs mode de HP/HC ?
+Pour les utilisateurs aillant différentes plages en fonction des jours de semaine ou weekend, il est nécessaire de renseigner la
+configuration manuellement, car les API d'Enedis ne renvoie pas toutes les informations...
+
+_Exemple :_
+```
+offpeak_hours_0: 3H40-8h10;12H40-16H10
+offpeak_hours_1: 3H40-8h10;12H40-16H10
+offpeak_hours_2: 0H00-0H00
+offpeak_hours_3: 3H40-8h10;12H40-16H10
+offpeak_hours_4: 3H40-8h10;12H40-16H10
+offpeak_hours_5: 0H00-0H00
+offpeak_hours_6: 0H00-0H00 
+``` 
+
+#### Tempo
+
+Actuellement Tempo n'est pas encore intégré, mais c'est dans ma TODO. 
+
+## Cache
+
+Afin de réduire le plus possible le nombre de demandes auprès de la passerelle MyElectricaData et d'Enedis, j'ai mit 
+en place 2 système de cache :
+- Cache Local stocker chez vous (/data/cache.db) obligatoire.
+- Cache en ligne sur la passerelle optionnel, mais fortement conseillé (cf #MyElectricalData limitation).
+
+Cependant en utilisant le cache en ligne, vous m'autorisez à stocker temporairement vos données (30j max)
+
+Voir [F.A.Q](https://www.myelectricaldata.fr/faq) pour plus de détail.
+
+
 ## Grafana 
 
-When you are exported all data in your influxDB, you can use this [grafana dashboard](grafana_dashboard.json).
+> Actuellement la dashboard est uniquement compatible avec les version <= 0.7.8
 
-> Actually it's work only in InfluxQL (v1 language), Flux mode (v2 language) it's in progress...
-> But you can use InfluxQL in V2. 
+Une fois les données exporté dans Grafana, vous pouvez utiliser la dashboard [ICI](grafana_dashboard.json)
 
-## Usage :
+> Ne fonctionne qu'avec InfluxDB <= V1.8
 
-**These are EXAMPLES, and do not necessarily represent your settings!**
-
-**Please read [parameter table](#environment-variable) and adapt to your configuration.**
-
+## Docker :
 
 ```
-docker run -it --restart=unless-stopped -v $(pwd):/data m4dm4rtig4n/enedisgateway2mqtt:latest
+docker run -it --restart=unless-stopped -v $(pwd):/data -p 5000:5000 -e TZ="Europe/Paris" m4dm4rtig4n/myelectricaldata:latest
 ```
 
-**docker-compose.yml**
+## Docker Compose:
+
 ```
 version: "3.9"
 services:
-  enedisgateway2mqtt:
-    image: m4dm4rtig4n/enedisgateway2mqtt:latest
+  myelectricaldata:
+    image: m4dm4rtig4n/myelectricaldata:latest
     restart: unless-stopped
     volumes:
-        -./:/data     
+      -./:/data     
+    environment:
+      TZ: Europe/Paris
+    ports:
+      - '5000:5000'
 ```
 
-## Dev environment
+## Environnement de développement
 
-Requirement:
+Pre-requis:
  - docker
  - docker-compose
  - make
 
-Display help information:
+Affiche l'aide :
 ```bash
 make
 ````
 
-Start containers:
+Démarrer tous les conteneurs en mode "Daemon" :
 ```bash
 make up
 ````
 
-Stop containers:
+Arrêter tous les conteneurs :
 ```bash
 make down
 ````
 
-Start application:
+Démarre l'application en mode normal :
 ```bash
-make start
+make run
 ````
 
-Connect to container:
+Démarre l'application en mode debug :
 ```bash
-make start
+make debug
+````
+
+Pour ce connecter au docker en bash :
+```bash
+make bash
 ````
 
 ## Roadmap
 
-- Add **DJU18**
-- Add Postgres/MariaDB Connector
-- [Add max power](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/66)
-- [Add range date](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/68)
+- Gestion du **DJU18** pour une meilleur estimation de l'évolution de la votre consommation.
+- Ajout d'un connecteur PostgreSQL / MariaDB
+- [Remonter la puissance max](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/66)
 
 ## Change log:
+
+### [0.8.0] - 2022-11-XX
+
+#### BREAKING CHANGE
+
+Il est nécessaire de refaire vos consentements sur [MyElectricalData.fr](https://www.myelectricaldata.fr)
+
+Il est nécessaire de reprendre le nouveau "template" du [config.yaml](https://github.com/m4dm4rtig4n/myelectricaldata/blob/master/config.exemple.yaml)
+
+Les "mesurements" d'influxDB ont étaient renomés :
+- enedisgateway_daily devient consumption 
+- enedisgateway_detail devient consumption_detail 
+
+#### Change Log :
+- Ajout d'une interface Web de gestion de vos point de livraison.
+- Migration vers la nouvelle plateforme MyElectricalData
+- Refonte compléte du projet
 
 ### [0.7.8] - 2021-11-XX
 

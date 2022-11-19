@@ -1,63 +1,71 @@
-##########
-# GLOBAL #
-##########
-debug: false
-
-####################
-##      MQTT      ##
-####################
+cycle: 14400  # 2H
+debug: true
+wipe_cache: false
+wipe_influxdb: false
+home_assistant:
+  enable: true
+  discovery: true
+  discovery_prefix: homeassistant
+influxdb:
+  enable: true
+  hostname: influxdb
+  port: 8086
+  token: myelectricaldata
+  org: myelectricaldata
+  bucket: myelectricaldata
 mqtt:
-  host: MOSQUITO_SERVER       # MANDATORY
+  enable: true
+  hostname: mosquitto
   port: 1883
-  username: ""
-  password: ""
-  prefix: enedis_gateway
-  client_id: enedis_gateway
+  username: null
+  password: null
+  prefix: myelectricaldata
+  client_id: myelectricaldata     # DOIT ETRE UNIQUE SUR LA TOTALITE DES CLIENTS CONNECTE AU SERVEUR MQTT
   retain: true
   qos: 0
-
-####################
-## Home assistant ##
-####################
-home_assistant:
-  discovery: false
-  discovery_prefix: homeassistant
-  card_myenedis: false
-
-###############
-## Influx DB ##
-###############
-#influxdb:
-#  host: MY_INFLUXDB_SERVER
-#  port: 8086
-#  token: MY_TOKEN
-#  org: MY_ORG
-#  bucket: MY_BUCKET
-
-####################
-## ENEDIS GATEWAY ##
-####################
-enedis_gateway:
-  PDL_1:                       # MANDATORY
-    token: PDL_1_TOKEN         # MANDATORY
-    plan: BASE                 # BASE or HP/HC
-    consumption: true
-    consumption_detail: true
-    consumption_price_hc: 0
-    consumption_price_hp: 0
-    consumption_price_base: 0
-    production: false
-    production_detail: false
-#    offpeak_hours: ""        # USE ONLY IF YOU WANT OVERLOAD DEFAULT VALUE, Format : 22h36-00h10;01h00-06h00
-    addresses: true
-#  PDL_2:
-#    token: PDL_2_TOKEN
-#    plan: HP/HC
-#    consumption: true
-#    consumption_detail: true
-#    consumption_price_hc: 0.1781
-#    consumption_price_hp: 0.1337
-#    consumption_price_base: 0.1781
-#    production: false
-#    production_detail: false
-#    addresses: true
+myelectricaldata:
+  "MON_PDL_1":
+    token: TOKEN_DE_MON_PDL_1
+    name: "Maison"
+    addresses: 'true'
+    cache: 'true'
+    consumption: 'true'
+    consumption_detail: 'true'
+    consumption_price_base: '0.145907'
+    consumption_price_hc: '0.124364'
+    consumption_price_hp: '0.164915'
+    offpeak_hours_0: 22H00-6H00               # LUNDI
+    offpeak_hours_1: 22H00-6H00               # MARDI
+    offpeak_hours_2: 22H00-6H00               # MERCREDI
+    offpeak_hours_3: 22H00-6H00               # JEUDI
+    offpeak_hours_4: 22H00-6H00               # VENDREDI
+    offpeak_hours_5: 22H00-6H00;12H00-14H00   # SAMEDI
+    offpeak_hours_6: 22H00-6H00;12H00-14H00   # DIMANCHE
+    plan: HC/HP
+    production: 'false'
+    production_detail: 'false'
+    production_price: '0.0'
+    refresh_addresse: 'false'
+    refresh_contract: 'false'
+  "MON_PDL_2_AVEC_PRODUCTION":
+    token: TOKEN_DE_MON_PDL_2
+    name: "Maison de vacance"
+    cache: 'true'
+    consumption: 'true'
+    consumption_detail: 'true'
+    consumption_price_base: '0.175'
+    consumption_price_hc: '0.175'
+    consumption_price_hp: '0.175'
+    offpeak_hours_0: ''
+    offpeak_hours_1: ''
+    offpeak_hours_2: ''
+    offpeak_hours_3: ''
+    offpeak_hours_4: ''
+    offpeak_hours_5: ''
+    offpeak_hours_6: ''
+    plan: BASE
+    production: 'true'
+    production_detail: 'true'
+    production_price: '0.10'
+    refresh_addresse: 'false'
+    refresh_contract: 'false'

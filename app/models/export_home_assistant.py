@@ -527,6 +527,7 @@ class HomeAssistant:
                         convert_kw_to_euro(daily_obj[5]["value"], price_base),
                         convert_kw_to_euro(daily_obj[6]["value"], price_base),
                     ],
+                    # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
                     "dailyweek_costHP": [
                         convert_kw_to_euro(dailyweek_hp[0]["value"], price_hp) if 0 in dailyweek_hp else 0,
                         convert_kw_to_euro(dailyweek_hp[1]["value"], price_hp) if 1 in dailyweek_hp else 0,

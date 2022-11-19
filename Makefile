@@ -27,11 +27,11 @@ down:
 
 ## Start in app
 start:
-	$(COMPOSE) exec enedisgateway2mqtt python -u /app/main.py
+	$(COMPOSE) exec myelectricaldata_import python -u /app/main.py
 	
 ## Connect to enedisgateway2mqtt container
 bash:
-	$(COMPOSE) exec enedisgateway2mqtt bash
+	$(COMPOSE) exec myelectricaldata_import bash
 
 ## Create git branch
 version=
