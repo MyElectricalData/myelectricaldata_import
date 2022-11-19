@@ -29,13 +29,13 @@ La dépendance à MQTT n'est plus obligatoire et je supporte :
 
 ## Informations
 
-MyElectricalData utilise une [API](https://myelectricaldata.fr/) dédié afin de récupérer toutes les informations auprès d'Enedis.
+MyElectricalData utilise une [API](https://myelectricaldata.fr/) dédiée afin de récupérer toutes les informations auprès d'Enedis.
 
 Avant d'utiliser l'outil, il est nécessaire de réaliser votre parcours de consentements.
 
 Tout est expliqué directement sur la passerelle [https://myelectricaldata.fr/](https://myelectricaldata.fr/).
 
-Une fois les consentements effectuée et récupéré votre "point de livraison" & "token", vous avez toutes les informations nécéssaire au fonctionnement de l'outils.
+Une fois les consentements effectués et récupérés votre "point de livraison" & "token", vous avez toutes les informations nécéssaires au fonctionnement de l'outil.
 
 > Pour récupérer votre consommation détaillée, il est nécessaire d'activer la "collecte horaire sur Enedis"
 >
@@ -45,7 +45,7 @@ Une fois les consentements effectuée et récupéré votre "point de livraison" 
 
 ## MyElectricalData limitation
 
-Les API d'Enedis limites le nombre d'appels par société, à savoir :
+Les API d'Enedis limitent le nombre d'appels par société, à savoir :
 - 5 appels par seconde 
 - 10 000 appels par heure
 
@@ -55,7 +55,7 @@ Afin d'éviter d'atteindre cette limite, j'ai mis en place plusieurs fonctionnal
 - Sans activation du cache, 50 appels / jours et par point de livraison.
 - Avec activation du cache, 150 appels / jours et par point de livraison (en cours d'intégration).
 
-> L'activation du cache, m'oblige à stocker vos données (chiffrés) sur ma passerelle pendant une certaine période.
+> L'activation du cache, m'oblige à stocker vos données (chiffrées) sur ma passerelle pendant une certaine période.
 > 
 > Voir [F.A.Q](https://www.myelectricaldata.fr/faq) pour plus de détail.
 
@@ -67,7 +67,7 @@ De part ces limitations, il est possible que la récupération des données pren
 
 Un 1er lancement consomme donc environ 150 appels.
 
-> Si vous avez également de la production, vous pouvez doubler le nombres.
+> Si vous avez également de la production, vous pouvez doubler le nombre.
 
 L'activation de la persistance des données est donc quasiment obligatoire si vous ne voulez pas dépasser les quotas.
 
@@ -84,7 +84,7 @@ Un template est disponible sur le repo [config.yaml](https://github.com/m4dm4rti
 
 | Champs           | Information                                                                                                                                                                            | Défaut |
 |------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
-| cycle            | Permet de définir l'interval d'execution du job d'importation des données (minimun 3600)<br/>Plus vous baisser cette valeur, plus vous avez de chance d'atteindre les quota rapidement | 14400 |
+| cycle            | Permet de définir l'interval d'exécution du job d'importation des données (minimun 3600)<br/>Plus vous baissez cette valeur, plus vous avez de chance d'atteindre les quota rapidement | 14400 |
 | debug            | Affichage des logs en mode Debug                                                                                                                                                       | False |
 | wipe_cache       | Permet de faire une purge des données du cache                                                                                                                                         | False |
 | wipe_influxdb    | Permet de faire une purge des données dans InfluxDB                                                                                                                                    | False |
@@ -97,7 +97,7 @@ Un template est disponible sur le repo [config.yaml](https://github.com/m4dm4rti
 | Champs           | Information                                                                  | Défaut        |
 |------------------|------------------------------------------------------------------------------|---------------|
 | enable           | Activation ou non des exports MQTT au format Home Assistant (auto-discovery) | False         |
-| discovery_prefix | Prefix configurer dans Home Assistant pour l'auto-discovery                  | homeassistant |
+| discovery_prefix | Prefix configuré dans Home Assistant pour l'auto-discovery                  | homeassistant |
 
 ### influxdb
 | Champs   | Information                                        | Défaut           |
@@ -137,7 +137,7 @@ influxdb:
 | port       | Port du serveur MQTT                                              | 8086             |
 | username   | Mettre "null" si pas d'authentification                           | myelectricaldata |
 | password   | Mettre "null" si pas d'authentification                           | myelectricaldata |
-| prefix     | Prefix de la queue dans MQTT                                      | myelectricaldata |
+| prefix     | Préfixe de la queue dans MQTT                                     | myelectricaldata |
 | client_id  | ID de connexion UNIQUE sur la totalité des clients                | myelectricaldata |
 | retain     | Activation de la persistance dans MQTT                            | True             |
 | qos        | Inutile de mettre plus de 0 (a part pour surcharger votre réseau) | 0                |
@@ -145,16 +145,16 @@ influxdb:
 
 ### myelectricaldata
 
-Dictionnaire avec comme clef votre Point de livraison (entre double quote) contenant toute sa configuration.
+Dictionnaire avec comme clef votre Point de Livraison (entre double quote) contenant toute sa configuration.
 
 | Champs                 | Information                                                                    | Défaut |
 |------------------------|--------------------------------------------------------------------------------|--------|
 | token                  | Activation ou non des exports vers MQTT                                        | ""     |
-| name                   | Alias de votre point livraison pour facilité la navigation                     | ""     |
+| name                   | Alias de votre point livraison pour faciliter la navigation                    | ""     |
 | addresses              | Récupération des coordonnées du point de livraison                             | False  |
 | cache                  | Activation du cache sur la passerelle                                          | True   |
-| consumption            | ctivation de la collecte de consommation journalière                           | True   |
-| consumption_detail     | ctivation de la collecte de consommation horaire                               | True   |
+| consumption            | Activation de la collecte de consommation journalière                          | True   |
+| consumption_detail     | Activation de la collecte de consommation horaire                              | True   |
 | consumption_price_base | Prix d'achat du kW sans forfait HP/HC                                          | 0      |
 | consumption_price_hc   | Prix d'achat du kW en Heure Creuse                                             | 0      |
 | consumption_price_hp   | Prix d'achat du kW en Heure Pleine                                             | 0      |
@@ -181,7 +181,7 @@ Même si votre forfait est en BASE, je vous recommande de saisir vos HC/HP afin 
 plus adapté au forfait BASE ou HP/HC.
 
 #### Plusieurs mode de HP/HC ?
-Pour les utilisateurs aillant différentes plages en fonction des jours de semaine ou weekend, il est nécessaire de renseigner la
+Pour les utilisateurs ayant différentes plages en fonction des jours de semaine ou weekend, il est nécessaire de renseigner la
 configuration manuellement, car les API d'Enedis ne renvoie pas toutes les informations...
 
 _Exemple :_
@@ -201,9 +201,9 @@ Actuellement Tempo n'est pas encore intégré, mais c'est dans ma TODO.
 
 ## Cache
 
-Afin de réduire le plus possible le nombre de demandes auprès de la passerelle MyElectricaData et d'Enedis, j'ai mit 
-en place 2 système de cache :
-- Cache Local stocker chez vous (/data/cache.db) obligatoire.
+Afin de réduire le plus possible le nombre de demandes auprès de la passerelle MyElectricaData et d'Enedis, j'ai mis 
+en place 2 systèmes de cache :
+- Cache Local stocké chez vous (/data/cache.db) obligatoire.
 - Cache en ligne sur la passerelle optionnel, mais fortement conseillé (cf #MyElectricalData limitation).
 
 Cependant en utilisant le cache en ligne, vous m'autorisez à stocker temporairement vos données (30j max)
@@ -243,7 +243,7 @@ services:
 
 ## Environnement de développement
 
-Pre-requis:
+Pré-requis:
  - docker
  - docker-compose
  - make
@@ -294,14 +294,14 @@ Il est nécessaire de refaire vos consentements sur [MyElectricalData.fr](https:
 
 Il est nécessaire de reprendre le nouveau "template" du [config.yaml](https://github.com/m4dm4rtig4n/myelectricaldata/blob/master/config.exemple.yaml)
 
-Les "mesurements" d'influxDB ont étaient renomés :
+Les "mesurements" d'influxDB ont étaient renommés :
 - enedisgateway_daily devient consumption 
 - enedisgateway_detail devient consumption_detail 
 
 #### Change Log :
-- Ajout d'une interface Web de gestion de vos point de livraison.
+- Ajout d'une interface Web de gestion de vos points de livraison.
 - Migration vers la nouvelle plateforme MyElectricalData
-- Refonte compléte du projet
+- Refonte complète du projet
 
 ### [0.7.8] - 2021-11-XX
 
