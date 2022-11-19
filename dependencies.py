@@ -8,6 +8,7 @@ from packaging.version import parse as parse_version
 
 docker_compose = "docker-compose -f docker-compose.dev.yml"
 
+
 def cmd(cmd, path="./"):
     return subprocess.run(
         cmd.split(),
@@ -15,6 +16,7 @@ def cmd(cmd, path="./"):
         cwd=path,
         stdout=subprocess.PIPE,
     )
+
 
 def wizard():
     app.LOG.title("Wizard Mode")
@@ -69,6 +71,7 @@ def run(debug=False):
     app.LOG.log(command)
     os.system(command)
 
+
 def create_release(prerelease=False):
     rebuild_confirm = False
 
@@ -76,7 +79,7 @@ def create_release(prerelease=False):
     if commit != "":
         app.LOG.warning("Your code it's not commit!!")
         if not inquirer.confirm(
-            message="Would you create release without this code?",
+                message="Would you create release without this code?",
         ).execute():
             app.LOG.critical("No problem!! :)")
 
@@ -105,12 +108,12 @@ def create_release(prerelease=False):
     for idx, digit in enumerate(new_release.split(".")):
         if idx > 0:
             idx = int(idx) * 2
-        version = new_release[:idx] + str(int(digit) + 1) + new_release[idx + 1 :]
+        version = new_release[:idx] + str(int(digit) + 1) + new_release[idx + 1:]
         for idxx, digitt in enumerate(version.split(".")):
             if idxx > 0:
                 idxx = int(idxx) * 2
             if idxx > idx:
-                version = version[:idxx] + str(0) + version[idxx + 1 :]
+                version = version[:idxx] + str(0) + version[idxx + 1:]
         last_version = Choice(version, f"NEW : {version}")
         new_version.append(last_version)
 
