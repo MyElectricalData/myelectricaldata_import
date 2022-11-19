@@ -16,7 +16,9 @@ on:
 jobs:
 
   informations:
+    name: Get release information
     timeout-minutes: 20
+    runs-on: [ ubuntu-latest ]
     env:
       APP_VERSION: ${{ github.event.release.tag_name }}
     steps:
