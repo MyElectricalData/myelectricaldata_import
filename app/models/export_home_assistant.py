@@ -471,7 +471,6 @@ class HomeAssistant:
         }
 
         yesterdayLastYear = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
-        print(daily_obj)
         config = {
             f"attributes": json.dumps(
                 {
