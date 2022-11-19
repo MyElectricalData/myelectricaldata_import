@@ -133,6 +133,8 @@ def create_release(prerelease=False):
         ).execute()
         if prerelease:
             version = f"{version}-dev"
+        else:
+            version = f"{version}-release"
 
     if version in tags:
         app.LOG.warning("Tag already exist on Github")
