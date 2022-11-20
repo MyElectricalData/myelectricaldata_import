@@ -29,10 +29,11 @@ class Config:
         }
         # TODO : CHANGE DEFAULT
         self.default = {
-            "cycle": 3600,
+            "cycle": 14400,
             "debug": False,
             "myelectricaldata": {
                 "pdl": {
+                    "enable": True,
                     "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
                     "cache": True,
                     "plan": "BASE",
