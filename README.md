@@ -158,6 +158,7 @@ Dictionnaire avec comme clef votre Point de Livraison (entre double quote) conte
 | consumption_price_base | Prix d'achat du kW sans forfait HP/HC                                          | 0      |
 | consumption_price_hc   | Prix d'achat du kW en Heure Creuse                                             | 0      |
 | consumption_price_hp   | Prix d'achat du kW en Heure Pleine                                             | 0      |
+| enable                 | Activation du PDL                                                              | True   |
 | offpeak_hours_0        | Heure creuse du Lundi                                                          | ""     |
 | offpeak_hours_1        | Heure creuse du Mardi                                                          | ""     |
 | offpeak_hours_2        | Heure creuse du Mercredi                                                       | ""     |
