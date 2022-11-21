@@ -30,6 +30,7 @@ LOG.logo(get_version())
 
 CONFIG.display()
 CONFIG.check()
+
 DB = Database()
 DB.unlock()
 

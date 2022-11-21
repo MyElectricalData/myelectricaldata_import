@@ -1,6 +1,7 @@
 import json
 
 import __main__ as app
+
 from config import URL
 from dependencies import *
 from models.log import Log
@@ -36,8 +37,10 @@ class Status:
             }
 
     def status(self, usage_point_id):
-
+        usage_point_id_config = app.DB.get_usage_point(usage_point_id)
         target = f"{self.url}/valid_access/{usage_point_id}"
+        if hasattr(usage_point_id_config, "cache") and usage_point_id_config.cache:
+            target += "/cache"
         response = Query(endpoint=target, headers=self.headers).get()
         if response.status_code == 200:
             try:
@@ -48,10 +51,10 @@ class Status:
             except LookupError:
                 return {
                     "error": True,
-                    "description": "Erreur lors de la récupération du contrat."
+                    "description": "Erreur lors de la récupération du status du compte."
                 }
         else:
             return {
                 "error": True,
-                "description": "Erreur lors de la récupération du contrat."
+                "description": "Erreur lors de la récupération du status du compte."
             }

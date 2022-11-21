@@ -27,7 +27,6 @@ class Config:
                 }
             }
         }
-        # TODO : CHANGE DEFAULT
         self.default = {
             "cycle": 14400,
             "debug": False,

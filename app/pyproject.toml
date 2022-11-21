@@ -18,7 +18,7 @@ dependencies = [
     "jinja2",
     "art",
     "SQLAlchemy",
-#    "Flask-Migrate"
+    "alembic"
 ]
 
 [project.optional-dependencies]
