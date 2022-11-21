@@ -51,10 +51,10 @@ class Status:
             except LookupError:
                 return {
                     "error": True,
-                    "description": "Erreur lors de la récupération du status du compte."
+                    "description": "Erreur lors de la récupération du statut du compte."
                 }
         else:
             return {
                 "error": True,
-                "description": "Erreur lors de la récupération du status du compte."
+                "description": "Erreur lors de la récupération du statut du compte."
             }
