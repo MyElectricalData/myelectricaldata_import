@@ -10,6 +10,8 @@ from statistics import median
 import pytz
 from dateutil.relativedelta import relativedelta
 
+from models.stat import Stat
+
 utc = pytz.UTC
 
 
@@ -43,6 +45,7 @@ class HomeAssistant:
             self.hourly = self.config_ha_config["hourly"]
 
         self.topic = f"{self.discovery_prefix}/sensor/myelectricaldata/{self.usage_point_id}"
+        self.stat = Stat(self.usage_point_id)
 
     def export(self, price_base, price_hp, price_hc):
 
@@ -128,215 +131,215 @@ class HomeAssistant:
         }
 
         # DAILY DATA
-        begin = datetime.combine(yesterday, datetime.min.time())
-        end = datetime.combine(yesterday, datetime.max.time())
-        day_idx = 0
-        daily_obj = []
-        while day_idx < 7:
-            day = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
-            if day:
-                daily_obj.append({
-                    "date": day[0].date,
-                    "value": day[0].value
-                })
-            else:
-                daily_obj.append({
-                    "date": begin,
-                    "value": 0
-                })
-            begin = begin - timedelta(days=1)
-            end = end - timedelta(days=1)
-            day_idx = day_idx + 1
+        # begin = datetime.combine(yesterday, datetime.min.time())
+        # end = datetime.combine(yesterday, datetime.max.time())
+        # day_idx = 0
+        # daily_obj = []
+        # while day_idx < 7:
+        #     day = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
+        #     if day:
+        #         daily_obj.append({
+        #             "date": day[0].date,
+        #             "value": day[0].value
+        #         })
+        #     else:
+        #         daily_obj.append({
+        #             "date": begin,
+        #             "value": 0
+        #         })
+        #     begin = begin - timedelta(days=1)
+        #     end = end - timedelta(days=1)
+        #     day_idx = day_idx + 1
 
-        # current_week
-        app.LOG.log(" - current_week")
-        current_week = 0
-        begin = datetime.combine(now - relativedelta(weeks=1), datetime.min.time())
-        end = datetime.combine(yesterday, datetime.max.time())
-        for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            current_week = current_week + data.value
-        info["current_week"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+        ## current_week
+        # app.LOG.log(" - current_week")
+        # current_week = 0
+        # begin = datetime.combine(now - relativedelta(weeks=1), datetime.min.time())
+        # end = datetime.combine(yesterday, datetime.max.time())
+        # for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     current_week = current_week + data.value
+        # info["current_week"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
 
-        # last_week
-        app.LOG.log(" - last_week")
-        last_week = 0
-        # begin = datetime.combine(yesterday - relativedelta(weeks=1), datetime.min.time())
+        # # last_week
+        # app.LOG.log(" - last_week")
+        # last_week = 0
+        # # begin = datetime.combine(yesterday - relativedelta(weeks=1), datetime.min.time())
+        # # end = datetime.combine(yesterday - relativedelta(weeks=1), datetime.max.time())
+        # # day_idx = 0
+        # # while day_idx < 7:
+        # #     day = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
+        # #     if day:
+        # #         for data in day:
+        # #             last_week = last_week + data.value
+        # #     begin = begin - timedelta(days=1)
+        # #     end = end - timedelta(days=1)
+        # #     day_idx = day_idx + 1
+        # begin = datetime.combine(now - relativedelta(weeks=2), datetime.min.time())
         # end = datetime.combine(yesterday - relativedelta(weeks=1), datetime.max.time())
-        # day_idx = 0
-        # while day_idx < 7:
-        #     day = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
-        #     if day:
-        #         for data in day:
-        #             last_week = last_week + data.value
-        #     begin = begin - timedelta(days=1)
-        #     end = end - timedelta(days=1)
-        #     day_idx = day_idx + 1
-        begin = datetime.combine(now - relativedelta(weeks=2), datetime.min.time())
-        end = datetime.combine(yesterday - relativedelta(weeks=1), datetime.max.time())
-        for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            last_week = last_week + data.value
-        info["last_week"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+        # for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     last_week = last_week + data.value
+        # info["last_week"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
 
-        # current_week_evolution
-        app.LOG.log(" - current_week_evolution")
-        if current_week != 0:
-            current_week_evolution = (current_week - last_week) * 100 / current_week
-        else:
-            current_week_evolution = 0
+        # # current_week_evolution
+        # app.LOG.log(" - current_week_evolution")
+        # if current_week != 0:
+        #     current_week_evolution = (current_week - last_week) * 100 / current_week
+        # else:
+        #     current_week_evolution = 0
 
-        # yesterday_evolution
-        app.LOG.log(" - yesterday_evolution")
-        begin = datetime.combine(yesterday, datetime.min.time())
-        end = datetime.combine(now, datetime.max.time())
-        yesterday_data = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
-        info["yesterday_data"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
-        begin = datetime.combine(yesterday - timedelta(days=1), datetime.min.time())
-        end = datetime.combine(now - timedelta(days=1), datetime.max.time())
-        yesterday_1_data = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
-        info["yesterday_1_data"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
-        if yesterday_data and yesterday_1_data and yesterday_data[0].value != 0 and yesterday_1_data[0].value != 0:
-            yesterday_evolution = (yesterday_data[0].value - yesterday_1_data[0].value) * 100 / yesterday_data[0].value
-        else:
-            yesterday_evolution = 0
+        # # yesterday_evolution
+        # app.LOG.log(" - yesterday_evolution")
+        # begin = datetime.combine(yesterday, datetime.min.time())
+        # end = datetime.combine(now, datetime.max.time())
+        # yesterday_data = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
+        # info["yesterday_data"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
+        # begin = datetime.combine(yesterday - timedelta(days=1), datetime.min.time())
+        # end = datetime.combine(now - timedelta(days=1), datetime.max.time())
+        # yesterday_1_data = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
+        # info["yesterday_1_data"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
+        # if yesterday_data and yesterday_1_data and yesterday_data[0].value != 0 and yesterday_1_data[0].value != 0:
+        #     yesterday_evolution = (yesterday_data[0].value - yesterday_1_data[0].value) * 100 / yesterday_data[0].value
+        # else:
+        #     yesterday_evolution = 0
 
-        # current_week_last_year
-        app.LOG.log(" - current_week_last_year")
-        current_week_last_year = 0
-        # begin = datetime.combine(yesterday - relativedelta(years=1), datetime.min.time())
+        # # current_week_last_year
+        # app.LOG.log(" - current_week_last_year")
+        # current_week_last_year = 0
+        # # begin = datetime.combine(yesterday - relativedelta(years=1), datetime.min.time())
+        # # end = datetime.combine(yesterday - relativedelta(years=1), datetime.max.time())
+        # # day_idx = 0
+        # # while day_idx < 7:
+        # #     day = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
+        # #     if day:
+        # #         for data in day:
+        # #             current_week_last_year = current_week_last_year + data.value
+        # #     begin = begin - timedelta(days=1)
+        # #     end = end - timedelta(days=1)
+        # #     day_idx = day_idx + 1
+        # begin = datetime.combine((now - timedelta(weeks=1)) - relativedelta(years=1), datetime.min.time())
         # end = datetime.combine(yesterday - relativedelta(years=1), datetime.max.time())
-        # day_idx = 0
-        # while day_idx < 7:
-        #     day = app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type)
-        #     if day:
-        #         for data in day:
-        #             current_week_last_year = current_week_last_year + data.value
-        #     begin = begin - timedelta(days=1)
-        #     end = end - timedelta(days=1)
-        #     day_idx = day_idx + 1
-        begin = datetime.combine((now - timedelta(weeks=1)) - relativedelta(years=1), datetime.min.time())
-        end = datetime.combine(yesterday - relativedelta(years=1), datetime.max.time())
-        for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            current_week_last_year = current_week_last_year + data.value
-        info["current_week_last_year"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+        # for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     current_week_last_year = current_week_last_year + data.value
+        # info["current_week_last_year"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
 
-        # last_month
-        app.LOG.log(" - last_month")
-        last_month = 0
-        begin = datetime.combine((now.replace(day=1) - timedelta(days=1)).replace(day=1), datetime.min.time())
-        end = datetime.combine(yesterday.replace(day=1) - timedelta(days=1), datetime.max.time())
-        for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            last_month = last_month + day.value
-        info["last_month"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+        # # last_month
+        # app.LOG.log(" - last_month")
+        # last_month = 0
+        # begin = datetime.combine((now.replace(day=1) - timedelta(days=1)).replace(day=1), datetime.min.time())
+        # end = datetime.combine(yesterday.replace(day=1) - timedelta(days=1), datetime.max.time())
+        # for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     last_month = last_month + day.value
+        # info["last_month"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
 
-        # current_month
-        app.LOG.log(" - current_month")
-        current_month = 0
-        begin = datetime.combine(now.replace(day=1), datetime.min.time())
-        end = yesterday
-        for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            current_month = current_month + day.value
-        info["current_month"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+        # # current_month
+        # app.LOG.log(" - current_month")
+        # current_month = 0
+        # begin = datetime.combine(now.replace(day=1), datetime.min.time())
+        # end = yesterday
+        # for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     current_month = current_month + day.value
+        # info["current_month"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
+        #
+        # # current_month_last_year
+        # app.LOG.log(" - current_month_last_year")
+        # current_month_last_year = 0
+        # begin = begin - relativedelta(years=1)
+        # end = end - relativedelta(years=1)
+        # for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     current_month_last_year = current_month_last_year + day.value
+        # info["current_month_last_year"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
 
-        # current_month_last_year
-        app.LOG.log(" - current_month_last_year")
-        current_month_last_year = 0
-        begin = begin - relativedelta(years=1)
-        end = end - relativedelta(years=1)
-        for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            current_month_last_year = current_month_last_year + day.value
-        info["current_month_last_year"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+        # # current_month_evolution
+        # app.LOG.log(" - current_month_evolution")
+        # if last_month != 0:
+        #     current_month_evolution = (current_month - current_month_last_year) * 100 / last_month
+        # else:
+        #     current_month_evolution = 0
 
-        # current_month_evolution
-        app.LOG.log(" - current_month_evolution")
-        if last_month != 0:
-            current_month_evolution = (current_month - current_month_last_year) * 100 / last_month
-        else:
-            current_month_evolution = 0
+        # # last_month_last_year
+        # app.LOG.log(" - last_month_last_year")
+        # last_month_last_year = 0
+        # begin = datetime.combine(
+        #     (now.replace(day=1) - timedelta(days=1)).replace(day=1),
+        #     datetime.min.time()) - relativedelta(years=1)
+        # end = datetime.combine(
+        #     yesterday.replace(day=1) - timedelta(days=1),
+        #     datetime.max.time()) - relativedelta(years=1)
+        # for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     last_month_last_year = last_month_last_year + day.value
+        # info["last_month_last_year"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
+        #
+        # # monthly_evolution
+        # app.LOG.log(" - monthly_evolution")
+        # if last_month != 0:
+        #     monthly_evolution = (last_month - last_month_last_year) * 100 / last_month
+        # else:
+        #     monthly_evolution = 0
 
-        # last_month_last_year
-        app.LOG.log(" - last_month_last_year")
-        last_month_last_year = 0
-        begin = datetime.combine(
-            (now.replace(day=1) - timedelta(days=1)).replace(day=1),
-            datetime.min.time()) - relativedelta(years=1)
-        end = datetime.combine(
-            yesterday.replace(day=1) - timedelta(days=1),
-            datetime.max.time()) - relativedelta(years=1)
-        for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            last_month_last_year = last_month_last_year + day.value
-        info["last_month_last_year"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
-
-        # monthly_evolution
-        app.LOG.log(" - monthly_evolution")
-        if last_month != 0:
-            monthly_evolution = (last_month - last_month_last_year) * 100 / last_month
-        else:
-            monthly_evolution = 0
-
-        # current_year
-        app.LOG.log(" - current_year")
-        current_year = 0
-        begin = datetime.combine(now.replace(month=1).replace(day=1), datetime.min.time())
-        end = yesterday
-        for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            current_year = current_year + day.value
-        info["current_year"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
-
-        # current_year_last_year
-        app.LOG.log(" - current_year_last_year")
-        current_year_last_year = 0
-        begin = datetime.combine(begin - relativedelta(years=1), datetime.min.time())
-        end = end - relativedelta(years=1)
-        for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            current_year_last_year = current_year_last_year + day.value
-        info["current_year_last_year"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
-
-        # last_year
-        app.LOG.log(" - last_year")
-        last_year = 0
-        begin = datetime.combine(now.replace(month=1).replace(day=1) - relativedelta(years=1),
-                                 datetime.min.time())
-        last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
-        end = datetime.combine(begin.replace(day=last_day_of_month).replace(month=12), datetime.max.time())
-        for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
-            last_year = last_year + day.value
-        info["last_year"] = {
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+        # # current_year
+        # app.LOG.log(" - current_year")
+        # current_year = 0
+        # begin = datetime.combine(now.replace(month=1).replace(day=1), datetime.min.time())
+        # end = yesterday
+        # for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     current_year = current_year + day.value
+        # info["current_year"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
+        #
+        # # current_year_last_year
+        # app.LOG.log(" - current_year_last_year")
+        # current_year_last_year = 0
+        # begin = datetime.combine(begin - relativedelta(years=1), datetime.min.time())
+        # end = end - relativedelta(years=1)
+        # for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     current_year_last_year = current_year_last_year + day.value
+        # info["current_year_last_year"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
+        #
+        # # last_year
+        # app.LOG.log(" - last_year")
+        # last_year = 0
+        # begin = datetime.combine(now.replace(month=1).replace(day=1) - relativedelta(years=1),
+        #                          datetime.min.time())
+        # last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
+        # end = datetime.combine(begin.replace(day=last_day_of_month).replace(month=12), datetime.max.time())
+        # for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        #     last_year = last_year + day.value
+        # info["last_year"] = {
+        #     "begin": begin.strftime(self.date_format),
+        #     "end": end.strftime(self.date_format)
+        # }
 
         # DETAIL DATA
         app.LOG.log(" - yesterday_hp / yesterday_hc")
@@ -470,6 +473,86 @@ class HomeAssistant:
             "end": end.strftime(self.date_format_detail)
         }
 
+        # current_week_array
+        current_week_array = self.stat.current_week_array("consumption")
+        daily_obj = current_week_array["value"]
+        # current_week
+        current_week = self.stat.current_week("consumption")
+        current_week_value = current_week["value"]
+        info["current_week"] = {
+            "begin": current_week["begin"],
+            "end": current_week["end"]
+        }
+        # last_week
+        last_week = self.stat.last_week("consumption")
+        last_week_value = last_week["value"]
+        info["last_week"] = {
+            "begin": last_week["begin"],
+            "end": last_week["end"]
+        }
+        # current_week_last_year
+        current_week_last_year = self.stat.current_week_last_year("consumption")
+        current_week_last_year_value = current_week_last_year["value"]
+        info["current_week_last_year"] = {
+            "begin": current_week_last_year["begin"],
+            "end": current_week_last_year["end"]
+        }
+        # last_month
+        last_month = self.stat.last_month("consumption")
+        last_month_value = last_month["value"]
+        info["last_month"] = {
+            "begin": last_month["begin"],
+            "end": last_month["end"]
+        }
+        # current_month
+        current_month = self.stat.current_month("consumption")
+        current_month_value = current_month["value"]
+        info["current_month"] = {
+            "begin": current_month["begin"],
+            "end": current_month["end"]
+        }
+        # current_month_last_year
+        current_month_last_year = self.stat.current_month_last_year("consumption")
+        current_month_last_year_value = current_month_last_year["value"]
+        info["current_month_last_year"] = {
+            "begin": current_month_last_year["begin"],
+            "end": current_month_last_year["end"]
+        }
+        # last_month_last_year
+        last_month_last_year = self.stat.last_month_last_year("consumption")
+        last_month_last_year_value = last_month_last_year["value"]
+        info["last_month_last_year"] = {
+            "begin": last_month_last_year["begin"],
+            "end": last_month_last_year["end"]
+        }
+        # current_year
+        current_year = self.stat.current_year("consumption")
+        current_year_value = current_year["value"]
+        info["current_year"] = {
+            "begin": current_year["begin"],
+            "end": current_year["end"]
+        }
+        # current_year_last_year
+        current_year_last_year = self.stat.current_year_last_year("consumption")
+        current_year_last_year_value = current_year_last_year["value"]
+        info["current_year_last_year"] = {
+            "begin": current_year_last_year["begin"],
+            "end": current_year_last_year["end"]
+        }
+        # last_year
+        last_year = self.stat.last_year("consumption")
+        last_year_value = last_year["value"]
+        info["last_year"] = {
+            "begin": last_year["begin"],
+            "end": last_year["end"]
+        }
+
+        # evolution
+        current_week_evolution = self.stat.current_week_evolution()
+        yesterday_evolution = self.stat.yesterday_evolution()
+        current_month_evolution = self.stat.current_month_evolution()
+        monthly_evolution = self.stat.monthly_evolution()
+
         yesterdayLastYear = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
         config = {
             f"attributes": json.dumps(
@@ -491,8 +574,8 @@ class HomeAssistant:
                         convert_kw(daily_obj[5]["value"]),
                         convert_kw(daily_obj[6]["value"])
                     ],
-                    "current_week": convert_kw(current_week),
-                    "last_week": convert_kw(last_week),
+                    "current_week": convert_kw(current_week_value),
+                    "last_week": convert_kw(last_week_value),
                     "day_1": convert_kw(daily_obj[0]["value"]),
                     "day_2": convert_kw(daily_obj[1]["value"]),
                     "day_3": convert_kw(daily_obj[2]["value"]),
@@ -500,14 +583,14 @@ class HomeAssistant:
                     "day_5": convert_kw(daily_obj[4]["value"]),
                     "day_6": convert_kw(daily_obj[5]["value"]),
                     "day_7": convert_kw(daily_obj[6]["value"]),
-                    "current_week_last_year": convert_kw(current_week_last_year),
-                    "last_month": convert_kw(last_month),
-                    "current_month": convert_kw(current_month),
-                    "current_month_last_year": convert_kw(current_month_last_year),
-                    "last_month_last_year": convert_kw(last_month_last_year),
-                    "last_year": convert_kw(last_year),
-                    "current_year": convert_kw(current_year),
-                    "current_year_last_year": convert_kw(current_year_last_year),
+                    "current_week_last_year": convert_kw(current_week_last_year_value),
+                    "last_month": convert_kw(last_month_value),
+                    "current_month": convert_kw(current_month_value),
+                    "current_month_last_year": convert_kw(current_month_last_year_value),
+                    "last_month_last_year": convert_kw(last_month_last_year_value),
+                    "last_year": convert_kw(last_year_value),
+                    "current_year": convert_kw(current_year_value),
+                    "current_year_last_year": convert_kw(current_year_last_year_value),
                     "dailyweek": [
                         daily_obj[0]["date"].strftime(self.date_format),
                         daily_obj[1]["date"].strftime(self.date_format),
@@ -596,7 +679,6 @@ class HomeAssistant:
                     "subscribed_power": f"{contract.subscribed_power}"
                 })
         }
-
         for key, value in info.items():
             config[f"info/{key}"] = json.dumps(value)
         app.MQTT.publish_multiple(config, self.topic)
