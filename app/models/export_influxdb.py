@@ -17,13 +17,13 @@ def forceRound(x, n):
 
 class ExportInfluxDB:
 
-    def __init__(self, usage_point_id, mesure_type="consumption" ):
+    def __init__(self, usage_point_id, measurement_direction="consumption" ):
         self.usage_point_id = usage_point_id
-        self.mesure_type = mesure_type
+        self.measurement_direction = measurement_direction
 
-    def daily(self, price, mesure_type="consumption"):
+    def daily(self, price, measurement_direction="consumption"):
         current_month = ""
-        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{mesure_type}" dans influxdb')
+        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement_direction}" dans influxdb')
         for daily in app.DB.get_daily_all(self.usage_point_id):
             date = daily.date
             watt = daily.value
@@ -32,7 +32,7 @@ class ExportInfluxDB:
             if current_month != date.strftime('%m'):
                 app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
             app.INFLUXDB.write(
-                measurement=mesure_type,
+                measurement=measurement_direction,
                 date=utc.localize(date),
                 tags={
                     "usage_point_id": self.usage_point_id,
@@ -47,9 +47,9 @@ class ExportInfluxDB:
             )
             current_month = date.strftime("%m")
 
-    def detail(self, price_hp, price_hc=0, mesure_type="consumption_detail"):
+    def detail(self, price_hp, price_hc=0, measurement_direction="consumption_detail"):
         current_month = ""
-        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{mesure_type}" dans influxdb')
+        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement_direction}" dans influxdb')
         for detail in app.DB.get_detail_all(self.usage_point_id):
             date = detail.date
             watt = detail.value
@@ -61,7 +61,7 @@ class ExportInfluxDB:
             else:
                 euro = kwatt * price_hc
             app.INFLUXDB.write(
-                measurement=mesure_type,
+                measurement=measurement_direction,
                 date=utc.localize(date),
                 tags={
                     "usage_point_id": self.usage_point_id,

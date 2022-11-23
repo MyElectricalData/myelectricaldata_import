@@ -72,25 +72,27 @@ class Daily:
                                     date=datetime.datetime.combine(single_date, datetime.datetime.min.time()),
                                     value=interval_reading_tmp[single_date.strftime(self.date_format)],
                                     blacklist=blacklist,
-                                    mesure_type=self.measure_type
+                                    measurement_direction=self.measure_type
                                 )
                             else:
                                 # NOT FOUND
                                 self.db.daily_fail_increment(
                                     usage_point_id=self.usage_point_id,
                                     date=datetime.datetime.combine(single_date, datetime.datetime.min.time()),
-                                    mesure_type=self.measure_type
+                                    measurement_direction=self.measure_type
                                 )
                         return interval_reading
                     else:
                         return {
                             "error": True,
                             "description": json.loads(data.text)["detail"],
+                            "status_code": data.status_code
                         }
                 else:
                     return {
                         "error": True,
                         "description": json.loads(data.text)["detail"],
+                        "status_code": data.status_code
                     }
         except Exception as e:
             app.LOG.exception(e)
@@ -131,7 +133,7 @@ class Daily:
                     "error": True,
                     "description": "MyElectricalData est indisponible."
                 }
-
+                app.LOG.error(error)
             if "error" in response and response["error"]:
                 error = [
                     "Echec de la récupération des données.",
@@ -139,6 +141,12 @@ class Daily:
                     f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
                 ]
                 app.LOG.error(error)
+
+            if response["status_code"] == 409:
+                finish = False
+                error = ["Arrêt de la récupération des données suite à une erreur.",
+                        f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
+                app.LOG.warning(error)
 
             count += 1
         return result

@@ -5,9 +5,9 @@ from dateutil.relativedelta import relativedelta
 
 class ExportMqtt:
 
-    def __init__(self, usage_point_id, mesure_type="consumption"):
+    def __init__(self, usage_point_id, measurement_direction="consumption"):
         self.usage_point_id = usage_point_id
-        self.mesure_type = mesure_type
+        self.measurement_direction = measurement_direction
         self.date_format = "%Y-%m-%d"
 
     def contract(self):
@@ -64,7 +64,7 @@ class ExportMqtt:
         current_month_year = ""
         current_this_month_year = ""
 
-        for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.mesure_type):
+        for data in app.DB.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             date = data.date
             watt = data.value
             kwatt = data.value / 1000
@@ -155,7 +155,7 @@ class ExportMqtt:
                                                            datetime.min.time())
             finish = False
             while not finish:
-                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
+                sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
                 self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:
@@ -184,7 +184,7 @@ class ExportMqtt:
                     key = "year"
                 else:
                     key = f"year-{idx}"
-                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/linear/{key}"
+                sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/linear/{key}"
                 self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:
@@ -230,7 +230,7 @@ class ExportMqtt:
             }
         }
 
-        for data in app.DB.get_detail_range(self.usage_point_id, begin, end, self.mesure_type):
+        for data in app.DB.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
             date = data.date
             watt = data.value / (60 / data.interval)
             kwatt = watt / 1000
@@ -304,7 +304,7 @@ class ExportMqtt:
                                                            datetime.min.time())
             finish = False
             while not finish:
-                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/annual/{date_begin_current.strftime('%Y')}"
+                sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
                 self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:
@@ -333,7 +333,7 @@ class ExportMqtt:
                     key = "year"
                 else:
                     key = f"year-{idx}"
-                sub_prefix = f"{self.usage_point_id}/{self.mesure_type}/linear/{key}"
+                sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/linear/{key}"
                 self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:

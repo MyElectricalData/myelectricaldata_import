@@ -45,13 +45,13 @@ class Database:
         engine = create_engine(uri, echo=False, query_cache_size=0)
         session = sessionmaker(engine)(autocommit=True, autoflush=True)
 
-        for mesure_type in ["consumption", "production"]:
-            LOG.warning(f'Migration des "{mesure_type}_daily"')
-            if mesure_type == "consumption":
+        for measurement_direction in ["consumption", "production"]:
+            LOG.warning(f'Migration des "{measurement_direction}_daily"')
+            if measurement_direction == "consumption":
                 table = ConsumptionDaily
             else:
                 table = ProductionDaily
-            daily_data = session.execute(f"select * from {mesure_type}_daily order by date").all()
+            daily_data = session.execute(f"select * from {measurement_direction}_daily order by date").all()
             current_date = ""
             year_value = 0
             bulk_insert = []
@@ -73,12 +73,12 @@ class Database:
                     year_value = 0
             self.session.add_all(bulk_insert)
 
-            LOG.warning(f'Migration des "{mesure_type}_detail"')
-            if mesure_type == "consumption":
+            LOG.warning(f'Migration des "{measurement_direction}_detail"')
+            if measurement_direction == "consumption":
                 table = ConsumptionDetail
             else:
                 table = ProductionDetail
-            detail_data = session.execute(f"select * from {mesure_type}_detail order by date").all()
+            detail_data = session.execute(f"select * from {measurement_direction}_detail order by date").all()
             current_date = ""
             day_value = 0
             bulk_insert = []
@@ -382,8 +382,8 @@ class Database:
     ## ----------------------------------------------------------------------------------------------------------------
     ## DAILY
     ## ----------------------------------------------------------------------------------------------------------------
-    def get_daily_all(self, usage_point_id, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_daily_all(self, usage_point_id, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -396,8 +396,8 @@ class Database:
             .order_by(table.date.desc())
         ).all()
 
-    def get_daily_date(self, usage_point_id, date, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_daily_date(self, usage_point_id, date, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -410,14 +410,14 @@ class Database:
             .where(table.date == date)
         ).first()
 
-    def get_daily_state(self, usage_point_id, date, mesure_type="consumption"):
-        if self.get_daily_date(usage_point_id, date, mesure_type) is not None:
+    def get_daily_state(self, usage_point_id, date, measurement_direction="consumption"):
+        if self.get_daily_date(usage_point_id, date, measurement_direction) is not None:
             return True
         else:
             return False
 
-    def get_daily_last_date(self, usage_point_id, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_daily_last_date(self, usage_point_id, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -434,8 +434,8 @@ class Database:
         else:
             return current_data.date
 
-    def get_daily_last(self, usage_point_id, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_daily_last(self, usage_point_id, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -453,8 +453,8 @@ class Database:
         else:
             return current_data
 
-    def get_daily_first_date(self, usage_point_id, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_daily_first_date(self, usage_point_id, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -473,15 +473,15 @@ class Database:
         else:
             return current_data.date
 
-    def get_daily_fail_count(self, usage_point_id, date, mesure_type="consumption"):
-        result = self.get_daily_date(usage_point_id, date, mesure_type)
+    def get_daily_fail_count(self, usage_point_id, date, measurement_direction="consumption"):
+        result = self.get_daily_date(usage_point_id, date, measurement_direction)
         if hasattr(result, "fail_count"):
             return result.fail_count
         else:
             return 0
 
-    def daily_fail_increment(self, usage_point_id, date, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def daily_fail_increment(self, usage_point_id, date, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -518,8 +518,8 @@ class Database:
             )
         return fail_count
 
-    def get_daily_range(self, usage_point_id, begin, end, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_daily_range(self, usage_point_id, begin, end, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -540,7 +540,7 @@ class Database:
         else:
             return current_data
 
-    def get_daily(self, usage_point_id, begin, end, mesure_type="consumption"):
+    def get_daily(self, usage_point_id, begin, end, measurement_direction="consumption"):
         delta = end - begin
         result = {
             "missing_data": False,
@@ -550,7 +550,7 @@ class Database:
         for i in range(delta.days + 1):
             checkDate = begin + timedelta(days=i)
             checkDate = datetime.combine(checkDate, datetime.min.time())
-            query_result = self.get_daily_date(usage_point_id, checkDate, mesure_type)
+            query_result = self.get_daily_date(usage_point_id, checkDate, measurement_direction)
             checkDate = checkDate.strftime('%Y-%m-%d')
             # print(query_result)
             if query_result is None:
@@ -581,8 +581,8 @@ class Database:
                     }
         return result
 
-    def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -610,8 +610,8 @@ class Database:
                 )
             )
 
-    def delete_daily(self, usage_point_id, date=None, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def delete_daily(self, usage_point_id, date=None, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
         else:
             table = ProductionDaily
@@ -625,8 +625,8 @@ class Database:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
         return True
 
-    def blacklist_daily(self, usage_point_id, date, action=True, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def blacklist_daily(self, usage_point_id, date, action=True, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
         else:
@@ -661,8 +661,8 @@ class Database:
     ## -----------------------------------------------------------------------------------------------------------------
     ## DETAIL CONSUMPTION
     ## -----------------------------------------------------------------------------------------------------------------
-    def get_detail_all(self, usage_point_id, begin=None, end=None, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_detail_all(self, usage_point_id, begin=None, end=None, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
         else:
@@ -685,8 +685,8 @@ class Database:
                 .order_by(table.date)
             ).all()
 
-    def get_detail_date(self, usage_point_id, date, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_detail_date(self, usage_point_id, date, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
         else:
@@ -699,8 +699,8 @@ class Database:
             .where(table.date == date)
         ).first()
 
-    def get_detail_range(self, usage_point_id, begin, end, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_detail_range(self, usage_point_id, begin, end, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
         else:
@@ -721,7 +721,7 @@ class Database:
         else:
             return current_data
 
-    def get_detail(self, usage_point_id, begin, end, mesure_type="consumption"):
+    def get_detail(self, usage_point_id, begin, end, measurement_direction="consumption"):
         delta = begin - begin
 
         result = {
@@ -731,7 +731,7 @@ class Database:
         }
 
         for i in range(delta.days + 1):
-            query_result = self.get_detail_all(usage_point_id, begin, end, mesure_type)
+            query_result = self.get_detail_all(usage_point_id, begin, end, measurement_direction)
             if len(query_result) < 160:
                 result["missing_data"] = True
             else:
@@ -744,8 +744,8 @@ class Database:
                     }
             return result
 
-    def get_detail_state(self, usage_point_id, date, mesure_type="consumption"):
-        if mesure_type == "consumption":
+    def get_detail_state(self, usage_point_id, date, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
         else:
