@@ -130,100 +130,6 @@ class HomeAssistant:
             "yesterday_last_year": yesterday_last_year.strftime(self.date_format)
         }
 
-        # app.LOG.log(" - dailyweek_hp / dailyweek_hc")
-        # dailyweek_hp = {}
-        # dailyweek_hc = {}
-        # # begin = datetime.combine(self.now - timedelta(weeks=1), datetime.min.time())
-        # # end = datetime.combine(self.yesterday, datetime.max.time())
-        # # day_idx = 0
-        # # last_date = 0
-        # # for data in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
-        # #     if last_date != data.date.strftime("%d"):
-        # #         day_idx = day_idx + 1
-        # #     date = data.date
-        # #     value = data.value
-        # #     if data.measure_type == "HP":
-        # #         if day_idx not in dailyweek_hp:
-        # #             dailyweek_hp[day_idx] = {
-        # #                 "date": date,
-        # #                 "value": value / (60 / data.interval),
-        # #             }
-        # #         else:
-        # #             dailyweek_hp[day_idx]["value"] = dailyweek_hp[day_idx]["value"] + data.value
-        # #     if data.measure_type == "HC":
-        # #         if day_idx not in dailyweek_hc:
-        # #             dailyweek_hc[day_idx] = {
-        # #                 "date": date,
-        # #                 "value": value / (60 / data.interval),
-        # #             }
-        # #         else:
-        # #             dailyweek_hc[day_idx]["value"] = dailyweek_hc[day_idx]["value"] + data.value
-        # #     last_date = data.date.strftime("%d")
-        # # info["dailyweek_hp_hc"] = {
-        # #     "begin": begin.strftime(self.date_format_detail),
-        # #     "end": end.strftime(self.date_format_detail)
-        # # }
-        #
-        # begin = datetime.combine(self.yesterday - timedelta(days=1), datetime.min.time())
-        # end = datetime.combine(self.yesterday, datetime.max.time())
-        # day_idx = 0
-        # while day_idx < 7:
-        #     detail_range = app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
-        #     if not detail_range:
-        #         dailyweek_hp[day_idx] = {
-        #             "date": begin,
-        #             "value": 0,
-        #         }
-        #         dailyweek_hc[day_idx] = {
-        #             "date": begin,
-        #             "value": 0,
-        #         }
-        #     else:
-        #         for day in detail_range:
-        #             date = day.date
-        #             value = day.value
-        #             if day.measure_type == "HP":
-        #                 if day_idx not in dailyweek_hp:
-        #                     dailyweek_hp[day_idx] = {
-        #                         "date": date,
-        #                         "value": value / (60 / day.interval),
-        #                     }
-        #                 else:
-        #                     dailyweek_hp[day_idx]["value"] = dailyweek_hp[day_idx]["value"] + day.value
-        #             if day.measure_type == "HC":
-        #                 if day_idx not in dailyweek_hc:
-        #                     dailyweek_hc[day_idx] = {
-        #                         "date": date,
-        #                         "value": value / (60 / day.interval),
-        #                     }
-        #                 else:
-        #                     dailyweek_hc[day_idx]["value"] = dailyweek_hc[day_idx]["value"] + day.value
-        #     day_idx = day_idx + 1
-        #     begin = begin - timedelta(days=1)
-        #     end = end - timedelta(days=1)
-        #
-        # app.LOG.log(" - peak_offpeak_percent_hp / peak_offpeak_percent_hc")
-        # peak_offpeak_percent_hp = 0
-        # peak_offpeak_percent_hc = 0
-        # begin = yesterday - relativedelta(years=1)
-        # end = yesterday
-        # for day in app.DB.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-        #     if day.measure_type == "HP":
-        #         peak_offpeak_percent_hp = peak_offpeak_percent_hp + (day.value / (60 / day.interval))
-        #     if day.measure_type == "HC":
-        #         peak_offpeak_percent_hc = peak_offpeak_percent_hc + (day.value / (60 / day.interval))
-        # if peak_offpeak_percent_hp != 0:
-        #     peak_offpeak_percent = (peak_offpeak_percent_hp - peak_offpeak_percent_hc) * 100 / peak_offpeak_percent_hp
-        # else:
-        #     peak_offpeak_percent = 0
-        # info["peak_offpeak_percent_hp_hc"] = {
-        #     "begin": begin.strftime(self.date_format_detail),
-        #     "end": end.strftime(self.date_format_detail)
-        # }
-
-        # # current_week_array
-        # current_week_array = self.stat.current_week_array("consumption")
-        # daily_obj = current_week_array["value"]
         # current_week
         current_week = self.stat.current_week("consumption")
         current_week_value = current_week["value"]
@@ -304,11 +210,11 @@ class HomeAssistant:
         }
 
         # evolution
-        current_week_evolution = self.stat.current_week_evolution()
-        yesterday_evolution = self.stat.yesterday_evolution()
-        current_month_evolution = self.stat.current_month_evolution()
-        monthly_evolution = self.stat.monthly_evolution()
         peak_offpeak_percent = self.stat.peak_offpeak_percent()
+        current_week_evolution = self.stat.current_week_evolution()
+        current_month_evolution = self.stat.current_month_evolution()
+        yesterday_evolution = self.stat.yesterday_evolution()
+        monthly_evolution = self.stat.monthly_evolution()
 
         yesterdayLastYear = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
         config = {
