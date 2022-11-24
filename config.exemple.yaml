@@ -1,4 +1,4 @@
-cycle: 14400  # 2H
+cycle: 14400  # 4H
 debug: true
 wipe_influxdb: false
 home_assistant:
