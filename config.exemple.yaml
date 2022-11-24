@@ -34,7 +34,6 @@ myelectricaldata:
     consumption_price_base: '0.145907'
     consumption_price_hc: '0.124364'
     consumption_price_hp: '0.164915'
-    enable: 'true'
     offpeak_hours_0: 22H00-6H00               # LUNDI
     offpeak_hours_1: 22H00-6H00               # MARDI
     offpeak_hours_2: 22H00-6H00               # MERCREDI
