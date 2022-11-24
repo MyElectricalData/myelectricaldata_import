@@ -1,6 +1,7 @@
 .idea
 .env
 /data/*
+/__pycache__/
 /app/__pycache__/
 /tmp
 /data/config.yaml

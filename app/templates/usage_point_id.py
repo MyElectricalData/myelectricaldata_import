@@ -461,13 +461,13 @@ class UsagePointId:
         for detail in data:
             year = detail.date.strftime("%Y")
             value = detail.value
-            mesure_type = detail.measure_type
+            measurement_direction = detail.measure_type
             if not year in recap:
                 recap[year] = {
                     "HC": 0,
                     "HP": 0,
                 }
-            recap[year][mesure_type] = recap[year][mesure_type] + value
+            recap[year][measurement_direction] = recap[year][measurement_direction] + value
         for year, data in recap.items():
             if self.recap_hc_hp == "Pas de données.":
                 self.recap_hc_hp = ""
