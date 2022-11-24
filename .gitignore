@@ -3,3 +3,9 @@
 /data/*
 /app/__pycache__/
 /tmp
+/data/config.yaml
+/mosquitto
+/data
+/app/models/__pycache__/
+/app/alembic/__pycache__/
+/app/alembic/versions/__pycache__/

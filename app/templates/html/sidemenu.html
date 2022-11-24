@@ -1,0 +1,73 @@
+<div class="side_menu">
+    <div class="burger_box">
+        <div class="menu-icon-container">
+            <a href="#" class="menu-icon js-menu_toggle closed">
+			<span class="menu-icon_box">
+				<span class="menu-icon_line menu-icon_line--1"></span>
+				<span class="menu-icon_line menu-icon_line--2"></span>
+				<span class="menu-icon_line menu-icon_line--3"></span>
+			</span>
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <h2 class="menu_title">Menu</h2>
+        <ul class="list_load">
+            <li class="list_item"><a href="/">Accueil</a></li>
+        <h2 class="menu_title">Passerelle</h2>
+            <li class="list_item">
+                <a style="cursor: pointer" class="alert_redirect" about="{{ myelectricaldata }}">Consentement</a>
+            </li>
+            <li class="list_item">
+                <a style="cursor: pointer" class="alert_redirect"
+                   about="{{ myelectricaldata }}/documentation/">Documentation</a></li>
+            <li class="list_item">
+                <a style="cursor: pointer" class="alert_redirect" about="{{ myelectricaldata }}/docs/">Swagger</a></li>
+            <li class="list_item">
+                <a style="cursor: pointer" class="alert_redirect" about="{{ myelectricaldata }}/redoc"/>Redoc</a>
+            </li>
+            <li class="list_item">
+                <a style="cursor: pointer" class="alert_redirect" about="{{ myelectricaldata }}/error_code/">Codes
+                    d'erreurs</a></li>
+            <li class="list_item">
+                <a style="cursor: pointer" class="alert_redirect" about="{{ myelectricaldata }}/faq/">FAQ</a></li>
+        </ul>
+        <div class="spacer_box"><p>Liens</p></div>
+        <ul id="menu_link" class="list_load">
+            <li class="list_item"><a href="https://discord.gg/DfVJZme" style="display: inline-block;">
+                <div>
+                    <img style="vertical-align:middle; width: 18px" src="/static/img/discord.png" alt="Discord">
+                    <span style="padding-left: 10px;">Discord</span>
+                </div>
+            </a>
+            </li>
+            <li class="list_item"><a href="https://mon-compte-client.enedis.fr" style="display: inline-block;">
+                <div>
+                    <img style="vertical-align:middle; width: 18px" src="/static/img/enedis.png" alt="Enedis">
+                    <span style="padding-left: 10px;">Enedis</span>
+                </div>
+            </a>
+            </li>
+        </ul>
+        <ul class="list_load">
+            <li class="list_item">
+                <div style="text-align: center" id="paypal" class="paypal_link">
+                    <form action="https://www.paypal.com/donate" method="post" target="_top" style="height: 55px;"
+                          id="paypal_form">
+                        <input type="hidden" name="business" value="FY25JLXDYLXAJ"/>
+                        <input type="hidden" name="no_recurring" value="0"/>
+                        <input type="hidden" name="currency_code" value="EUR"/>
+                        <input type="image" id="paypal_img"
+                               src="/static/img/paypal.png"
+                               border="0"
+                               name="submit"
+                               title="PayPal - The safer, easier way to pay online!"
+                               alt="Bouton Faites un don avec PayPal"/>
+                        <img alt="" border="0" src="https://www.paypal.com/fr_FR/i/scr/pixel.gif" width="1"
+                             height="1"/>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>

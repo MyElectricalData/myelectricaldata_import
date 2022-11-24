@@ -1,19 +1,20 @@
 version: "3.9"
 services:
-  enedisgateway2mqtt:
+  myelectricaldata_import:
     build: .
     environment:
       TZ: Europe/Paris
+    ports:
+      - '5000:5000'
     links:
       - influxdb
       - mosquitto
     volumes:
       - ./data:/data
       - ./app:/app
-    command: tail -f /dev/null
       
   influxdb:
-    image: influxdb:2.0.7
+    image: influxdb:2.4
     ports:
       - '8086:8086'
     volumes:
@@ -25,12 +26,12 @@ services:
       start_period: 30s
     environment:
       TZ: Europe/Paris
-      DOCKER_INFLUXDB_INIT_MODE: setup 
-      DOCKER_INFLUXDB_INIT_USERNAME: enedisgateway2mqtt
-      DOCKER_INFLUXDB_INIT_PASSWORD: enedisgateway2mqtt
-      DOCKER_INFLUXDB_INIT_ORG: enedisgateway2mqtt
-      DOCKER_INFLUXDB_INIT_BUCKET: enedisgateway2mqtt
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: myelectricaldata
+      DOCKER_INFLUXDB_INIT_PASSWORD: myelectricaldata
+      DOCKER_INFLUXDB_INIT_ORG: myelectricaldata
+      DOCKER_INFLUXDB_INIT_BUCKET: myelectricaldata
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: myelectricaldata
 
   mosquitto:
     image: eclipse-mosquitto:2.0.12
@@ -44,7 +45,6 @@ services:
     ports:
       - 1883:1883
       - 9001:9001
-      
 
   mqtt_explorer:
     image: smeagolworms4/mqtt-explorer

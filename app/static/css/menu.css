@@ -1,0 +1,144 @@
+a,
+.side_menu {
+    -webkit-transition: all 300ms ease-in-out;
+    transition: all 300ms ease-in-out;
+    z-index: 100;
+}
+
+/* MENU CONTAINER ----- */
+.side_menu {
+    background: var(--sde-bg-color);
+    height: 100vh;
+    left: -250px;
+    position: fixed;
+    top: 0;
+    width: 250px;
+    border-right: solid 5px var(--text-title);
+}
+.side_menu .container {
+    padding: 0 1em;
+}
+
+/* HAMBURGER STYLES ----- */
+.burger_box {
+    display: block;
+    float: right;
+    margin-right: -45px;
+    /*background: var(--text-title);*/
+    border-top-right-radius: 10px ;
+    border-bottom-right-radius: 10px ;
+}
+.burger_box a.menu-icon {
+    display: inline-block;
+    float: none;
+    height: 25px;
+    padding: 10px;
+    opacity: .5;
+    width: 25px;
+    z-index: 100;
+    border-top-right-radius: 10px ;
+    border-bottom-right-radius: 10px ;
+    /*background: var(--text-title);*/
+}
+.burger_box a.menu-icon:hover,
+.burger_box a.menu-icon.opened {
+    opacity: 1;
+    background: var(--ligne);
+}
+.burger_box a.menu-icon.opened {
+    background: var(--ligne);
+    border: solid 5px var(--ligne);
+}
+
+.burger_box .menu-icon_box {
+    display: inline-block;
+    height: 25px;
+    position: relative;
+    text-align: left;
+    width: 25px;
+}
+.burger_box .menu-icon_line {
+    background: var(--text-color);
+    border-radius: 2px;
+    display: inline-block;
+    height: 3px;
+    position: absolute;
+    width: 100%;
+}
+.burger_box .menu-icon_line--1 {
+    top: 2px;
+}
+.burger_box .menu-icon_line--2 {
+    top: 10px;
+}
+.burger_box .menu-icon_line--3 {
+    top: 18px;
+}
+.burger_box .menu-icon_line--1 {
+    transition: top 200ms 250ms, transform 200ms;
+    -webkit-transition: top 200ms 250ms, -webkit-transform 200ms;
+}
+.burger_box .menu-icon_line--2 {
+    transition: opacity 0ms 300ms;
+    -webkit-transition: opacity 0ms 300ms;
+}
+.burger_box .menu-icon_line--3 {
+    transition: top 100ms 300ms, transform 200ms;
+    -webkit-transition: top 100ms 300ms, -webkit-transform 200ms;
+}
+.burger_box .menu-icon.opened .menu-icon_box {
+    transform: scale3d(0.9, 0.9, 0.9);
+    -webkit-transform: scale3d(0.9, 0.9, 0.9);
+}
+.burger_box .menu-icon.opened .menu-icon_line {
+    top: 10px;
+}
+.burger_box .menu-icon.opened .menu-icon_line--1 {
+    transform: rotate3d(0, 0, 1, 45deg);
+    -webkit-transform: rotate3d(0, 0, 1, 45deg);
+    transition: top 100ms, transform 200ms 250ms;
+    -webkit-transition: top 100ms, -webkit-transform 200ms 250ms;
+}
+.burger_box .menu-icon.opened .menu-icon_line--2 {
+    opacity: 0;
+    transition: opacity 200ms;
+    -webkit-transition: opacity 200ms;
+}
+.burger_box .menu-icon.opened .menu-icon_line--3 {
+    transform: rotate3d(0, 0, 1, -45deg);
+    -webkit-transform: rotate3d(0, 0, 1, -45deg);
+    transition: top 200ms, transform 200ms 250ms;
+    -webkit-transition: top 200ms, -webkit-transform 200ms 250ms;
+}
+
+/* STAGGER LIST ----- */
+.list_load {
+    display: none;
+    list-style: none;
+    padding: 0;
+}
+.list_item {
+    margin-left: -20px;
+    opacity: 0;
+    -webkit-transition: all 200ms ease-in-out;
+    transition: all 200ms ease-in-out;
+}
+.list_item a {
+    color: var(--main-bg-color);
+    display: block;
+    padding: 5px 10px;
+    text-decoration: none;
+}
+.list_item a:hover {
+    background: var(--sde-bg-color);
+}
+
+.menu_title, .spacer_box {
+    color: var(--logo);
+    letter-spacing: 0px;
+    font-size: 25px;
+    background: var(--sde-bg-color);
+    border: 0px solid var(--main-bg-color);
+    border-radius: 15px;
+    /*padding: 10px;*/
+}

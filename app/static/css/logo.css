@@ -1,0 +1,17 @@
+#logo {
+    background-color: var(--logo);
+	background-size: auto;
+	mask: url('/static/img/icon.svg') no-repeat 20px 0px ;
+	mask-size:contain;
+	-webkit-mask: url('/static/img/icon.svg') no-repeat 20px 0px ;
+	-webkit-mask-size: contain ;
+	background-repeat: no-repeat no-repeat;
+	height: 50px;
+	cursor: pointer;
+    padding: 20px;
+    /*border-radius: 10px;*/
+    margin: 25px 50px 0 50px;
+    text-align: left;
+	color: var(--main-bg-color);
+	width: 565px
+}
