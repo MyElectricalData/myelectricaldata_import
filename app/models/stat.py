@@ -38,6 +38,7 @@ class Stat:
         self.value_yesterday_evolution = 0
         self.value_current_month_evolution = 0
         self.value_peak_offpeak_percent_hp_vs_hc = 0
+        self.value_monthly_evolution = 0
 
     def daily(self, index=0, measurement_direction="consumption"):
         begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())

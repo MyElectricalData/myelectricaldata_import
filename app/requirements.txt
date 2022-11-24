@@ -83,6 +83,8 @@ urllib3==1.26.12
     # via
     #   influxdb-client
     #   requests
+waitress==2.1.2
+    # via myelectricaldata_import (pyproject.toml)
 werkzeug==2.2.2
     # via flask
 

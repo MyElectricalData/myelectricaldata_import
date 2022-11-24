@@ -6,7 +6,7 @@ from InquirerPy import inquirer, prompt
 from InquirerPy.base import Choice
 from packaging.version import parse as parse_version
 
-docker_compose = "docker-compose -f docker-compose.dev.yml"
+docker_compose = "docker-compose -f dev/docker-compose.dev.yaml"
 
 
 def cmd(cmd, path="./"):
@@ -56,17 +56,20 @@ def wizard():
         app.LOG.error("Good bye!!")
 
 
-def run(debug=False):
+def run(dev=False, debug=False):
     if debug:
         app.LOG.title(["Boot DynAPI in debug mode", "CTRL + C to exit"])
     else:
         app.LOG.title(["Boot DynAPI", "CTRL + C to exit"])
     mode_debug = ""
+    mode_dev = ""
     if debug:
         mode_debug = "-e DEBUG=true"
+    if dev:
+        mode_dev = "-e DEV=true"
     command = (
-        f"{docker_compose} run -p 5000:5000 "
-        f"{mode_debug} myelectricaldata_import"
+        f"{docker_compose} run -p 5000:5000"
+        f"{mode_debug} {mode_dev} myelectricaldata_import"
     )
     app.LOG.log(command)
     os.system(command)

@@ -1,21 +1,25 @@
-import sys
-
 from flask import Flask, request, send_file
 from flask_apscheduler import APScheduler
+from waitress import serve
 
 from config import cycle_minimun
 from dependencies import *
-from models.config import Config, get_version
-from models.jobs import Job
 from models.ajax import Ajax
+from models.config import Config, get_version
 from models.database import Database
 from models.influxdb import InfluxDB
+from models.jobs import Job
 from models.log import Log
 from models.mqtt import Mqtt
 from templates.index import Index
 from templates.usage_point_id import UsagePointId
 
 LOG = Log()
+
+if "DEV" in os.environ and os.getenv("DEV"):
+    LOG.title_warning("Run in Development mode")
+else:
+    LOG.title("Run in production mode")
 
 if "APPLICATION_PATH_DATA" in os.environ:
     APPLICATION_PATH_DATA = os.getenv("APPLICATION_PATH_DATA")
@@ -143,6 +147,7 @@ if __name__ == '__main__':
     def lock():
         return str(DB.lock_status())
 
+
     @APP.route("/gateway_status", methods=['GET'])
     @APP.route("/gateway_status/", methods=['GET'])
     def gateway_status():
@@ -171,6 +176,7 @@ if __name__ == '__main__':
     @APP.route("/import/<usage_point_id>/", methods=['GET'])
     def import_all_data(usage_point_id):
         return Ajax(usage_point_id).import_data()
+
 
     @APP.route("/import/<usage_point_id>/<target>", methods=['GET'])
     @APP.route("/import/<usage_point_id>/<target>", methods=['GET'])
@@ -207,5 +213,7 @@ if __name__ == '__main__':
     def fetch_data(usage_point_id, target, date):
         return Ajax(usage_point_id).fetch(target, date)
 
-
-    APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)
+    if "DEV" in os.environ and os.getenv("DEV"):
+        APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)
+    else:
+        serve(APP, host="0.0.0.0", port=5000)
