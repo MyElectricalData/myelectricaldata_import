@@ -34,6 +34,10 @@ class Stat:
         self.value_yesterday_hc = 0
         self.value_peak_offpeak_percent_hp = 0
         self.value_peak_offpeak_percent_hc = 0
+        self.value_current_week_evolution = 0
+        self.value_yesterday_evolution = 0
+        self.value_current_month_evolution = 0
+        self.value_peak_offpeak_percent_hp_vs_hc = 0
 
     def daily(self, index=0, measurement_direction="consumption"):
         begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
@@ -90,11 +94,12 @@ class Stat:
         }
 
     def current_week(self, measurement_direction="consumption"):
-        app.LOG.log(" - current_week")
+        app.LOG.log("current_week")
         begin = datetime.combine(self.now_date - relativedelta(weeks=1), datetime.min.time())
         end = datetime.combine(self.yesterday_date, datetime.max.time())
         for data in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_current_week = self.value_current_week + data.value
+        app.LOG.log(f" => {self.value_current_week}")
         return {
             "value": self.value_current_week,
             "begin": begin.strftime(self.date_format),
@@ -102,7 +107,7 @@ class Stat:
         }
 
     def last_week(self, measurement_direction="consumption"):
-        app.LOG.log(" - last_week")
+        app.LOG.log("last_week")
         begin = datetime.combine(self.now_date - relativedelta(weeks=2), datetime.min.time())
         end = datetime.combine(self.yesterday_date - relativedelta(weeks=1), datetime.max.time())
         # while day_idx < 7:
@@ -115,6 +120,7 @@ class Stat:
         #     day_idx = day_idx + 1
         for data in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_last_week = self.value_last_week + data.value
+        app.LOG.log(f" => {self.value_last_week}")
         return {
             "value": self.value_last_week,
             "begin": begin.strftime(self.date_format),
@@ -122,14 +128,14 @@ class Stat:
         }
 
     def current_week_evolution(self):
-        app.LOG.log(" - current_week_evolution")
-        if self.value_current_week != 0:
-            return ((self.value_current_week * 100) / self.value_last_week) - 100
-        else:
-            return 0
+        app.LOG.log("current_week_evolution")
+        if self.value_last_week != 0:
+            self.value_current_week_evolution = ((self.value_current_week * 100) / self.value_last_week) - 100
+        app.LOG.log(f" => {self.value_current_week_evolution}")
+        return self.value_current_week_evolution
 
     def yesterday(self, measurement_direction="consumption"):
-        app.LOG.log(" - yesterday")
+        app.LOG.log("yesterday")
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
         end = datetime.combine(self.yesterday_date, datetime.max.time())
         data = app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction)
@@ -137,6 +143,7 @@ class Stat:
             self.value_yesterday = data[0].value
         else:
             self.value_yesterday = 0
+        app.LOG.log(f" => {self.value_yesterday}")
         return {
             "value": self.value_yesterday,
             "begin": begin.strftime(self.date_format),
@@ -144,7 +151,7 @@ class Stat:
         }
 
     def yesterday_1(self, measurement_direction="consumption"):
-        app.LOG.log(" - yesterday_1")
+        app.LOG.log("yesterday_1")
         begin = datetime.combine(self.yesterday_date - timedelta(days=1), datetime.min.time())
         end = datetime.combine(self.yesterday_date - timedelta(days=1), datetime.max.time())
         data = app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction)
@@ -152,6 +159,7 @@ class Stat:
             self.value_yesterday_1 = data[0].value
         else:
             self.value_yesterday_1 = 0
+        app.LOG.log(f" => {self.value_yesterday_1}")
         return {
             "value": self.value_yesterday_1,
             "begin": begin.strftime(self.date_format),
@@ -159,16 +167,16 @@ class Stat:
         }
 
     def yesterday_evolution(self):
-        app.LOG.log(" - yesterday_evolution")
+        app.LOG.log("yesterday_evolution")
         self.yesterday()
         self.yesterday_1()
-        if self.value_yesterday != 0:
-            return ((100 * self.value_yesterday) / self.value_yesterday_1) - 100
-        else:
-            return 0
+        if self.value_yesterday_1 != 0:
+            self.value_yesterday_evolution = ((100 * self.value_yesterday) / self.value_yesterday_1) - 100
+        app.LOG.log(f" => {self.value_yesterday_evolution}")
+        return self.value_yesterday_evolution
 
     def current_week_last_year(self, measurement_direction="consumption"):
-        app.LOG.log(" - current_week_last_year")
+        app.LOG.log("current_week_last_year")
         # begin = datetime.combine(yesterday - relativedelta(years=1), datetime.min.time())
         # end = datetime.combine(yesterday - relativedelta(years=1), datetime.max.time())
         # day_idx = 0
@@ -184,6 +192,7 @@ class Stat:
         end = datetime.combine(self.yesterday_date - relativedelta(years=1), datetime.max.time())
         for data in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_current_week_last_year = self.value_current_week_last_year + data.value
+        app.LOG.log(f" => {self.value_current_week_last_year}")
         return {
             "value": self.value_current_week_last_year,
             "begin": begin.strftime(self.date_format),
@@ -191,11 +200,13 @@ class Stat:
         }
 
     def last_month(self, measurement_direction="consumption"):
-        app.LOG.log(" - last_month")
-        begin = datetime.combine((self.now_date.replace(day=1) - timedelta(days=1)).replace(day=1), datetime.min.time())
+        app.LOG.log("last_month")
+        begin = datetime.combine((self.now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
+                                 datetime.min.time())
         end = datetime.combine(self.yesterday_date.replace(day=1) - timedelta(days=1), datetime.max.time())
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_last_month = self.value_last_month + day.value
+        app.LOG.log(f" => {self.value_last_month}")
         return {
             "value": self.value_last_month,
             "begin": begin.strftime(self.date_format),
@@ -203,11 +214,12 @@ class Stat:
         }
 
     def current_month(self, measurement_direction="consumption"):
-        app.LOG.log(" - current_month")
+        app.LOG.log("current_month")
         begin = datetime.combine(self.now_date.replace(day=1), datetime.min.time())
         end = self.yesterday_date
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_current_month = self.value_current_month + day.value
+        app.LOG.log(f" => {self.value_current_month}")
         return {
             "value": self.value_current_month,
             "begin": begin.strftime(self.date_format),
@@ -215,11 +227,12 @@ class Stat:
         }
 
     def current_month_last_year(self, measurement_direction="consumption"):
-        app.LOG.log(" - current_month_last_year")
+        app.LOG.log("current_month_last_year")
         begin = datetime.combine(self.now_date.replace(day=1), datetime.min.time()) - relativedelta(years=1)
         end = self.yesterday_date - relativedelta(years=1)
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_current_month_last_year = self.value_current_month_last_year + day.value
+        app.LOG.log(f" => {self.value_current_month_last_year}")
         return {
             "value": self.value_current_month_last_year,
             "begin": begin.strftime(self.date_format),
@@ -227,15 +240,16 @@ class Stat:
         }
 
     def current_month_evolution(self):
-        app.LOG.log(" - current_month_evolution")
-        if self.value_current_month != 0:
-            # return (self.value_current_month - self.value_current_month_last_year) * 100 / self.value_current_month
-            return ((100 * self.value_current_month) / self.value_current_month_last_year) - 100
-        else:
-            return 0
+        app.LOG.log("current_month_evolution")
+        if self.value_current_month_last_year != 0:
+            self.value_current_month_evolution = (
+                        (100 * self.value_current_month) / self.value_current_month_last_year
+                ) - 100
+        app.LOG.log(f" => {self.value_current_month_evolution}")
+        return self.value_current_month_evolution
 
     def last_month_last_year(self, measurement_direction="consumption"):
-        app.LOG.log(" - last_month_last_year")
+        app.LOG.log("last_month_last_year")
         begin = datetime.combine(
             (self.now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
             datetime.min.time()) - relativedelta(years=1)
@@ -244,6 +258,7 @@ class Stat:
             datetime.max.time()) - relativedelta(years=1)
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_last_month_last_year = self.value_last_month_last_year + day.value
+        app.LOG.log(f" => {self.value_last_month_last_year}")
         return {
             "value": self.value_last_month_last_year,
             "begin": begin.strftime(self.date_format),
@@ -251,21 +266,21 @@ class Stat:
         }
 
     def monthly_evolution(self):
-        app.LOG.log(" - monthly_evolution")
+        app.LOG.log("monthly_evolution")
         self.last_month()
         self.last_month_last_year()
-        if self.value_last_month != 0:
-            # return (self.value_last_month - self.value_last_month_last_year) * 100 / self.value_last_month
-            return ((100 * self.value_last_month) / self.value_last_month_last_year) - 100
-        else:
-            return 0
+        if self.value_last_month_last_year != 0:
+            self.value_monthly_evolution = ((100 * self.value_last_month) / self.value_last_month_last_year) - 100
+        app.LOG.log(f" => {self.value_monthly_evolution}")
+        return self.value_monthly_evolution
 
     def current_year(self, measurement_direction="consumption"):
-        app.LOG.log(" - current_year")
+        app.LOG.log("current_year")
         begin = datetime.combine(self.now_date.replace(month=1).replace(day=1), datetime.min.time())
         end = self.yesterday_date
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_current_year = self.value_current_year + day.value
+        app.LOG.log(f" => {self.value_current_year}")
         return {
             "value": self.value_current_year,
             "begin": begin.strftime(self.date_format),
@@ -273,13 +288,15 @@ class Stat:
         }
 
     def current_year_last_year(self, measurement_direction="consumption"):
-        app.LOG.log(" - current_year_last_year")
+        app.LOG.log("current_year_last_year")
         begin = datetime.combine(
-            datetime.combine(self.now_date.replace(month=1).replace(day=1), datetime.min.time()) - relativedelta(years=1),
+            datetime.combine(self.now_date.replace(month=1).replace(day=1), datetime.min.time()) - relativedelta(
+                years=1),
             datetime.min.time())
         end = self.yesterday_date - relativedelta(years=1)
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_current_year_last_year = self.value_current_year_last_year + day.value
+        app.LOG.log(f" => {self.value_current_year_last_year}")
         return {
             "value": self.value_current_year_last_year,
             "begin": begin.strftime(self.date_format),
@@ -287,13 +304,14 @@ class Stat:
         }
 
     def last_year(self, measurement_direction="consumption"):
-        app.LOG.log(" - last_year")
+        app.LOG.log("last_year")
         begin = datetime.combine(self.now_date.replace(month=1).replace(day=1) - relativedelta(years=1),
                                  datetime.min.time())
         last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
         end = datetime.combine(begin.replace(day=last_day_of_month).replace(month=12), datetime.max.time())
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_last_year = self.value_last_year + day.value
+        app.LOG.log(f" => {self.value_last_year}")
         return {
             "value": self.value_last_year,
             "begin": begin.strftime(self.date_format),
@@ -301,7 +319,7 @@ class Stat:
         }
 
     def yesterday_hc_hp(self, measurement_direction="consumption"):
-        app.LOG.log(" - yesterday_hp / yesterday_hc")
+        app.LOG.log("yesterday_hp / yesterday_hc")
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
         end = datetime.combine(self.now_date, datetime.max.time())
         for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
@@ -309,6 +327,8 @@ class Stat:
                 self.value_yesterday_hp = self.value_yesterday_hp + (day.value / (60 / day.interval))
             if day.measure_type == "HC":
                 self.value_yesterday_hc = self.value_yesterday_hc + (day.value / (60 / day.interval))
+        app.LOG.log(f" => HC : {self.value_yesterday_hc}")
+        app.LOG.log(f" => HP : {self.value_yesterday_hp}")
         return {
             "value": {
                 "hc": self.value_yesterday_hc,
@@ -319,18 +339,20 @@ class Stat:
         }
 
     def peak_offpeak_percent(self, measurement_direction="consumption"):
-        app.LOG.log(" - peak_offpeak_percent_hp / peak_offpeak_percent_hc")
+        app.LOG.log("peak_offpeak_percent_hp VS peak_offpeak_percent_hc")
         begin = self.yesterday_date - relativedelta(years=1)
         end = self.yesterday_date
         for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
             if day.measure_type == "HP":
                 self.value_peak_offpeak_percent_hp = self.value_peak_offpeak_percent_hp + (
-                            day.value / (60 / day.interval))
+                        day.value / (60 / day.interval))
             if day.measure_type == "HC":
                 self.value_peak_offpeak_percent_hc = self.value_peak_offpeak_percent_hc + (
-                            day.value / (60 / day.interval))
-
-        if self.value_peak_offpeak_percent_hp != 0:
-            return (self.value_peak_offpeak_percent_hp - self.value_peak_offpeak_percent_hc) * 100 / self.value_peak_offpeak_percent_hp
-        else:
-            return 0
+                        day.value / (60 / day.interval))
+        if self.value_peak_offpeak_percent_hc != 0:
+            self.value_peak_offpeak_percent_hp_vs_hc = \
+                (
+                        (100 * self.value_peak_offpeak_percent_hp) / self.value_peak_offpeak_percent_hc
+                ) - 100
+        app.LOG.log(f" => {self.value_peak_offpeak_percent_hp_vs_hc}")
+        return self.value_peak_offpeak_percent_hp_vs_hc

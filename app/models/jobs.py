@@ -47,50 +47,50 @@ class Job:
                         if target == "gateway_status" or target is None:
                             self.get_gateway_status()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de la récupération des information de la passerelle")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération des information de la passerelle", e])
                     try:
                         if target == "account_status" or target is None:
                             self.get_account_status()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de la récupération du status de votre compte")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération du status de votre compte", e])
                     try:
                         if target == "contract" or target is None:
                             self.get_contract()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.critical(f"Erreur lors de la récupération des information du contract")
+                        traceback.print_exc()
+                        LOG.critical([f"Erreur lors de la récupération des information du contract", e])
                     try:
                         if target == "addresses" or target is None:
                             self.get_addresses()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de la récupération de vos coordonnées")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération de vos coordonnées", e])
                     try:
                         if target == "consumption" or target is None:
                             self.get_consumption()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de la récupération de votre consommation journalière")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération de votre consommation journalière", e])
                     try:
                         if target == "consumption_detail" or target is None:
                             self.get_consumption_detail()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de la récupération de votre consommation détaillé")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération de votre consommation détaillé", e])
                     try:
                         if target == "production" or target is None:
                             self.get_production()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de la récupération de votre production journalière")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération de votre production journalière", e])
                     try:
                         if target == "production_detail" or target is None:
                             self.get_production_detail()
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de la récupération de votre production détaillé")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération de votre production détaillé", e])
 
                     try:
                         # #######################################################################################################
@@ -128,8 +128,8 @@ class Job:
                                     ExportMqtt("production").detail_annual(self.usage_point_config.production_price)
                                     ExportMqtt("production").detail_linear(self.usage_point_config.production_price)
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de l'exportation des données dans MQTT")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de l'exportation des données dans MQTT", e])
 
                     #######################################################################################################
                     # HOME ASSISTANT
@@ -146,8 +146,8 @@ class Job:
                                 app.LOG.critical("L'export Home Assistant est dépendant de MQTT, "
                                                  "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
                     except Exception as e:
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de l'exportation des données dans Home Assistant")
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de l'exportation des données dans Home Assistant", e])
 
                     #######################################################################################################
                     # INFLUXDB
@@ -176,8 +176,7 @@ class Job:
                                     )
                     except Exception as e:
                         traceback.print_exc()
-                        LOG.error(e)
-                        LOG.error(f"Erreur lors de l'exportation des données dans InfluxDB")
+                        LOG.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
                 else:
                     app.LOG.log(f" => Point de livraison désactivé.")
             LOG.finish()
