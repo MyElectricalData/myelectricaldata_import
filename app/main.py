@@ -87,17 +87,18 @@ if CYCLE < cycle_minimun:
 
 
 class FetchAllDataScheduler(object):
-    JOBS = [
-        {
+    JOBS = []
+    if "DEV" not in os.environ or not os.getenv("DEV"):
+        JOBS.append({
             "id": f"fetch_data_boot",
             "func": Job().job_import_data
-        }, {
-            "id": f"fetch_data",
-            "func": Job().job_import_data,
-            "trigger": "interval",
-            "seconds": CYCLE,
-        }
-    ]
+        })
+    JOBS.append({
+        "id": f"fetch_data",
+        "func": Job().job_import_data,
+        "trigger": "interval",
+        "seconds": CYCLE,
+    })
     SCHEDULER_API_ENABLED = True
 
 

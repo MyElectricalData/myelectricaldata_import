@@ -8,7 +8,7 @@
 
 **Vous recherchez un Discord Francais autour de la "Domotique & Diy" ?**
 
-[![https://discord.gg/DfVJZme](discord.png 'Vous recherchez un Discord Francais autour de la "Domotique & Diy" ?')](https://discord.gg/DfVJZme)
+[![https://discord.gg/DfVJZme](ressources/discord.png 'Vous recherchez un Discord Francais autour de la "Domotique & Diy" ?')](https://discord.gg/DfVJZme)
 
 ****
 
@@ -216,7 +216,7 @@ Voir [F.A.Q](https://www.myelectricaldata.fr/faq) pour plus de détail.
 
 > Actuellement la dashboard est uniquement compatible avec les version <= 0.7.8
 
-Une fois les données exporté dans Grafana, vous pouvez utiliser la dashboard [ICI](grafana_dashboard.json)
+Une fois les données exporté dans Grafana, vous pouvez utiliser la dashboard [ICI](ressources/grafana_dashboard.json)
 
 > Ne fonctionne qu'avec InfluxDB <= V1.8
 
