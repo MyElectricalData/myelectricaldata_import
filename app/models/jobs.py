@@ -1,12 +1,12 @@
 import __main__ as app
-import sys
+import time
 import traceback
 
 from models.config import get_version
 from models.database import Database
-from models.export_mqtt import ExportMqtt
 from models.export_home_assistant import HomeAssistant
 from models.export_influxdb import ExportInfluxDB
+from models.export_mqtt import ExportMqtt
 from models.log import Log
 from models.query_address import Address
 from models.query_contract import Contract
@@ -26,8 +26,15 @@ class Job:
         self.mqtt_config = self.config.mqtt_config()
         self.home_assistant_config = self.config.home_assistant_config()
         self.influxdb_config = self.config.influxdb_config()
+        self.wait_job_start = 10
 
     def job_import_data(self, target=None):
+        app.LOG.title("Démarrage du job d'importation dans 10s")
+        i = self.wait_job_start
+        while i > 0:
+            app.LOG.log(f" => {i}s")
+            time.sleep(1)
+            i = i - 1
         if app.DB.lock_status():
             return {
                 "status": False,
@@ -99,14 +106,16 @@ class Job:
                             if target == "mqtt" or target is None:
                                 ExportMqtt(self.usage_point_id, "consumption").contract()
                                 ExportMqtt(self.usage_point_id, "consumption").address()
-                                if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
+                                if hasattr(self.usage_point_config,
+                                           "consumption") and self.usage_point_config.consumption:
                                     ExportMqtt(self.usage_point_id, "consumption").daily_annual(
                                         self.usage_point_config.consumption_price_base
                                     )
                                     ExportMqtt(self.usage_point_id, "consumption").daily_linear(
                                         self.usage_point_config.consumption_price_base
                                     )
-                                if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
+                                if hasattr(self.usage_point_config,
+                                           "production") and self.usage_point_config.production:
                                     ExportMqtt(self.usage_point_id, "production").daily_annual(
                                         self.usage_point_config.production_price
                                     )
@@ -155,21 +164,25 @@ class Job:
                         if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
                             # app.INFLUXDB.purge_influxdb()
                             if target == "influxdb" or target is None:
-                                if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
+                                if hasattr(self.usage_point_config,
+                                           "consumption") and self.usage_point_config.consumption:
                                     ExportInfluxDB(self.usage_point_id).daily(
                                         self.usage_point_config.consumption_price_base,
                                     )
-                                if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
+                                if hasattr(self.usage_point_config,
+                                           "production") and self.usage_point_config.production:
                                     ExportInfluxDB(self.usage_point_id).daily(
                                         self.usage_point_config.production_price,
                                         "production"
                                     )
-                                if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
+                                if hasattr(self.usage_point_config,
+                                           "consumption_detail") and self.usage_point_config.consumption_detail:
                                     ExportInfluxDB(self.usage_point_id).detail(
                                         self.usage_point_config.consumption_price_hp,
                                         self.usage_point_config.consumption_price_hc
                                     )
-                                if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
+                                if hasattr(self.usage_point_config,
+                                           "production_detail") and self.usage_point_config.production_detail:
                                     ExportInfluxDB(self.usage_point_id).detail(
                                         self.usage_point_config.production_price,
                                         "production_detail"

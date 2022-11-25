@@ -18,7 +18,8 @@ dependencies = [
     "jinja2",
     "art",
     "SQLAlchemy",
-    "alembic"
+    "alembic",
+    "waitress"
 ]
 
 [project.optional-dependencies]

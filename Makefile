@@ -1,4 +1,4 @@
-COMPOSE=docker compose -f docker-compose.dev.yml
+COMPOSE=docker compose -f dev/docker-compose.dev.yaml
 
 .DEFAULT_GOAL := wizard
 ## Run wizard
@@ -16,6 +16,12 @@ run:
 	$(COMPOSE) stop myelectricaldata_import
 	$(COMPOSE) rm -f myelectricaldata_import
 	python3 main.py action=run
+
+## Connect to EnedisGateway container : DEV
+run-production:
+	$(COMPOSE) stop myelectricaldata_import
+	$(COMPOSE) rm -f myelectricaldata_import
+	python3 main.py action=run env=production
 
 ## Start docker conatiners for dev
 up:
@@ -64,9 +70,9 @@ git_push:
 generate-dependencies:
 	cd app; pip-compile -o requirements.txt pyproject.toml; cd -
 
-## Create github pre release (dev)
-create-release-dev:
-	python3 main.py action=create_pre_release
+clean: generate-dependencies
+	docker image rm -f myelectricaldata_import_myelectricaldata_import
+#	docker build ./
 
 ## Create github release (prod)
 create-release:

@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  myelectricaldata:
+    image: m4dm4rtig4n/myelectricaldata:latest
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    environment:
+      TZ: Europe/Paris
+    ports:
+      - '5000:5000'
