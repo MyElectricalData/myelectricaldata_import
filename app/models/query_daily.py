@@ -42,9 +42,9 @@ class Daily:
         end_str = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"daily_{self.measure_type}/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        if begin < datetime.datetime.now() - datetime.timedelta(days=7):
-            if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
-                endpoint += "/cache"
+        # if begin < datetime.datetime.now() - datetime.timedelta(days=7):
+        if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
+            endpoint += "/cache"
         try:
             current_data = self.db.get_daily(self.usage_point_id, begin, end, self.measure_type)
             if not current_data["missing_data"]:
@@ -111,10 +111,6 @@ class Daily:
 
             if self.activation_date and self.activation_date > begin:
                 # Activation date reached
-                print('------------------------------------')
-                print(self.activation_date)
-                print(begin, end)
-                print('------------------------------------')
                 begin = self.activation_date
                 finish = False
                 response = self.run(begin, end)
