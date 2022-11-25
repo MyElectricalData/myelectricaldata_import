@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, request, send_file
 from flask_apscheduler import APScheduler
 from waitress import serve
@@ -16,7 +18,7 @@ from templates.usage_point_id import UsagePointId
 
 LOG = Log()
 
-if "DEV" in os.environ and os.getenv("DEV"):
+if "DEV" in os.environ or "DEBUG" in os.environ:
     LOG.title_warning("Run in Development mode")
 else:
     LOG.title("Run in production mode")
@@ -87,18 +89,17 @@ if CYCLE < cycle_minimun:
 
 
 class FetchAllDataScheduler(object):
-    JOBS = []
-    if "DEV" not in os.environ or not os.getenv("DEV"):
-        JOBS.append({
-            "id": f"fetch_data_boot",
-            "func": Job().job_import_data
-        })
-    JOBS.append({
+    JOBS = [{
         "id": f"fetch_data",
         "func": Job().job_import_data,
         "trigger": "interval",
         "seconds": CYCLE,
-    })
+    }]
+    if "DEV" not in os.environ and "DEBUG" not in os.environ:
+        JOBS.append({
+            "id": f"fetch_data_boot",
+            "func": Job().job_import_data
+        })
     SCHEDULER_API_ENABLED = True
 
 
@@ -214,7 +215,8 @@ if __name__ == '__main__':
     def fetch_data(usage_point_id, target, date):
         return Ajax(usage_point_id).fetch(target, date)
 
-    if "DEV" in os.environ and os.getenv("DEV"):
+
+    if ("DEV" in os.environ and os.getenv("DEV")) or ("DEBUG" in os.environ and os.getenv("DEBUG")):
         APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)
     else:
         serve(APP, host="0.0.0.0", port=5000)

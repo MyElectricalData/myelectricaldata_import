@@ -29,8 +29,8 @@ $(".datatable_button").click(function () {
                         $('#' + tag + '_import_' + date).css("display", "block");
                         $('#' + tag + '_icon_' + date).removeClass("icon_success");
                         $('#' + tag + '_icon_' + date).addClass("icon_failed");
-                        $('#' + tag + '_conso_w_' + date).html("0 W");
-                        $('#' + tag + '_conso_kw_' + date).html("0 kW");
+                        $('#' + tag + '_conso_w_' + date).html("0");
+                        $('#' + tag + '_conso_kw_' + date).html("0");
                         $('#' + tag + '_fail_count_' + date).html(data["result"]['fail_count']);
                         $('#' + tag + '_blacklist_' + date).css("display", "block");
                         $('#' + tag + '_whitelist_' + date).css("display", "none")
@@ -41,8 +41,8 @@ $(".datatable_button").click(function () {
                             $('#' + tag + '_import_' + date).css("display", "none");
                             $('#' + tag + '_icon_' + date).removeClass("icon_failed");
                             $('#' + tag + '_icon_' + date).addClass("icon_success");
-                            $('#' + tag + '_conso_w_' + date).html(data["result"]['value'] + " W");
-                            $('#' + tag + '_conso_kw_' + date).html(data["result"]['value'] / 1000 + " kW");
+                            $('#' + tag + '_conso_w_' + date).html(data["result"]['value']);
+                            $('#' + tag + '_conso_kw_' + date).html(data["result"]['value'] / 1000);
                             $('#' + tag + '_fail_count_' + date).html(data["result"]['fail_count']);
                             $('#' + tag + '_blacklist_' + date).css("display", "block");
                             $('#' + tag + '_whitelist_' + date).css("display", "none");
@@ -82,8 +82,8 @@ $(".datatable_button").click(function () {
                             $('#' + tag + '_whitelist_' + date).css("display", "block");
                             $('#' + tag + '_icon_' + date).removeClass("icon_failed");
                             $('#' + tag + '_icon_' + date).addClass("icon_success");
-                            $('#' + tag + '_conso_w_' + date).html("0 W");
-                            $('#' + tag + '_conso_kw_' + date).html("0 kW");
+                            $('#' + tag + '_conso_w_' + date).html("0");
+                            $('#' + tag + '_conso_kw_' + date).html("0");
                             $('#' + tag + '_reset_' + date).css("display", "block");
                             $('#' + tag + '_import_' + date).css("display", "none");
                         } else {

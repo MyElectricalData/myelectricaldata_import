@@ -529,11 +529,12 @@ class UsagePointId:
             for year, data in linear_years.items():
                 if self.current_years > max_history:
                     data_last_years_class = ""
-                    data_last_years = "---"
+                    data_last_years = 0
                     key = f"{current_month}/{self.current_years - 1} => {current_month}/{self.current_years - 2}"
                     if str(key) in linear_years:
                         data_last_years = linear_years[str(key)]
-                        data_last_years = round((100 * int(data)) / int(data_last_years) - 100, 2)
+                        if data_last_years != 0:
+                            data_last_years = round((100 * int(data)) / int(data_last_years) - 100, 2)
                         self.current_years = self.current_years - 1
                         if data_last_years >= 0:
                             if data_last_years == 0:

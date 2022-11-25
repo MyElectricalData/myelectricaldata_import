@@ -30,9 +30,14 @@ class UsagePointSelect:
             else:
                 text = usage_point
             select = ""
+            style = ""
+            disable = ""
+            if hasattr(config, "enable") and not config.enable:
+                style = "color:#B0B0B0"
+                disable = "(Désactivé) "
             if self.selected_usage_point == usage_point:
                 select = "selected"
-            list_usage_points_id += f'<option value="{usage_point}" {select}>{text}</option>'
+            list_usage_points_id += f'<option value="{usage_point}" style="{style}" {select}>{disable}{text}</option>'
         list_usage_points_id += '</select>'
         result = f'<h3 style="line-height: 45px; font-size: 25px;">Choix du point de livraison {list_usage_points_id}</h3>'
         if self.selected_usage_point is not None:

@@ -295,7 +295,7 @@ class Ajax:
             }
 
     def import_data(self, target=None):
-        result = Job(self.usage_point_id).job_import_data(target)
+        result = Job(self.usage_point_id).job_import_data(wait=False, target=target)
         if not result:
             return {
                 "error": "true",
