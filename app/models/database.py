@@ -594,6 +594,7 @@ class Database:
                  .where(table.date == date))
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
+            self.delete_daily(usage_point_id, date, measurement_direction)
             daily.usage_point_id = usage_point_id
             daily.date = date
             daily.value = value
