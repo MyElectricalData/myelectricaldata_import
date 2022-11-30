@@ -105,8 +105,9 @@ class Job:
                         # # MQTT
                         if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
                             if target == "mqtt" or target is None:
-                                ExportMqtt(self.usage_point_id, "consumption").contract()
-                                ExportMqtt(self.usage_point_id, "consumption").address()
+                                ExportMqtt(self.usage_point_id).status()
+                                ExportMqtt(self.usage_point_id).contract()
+                                ExportMqtt(self.usage_point_id).address()
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
                                     ExportMqtt(self.usage_point_id, "consumption").daily_annual(
@@ -250,8 +251,7 @@ class Job:
             LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation journalière :")
             result = Daily(
                 headers=self.header_generate(),
-                usage_point_id=self.usage_point_config.usage_point_id,
-                config=self.usage_point_config,
+                usage_point_id=self.usage_point_config.usage_point_id
             ).get()
         return result
 
@@ -262,7 +262,6 @@ class Job:
             result = Detail(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
-                config=self.usage_point_config,
             ).get()
         return result
 
@@ -273,7 +272,6 @@ class Job:
             result = Daily(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
-                config=self.usage_point_config,
                 measure_type="production"
             ).get()
         return result
@@ -285,7 +283,6 @@ class Job:
             result = Detail(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
-                config=self.usage_point_config,
                 measure_type="production"
             ).get()
         return result

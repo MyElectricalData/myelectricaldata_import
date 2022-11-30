@@ -1,3 +1,4 @@
+import datetime
 import json
 
 import __main__ as app
@@ -47,6 +48,16 @@ class Status:
                 status = json.loads(response.text)
                 for key, value in status.items():
                     app.LOG.log(f"{key}: {value}")
+                app.DB.usage_point_update(
+                    usage_point_id,
+                    consentement_expiration=datetime.datetime.strptime(status["consent_expiration_date"], "%Y-%m-%dT%H:%M:%S.%f"),
+                    last_call=datetime.datetime.strptime(status["last_call"], "%Y-%m-%dT%H:%M:%S.%f"),
+                    call_number=status["call_number"],
+                    quota_limit=status["quota_limit"],
+                    quota_reached=status["quota_reached"],
+                    quota_reset_at=datetime.datetime.strptime(status["quota_reset_at"], "%Y-%m-%dT%H:%M:%S.%f"),
+                    ban=status["ban"]
+                )
                 return status
             except LookupError:
                 return {

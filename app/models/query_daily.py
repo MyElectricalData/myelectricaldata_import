@@ -13,14 +13,14 @@ def daterange(start_date, end_date):
 
 class Daily:
 
-    def __init__(self, headers, usage_point_id, config, measure_type="consumption"):
+    def __init__(self, headers, usage_point_id, measure_type="consumption"):
         self.db = app.DB
         self.url = URL
         self.max_daily = 36
         self.date_format = '%Y-%m-%d'
         self.headers = headers
         self.usage_point_id = usage_point_id
-        self.usage_point_config = config
+        self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = DAILY_MAX_DAYS
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)

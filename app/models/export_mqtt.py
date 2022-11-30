@@ -10,6 +10,23 @@ class ExportMqtt:
         self.measurement_direction = measurement_direction
         self.date_format = "%Y-%m-%d"
 
+    def status(self):
+        app.LOG.title(f"[{self.usage_point_id}] Status du compte.")
+        usage_point_id_config = app.DB.get_usage_point(self.usage_point_id)
+        # consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
+        consentement_expiration = {
+            f"{self.usage_point_id}/status/consentement_expiration": usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S"),
+            f"{self.usage_point_id}/status/call_number": usage_point_id_config.call_number,
+            f"{self.usage_point_id}/status/quota_reached": usage_point_id_config.quota_reached,
+            f"{self.usage_point_id}/status/quota_limit": usage_point_id_config.quota_limit,
+            f"{self.usage_point_id}/status/quota_reset_at": usage_point_id_config.quota_reset_at.strftime("%Y-%m-%d %H:%M:%S"),
+            f"{self.usage_point_id}/status/last_call": usage_point_id_config.last_call.strftime("%Y-%m-%d %H:%M:%S"),
+            f"{self.usage_point_id}/status/ban": usage_point_id_config.ban
+        }
+        app.MQTT.publish_multiple(consentement_expiration)
+        app.LOG.log(" => Finish")
+
+
     def contract(self):
         app.LOG.title(f"[{self.usage_point_id}] Exportation de données dans MQTT.")
 

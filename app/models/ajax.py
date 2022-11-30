@@ -43,26 +43,22 @@ class Ajax:
         Daily(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
-            config=self.usage_point_config,
         ).reset()
         app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée.")
         Detail(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
-            config=self.usage_point_config,
         ).reset()
         app.LOG.title(f"[{self.usage_point_id}] Reset de la production journalière.")
         Daily(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
-            config=self.usage_point_config,
             measure_type="production"
         ).reset()
         app.LOG.title(f"[{self.usage_point_id}] Reset de la production détaillée.")
         Detail(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
-            config=self.usage_point_config,
             measure_type="production"
         ).reset()
         return {
@@ -76,22 +72,18 @@ class Ajax:
             app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation journalière du {date}:")
             result["consumption"] = Daily(
                 headers=self.headers,
-                usage_point_id=self.usage_point_id,
-                config=self.usage_point_config,
+                usage_point_id=self.usage_point_id
             ).reset(date)
         elif target == "consumption_detail":
             app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillé du {date}:")
             result["consumption_detail"] = Detail(
                 headers=self.headers,
-                usage_point_id=self.usage_point_id,
-                config=self.usage_point_config,
             ).reset(date)
         elif target == "production":
             app.LOG.title(f"[{self.usage_point_id}] Reset de la production journalière du {date}:")
             result["production"] = Daily(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id,
-                config=self.usage_point_config,
                 measure_type="production"
             ).reset(date)
         elif target == "production_detail":
@@ -99,7 +91,6 @@ class Ajax:
             result["production_detail"] = Detail(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id,
-                config=self.usage_point_config,
                 measure_type="production"
             ).reset(date)
         else:
@@ -129,7 +120,6 @@ class Ajax:
                 result["consumption"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                 ).fetch(date)
         elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
@@ -137,7 +127,6 @@ class Ajax:
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                 ).fetch(date)
         elif target == "production":
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
@@ -145,7 +134,6 @@ class Ajax:
                 result["production"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                     measure_type="production"
                 ).fetch(date)
         elif target == "production_detail":
@@ -154,7 +142,6 @@ class Ajax:
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                     measure_type="production"
                 ).fetch(date)
         else:
@@ -192,7 +179,6 @@ class Ajax:
                 result["consumption"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                 ).blacklist(date, True)
         if target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
@@ -200,7 +186,6 @@ class Ajax:
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                 ).blacklist(date, True)
         elif target == "production":
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
@@ -208,7 +193,6 @@ class Ajax:
                 result["production"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                     measure_type="production"
                 ).blacklist(date, True)
         elif target == "production_detail":
@@ -217,7 +201,6 @@ class Ajax:
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                     measure_type="production"
                 ).blacklist(date, True)
         else:
@@ -247,7 +230,6 @@ class Ajax:
                 result["consumption"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                 ).blacklist(date, False)
         elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
@@ -255,7 +237,6 @@ class Ajax:
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                 ).blacklist(date, False)
         elif target == "production":
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
@@ -263,7 +244,6 @@ class Ajax:
                 result["production"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                     measure_type="production"
                 ).blacklist(date, False)
         elif target == "production_detail":
@@ -272,7 +252,6 @@ class Ajax:
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                    config=self.usage_point_config,
                     measure_type="production"
                 ).blacklist(date, False)
         else:

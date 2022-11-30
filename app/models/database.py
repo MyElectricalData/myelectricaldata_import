@@ -3,6 +3,10 @@ import json
 import os
 from datetime import datetime, timedelta
 
+from sqlalchemy import (create_engine, delete, inspect, select)
+from sqlalchemy.orm import sessionmaker
+
+from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
     Contracts,
@@ -13,13 +17,9 @@ from db_schema import (
     ConsumptionDetail,
     ProductionDetail,
 )
+from dependencies import str2bool
 from models.config import get_version
 from models.log import Log
-from sqlalchemy import (create_engine, delete, inspect, select)
-from sqlalchemy.orm import sessionmaker
-
-from config import MAX_IMPORT_TRY
-from dependencies import str2bool
 
 LOG = Log()
 
@@ -275,7 +275,31 @@ class Database:
         usage_points = self.session.scalars(query).one_or_none()
         usage_points.progress = usage_points.progress + increment
 
-    ## ----------------------------------------------------------------------------------------------------------------
+    def usage_point_update(self,
+                           usage_point_id,
+                           consentement_expiration=datetime.now(),
+                           call_number=0,
+                           quota_reached=False,
+                           quota_limit=None,
+                           quota_reset_at=None,
+                           last_call=None,
+                           ban=None
+                           ):
+        query = (
+            select(UsagePoints)
+            .where(UsagePoints.usage_point_id == usage_point_id)
+        )
+        usage_points = self.session.scalars(query).one_or_none()
+        usage_points.consentement_expiration = consentement_expiration
+        usage_points.call_number = call_number
+        usage_points.quota_reached = quota_reached
+        usage_points.quota_limit = quota_limit
+        usage_points.quota_reset_at = quota_reset_at
+        usage_points.last_call = last_call
+        usage_points.ban = ban
+
+        ## ----------------------------------------------------------------------------------------------------------------
+
     ## ADDRESSES
     ## ----------------------------------------------------------------------------------------------------------------
     def get_addresse(self, usage_point_id):
@@ -581,7 +605,8 @@ class Database:
                     }
         return result
 
-    def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0, measurement_direction="consumption"):
+    def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0,
+                     measurement_direction="consumption"):
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -918,6 +943,7 @@ class Database:
             "begin": self.get_detail_last_date(usage_point_id),
             "end": self.get_detail_first_date(usage_point_id)
         }
+
 
 os.system("cd /app; alembic upgrade head")
 Database().init_database()

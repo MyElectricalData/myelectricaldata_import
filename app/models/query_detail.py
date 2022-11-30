@@ -17,7 +17,7 @@ def daterange(start_date, end_date):
 
 class Detail:
 
-    def __init__(self, headers, usage_point_id, config, measure_type="consumption"):
+    def __init__(self, headers, usage_point_id, measure_type="consumption"):
         self.db = app.DB
         self.url = URL
         self.max_detail = 7
@@ -25,7 +25,7 @@ class Detail:
         self.date_detail_format = '%Y-%m-%d %H:%M:%S'
         self.headers = headers
         self.usage_point_id = usage_point_id
-        self.usage_point_config = config
+        self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = int(DETAIL_MAX_DAYS)
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
