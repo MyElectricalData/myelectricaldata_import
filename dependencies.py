@@ -68,7 +68,7 @@ def run(dev=False, debug=False):
     if dev:
         mode_dev = "-e DEV=true"
     command = (
-        f"{docker_compose} run -p 5000:5000"
+        f"{docker_compose} run -p 5000:5000 "
         f"{mode_debug} {mode_dev} myelectricaldata_import"
     )
     app.LOG.log(command)

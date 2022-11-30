@@ -110,8 +110,8 @@ class Datatable:
                     result += f"""
                     <tr>
                         <td><b>{date_text}</b></td>
-                        <td id="{tag}_conso_w_{date_text}">{conso_w} W</td>
-                        <td id="{tag}_conso_kw_{date_text}">{conso_kw} kW</td>
+                        <td id="{tag}_conso_w_{date_text}">{conso_w}</td>
+                        <td id="{tag}_conso_kw_{date_text}">{conso_kw}</td>
                         <td id="{tag}_fail_count_{date_text}">{fail_count}</td>
                         <td>{cache_state}</td>
                         <td class="loading_bg">{reset}</td>

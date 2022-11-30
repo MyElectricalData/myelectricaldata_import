@@ -42,9 +42,9 @@ class Daily:
         end_str = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"daily_{self.measure_type}/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        if begin < datetime.datetime.now() - datetime.timedelta(days=7):
-            if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
-                endpoint += "/cache"
+        # if begin < datetime.datetime.now() - datetime.timedelta(days=7):
+        if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
+            endpoint += "/cache"
         try:
             current_data = self.db.get_daily(self.usage_point_id, begin, end, self.measure_type)
             if not current_data["missing_data"]:
@@ -120,10 +120,7 @@ class Daily:
                 finish = False
                 response = self.run(begin, end)
             else:
-                if count == 0:
-                    response = self.run(begin, end)
-                else:
-                    response = self.run(begin, end)
+                response = self.run(begin, end)
                 begin = begin - datetime.timedelta(days=self.max_daily)
                 end = end - datetime.timedelta(days=self.max_daily)
             if response is not None:
@@ -152,32 +149,35 @@ class Daily:
         return result
 
     def reset(self, date=None):
-        dateObject = datetime.datetime.strptime(date, self.date_format)
-        self.db.delete_daily(self.usage_point_id, dateObject, self.measure_type)
+        if date is not None:
+            date = datetime.datetime.strptime(date, self.date_format)
+        self.db.delete_daily(self.usage_point_id, date, self.measure_type)
         return True
 
     def fetch(self, date):
-        dateObject = datetime.datetime.strptime(date, self.date_format)
+        if date is not None:
+            date = datetime.datetime.strptime(date, self.date_format)
         result = self.run(
-            dateObject - datetime.timedelta(days=1),
-            dateObject + datetime.timedelta(days=1),
+            date - datetime.timedelta(days=1),
+            date + datetime.timedelta(days=1),
         )
         if "error" in result and result["error"]:
             return {
                 "error": True,
                 "notif": result['description'],
-                "fail_count": self.db.get_daily_fail_count(self.usage_point_id, dateObject, self.measure_type)
+                "fail_count": self.db.get_daily_fail_count(self.usage_point_id, date, self.measure_type)
             }
         for item in result:
-            if dateObject.strftime(self.date_format) in item['date']:
+            if date.strftime(self.date_format) in item['date']:
                 return item
         return {
             "error": True,
-            "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({dateObject})",
-            "fail_count": self.db.get_daily_fail_count(self.usage_point_id, dateObject, self.measure_type)
+            "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({date})",
+            "fail_count": self.db.get_daily_fail_count(self.usage_point_id, date, self.measure_type)
         }
 
     def blacklist(self, date, action):
-        dateObject = datetime.datetime.strptime(date, self.date_format)
-        self.db.blacklist_daily(self.usage_point_id, dateObject, action, self.measure_type)
+        if date is not None:
+            date = datetime.datetime.strptime(date, self.date_format)
+        self.db.blacklist_daily(self.usage_point_id, date, action, self.measure_type)
         return True

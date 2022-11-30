@@ -28,13 +28,7 @@ class Job:
         self.influxdb_config = self.config.influxdb_config()
         self.wait_job_start = 10
 
-    def job_import_data(self, target=None):
-        app.LOG.title("Démarrage du job d'importation dans 10s")
-        i = self.wait_job_start
-        while i > 0:
-            app.LOG.log(f" => {i}s")
-            time.sleep(1)
-            i = i - 1
+    def job_import_data(self, wait=True, target=None):
         if app.DB.lock_status():
             return {
                 "status": False,
@@ -42,6 +36,13 @@ class Job:
             }
         else:
             DB.lock()
+            if wait:
+                app.LOG.title("Démarrage du job d'importation dans 10s")
+                i = self.wait_job_start
+                while i > 0:
+                    app.LOG.log(f" => {i}s")
+                    time.sleep(1)
+                    i = i - 1
             if self.usage_point_id is None:
                 self.usage_points = DB.get_usage_point_all()
             else:

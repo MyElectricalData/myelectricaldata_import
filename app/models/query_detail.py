@@ -58,9 +58,9 @@ class Detail:
         end_str = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"{self.measure_type}_load_curve/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        if begin <= (datetime.datetime.now() - datetime.timedelta(days=8)):
-            if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
-                endpoint += "/cache"
+        # if begin <= (datetime.datetime.now() - datetime.timedelta(days=8)):
+        if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
+            endpoint += "/cache"
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
             current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
