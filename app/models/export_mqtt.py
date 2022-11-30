@@ -227,16 +227,6 @@ class ExportMqtt:
                 "week_euro": {},
                 "this_month_watt": 0,
                 "this_month_euro": 0
-            },
-            "base": {
-                "this_year_watt": 0,
-                "this_year_euro": 0,
-                "month_watt": {},
-                "month_euro": {},
-                "week_watt": {},
-                "week_euro": {},
-                "this_month_watt": 0,
-                "this_month_euro": 0
             }
         }
 
