@@ -47,9 +47,6 @@ def upgrade() -> None:
     sa.Column('refresh_addresse', sa.Boolean(), nullable=False),
     sa.Column('refresh_contract', sa.Boolean(), nullable=False),
     sa.Column('token', sa.Text(), nullable=False),
-    sa.Column('progress', sa.Integer(), nullable=False),
-    sa.Column('progress_status', sa.Text(), nullable=False),
-    sa.Column('enable', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('usage_point_id')
     )
     op.create_index(op.f('ix_usage_points_usage_point_id'), 'usage_points', ['usage_point_id'], unique=True)

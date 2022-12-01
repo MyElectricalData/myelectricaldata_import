@@ -6,10 +6,10 @@
 /mosquitto
 /data
 
-/__pycache__
-/app/alembic/__pycache__
-/app/alembic/versions/__pycache__
-/app/__pycache__
-/app/templates/__pycache__
-/app/templates/models/__pycache__
-/app/models/__pycache__
+/__pycache__/
+/app/alembic/__pycache__/
+/app/alembic/versions/__pycache__/
+/app/__pycache__/
+/app/templates/__pycache__/
+/app/templates/models/__pycache__/
+/app/models/__pycache__/

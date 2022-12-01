@@ -241,12 +241,17 @@ class UsagePointId:
     def contract_data(self):
         contract_data = {}
         if self.contract is not None:
+            last_activation_date = self.contract.last_activation_date
+            if hasattr(self.config, "activation_date_daily") and hasattr(self.config, "activation_date_detail"):
+                last_activation_date = f"<b style='text-decoration-line: line-through;'>{last_activation_date}</b><br>" \
+                                       f"Date d'activation journalière : {self.config.activation_date_daily} <br>" \
+                                       f"Date d'activation détaillé : {self.config.activation_date_detail} "
             contract_data = {
                 "usage_point_status": self.contract.usage_point_status,
                 "meter_type": self.contract.meter_type,
                 "segment": self.contract.segment,
                 "subscribed_power": self.contract.subscribed_power,
-                "last_activation_date": self.contract.last_activation_date,
+                "last_activation_date": last_activation_date,
                 "distribution_tariff": self.contract.distribution_tariff,
                 "contract_status": self.contract.contract_status,
                 "last_distribution_tariff_change_date": self.contract.last_distribution_tariff_change_date,

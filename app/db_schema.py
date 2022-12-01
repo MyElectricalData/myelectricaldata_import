@@ -122,6 +122,39 @@ class UsagePoints(Base):
                     nullable=False,
                     default=True
                     )
+    consentement_expiration = Column(DateTime,
+                                     nullable=True,
+                                     )
+    call_number = Column(Integer,
+                         nullable=True,
+                         )
+    quota_reached = Column(Boolean,
+                           nullable=True,
+                           )
+    quota_limit = Column(Integer,
+                         nullable=True,
+                         )
+    quota_reset_at = Column(DateTime,
+                            nullable=True,
+                            )
+    last_call = Column(DateTime,
+                       nullable=True,
+                       )
+    ban = Column(Boolean,
+                 nullable=True,
+                 )
+    consumption_max_date = Column(DateTime,
+                 nullable=True,
+                 )
+    consumption_detail_max_date = Column(DateTime,
+                 nullable=True,
+                 )
+    production_max_date = Column(DateTime,
+                 nullable=True,
+                 )
+    production_detail_max_date = Column(DateTime,
+                 nullable=True,
+                 )
 
     relation_addressess = relationship("Addresses", back_populates="usage_point")
     relation_contract = relationship("Contracts", back_populates="usage_point")
@@ -135,6 +168,7 @@ class UsagePoints(Base):
         return f"UsagePoints(" \
                f"usage_point_id={self.usage_point_id!r}, " \
                f"name={self.name!r}, " \
+               f"cache={self.cache!r}, " \
                f"consumption={self.consumption!r}, " \
                f"consumption_detail={self.consumption_detail!r}, " \
                f"production={self.production!r}, " \
@@ -157,6 +191,17 @@ class UsagePoints(Base):
                f"progress={self.progress!r}, " \
                f"progress_status={self.progress_status!r}, " \
                f"enable={self.enable!r}, " \
+               f"consentement_expiration={self.consentement_expiration!r}, " \
+               f"call_number={self.call_number!r}, " \
+               f"quota_reached={self.quota_reached!r}, " \
+               f"quota_limit={self.quota_limit!r}, " \
+               f"quota_reset_at={self.quota_reset_at!r}, " \
+               f"last_call={self.last_call!r}, " \
+               f"ban={self.ban!r}, " \
+               f"consumption_max_date={self.consumption_max_date!r}, " \
+               f"consumption_detail_max_date={self.consumption_detail_max_date!r}, " \
+               f"production_max_date={self.production_max_date!r}, " \
+               f"production_detail_max_date={self.production_detail_max_date!r}, " \
                f")"
 
 

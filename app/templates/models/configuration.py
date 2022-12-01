@@ -1,4 +1,5 @@
 import __main__ as app
+import datetime
 
 from jinja2 import Template
 from mergedeep import Strategy, merge
@@ -69,6 +70,16 @@ class Configuration:
                     "type": True,
                     "default": True
                 },
+                "consumption_max_date": {
+                    "title": "Date max journalière",
+                    "help": "Permet de définir la date de fin de récupération des données en mode journalier.  "
+                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                            "par les API d'Enedis."
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                    "type": datetime.datetime.now(),
+                    "default": ""
+                },
                 "consumption_detail": {
                     "title": "Consommation détaillée",
                     "help": "Active/Désactive la récupération de la consommation détaillé.<br><br></b>ATTENTION</b>, pour "
@@ -76,6 +87,16 @@ class Configuration:
                             "Plus d'informations sont disponible <a href='https://www.myelectricaldata.fr/faq'>ici</a>",
                     "type": True,
                     "default": True
+                },
+                "consumption_detail_max_date": {
+                    "title": "Date max détaillée",
+                    "help": "Permet de définir la date de fin de récupération des données en mode détaillée.  "
+                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                            "par les API d'Enedis."
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                    "type": datetime.datetime.now(),
+                    "default": ""
                 },
                 "consumption_price_hc": {
                     "title": "Prix TTC HC",
@@ -153,6 +174,16 @@ class Configuration:
                     "type": True,
                     "default": False
                 },
+                "production_max_date": {
+                    "title": "Date max journalière",
+                    "help": "Permet de définir la date de fin de récupération des données en mode journalier.  "
+                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                            "par les API d'Enedis."
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                    "type": datetime.datetime.now(),
+                    "default": ""
+                },
                 "production_detail": {
                     "title": "Production détaillée",
                     "help": "Active/Désactive la récupération de la production détaillé via vos panneaux solaires."
@@ -161,6 +192,16 @@ class Configuration:
                             "<a href='https://www.myelectricaldata.fr/faq'>ici</a>",
                     "type": True,
                     "default": False
+                },
+                "production_detail_max_date": {
+                    "title": "Date max détaillée",
+                    "help": "Permet de définir la date de fin de récupération des données en mode détaillée.  "
+                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                            "par les API d'Enedis."
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                    "type": datetime.datetime.now(),
+                    "default": ""
                 },
                 "production_price": {
                     "title": "Prix de revente TTC",
@@ -252,6 +293,19 @@ class Configuration:
                             configuration += f'''
                             <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>'''
                         configuration += '</tr>'
+                    elif isinstance(var_type, datetime.datetime):
+                        if isinstance(value, datetime.datetime):
+                            date = datetime.datetime.strftime(value, '%Y-%m-%d')
+                        else:
+                            date = ""
+                        configuration += f'''
+                        <tr>
+                            <td class="key">{title}</td>
+                            <td class="value"><input type="text" id="configuration_{key}" name="{key}" value="{date}"></td>'''
+                        if "help" in data:
+                            configuration += f'''
+                            <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>'''
+                        configuration += '</tr>'
         else:
             configuration = f"""
             <div id="configuration" title="{self.title}" style="display: none">
@@ -308,6 +362,15 @@ class Configuration:
                             configuration += f'''
                                     <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>'''
                         configuration += f'</tr>'
+                    elif isinstance(var_type, datetime.datetime):
+                        configuration += f'''
+                        <tr>
+                            <td class="key">{title}</td>
+                            <td class="value"><input type="text" id="configuration_{key}" name="{key}" value=""></td>'''
+                        if "help" in data:
+                            configuration += f'''
+                            <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>'''
+                        configuration += '</tr>'
         configuration += "</table></form></div>"
         return configuration
 
@@ -321,6 +384,8 @@ class Configuration:
                 elif type(var_type) == str or type(var_type) == float:
                     configuration_input += f'{key}: $("#configuration_{key}").val(),'
                 elif type(var_type) == list:
+                    configuration_input += f'{key}: $("#configuration_{key}").val(),'
+                elif isinstance(var_type, datetime.datetime):
                     configuration_input += f'{key}: $("#configuration_{key}").val(),'
 
         with open(f'{self.application_path}/templates/js/usage_point_configuration.js') as file_:

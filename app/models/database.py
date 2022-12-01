@@ -3,6 +3,10 @@ import json
 import os
 from datetime import datetime, timedelta
 
+from sqlalchemy import (create_engine, delete, inspect, select)
+from sqlalchemy.orm import sessionmaker
+
+from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
     Contracts,
@@ -13,13 +17,9 @@ from db_schema import (
     ConsumptionDetail,
     ProductionDetail,
 )
+from dependencies import str2bool
 from models.config import get_version
 from models.log import Log
-from sqlalchemy import (create_engine, delete, inspect, select)
-from sqlalchemy.orm import sessionmaker
-
-from config import MAX_IMPORT_TRY
-from dependencies import str2bool
 
 LOG = Log()
 
@@ -235,6 +235,43 @@ class Database:
             usage_points.progress = progress
             usage_points.progress_status = progress_status
             usage_points.enable = str2bool(data["enable"])
+            if "consumption_max_date" in data:
+                if data["consumption_max_date"] == "":
+                    usage_points.consumption_max_date = None
+                else:
+                    consumption_max_date = data["consumption_max_date"]
+                    if isinstance(consumption_max_date, datetime):
+                        usage_points.consumption_max_date = consumption_max_date
+                    else:
+                        usage_points.consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
+            if "consumption_detail_max_date" in data:
+                if "consumption_detail_max_date" in data:
+                    if data["consumption_detail_max_date"] == "":
+                        usage_points.consumption_detail_max_date = None
+                    else:
+                        consumption_detail_max_date = data["consumption_detail_max_date"]
+                        if isinstance(consumption_detail_max_date, datetime):
+                            usage_points.consumption_detail_max_date = consumption_detail_max_date
+                        else:
+                            usage_points.consumption_detail_max_date = datetime.strptime(consumption_detail_max_date, "%Y-%m-%d")
+            if "production_max_date" in data:
+                if data["production_max_date"] == "":
+                    usage_points.production_max_date = None
+                else:
+                    production_max_date = data["production_max_date"]
+                    if isinstance(production_max_date, datetime):
+                        usage_points.production_max_date = production_max_date
+                    else:
+                        usage_points.production_max_date = datetime.strptime(production_max_date, "%Y-%m-%d")
+            if "production_detail_max_date" in data:
+                if data["production_detail_max_date"] == "":
+                    usage_points.production_detail_max_date = None
+                else:
+                    production_detail_max_date = data["production_detail_max_date"]
+                    if isinstance(production_detail_max_date, datetime):
+                        usage_points.production_detail_max_date = production_detail_max_date
+                    else:
+                        usage_points.production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
         else:
             self.session.add(
                 UsagePoints(
@@ -263,7 +300,11 @@ class Database:
                     token=data["token"],
                     progress=progress,
                     progress_status=progress_status,
-                    enable=str2bool(data["enable"])
+                    enable=str2bool(data["enable"]),
+                    consumption_max_date=None,
+                    consumption_detail_max_date=None,
+                    production_max_date=None,
+                    production_detail_max_date=None
                 )
             )
 
@@ -275,7 +316,31 @@ class Database:
         usage_points = self.session.scalars(query).one_or_none()
         usage_points.progress = usage_points.progress + increment
 
-    ## ----------------------------------------------------------------------------------------------------------------
+    def usage_point_update(self,
+                           usage_point_id,
+                           consentement_expiration=datetime.now(),
+                           call_number=0,
+                           quota_reached=False,
+                           quota_limit=None,
+                           quota_reset_at=None,
+                           last_call=None,
+                           ban=None
+                           ):
+        query = (
+            select(UsagePoints)
+            .where(UsagePoints.usage_point_id == usage_point_id)
+        )
+        usage_points = self.session.scalars(query).one_or_none()
+        usage_points.consentement_expiration = consentement_expiration
+        usage_points.call_number = call_number
+        usage_points.quota_reached = quota_reached
+        usage_points.quota_limit = quota_limit
+        usage_points.quota_reset_at = quota_reset_at
+        usage_points.last_call = last_call
+        usage_points.ban = ban
+
+        ## ----------------------------------------------------------------------------------------------------------------
+
     ## ADDRESSES
     ## ----------------------------------------------------------------------------------------------------------------
     def get_addresse(self, usage_point_id):
@@ -581,7 +646,8 @@ class Database:
                     }
         return result
 
-    def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0, measurement_direction="consumption"):
+    def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0,
+                     measurement_direction="consumption"):
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -722,6 +788,10 @@ class Database:
             return current_data
 
     def get_detail(self, usage_point_id, begin, end, measurement_direction="consumption"):
+
+        # begin = datetime.combine(begin, datetime.min.time())
+        # end = datetime.combine(end, datetime.max.time())
+
         delta = begin - begin
 
         result = {
@@ -732,7 +802,11 @@ class Database:
 
         for i in range(delta.days + 1):
             query_result = self.get_detail_all(usage_point_id, begin, end, measurement_direction)
-            if len(query_result) < 160:
+            time_delta = abs(int((begin - end).total_seconds() / 60))
+            total_internal = 0
+            for query in query_result:
+                total_internal = total_internal + query.interval
+            if abs(total_internal - time_delta) > 60:
                 result["missing_data"] = True
             else:
                 for query in query_result:
@@ -918,6 +992,7 @@ class Database:
             "begin": self.get_detail_last_date(usage_point_id),
             "end": self.get_detail_first_date(usage_point_id)
         }
+
 
 os.system("cd /app; alembic upgrade head")
 Database().init_database()

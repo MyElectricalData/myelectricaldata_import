@@ -2,6 +2,9 @@
 
 ## Mon contrat
 
+* Les données ont était récupéré via les API d'Enedis et ne corresponde pas forcément à votre contrat.
+Vérifié bien vous horaires HC/HP et votre date d'activation. Vous pouvez surcharger ces valeurs dans la configuration du point de livraison.
+
 Adresse postale : **{{ address | default("Pas de données.") }}**
 
 Statut du point de livraison : **{{ contract_data['usage_point_status'] | default("Pas de données.")}}**

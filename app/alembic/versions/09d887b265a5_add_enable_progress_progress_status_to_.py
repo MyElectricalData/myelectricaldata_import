@@ -5,9 +5,9 @@ Revises: 0c07baa8d7b2
 Create Date: 2022-11-21 00:40:16.407209
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
+from sqlalchemy.sql import true
 
 # revision identifiers, used by Alembic.
 revision = '09d887b265a5'
@@ -17,8 +17,12 @@ depends_on = None
 
 
 def upgrade() -> None:
-    pass
+    op.add_column('usage_points', sa.Column('progress', sa.Integer, nullable=False, server_default="0"))
+    op.add_column('usage_points', sa.Column('progress_status', sa.Text, nullable=False, server_default=""))
+    op.add_column('usage_points', sa.Column('enable', sa.Boolean, nullable=False, server_default=true()))
 
 
 def downgrade() -> None:
-    pass
+    op.drop_column('usage_points', 'progress')
+    op.drop_column('usage_points', 'progress_status')
+    op.drop_column('usage_points', 'enable')
