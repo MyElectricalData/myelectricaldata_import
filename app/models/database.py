@@ -747,6 +747,10 @@ class Database:
             return current_data
 
     def get_detail(self, usage_point_id, begin, end, measurement_direction="consumption"):
+
+        # begin = datetime.combine(begin, datetime.min.time())
+        # end = datetime.combine(end, datetime.max.time())
+
         delta = begin - begin
 
         result = {
@@ -757,7 +761,11 @@ class Database:
 
         for i in range(delta.days + 1):
             query_result = self.get_detail_all(usage_point_id, begin, end, measurement_direction)
-            if len(query_result) < 160:
+            time_delta = abs(int((begin - end).total_seconds() / 60))
+            total_internal = 0
+            for query in query_result:
+                total_internal = total_internal + query.interval
+            if abs(total_internal - time_delta) > 60:
                 result["missing_data"] = True
             else:
                 for query in query_result:
