@@ -143,6 +143,18 @@ class UsagePoints(Base):
     ban = Column(Boolean,
                  nullable=True,
                  )
+    consumption_max_date = Column(DateTime,
+                 nullable=True,
+                 )
+    consumption_detail_max_date = Column(DateTime,
+                 nullable=True,
+                 )
+    production_max_date = Column(DateTime,
+                 nullable=True,
+                 )
+    production_detail_max_date = Column(DateTime,
+                 nullable=True,
+                 )
 
     relation_addressess = relationship("Addresses", back_populates="usage_point")
     relation_contract = relationship("Contracts", back_populates="usage_point")
@@ -186,6 +198,10 @@ class UsagePoints(Base):
                f"quota_reset_at={self.quota_reset_at!r}, " \
                f"last_call={self.last_call!r}, " \
                f"ban={self.ban!r}, " \
+               f"consumption_max_date={self.consumption_max_date!r}, " \
+               f"consumption_detail_max_date={self.consumption_detail_max_date!r}, " \
+               f"production_max_date={self.production_max_date!r}, " \
+               f"production_detail_max_date={self.production_detail_max_date!r}, " \
                f")"
 
 

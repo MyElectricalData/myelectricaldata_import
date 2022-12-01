@@ -41,6 +41,8 @@ class Config:
                     "consumption_price_hc": 0,
                     "consumption_price_hp": 0,
                     "consumption_price_base": 0,
+                    "activation_date_daily": "",
+                    "activation_date_detail": "",
                     "production": False,
                     "production_detail": False,
                     "production_price": 0,

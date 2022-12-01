@@ -235,6 +235,43 @@ class Database:
             usage_points.progress = progress
             usage_points.progress_status = progress_status
             usage_points.enable = str2bool(data["enable"])
+            if "consumption_max_date" in data:
+                if data["consumption_max_date"] == "":
+                    usage_points.consumption_max_date = None
+                else:
+                    consumption_max_date = data["consumption_max_date"]
+                    if isinstance(consumption_max_date, datetime):
+                        usage_points.consumption_max_date = consumption_max_date
+                    else:
+                        usage_points.consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
+            if "consumption_detail_max_date" in data:
+                if "consumption_detail_max_date" in data:
+                    if data["consumption_detail_max_date"] == "":
+                        usage_points.consumption_detail_max_date = None
+                    else:
+                        consumption_detail_max_date = data["consumption_detail_max_date"]
+                        if isinstance(consumption_detail_max_date, datetime):
+                            usage_points.consumption_detail_max_date = consumption_detail_max_date
+                        else:
+                            usage_points.consumption_detail_max_date = datetime.strptime(consumption_detail_max_date, "%Y-%m-%d")
+            if "production_max_date" in data:
+                if data["production_max_date"] == "":
+                    usage_points.production_max_date = None
+                else:
+                    production_max_date = data["production_max_date"]
+                    if isinstance(production_max_date, datetime):
+                        usage_points.production_max_date = production_max_date
+                    else:
+                        usage_points.production_max_date = datetime.strptime(production_max_date, "%Y-%m-%d")
+            if "production_detail_max_date" in data:
+                if data["production_detail_max_date"] == "":
+                    usage_points.production_detail_max_date = None
+                else:
+                    production_detail_max_date = data["production_detail_max_date"]
+                    if isinstance(production_detail_max_date, datetime):
+                        usage_points.production_detail_max_date = production_detail_max_date
+                    else:
+                        usage_points.production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
         else:
             self.session.add(
                 UsagePoints(
@@ -263,7 +300,11 @@ class Database:
                     token=data["token"],
                     progress=progress,
                     progress_status=progress_status,
-                    enable=str2bool(data["enable"])
+                    enable=str2bool(data["enable"]),
+                    consumption_max_date=None,
+                    consumption_detail_max_date=None,
+                    production_max_date=None,
+                    production_detail_max_date=None
                 )
             )
 

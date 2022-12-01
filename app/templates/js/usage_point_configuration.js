@@ -35,6 +35,45 @@ $("#configuration").dialog({
     },
 });
 
+jQuery.validator.addMethod("customDateValidator", function(value, element) {
+   var re = /^([0-9]{4}|[0-9]{2})[./-]([0]?[1-9]|[1][0-2])[./-]([0]?[1-9]|[1|2][0-9]|[3][0|1])$/ ;
+   if (! re.test(value) ) return false
+   try{jQuery.datepicker.parseDate( 'yy-mm-dd', value);return true ;}
+   catch(e){return false;}
+   },
+   "Format de date incorrect : YYYY-MM-DD"
+);
+
+$( "#configuration_consumption_max_date" ).datepicker({
+        dateFormat: "yy-mm-dd",
+        changeMonth: true,
+        changeYear: true,
+        showButtonPanel: true
+    }
+);
+$( "#configuration_consumption_detail_max_date" ).datepicker({
+        dateFormat: "yy-mm-dd",
+        changeMonth: true,
+        changeYear: true,
+        showButtonPanel: true
+    }
+);
+
+$( "#configuration_production_max_date" ).datepicker({
+        dateFormat: "yy-mm-dd",
+        changeMonth: true,
+        changeYear: true,
+        showButtonPanel: true
+    }
+);
+$( "#configuration_production_detail_max_date" ).datepicker({
+        dateFormat: "yy-mm-dd",
+        changeMonth: true,
+        changeYear: true,
+        showButtonPanel: true
+    }
+);
+
 $("#formConfiguration").validate({
     lang: 'fr',
     rules: {
@@ -62,6 +101,12 @@ $("#formConfiguration").validate({
         production_price: {
             number: true,
         },
+        // activation_date_daily: {
+        //     customDateValidator: true
+        // },
+        // activation_date_detail: {
+        //     customDateValidator: true
+        // },
     }
 });
 
