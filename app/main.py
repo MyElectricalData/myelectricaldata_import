@@ -66,6 +66,12 @@ if MQTT_CONFIG and "enable" in MQTT_CONFIG and MQTT_CONFIG["enable"]:
 INFLUXDB_CONFIG = CONFIG.influxdb_config()
 INFLUXB_ENABLE = False
 INFLUXDB = None
+
+if "asynchronous" in INFLUXDB_CONFIG and str2bool(INFLUXDB_CONFIG["asynchronous"]):
+    write_options = "ASYNCHRONOUS"
+else:
+    write_options = "SYNCHRONOUS"
+
 if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]:
     INFLUXB_ENABLE = True
     INFLUXDB = InfluxDB(
@@ -73,7 +79,8 @@ if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]
         port=INFLUXDB_CONFIG["port"],
         token=INFLUXDB_CONFIG["token"],
         org=INFLUXDB_CONFIG["org"],
-        bucket=INFLUXDB_CONFIG["bucket"]
+        bucket=INFLUXDB_CONFIG["bucket"],
+        write_options=write_options
     )
     if CONFIG.get("wipe_influxdb"):
         INFLUXDB.purge_influxdb()

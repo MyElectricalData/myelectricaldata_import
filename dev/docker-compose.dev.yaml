@@ -10,7 +10,7 @@ services:
       - influxdb
       - mosquitto
     volumes:
-      - ./../data:/data
+      - ./../data/cache:/data
       - ./../app:/app
       
   influxdb:
