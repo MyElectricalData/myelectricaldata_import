@@ -85,7 +85,7 @@ jobs:
       # LATEST-DEV
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: github.ref == 'refs/heads/pre-release'
+        if: ${{ github.event.release.prerelease }}
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -97,13 +97,14 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
+        if: ${{ github.event.release.prerelease }}
         with:
           args: '**MyElectricalData** : **latest-dev** image version is up to date'
 #      ##################################################################################################################
 #      # LATEST
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: github.ref != 'refs/heads/pre-release'
+        if: ${{ !github.event.release.prerelease }}
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -112,10 +113,10 @@ jobs:
             m4dm4rtig4n/enedisgateway2mqtt:latest
             m4dm4rtig4n/myelectricaldata:latest
       - name: Discord notification
+        if: ${{ !github.event.release.prerelease }}
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
-        if: github.event.release.prerelease == 'false'
         with:
           args: '**MyElectricalData** : **latest** image version is up to date'
       ##################################################################################################################
