@@ -267,7 +267,7 @@ class Configuration:
                         configuration += f'''
                         <tr>
                             <td class="key">{title}</td>
-                            <td class="value"><input type="checkbox" id="configuration_{key}" name="{key}" {checked}></td>'''
+                            <td class="value"><input type="checkbox" style="height: 20px;cursor: pointer;" id="configuration_{key}" name="{key}" {checked}></td>'''
                         if "help" in data:
                             configuration += f'''
                             <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>'''
@@ -336,7 +336,7 @@ class Configuration:
                         configuration += f'''
                                 <tr>
                                     <td class="key">{title}</td>
-                                    <td class="value"><input type="checkbox" id="configuration_{key}" name="{key}" {checked}></td>'''
+                                    <td class="value"><input type="checkbox" style="height: 20px;cursor: pointer;" id="configuration_{key}" name="{key}" {checked}></td>'''
                         if "help" in data:
                             configuration += f'''
                                     <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>'''

@@ -143,7 +143,7 @@ class Daily:
                 ]
                 app.LOG.error(error)
 
-            if "status_code" in response and response["status_code"] == 409:
+            if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
                 error = ["Arrêt de la récupération des données suite à une erreur.",
                         f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
