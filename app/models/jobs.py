@@ -187,7 +187,7 @@ class Job:
                                            "production_detail") and self.usage_point_config.production_detail:
                                     ExportInfluxDB(self.usage_point_id).detail(
                                         self.usage_point_config.production_price,
-                                        "production_detail"
+                                        measurement_direction="production_detail"
                                     )
                     except Exception as e:
                         traceback.print_exc()

@@ -236,7 +236,7 @@ class Database:
             usage_points.progress_status = progress_status
             usage_points.enable = str2bool(data["enable"])
             if "consumption_max_date" in data:
-                if data["consumption_max_date"] == "":
+                if not data["consumption_max_date"] or data["consumption_max_date"] is None:
                     usage_points.consumption_max_date = None
                 else:
                     consumption_max_date = data["consumption_max_date"]
@@ -246,7 +246,7 @@ class Database:
                         usage_points.consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
             if "consumption_detail_max_date" in data:
                 if "consumption_detail_max_date" in data:
-                    if data["consumption_detail_max_date"] == "":
+                    if not data["consumption_detail_max_date"] or data["consumption_detail_max_date"] is None:
                         usage_points.consumption_detail_max_date = None
                     else:
                         consumption_detail_max_date = data["consumption_detail_max_date"]
@@ -255,7 +255,7 @@ class Database:
                         else:
                             usage_points.consumption_detail_max_date = datetime.strptime(consumption_detail_max_date, "%Y-%m-%d")
             if "production_max_date" in data:
-                if data["production_max_date"] == "":
+                if not data["production_max_date"] or data["production_max_date"] is None:
                     usage_points.production_max_date = None
                 else:
                     production_max_date = data["production_max_date"]
@@ -264,7 +264,7 @@ class Database:
                     else:
                         usage_points.production_max_date = datetime.strptime(production_max_date, "%Y-%m-%d")
             if "production_detail_max_date" in data:
-                if data["production_detail_max_date"] == "":
+                if not data["production_detail_max_date"] or data["production_detail_max_date"] is None:
                     usage_points.production_detail_max_date = None
                 else:
                     production_detail_max_date = data["production_detail_max_date"]
