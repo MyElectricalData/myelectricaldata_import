@@ -34,104 +34,95 @@ jobs:
             release="${{ github.event.release.tag_name }}"
             echo "::set-output name=version::${release}"
           fi
-      - name: test
-        if: ${{ github.event.release.prerelease }}
-        run: |
-          echo "prerelease"
-      - name: test1
-        if: ${{ !github.event.release.prerelease }}
-        run: |
-          echo "not prerelease"
-
     outputs:
       version: ${{ steps.set_env.outputs.version }}
 
-#  build_push:
-#    needs: [informations]
-#    name: Build & Deploy in docker.io
-#    runs-on: [ ubuntu-latest ]
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v1
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v1
-#      - name: Login to DockerHub
-#        uses: docker/login-action@v1
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#      - name: Discord notification building state
-#        env:
-#          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-#        uses: Ilshidur/action-discord@master
-#        with:
-#          args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
-#      ##################################################################################################################
-#      # VERSION
-#      - name: Build and push ${{ needs.informations.outputs.version }}
-#        uses: docker/build-push-action@v3
-#        with:
-#          build-args: ARCH=arm32v6 ARCH=arm32v7 ARCH=amd64
-#          file: Dockerfile
-#          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
-#          context: .
-##          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
-#          push: true
-#          tags: |
-#            m4dm4rtig4n/enedisgateway2mqtt:${{ needs.informations.outputs.version }}
-#            m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}
-#
-#      - name: Discord notification {{ needs.informations.outputs.version }} image version is up to date
-#        env:
-#          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-#        uses: Ilshidur/action-discord@master
-#        with:
-#          args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}** image version is up to date'
-#      ##################################################################################################################
-#      # LATEST-DEV
-#      - name: Build and push
-#        uses: docker/build-push-action@v2
-#        if: ${{ github.event.release.prerelease }}
-#        with:
-#          context: .
+  build_push:
+    needs: [informations]
+    name: Build & Deploy in docker.io
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Discord notification building state
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
+      ##################################################################################################################
+      # VERSION
+      - name: Build and push ${{ needs.informations.outputs.version }}
+        uses: docker/build-push-action@v3
+        with:
+          build-args: ARCH=arm32v6 ARCH=arm32v7 ARCH=amd64
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          context: .
 #          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
-#          push: true
-#          tags: |
-#            m4dm4rtig4n/enedisgateway2mqtt:latest-dev
-#            m4dm4rtig4n/myelectricaldata:latest-dev
-#      - name: Discord notification
-#        env:
-#          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-#        uses: Ilshidur/action-discord@master
-#        with:
-#          args: '**MyElectricalData** : **latest-dev** image version is up to date'
-##      ##################################################################################################################
-##      # LATEST
-#      - name: Build and push
-#        uses: docker/build-push-action@v2
-#        if: ${{ !github.event.release.prerelease }}
-#        with:
-#          context: .
-#          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
-#          push: true
-#          tags: |
-#            m4dm4rtig4n/enedisgateway2mqtt:latest
-#            m4dm4rtig4n/myelectricaldata:latest
-#      - name: Discord notification
-#        env:
-#          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-#        uses: Ilshidur/action-discord@master
-#        if: github.event.release.prerelease == 'false'
-#        with:
-#          args: '**MyElectricalData** : **latest** image version is up to date'
+          push: true
+          tags: |
+            m4dm4rtig4n/enedisgateway2mqtt:${{ needs.informations.outputs.version }}
+            m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}
+
+      - name: Discord notification {{ needs.informations.outputs.version }} image version is up to date
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}** image version is up to date'
+      ##################################################################################################################
+      # LATEST-DEV
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        if: ${{ github.event.release.prerelease }}
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
+          push: true
+          tags: |
+            m4dm4rtig4n/enedisgateway2mqtt:latest-dev
+            m4dm4rtig4n/myelectricaldata:latest-dev
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '**MyElectricalData** : **latest-dev** image version is up to date'
 #      ##################################################################################################################
-#      # FINISH
-#      - name: Discord notification
-#        env:
-#          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-#        uses: Ilshidur/action-discord@master
-#        with:
-#          args: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
+#      # LATEST
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        if: ${{ !github.event.release.prerelease }}
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
+          push: true
+          tags: |
+            m4dm4rtig4n/enedisgateway2mqtt:latest
+            m4dm4rtig4n/myelectricaldata:latest
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        if: github.event.release.prerelease == 'false'
+        with:
+          args: '**MyElectricalData** : **latest** image version is up to date'
+      ##################################################################################################################
+      # FINISH
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
