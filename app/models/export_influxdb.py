@@ -54,7 +54,7 @@ class ExportInfluxDB:
             date = detail.date
             watt = detail.value
             kwatt = watt / 1000
-            watth = watt / detail.interval
+            watth = watt / (60 / date.interval)
             kwatth = watth / 1000
             if current_month != date.strftime('%m'):
                 app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
