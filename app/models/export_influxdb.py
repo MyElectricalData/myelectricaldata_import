@@ -54,12 +54,14 @@ class ExportInfluxDB:
             date = detail.date
             watt = detail.value
             kwatt = watt / 1000
+            watth = watt / detail.interval
+            kwatth = watth / 1000
             if current_month != date.strftime('%m'):
                 app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
             if detail.measure_type == "HP":
-                euro = kwatt * price_hp
+                euro = kwatth * price_hp
             else:
-                euro = kwatt * price_hc
+                euro = kwatth * price_hc
             app.INFLUXDB.write(
                 measurement=measurement_direction,
                 date=utc.localize(date),
@@ -71,8 +73,10 @@ class ExportInfluxDB:
                     "measure_type": detail.measure_type,
                 },
                 fields={
-                    "Wh": watt,
-                    "kWh": forceRound(kwatt, 2),
+                    "W": watt,
+                    "kW": forceRound(kwatt, 2),
+                    "Wh": watth,
+                    "kWh": forceRound(kwatth, 2),
                     "price": forceRound(euro, 2)
                 },
             )
