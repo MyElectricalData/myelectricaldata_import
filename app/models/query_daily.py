@@ -105,11 +105,11 @@ class Daily:
     def get(self):
 
         # REMOVE TODAY
-        begin = datetime.datetime.now() - datetime.timedelta(days=self.max_daily)
-        end = datetime.datetime.now()
+        end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_daily), datetime.datetime.min.time())
+
         finish = True
         result = []
-        count = 0
 
         while finish:
 
@@ -148,8 +148,6 @@ class Daily:
                 error = ["Arrêt de la récupération des données suite à une erreur.",
                         f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
                 app.LOG.warning(error)
-
-            count += 1
         return result
 
     def reset(self, date=None):

@@ -68,10 +68,11 @@ class Detail:
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
             current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
-            last_week = False
-            if current_week <= begin:
-                last_week = True
-            if not current_data["missing_data"] and not last_week:
+            # last_week = False
+            # if current_week <= begin:
+            #     last_week = True
+            # if not current_data["missing_data"] and not last_week:
+            if not current_data["missing_data"]:
                 app.LOG.log(" => Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
@@ -140,8 +141,8 @@ class Detail:
     def get(self):
 
         # REMOVE TODAY
-        begin = datetime.datetime.now() - datetime.timedelta(days=self.max_detail)
-        end = datetime.datetime.now()
+        end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_detail), datetime.datetime.min.time())
         finish = True
         result = []
         while finish:
