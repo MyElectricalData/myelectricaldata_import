@@ -1,3 +1,5 @@
+// noinspection SyntaxError
+
 $('#configuration').draggable({
     containment: 'window'
 });
