@@ -1,11 +1,6 @@
 import __main__ as app
-import calendar
 import json
-import sys
-from datetime import datetime, timezone, timedelta
-
-from pprint import pprint
-from statistics import median
+from datetime import datetime, timezone
 
 import pytz
 from dateutil.relativedelta import relativedelta
@@ -102,12 +97,12 @@ class HomeAssistant:
                 hasattr(usage_point, "offpeak_hours_6") and usage_point.offpeak_hours_6 is not None
         ):
             offpeak_hours_enedis = (
-                f"Lundi ({usage_point.offpeak_hours_0});" 
-                f"Mardi ({usage_point.offpeak_hours_1});"  
-                f"Mercredi ({usage_point.offpeak_hours_2});"  
-                f"Jeudi ({usage_point.offpeak_hours_3});" 
-                f"Vendredi ({usage_point.offpeak_hours_4});"  
-                f"Samedi ({usage_point.offpeak_hours_5});" 
+                f"Lundi ({usage_point.offpeak_hours_0});"
+                f"Mardi ({usage_point.offpeak_hours_1});"
+                f"Mercredi ({usage_point.offpeak_hours_2});"
+                f"Jeudi ({usage_point.offpeak_hours_3});"
+                f"Vendredi ({usage_point.offpeak_hours_4});"
+                f"Samedi ({usage_point.offpeak_hours_5});"
                 f"Dimanche ({usage_point.offpeak_hours_6});"
             )
 
@@ -216,18 +211,27 @@ class HomeAssistant:
         yesterday_evolution = self.stat.yesterday_evolution()
         monthly_evolution = self.stat.monthly_evolution()
 
-        yesterdayLastYear = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
+        yesterday_last_year = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
+        if hasattr(contract, "last_activation_date"):
+            activation_date = contract.last_activation_date.strftime(self.date_format_detail)
+        else:
+            activation_date = None
+        if hasattr(contract, "subscribed_power"):
+            subscribed_power = contract.subscribed_power
+        else:
+            subscribed_power = None
         config = {
             f"attributes": json.dumps(
                 {
                     "numPDL": self.usage_point_id,
-                    "activationDate": contract.last_activation_date.strftime(self.date_format_detail),
+                    "activationDate": activation_date,
                     "lastUpdate": now.strftime(self.date_format_detail),
                     "timeLastCall": now.strftime(self.date_format_detail),
                     "yesterdayDate": self.stat.daily(0)["begin"],
                     "yesterday": convert_kw(self.stat.daily(0)["value"]),
                     "yesterdayLastYearDate": (now - relativedelta(years=1)).strftime(self.date_format),
-                    "yesterdayLastYear": convert_kw(yesterdayLastYear.value) if hasattr(yesterdayLastYear, "value") else 0,
+                    "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year,
+                                                                                          "value") else 0,
                     "daily": [
                         convert_kw(self.stat.daily(0)["value"]),
                         convert_kw(self.stat.daily(1)["value"]),
@@ -329,7 +333,7 @@ class HomeAssistant:
                     "day_6_HC": self.stat.detail(5, "HC")["value"],
                     "day_7_HC": self.stat.detail(6, "HC")["value"],
                     "peak_offpeak_percent": round(peak_offpeak_percent, 2),
-                    "monthly_evolution":  round(monthly_evolution, 2),
+                    "monthly_evolution": round(monthly_evolution, 2),
                     "current_week_evolution": round(current_week_evolution, 2),
                     "current_month_evolution": round(current_month_evolution, 2),
                     "yesterday_evolution": round(yesterday_evolution, 2),
@@ -339,7 +343,7 @@ class HomeAssistant:
                     "current_week_number": yesterday.strftime("%V"),
                     "offpeak_hours_enedis": offpeak_hours_enedis,
                     "offpeak_hours": offpeak_hours,
-                    "subscribed_power": f"{contract.subscribed_power}"
+                    "subscribed_power": subscribed_power
                 })
         }
         for key, value in info.items():

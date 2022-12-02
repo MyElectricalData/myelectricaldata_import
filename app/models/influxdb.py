@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzlocal
 from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
-from influxdb_client.client.write_api import ASYNCHRONOUS
+from influxdb_client.client.write_api import ASYNCHRONOUS, SYNCHRONOUS
 
 import __main__ as app
 from dependencies import *
@@ -14,7 +14,7 @@ from models.log import Log
 
 class InfluxDB:
 
-    def __init__(self, hostname, port, token, org="myelectricaldata.fr", bucket="myelectricaldata"):
+    def __init__(self, hostname, port, token, org="myelectricaldata.fr", bucket="myelectricaldata", write_options="SYNCHRONOUS"):
         self.hostname = hostname
         self.port = port
         self.token = token
@@ -23,6 +23,7 @@ class InfluxDB:
         self.influxdb = {}
         self.write_api = {}
         self.delete_api = {}
+        self.write_options = write_options
         self.connect()
 
     def connect(self):
@@ -46,7 +47,10 @@ class InfluxDB:
                 "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
             ])
 
-        self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
+        if self.write_options == "ASYNCHRONOUS":
+            self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
+        else:
+            self.write_api = self.influxdb.write_api(write_options=SYNCHRONOUS)
         self.delete_api = self.influxdb.delete_api()
 
     def purge_influxdb(self):

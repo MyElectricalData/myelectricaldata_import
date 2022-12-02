@@ -12,6 +12,10 @@ influxdb:
   token: myelectricaldata
   org: myelectricaldata
   bucket: myelectricaldata
+  # ATTENTION, L'activation de l'importation asynchrone va réduire fortement le temps d'importation dans InfluxDB
+  # mais va augmenter drastiquement la consommation mémoire & CPU.
+  # À activer uniquement sur un hardware robuste (et pas sur un Raspberry ou autre par exemple).
+  asynchronous: 'false'
 mqtt:
   enable: true
   hostname: mosquitto
@@ -43,7 +47,6 @@ myelectricaldata:
     offpeak_hours_4: 22H00-6H00               # VENDREDI
     offpeak_hours_5: 22H00-6H00;12H00-14H00   # SAMEDI
     offpeak_hours_6: 22H00-6H00;12H00-14H00   # DIMANCHE
-    activation_date_detail: "2021-06-05"
     plan: HC/HP
     production: 'false'
     production_detail: 'false'

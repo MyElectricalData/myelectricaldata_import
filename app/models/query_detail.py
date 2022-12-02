@@ -30,9 +30,9 @@ class Detail:
         self.daily_max_days = int(DETAIL_MAX_DAYS)
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
         if measure_type == "consumption" and hasattr(self.usage_point_config, "consumption_detail_max_date"):
-            self.activation_date = self.usage_point_config.consumption_max_date
+            self.activation_date = self.usage_point_config.consumption_detail_max_date
         elif measure_type == "production" and hasattr(self.usage_point_config, "production_detail_max_date"):
-            self.activation_date = self.usage_point_config.consumption_max_date
+            self.activation_date = self.usage_point_config.production_detail_max_date
         elif hasattr(self.contract, "last_activation_date"):
             self.activation_date = self.contract.last_activation_date
         else:
@@ -68,10 +68,11 @@ class Detail:
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
             current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
-            last_week = False
-            if current_week <= begin:
-                last_week = True
-            if not current_data["missing_data"] and not last_week:
+            # last_week = False
+            # if current_week <= begin:
+            #     last_week = True
+            # if not current_data["missing_data"] and not last_week:
+            if not current_data["missing_data"]:
                 app.LOG.log(" => Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
@@ -140,8 +141,8 @@ class Detail:
     def get(self):
 
         # REMOVE TODAY
-        begin = datetime.datetime.now() - datetime.timedelta(days=self.max_detail)
-        end = datetime.datetime.now()
+        end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_detail), datetime.datetime.min.time())
         finish = True
         result = []
         while finish:

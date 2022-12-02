@@ -617,7 +617,6 @@ class Database:
             checkDate = datetime.combine(checkDate, datetime.min.time())
             query_result = self.get_daily_date(usage_point_id, checkDate, measurement_direction)
             checkDate = checkDate.strftime('%Y-%m-%d')
-            # print(query_result)
             if query_result is None:
                 # NEVER QUERY
                 result["date"][checkDate] = {

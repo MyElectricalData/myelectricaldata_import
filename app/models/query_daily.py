@@ -26,8 +26,8 @@ class Daily:
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
         if measure_type == "consumption" and hasattr(self.usage_point_config, "consumption_max_date"):
             self.activation_date = self.usage_point_config.consumption_max_date
-        elif measure_type == "production" and hasattr(self.usage_point_config, "production_date"):
-            self.activation_date = self.usage_point_config.consumption_max_date
+        elif measure_type == "production" and hasattr(self.usage_point_config, "production_max_date"):
+            self.activation_date = self.usage_point_config.production_max_date
         elif hasattr(self.contract, "last_activation_date"):
             self.activation_date = self.contract.last_activation_date
         else:
@@ -105,11 +105,11 @@ class Daily:
     def get(self):
 
         # REMOVE TODAY
-        begin = datetime.datetime.now() - datetime.timedelta(days=self.max_daily)
-        end = datetime.datetime.now()
+        end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_daily), datetime.datetime.min.time())
+
         finish = True
         result = []
-        count = 0
 
         while finish:
 
@@ -148,8 +148,6 @@ class Daily:
                 error = ["Arrêt de la récupération des données suite à une erreur.",
                         f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
                 app.LOG.warning(error)
-
-            count += 1
         return result
 
     def reset(self, date=None):

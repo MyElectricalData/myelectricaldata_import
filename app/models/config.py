@@ -80,6 +80,7 @@ class Config:
                 "token": "XXXXXXXXXXX",
                 "org": "myelectricaldata",
                 "bucket": "myelectricaldata",
+                "asynchronous": 'false'
             }
         }
 
