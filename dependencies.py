@@ -19,7 +19,7 @@ def cmd(cmd, path="./"):
 
 
 def switch_version(version):
-    open("/app/VERSION", "w").write(version)
+    open("app/VERSION", "w").write(version)
 
 
 def wizard():
