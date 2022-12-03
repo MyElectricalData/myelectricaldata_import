@@ -10,7 +10,7 @@ def get_version():
     f = open("/app/VERSION", "r")
     version = f.read()
     f.close()
-    return version
+    return version.strip()
 
 
 class Config:
