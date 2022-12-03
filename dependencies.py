@@ -151,6 +151,8 @@ def create_release(prerelease=False):
             app.LOG.title_error("No problem!")
             return False
 
+    switch_version(version)
+
     if rebuild_confirm:
         app.LOG.log(f"Delete release {version} on remote")
         os.system(f"gh release delete {version} -y")
@@ -175,6 +177,5 @@ def create_release(prerelease=False):
     os.system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")
 
-    switch_version(version)
 
     app.LOG.log(f"Release {version} is online!!!!")
