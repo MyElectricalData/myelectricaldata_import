@@ -26,11 +26,13 @@ jobs:
       - name: Set environment from branch
         id: set_env
         run: |
-          echo "Running on branch ${{ github.ref }}"
+          echo "Running on branch ${{ github.ref }}"        
           if [ "${{ github.event.release.prerelease }}" = "false" ]; then
-            echo "::set-output name=version::${{ github.event.release.tag_name }}"
+            release=$(echo "${{ github.event.release.tag_name }}" | awk -F- '{print $1}')
+            echo "::set-output name=version::${release}"
           else
-            echo "::set-output name=version::${{ github.event.release.tag_name }}"
+            release="${{ github.event.release.tag_name }}"
+            echo "::set-output name=version::${release}"
           fi
     outputs:
       version: ${{ steps.set_env.outputs.version }}
@@ -83,6 +85,7 @@ jobs:
       # LATEST-DEV
       - name: Build and push
         uses: docker/build-push-action@v2
+        if: ${{ github.event.release.prerelease }}
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -100,7 +103,7 @@ jobs:
 #      # LATEST
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: github.event.release.prerelease == 'false'
+        if: ${{ !github.event.release.prerelease }}
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
