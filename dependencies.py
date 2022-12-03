@@ -18,6 +18,10 @@ def cmd(cmd, path="./"):
     )
 
 
+def switch_version(version):
+    open("/app/VERSION", "w").write(version)
+
+
 def wizard():
     app.LOG.title("Wizard Mode")
     skip = ["help"]
@@ -170,5 +174,7 @@ def create_release(prerelease=False):
         prerelease_txt = "--prerelease"
     os.system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")
+
+    switch_version()
 
     app.LOG.log(f"Release {version} is online!!!!")

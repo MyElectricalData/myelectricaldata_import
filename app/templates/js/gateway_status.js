@@ -67,14 +67,18 @@ if (document.URL.indexOf("/usage_point_id/") >= 0) {
             let gateway_state = "success.png"
             let information = ""
             let information_class = "stat_value"
-            if (data["status"] === false) {
+            version = data["version"]
+            if (data["gateway"]["status"] === false) {
                 gateway_state = "error.png";
-                information = data["information"]
+                information = data["gateway"]["information"]
                 information_class = "stat_value_warning";
             }
             content = "<table class='stat_table'>" +
                 "<tr>" +
                 "<td class='stat_key'>Statut de la passerelle</td><td class='stat_value'><img src='/static/img/" + gateway_state + "' style='width: 18px;'></td>" +
+                "</tr>" +
+                "<tr>" +
+                "<td class='stat_key'>Version</td><td class='stat_value' style='width: 100px'>" + version + "</td>" +
                 "</tr>" +
                 "<tr>" +
                 "<td class='" + information_class + "' colspan='2'>" + information + "</td>" +
