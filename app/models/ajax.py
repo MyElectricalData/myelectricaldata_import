@@ -32,10 +32,7 @@ class Ajax:
 
     def gateway_status(self):
         app.LOG.title(f"[{self.usage_point_id}] Check de l'état de la passerelle.")
-        return {
-            "gateway": Status().ping(),
-            "version": get_version()
-        }
+        return Status().ping()
 
     def account_status(self):
         app.LOG.title(f"[{self.usage_point_id}] Check du statut du compte.")

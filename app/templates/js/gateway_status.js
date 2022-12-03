@@ -68,9 +68,9 @@ if (document.URL.indexOf("/usage_point_id/") >= 0) {
             let information = ""
             let information_class = "stat_value"
             version = data["version"]
-            if (data["gateway"]["status"] === false) {
+            if (data["status"] === false) {
                 gateway_state = "error.png";
-                information = data["gateway"]["information"]
+                information = data["information"]
                 information_class = "stat_value_warning";
             }
             content = "<table class='stat_table'>" +
