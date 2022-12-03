@@ -175,6 +175,6 @@ def create_release(prerelease=False):
     os.system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")
 
-    switch_version()
+    switch_version(version)
 
     app.LOG.log(f"Release {version} is online!!!!")
