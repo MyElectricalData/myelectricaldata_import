@@ -67,7 +67,7 @@ class Detail:
             endpoint += "/cache"
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
-            current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
+            # current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
             # last_week = False
             # if current_week <= begin:
             #     last_week = True
