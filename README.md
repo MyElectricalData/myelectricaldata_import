@@ -100,6 +100,9 @@ Un template est disponible sur le repo [config.yaml](https://github.com/m4dm4rti
 | discovery_prefix | Préfixe configuré dans Home Assistant pour l'auto-discovery                  | homeassistant |
 
 ### influxdb
+
+> Version supportée minimun 1.8
+
 | Champs           | Information                                                   | Défaut           |
 |------------------|---------------------------------------------------------------|------------------|
 | enable           | Activation ou non des exports vers InfluxDB                   | False            |
@@ -123,7 +126,7 @@ Ces 2 propriétés vont vous permettre de jouer sur la rapidité d'importation d
 
 #### Configuration par version :
 
-##### v1.X :
+##### v1.8 :
 ```yaml
 influxdb:
   enable: 'true'  

@@ -112,15 +112,23 @@ class Detail:
                                         result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
                                         if result:
                                             measure_type = "HC"
-                            bulk_insert.append(self.detail_table(
+                            self.db.insert_detail(
                                 usage_point_id=self.usage_point_id,
                                 date=date,
                                 value=value,
                                 interval=interval,
                                 measure_type=measure_type,
-                                blacklist=0
-                            ))
-                        self.db.insert_detail_bulk(bulk_insert, self.measure_type)
+                                blacklist=0,
+                            )
+                            # bulk_insert.append(self.detail_table(
+                            #     usage_point_id=self.usage_point_id,
+                            #     date=date,
+                            #     value=value,
+                            #     interval=interval,
+                            #     measure_type=measure_type,
+                            #     blacklist=0
+                            # ))
+                        # self.db.insert_detail_bulk(bulk_insert, self.measure_type)
                         return meter_reading["interval_reading"]
                     else:
                         return {

@@ -67,10 +67,14 @@ INFLUXDB_CONFIG = CONFIG.influxdb_config()
 INFLUXB_ENABLE = False
 INFLUXDB = None
 
-if "asynchronous" in INFLUXDB_CONFIG and str2bool(INFLUXDB_CONFIG["asynchronous"]):
-    write_options = "ASYNCHRONOUS"
+if "method" in INFLUXDB_CONFIG:
+    method = INFLUXDB_CONFIG["method"]
 else:
-    write_options = "SYNCHRONOUS"
+    method = "SYNCHRONOUS"
+
+write_options = []
+if "batching_options" in INFLUXDB_CONFIG:
+    write_options = INFLUXDB_CONFIG["batching_options"]
 
 if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]:
     INFLUXB_ENABLE = True
@@ -80,6 +84,7 @@ if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]
         token=INFLUXDB_CONFIG["token"],
         org=INFLUXDB_CONFIG["org"],
         bucket=INFLUXDB_CONFIG["bucket"],
+        method=method,
         write_options=write_options
     )
     if CONFIG.get("wipe_influxdb"):

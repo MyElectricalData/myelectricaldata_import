@@ -13,7 +13,7 @@ from dependencies import *
 
 class InfluxDB:
 
-    def __init__(self, hostname, port, token, org="myelectricaldata.fr", bucket="myelectricaldata", method="batching",
+    def __init__(self, hostname, port, token, org="myelectricaldata.fr", bucket="myelectricaldata", method="SYNCHRONOUS",
                  write_options=None):
         if write_options is None:
             write_options = {}
@@ -66,8 +66,8 @@ class InfluxDB:
         self.get_list_retention_policies()
         if self.retention < 94608000:
             day = int(self.retention / 60 / 60 / 24)
-            app.LOG.log([
-                f" => ATTENTION, l'InfluxDB est configuré avec une durée de retention de {day} jours.",
+            app.LOG.warning([
+                f"<!> ATTENTION, l'InfluxDB est configuré avec une durée de retention de {day} jours.",
                 f"    Toutes les données supérieurs à {day} jours ne seront jamais inséré dans celui-ci."
             ])
 
@@ -93,7 +93,9 @@ class InfluxDB:
                 "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
             ])
 
+        app.LOG.log(f" => Methode d'importation : {self.method.upper()}")
         if self.method.upper() == "ASYNCHRONOUS":
+            app.LOG.warning("<!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")
             self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
         elif self.method.upper() == "SYNCHRONOUS":
             self.write_api = self.influxdb.write_api(write_options=SYNCHRONOUS)

@@ -366,7 +366,6 @@ class Database:
             self.session.add(
                 UsagePoints(
                     usage_point_id=usage_point_id,
-                    # TODO : Erreur si name est vide
                     name=name,
                     cache=str2bool(cache),
                     consumption=str2bool(consumption),
