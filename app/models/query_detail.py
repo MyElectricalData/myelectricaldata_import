@@ -141,7 +141,8 @@ class Detail:
     def get(self):
 
         # REMOVE TODAY
-        end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        end = datetime.datetime.combine((datetime.datetime.now()), datetime.datetime.max.time())
         begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_detail), datetime.datetime.min.time())
         finish = True
         result = []
