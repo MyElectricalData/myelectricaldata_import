@@ -14,7 +14,7 @@ influxdb:
   bucket: myelectricaldata
   # ATTENTION, L'activation de l'importation asynchrone va réduire fortement le temps d'importation dans InfluxDB
   # mais va augmenter la consommation mémoire & CPU et donc à activer uniquement sur un hardware robuste.
-  method: batching    # Mode disponible : synchronous / asynchronous / batching
+  method: synchronous    # Mode disponible : synchronous / asynchronous / batching
   # batching_options permet uniquement de configurer la methode `batching`.
   # Pour plus d'information : https://github.com/influxdata/influxdb-client-python#batching
   batching_options:

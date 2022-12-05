@@ -25,6 +25,7 @@ class InfluxDB:
         self.influxdb = {}
         self.write_api = {}
         self.delete_api = {}
+        self.buckets_api = {}
         self.method = method
         self.write_options = {}
         if "batch_size" in write_options:
@@ -60,6 +61,16 @@ class InfluxDB:
         else:
             self.write_options["exponential_base"] = 2
         self.connect()
+        self.retention = 0
+        self.max_retention = None
+        self.get_list_retention_policies()
+        if self.retention < 94608000:
+            day = int(self.retention / 60 / 60 / 24)
+            app.LOG.log([
+                f" => ATTENTION, l'InfluxDB est configuré avec une durée de retention de {day} jours.",
+                f"    Toutes les données supérieurs à {day} jours ne seront jamais inséré dans celui-ci."
+            ])
+
 
     def connect(self):
         app.LOG.separator()
@@ -96,6 +107,8 @@ class InfluxDB:
                 max_retry_delay=self.write_options["max_retry_delay"],
                 exponential_base=self.write_options["exponential_base"]))
         self.delete_api = self.influxdb.delete_api()
+        self.buckets_api = self.influxdb.buckets_api()
+        self.get_list_retention_policies()
 
     def purge_influxdb(self):
         app.LOG.separator_warning()
@@ -114,21 +127,30 @@ class InfluxDB:
         # app.CONFIG.set("wipe_influxdb", False)
         app.LOG.warning(f" => Data reset")
 
+    def get_list_retention_policies(self):
+        buckets = self.buckets_api.find_buckets().buckets
+        for bucket in buckets:
+            if bucket.name == self.bucket:
+                self.retention = bucket.retention_rules[0].every_seconds
+                self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
+
     def write(self, tags, date=None, fields=None, measurement="log"):
+        date_max = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
         if date is None:
             date_object = datetime.datetime.now()
         else:
             date_object = date
-        record = {
-            "measurement": measurement,
-            "time": date_object,
-            "tags": {},
-            "fields": {}
-        }
-        if tags:
-            for key, value in tags.items():
-                record["tags"][key] = value
-        if fields is not None:
-            for key, value in fields.items():
-                record["fields"][key] = value
-        self.write_api.write(bucket=self.bucket, org=self.org, record=record)
+        if date.replace(tzinfo=None) > date_max.replace(tzinfo=None):
+            record = {
+                "measurement": measurement,
+                "time": date_object,
+                "tags": {},
+                "fields": {}
+            }
+            if tags:
+                for key, value in tags.items():
+                    record["tags"][key] = value
+            if fields is not None:
+                for key, value in fields.items():
+                    record["fields"][key] = value
+            self.write_api.write(bucket=self.bucket, org=self.org, record=record)

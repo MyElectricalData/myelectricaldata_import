@@ -100,33 +100,51 @@ Un template est disponible sur le repo [config.yaml](https://github.com/m4dm4rti
 | discovery_prefix | Préfixe configuré dans Home Assistant pour l'auto-discovery                  | homeassistant |
 
 ### influxdb
-| Champs   | Information                                        | Défaut           |
-|----------|----------------------------------------------------|------------------|
-| enable   | Activation ou non des exports vers InfluxDB        | False            |
-| hostname | Addresse IP ou domaine vers votre serveur InfluxDB | influxdb         |
-| port     | Port du serveur InfluxDB                           | 8086             |
-| token    | Token en V2 & USERNAME:PASSWORD pour la V1         | myelectricaldata |
-| org      | Nom de l'organisation V2, en V1 mettre "-"         | myelectricaldata |
-| bucket   | Nom du bucket en V2 et "DATABASE/RETENTION" en V1  | myelectricaldata |
+| Champs           | Information                                                   | Défaut           |
+|------------------|---------------------------------------------------------------|------------------|
+| enable           | Activation ou non des exports vers InfluxDB                   | False            |
+| hostname         | Addresse IP ou domaine vers votre serveur InfluxDB            | influxdb         |
+| port             | Port du serveur InfluxDB                                      | 8086             |
+| token            | Token en V2 & USERNAME:PASSWORD pour la V1                    | myelectricaldata |
+| org              | Nom de l'organisation V2, en V1 mettre "-"                    | myelectricaldata |
+| bucket           | Nom du bucket en V2 et "DATABASE/RETENTION" en V1             | myelectricaldata |
+| method           | synchronous / asynchronous / batching                         | synchronous      |
+| batching_options | https://github.com/influxdata/influxdb-client-python#batching |                  |
 
-#### v1.X :
+#### **method & batching_options :**
+
+Ces 2 propriétés vont vous permettre de jouer sur la rapidité d'importation dans l'influxdb.
+
+> ATTENTION, en fonction de la configuration, vous risquez de surcharger votre serveur.
+
+- **synchronous** : Mode classique assez lent sur l'importation, mais évite de surcharger le CPU & la mémoire.
+- **asynchronous** : Mode "bourrin", la totalité des valeurs seront envoyée en même temps et donc consommer énormément de ressources le temps du traimement 
+- **batching** : Mode custom qui va vous permettre de jouer sur divers paramètres. A utilisé si le mode synchronous est encore trop gourmand. Plus d'information disponible [ici](https://github.com/influxdata/influxdb-client-python#batching).
+
+#### Configuration par version :
+
+##### v1.X :
 ```yaml
 influxdb:
-    host: influxdb
-    port: 8086
-    token: USERNAME:PASSWORD
-    org: "-"
-    bucket: "DATABASE/RETENTION"
+  enable: 'true'  
+  hostname: influxdb
+  port: 8086
+  token: USERNAME:PASSWORD
+  org: "-"
+  bucket: "DATABASE/RETENTION"
+  method: asynchronous
 ```
 
-#### v2.X :
+##### v2.X :
 ```yaml
 influxdb:
-    host: influxdb
-    port: 8086
-    token: MY_TOKEN
-    org: MY_ORG
-    bucket: MY_BUCKET
+  enable: 'true'  
+  hostname: influxdb
+  port: 8086
+  token: MY_TOKEN
+  org: MY_ORG
+  bucket: MY_BUCKET
+  method: batching
 ```
 
 ### mqtt
@@ -147,31 +165,38 @@ influxdb:
 
 Dictionnaire avec comme clef votre Point de Livraison (entre double quote) contenant toute sa configuration.
 
-| Champs                 | Information                                                                    | Défaut |
-|------------------------|--------------------------------------------------------------------------------|--------|
-| token                  | Activation ou non des exports vers MQTT                                        | ""     |
-| name                   | Alias de votre point livraison pour faciliter la navigation                    | ""     |
-| addresses              | Récupération des coordonnées du point de livraison                             | False  |
-| cache                  | Activation du cache sur la passerelle                                          | True   |
-| consumption            | Activation de la collecte de consommation journalière                          | True   |
-| consumption_detail     | Activation de la collecte de consommation horaire                              | True   |
-| consumption_price_base | Prix d'achat du kW sans forfait HP/HC                                          | 0      |
-| consumption_price_hc   | Prix d'achat du kW en Heure Creuse                                             | 0      |
-| consumption_price_hp   | Prix d'achat du kW en Heure Pleine                                             | 0      |
-| enable                 | Activation du PDL                                                              | True   |
-| offpeak_hours_0        | Heure creuse du Lundi                                                          | ""     |
-| offpeak_hours_1        | Heure creuse du Mardi                                                          | ""     |
-| offpeak_hours_2        | Heure creuse du Mercredi                                                       | ""     |
-| offpeak_hours_3        | Heure creuse du Jeudi                                                          | ""     |
-| offpeak_hours_4        | Heure creuse du Vendredi                                                       | ""     |
-| offpeak_hours_5        | Heure creuse du Samedi                                                         | ""     |
-| offpeak_hours_6        | Heure creuse du Dimanche                                                       | ""     |
-| plan                   | Votre type de plan BASE ou HP/HC                                               | BASE   |
-| production             | Activation de la collecte de production journalière                            | False  |
-| production_detail      | Activation de la collecte de production horaire                                | False  |
-| production_price       | Prix de revente à Enedis (Inutile pour l'instant)                              | 0      |
-| refresh_addresse       | Permet de forcer un rafraichissement des informations "postale" dans le cache  | False  |
-| refresh_contract       | Permet de forcer un rafraichissement des informations du contrat dans le cache | False  |
+| Champs                      | Information                                                                    | Défaut |
+|-----------------------------|--------------------------------------------------------------------------------|--------|
+| token                       | Activation ou non des exports vers MQTT                                        | ""     |
+| name                        | Alias de votre point livraison pour faciliter la navigation                    | ""     |
+| addresses                   | Récupération des coordonnées du point de livraison                             | False  |
+| cache                       | Activation du cache sur la passerelle                                          | True   |
+| consumption                 | Activation de la collecte de consommation journalière                          | True   |
+| consumption_detail          | Activation de la collecte de consommation horaire                              | True   |
+| consumption_max_date        | Permet de la date boutoir de récupération de la consommation journalière       | ""     |
+| consumption_detail_max_date | Permet de la date boutoir de récupération de la consommation détaillée         | ""     |
+| consumption_price_base      | Prix d'achat du kW sans forfait HP/HC                                          | 0      |
+| consumption_price_hc        | Prix d'achat du kW en Heure Creuse                                             | 0      |
+| consumption_price_hp        | Prix d'achat du kW en Heure Pleine                                             | 0      |
+| enable                      | Activation du PDL                                                              | True   |
+| offpeak_hours_0             | Heure creuse du Lundi                                                          | ""     |
+| offpeak_hours_1             | Heure creuse du Mardi                                                          | ""     |
+| offpeak_hours_2             | Heure creuse du Mercredi                                                       | ""     |
+| offpeak_hours_3             | Heure creuse du Jeudi                                                          | ""     |
+| offpeak_hours_4             | Heure creuse du Vendredi                                                       | ""     |
+| offpeak_hours_5             | Heure creuse du Samedi                                                         | ""     |
+| offpeak_hours_6             | Heure creuse du Dimanche                                                       | ""     |
+| plan                        | Votre type de plan BASE ou HP/HC                                               | BASE   |
+| production                  | Activation de la collecte de production journalière                            | False  |
+| production_detail           | Activation de la collecte de production horaire                                | False  |
+| production_price            | Prix de revente à Enedis (Inutile pour l'instant)                              | 0      |
+| production_max_date         | Permet de la date boutoir de récupération de la production journalière         | ""     |
+| production_detail_max_date  | Permet de la date boutoir de récupération de la production détaillée           | ""     |
+| refresh_addresse            | Permet de forcer un rafraichissement des informations "postale" dans le cache  | False  |
+| refresh_contract            | Permet de forcer un rafraichissement des informations du contrat dans le cache | False  |
+
+> Si les valeurs **consumption_max_date**, **consumption_max_detail_date**, **production_max_date**, **production_detail_max_date** 
+> ne sont pas défini, ce sera la date de début de contrat remonté par Enedis qui sera prise en compte.
 
 #### offpeak_hours
 
