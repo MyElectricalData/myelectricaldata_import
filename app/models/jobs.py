@@ -56,7 +56,7 @@ class Job:
                             self.get_gateway_status()
                     except Exception as e:
                         traceback.print_exc()
-                        LOG.error([f"Erreur lors de la récupération des information de la passerelle", e])
+                        LOG.error([f"Erreur lors de la récupération des informations de la passerelle", e])
                     try:
                         if target == "account_status" or target is None:
                             self.get_account_status()
@@ -68,7 +68,7 @@ class Job:
                             self.get_contract()
                     except Exception as e:
                         traceback.print_exc()
-                        LOG.critical([f"Erreur lors de la récupération des information du contract", e])
+                        LOG.critical([f"Erreur lors de la récupération des informations du contract", e])
                     try:
                         if target == "addresses" or target is None:
                             self.get_addresses()
@@ -86,7 +86,7 @@ class Job:
                             self.get_consumption_detail()
                     except Exception as e:
                         traceback.print_exc()
-                        LOG.error([f"Erreur lors de la récupération de votre consommation détaillé", e])
+                        LOG.error([f"Erreur lors de la récupération de votre consommation détaillée", e])
                     try:
                         if target == "production" or target is None:
                             self.get_production()
@@ -98,7 +98,7 @@ class Job:
                             self.get_production_detail()
                     except Exception as e:
                         traceback.print_exc()
-                        LOG.error([f"Erreur lors de la récupération de votre production détaillé", e])
+                        LOG.error([f"Erreur lors de la récupération de votre production détaillée", e])
 
                     try:
                         # #######################################################################################################
@@ -258,7 +258,7 @@ class Job:
     def get_consumption_detail(self):
         result = {}
         if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-            LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation détaillé :")
+            LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation détaillée :")
             result = Detail(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
@@ -279,7 +279,7 @@ class Job:
     def get_production_detail(self):
         result = {}
         if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-            LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production détaillé :")
+            LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production détaillée :")
             result = Detail(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
