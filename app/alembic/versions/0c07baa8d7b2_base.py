@@ -68,7 +68,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_addresses_id'), 'addresses', ['id'], unique=True)
     op.create_index(op.f('ix_addresses_usage_point_id'), 'addresses', ['usage_point_id'], unique=False)
     op.create_table('consumption_daily',
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.String(), nullable=False),
     sa.Column('usage_point_id', sa.Text(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
     sa.Column('value', sa.Integer(), nullable=False),
@@ -81,7 +81,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_consumption_daily_id'), 'consumption_daily', ['id'], unique=True)
     op.create_index(op.f('ix_consumption_daily_usage_point_id'), 'consumption_daily', ['usage_point_id'], unique=False)
     op.create_table('consumption_detail',
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.String(), nullable=False),
     sa.Column('usage_point_id', sa.Text(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
     sa.Column('value', sa.Integer(), nullable=False),
@@ -91,7 +91,7 @@ def upgrade() -> None:
     sa.Column('fail_count', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['usage_point_id'], ['usage_points.usage_point_id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sqlite_autoincrement=True
+    # sqlite_autoincrement=True
     )
     op.create_index(op.f('ix_consumption_detail_id'), 'consumption_detail', ['id'], unique=True)
     op.create_index(op.f('ix_consumption_detail_usage_point_id'), 'consumption_detail', ['usage_point_id'], unique=False)
@@ -116,12 +116,12 @@ def upgrade() -> None:
     sa.Column('count', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['usage_point_id'], ['usage_points.usage_point_id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sqlite_autoincrement=True
+    # sqlite_autoincrement=True
     )
     op.create_index(op.f('ix_contracts_id'), 'contracts', ['id'], unique=True)
     op.create_index(op.f('ix_contracts_usage_point_id'), 'contracts', ['usage_point_id'], unique=False)
     op.create_table('production_daily',
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.String(), nullable=False),
     sa.Column('usage_point_id', sa.Text(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
     sa.Column('value', sa.Integer(), nullable=False),
@@ -129,12 +129,12 @@ def upgrade() -> None:
     sa.Column('fail_count', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['usage_point_id'], ['usage_points.usage_point_id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sqlite_autoincrement=True
+    # sqlite_autoincrement=True
     )
     op.create_index(op.f('ix_production_daily_id'), 'production_daily', ['id'], unique=True)
     op.create_index(op.f('ix_production_daily_usage_point_id'), 'production_daily', ['usage_point_id'], unique=False)
     op.create_table('production_detail',
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.String(), nullable=False),
     sa.Column('usage_point_id', sa.Text(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
     sa.Column('value', sa.Integer(), nullable=False),
@@ -144,7 +144,7 @@ def upgrade() -> None:
     sa.Column('fail_count', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['usage_point_id'], ['usage_points.usage_point_id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sqlite_autoincrement=True
+    # sqlite_autoincrement=True
     )
     op.create_index(op.f('ix_production_detail_id'), 'production_detail', ['id'], unique=True)
     op.create_index(op.f('ix_production_detail_usage_point_id'), 'production_detail', ['usage_point_id'], unique=False)

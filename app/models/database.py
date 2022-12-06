@@ -1,6 +1,6 @@
-import datetime
 import json
 import os
+import hashlib
 from datetime import datetime, timedelta
 
 from sqlalchemy import (create_engine, delete, inspect, select)
@@ -332,6 +332,36 @@ class Database:
                     production_detail_max_date = production_detail_max_date
                 else:
                     production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
+
+        if "call_number" in data:
+            call_number = data["call_number"]
+        else:
+            call_number = 0
+        if "quota_reached" in data:
+            quota_reached = str2bool(data["quota_reached"])
+        else:
+            quota_reached = False
+        if "quota_limit" in data:
+            quota_limit = data["quota_limit"]
+        else:
+            quota_limit = 0
+        if "quota_reset_at" in data:
+            quota_reset_at = data["quota_reset_at"]
+        else:
+            quota_reset_at = None
+        if "last_call" in data:
+            last_call = data["last_call"]
+        else:
+            last_call = None
+        if "ban" in data:
+            ban = str2bool(data["ban"])
+        else:
+            ban = False
+        if "consentement_expiration" in data:
+            consentement_expiration = data["consentement_expiration"]
+        else:
+            consentement_expiration = None
+
         if usage_points is not None:
             usage_points.enable = str2bool(enable)
             usage_points.name = name
@@ -362,6 +392,13 @@ class Database:
             usage_points.consumption_detail_max_date = consumption_detail_max_date
             usage_points.production_max_date = production_max_date
             usage_points.production_detail_max_date = production_detail_max_date
+            usage_points.call_number = call_number
+            usage_points.quota_reached = str2bool(quota_reached)
+            usage_points.quota_limit = quota_limit
+            usage_points.quota_reset_at = quota_reset_at
+            usage_points.last_call = last_call
+            usage_points.ban = str2bool(ban)
+            usage_points.consentement_expiration = consentement_expiration
         else:
             self.session.add(
                 UsagePoints(
@@ -389,11 +426,18 @@ class Database:
                     token=token,
                     progress=progress,
                     progress_status=progress_status,
-                    enable=enable,
-                    consumption_max_date=None,
-                    consumption_detail_max_date=None,
-                    production_max_date=None,
-                    production_detail_max_date=None
+                    enable=str2bool(enable),
+                    consumption_max_date=consumption_max_date,
+                    consumption_detail_max_date=consumption_detail_max_date,
+                    production_max_date=production_max_date,
+                    production_detail_max_date=production_detail_max_date,
+                    call_number=call_number,
+                    quota_reached=str2bool(quota_reached),
+                    quota_limit=quota_limit,
+                    quota_reset_at=quota_reset_at,
+                    last_call=last_call,
+                    ban=str2bool(ban),
+                    consentement_expiration=consentement_expiration
                 )
             )
 
@@ -428,8 +472,7 @@ class Database:
         usage_points.last_call = last_call
         usage_points.ban = ban
 
-        ## ----------------------------------------------------------------------------------------------------------------
-
+    ## ----------------------------------------------------------------------------------------------------------------
     ## ADDRESSES
     ## ----------------------------------------------------------------------------------------------------------------
     def get_addresse(self, usage_point_id):
@@ -551,6 +594,7 @@ class Database:
         ).all()
 
     def get_daily_date(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -560,8 +604,7 @@ class Database:
         return self.session.scalars(
             select(table)
             .join(relation)
-            .where(table.usage_point_id == usage_point_id)
-            .where(table.date == date)
+            .where(table.id == unique_id)
         ).first()
 
     def get_daily_state(self, usage_point_id, date, measurement_direction="consumption"):
@@ -635,6 +678,7 @@ class Database:
             return 0
 
     def daily_fail_increment(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -643,8 +687,7 @@ class Database:
             relation = UsagePoints.relation_production_daily
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date))
+                 .where(table.id == unique_id))
         LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
@@ -736,6 +779,7 @@ class Database:
 
     def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0,
                      measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -744,10 +788,10 @@ class Database:
             relation = UsagePoints.relation_production_daily
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date))
+                 .where(table.id == unique_id))
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
+            daily.id = unique_id
             daily.usage_point_id = usage_point_id
             daily.date = date
             daily.value = value
@@ -756,6 +800,7 @@ class Database:
         else:
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=value,
@@ -770,16 +815,17 @@ class Database:
         else:
             table = ProductionDaily
         if date is not None:
+            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
             self.session.execute(
                 delete(table)
-                .where(table.usage_point_id == usage_point_id)
-                .where(table.date == date)
+                .where(table.id == unique_id)
             )
         else:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
         return True
 
     def blacklist_daily(self, usage_point_id, date, action=True, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -788,8 +834,7 @@ class Database:
             relation = UsagePoints.relation_production_daily
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date)
+                 .where(table.id == unique_id)
                  )
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
@@ -797,6 +842,7 @@ class Database:
         else:
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=0,
@@ -840,6 +886,7 @@ class Database:
             ).all()
 
     def get_detail_date(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
@@ -849,8 +896,7 @@ class Database:
         return self.session.scalars(
             select(table)
             .join(relation)
-            .where(table.usage_point_id == usage_point_id)
-            .where(table.date == date)
+            .where(table.id == unique_id)
         ).first()
 
     def get_detail_range(self, usage_point_id, begin, end, measurement_direction="consumption"):
@@ -910,6 +956,7 @@ class Database:
             return result
 
     def get_detail_state(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
@@ -919,38 +966,39 @@ class Database:
         current_data = self.session.scalars(
             select(table)
             .join(relation)
-            .where(table.usage_point_id == usage_point_id)
-            .where(table.date == date)
+            .where(table.id == unique_id)
         ).one_or_none()
         if current_data is None:
             return False
         else:
             return True
 
-    def insert_detail_bulk(self, data, mesure_type="consumption"):
-        if mesure_type == "consumption":
-            table = ConsumptionDetail
-        else:
-            table = ProductionDetail
-        begin = ""
-        end = ""
-        for scalar in data:
-            if begin == "":
-                begin = scalar.date
-            end = scalar.date
-        self.session.execute(
-            table.__table__.delete().filter(ConsumptionDetail.date.between(begin, end))
-        )
-        self.session.add_all(data)
+    # def insert_detail_bulk(self, data, mesure_type="consumption"):
+    #     if mesure_type == "consumption":
+    #         table = ConsumptionDetail
+    #     else:
+    #         table = ProductionDetail
+    #     begin = ""
+    #     end = ""
+    #     for scalar in data:
+    #         if begin == "":
+    #             begin = scalar.date
+    #         end = scalar.date
+    #     self.session.execute(
+    #         table.__table__.delete().filter(ConsumptionDetail.date.between(begin, end))
+    #     )
+    #     self.session.add_all(data)
 
     def insert_detail(self, usage_point_id, date, value, interval, measure_type, blacklist=0, fail_count=0,
                       mesure_type="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if mesure_type == "consumption":
             table = ConsumptionDetail
         else:
             table = ProductionDetail
         detail = self.get_detail_date(usage_point_id, date, mesure_type)
         if detail is not None:
+            detail.id = unique_id
             detail.usage_point_id = usage_point_id
             detail.date = date
             detail.value = value
@@ -961,6 +1009,7 @@ class Database:
         else:
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=value,
@@ -977,10 +1026,10 @@ class Database:
         else:
             table = ProductionDetail
         if date is not None:
+            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
             self.session.execute(
                 delete(table)
-                .where(table.usage_point_id == usage_point_id)
-                .where(table.date == date)
+                .where(table.id == unique_id)
             )
         else:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
@@ -1000,6 +1049,7 @@ class Database:
         return self.get_detail_date(usage_point_id, date, mesure_type).fail_count
 
     def detail_fail_increment(self, usage_point_id, date, mesure_type="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if mesure_type == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
@@ -1008,8 +1058,7 @@ class Database:
             relation = UsagePoints.relation_production_detail
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date))
+                 .where(table.id == unique_id))
         detail = self.session.scalars(query).one_or_none()
         if detail is not None:
             fail_count = int(detail.fail_count) + 1
@@ -1029,6 +1078,7 @@ class Database:
             fail_count = 0
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=0,
