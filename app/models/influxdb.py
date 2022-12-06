@@ -64,11 +64,15 @@ class InfluxDB:
         self.retention = 0
         self.max_retention = None
         self.get_list_retention_policies()
-        if self.retention < 94608000:
+        if self.retention != 0:
             day = int(self.retention / 60 / 60 / 24)
             app.LOG.warning([
                 f"<!> ATTENTION, l'InfluxDB est configuré avec une durée de retention de {day} jours.",
                 f"    Toutes les données supérieurs à {day} jours ne seront jamais inséré dans celui-ci."
+            ])
+        else:
+            app.LOG.log([
+                f" => Aucune retention de données détecté."
             ])
 
 
@@ -95,7 +99,7 @@ class InfluxDB:
 
         app.LOG.log(f" => Methode d'importation : {self.method.upper()}")
         if self.method.upper() == "ASYNCHRONOUS":
-            app.LOG.warning("<!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")
+            app.LOG.warning(" <!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")
             self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
         elif self.method.upper() == "SYNCHRONOUS":
             self.write_api = self.influxdb.write_api(write_options=SYNCHRONOUS)
@@ -142,7 +146,7 @@ class InfluxDB:
             date_object = datetime.datetime.now()
         else:
             date_object = date
-        if date.replace(tzinfo=None) > date_max.replace(tzinfo=None):
+        if self.retention == 0 or (date.replace(tzinfo=None) > date_max.replace(tzinfo=None)):
             record = {
                 "measurement": measurement,
                 "time": date_object,

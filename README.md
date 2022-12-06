@@ -263,7 +263,7 @@ services:
     image: m4dm4rtig4n/myelectricaldata:latest
     restart: unless-stopped
     volumes:
-      -./:/data     
+      - ./:/data     
     environment:
       TZ: Europe/Paris
     ports:
