@@ -942,7 +942,6 @@ class Database:
             time_delta = abs(int((begin - end).total_seconds() / 60))
             total_internal = 0
             for query in query_result:
-                # print(query)
                 total_internal = total_internal + query.interval
             total_time = abs(total_internal - time_delta)
             if total_time > 300:
