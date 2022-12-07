@@ -3,7 +3,6 @@ import requests
 import __main__ as app
 from dependencies import *
 
-# TODO : Arrété les call quand le quota est atteint
 
 class Query(object):
 

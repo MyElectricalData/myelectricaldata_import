@@ -1,6 +1,6 @@
-import datetime
 import json
 import os
+import hashlib
 from datetime import datetime, timedelta
 
 from sqlalchemy import (create_engine, delete, inspect, select)
@@ -203,108 +203,241 @@ class Database:
             .where(UsagePoints.usage_point_id == usage_point_id)
         )
         usage_points = self.session.scalars(query).one_or_none()
+        if "enable" in data:
+            enable = data["enable"]
+        else:
+            enable = True
+        if "name" in data:
+            name = data["name"]
+        else:
+            name = ""
+        if "cache" in data:
+            cache = data["cache"]
+        else:
+            cache = True
+        if "consumption" in data:
+            consumption = data["consumption"]
+        else:
+            consumption = True
+        if "consumption_detail" in data:
+            consumption_detail = data["consumption_detail"]
+        else:
+            consumption_detail = True
+        if "production" in data:
+            production = data["production"]
+        else:
+            production = False
+        if "production_detail" in data:
+            production_detail = data["production_detail"]
+        else:
+            production_detail = False
+        if "production_price" in data:
+            production_price = data["production_price"]
+        else:
+            production_price = 0
+        if "consumption_price_base" in data:
+            consumption_price_base = data["consumption_price_base"]
+        else:
+            consumption_price_base = 0
+        if "consumption_price_hc" in data:
+            consumption_price_hc = data["consumption_price_hc"]
+        else:
+            consumption_price_hc = 0
+        if "consumption_price_hp" in data:
+            consumption_price_hp = data["consumption_price_hp"]
+        else:
+            consumption_price_hp = 0
+        if "offpeak_hours_0" in data:
+            offpeak_hours_0 = data["offpeak_hours_0"]
+        else:
+            offpeak_hours_0 = ""
+        if "offpeak_hours_1" in data:
+            offpeak_hours_1 = data["offpeak_hours_1"]
+        else:
+            offpeak_hours_1 = ""
+        if "offpeak_hours_2" in data:
+            offpeak_hours_2 = data["offpeak_hours_2"]
+        else:
+            offpeak_hours_2 = ""
+        if "offpeak_hours_3" in data:
+            offpeak_hours_3 = data["offpeak_hours_3"]
+        else:
+            offpeak_hours_3 = ""
+        if "offpeak_hours_4" in data:
+            offpeak_hours_4 = data["offpeak_hours_4"]
+        else:
+            offpeak_hours_4 = ""
+        if "offpeak_hours_5" in data:
+            offpeak_hours_5 = data["offpeak_hours_5"]
+        else:
+            offpeak_hours_5 = ""
+        if "offpeak_hours_6" in data:
+            offpeak_hours_6 = data["offpeak_hours_6"]
+        else:
+            offpeak_hours_6 = ""
+        if "plan" in data:
+            plan = data["plan"]
+        else:
+            plan = "BASE"
+        if "refresh_addresse" in data:
+            refresh_addresse = data["refresh_addresse"]
+        else:
+            refresh_addresse = False
+        if "refresh_contract" in data:
+            refresh_contract = data["refresh_contract"]
+        else:
+            refresh_contract = False
+        if "token" in data:
+            token = data["token"]
+        else:
+            token = ""
         progress = 0
         if "progress" in data:
             progress = data["progress"]
         progress_status = ""
         if "progress_status" in data:
-            progress = data["progress_status"]
-        # progress_status = data["progress_status"] if "progress_status" in data else progress_status = 0
+            progress_status = data["progress_status"]
+        consumption_max_date = None
+        if "consumption_max_date" in data:
+            if not data["consumption_max_date"] or data["consumption_max_date"] is None:
+                consumption_max_date = None
+            else:
+                consumption_max_date = data["consumption_max_date"]
+                if not isinstance(consumption_max_date, datetime):
+                    consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
+        consumption_detail_max_date = None
+        if "consumption_detail_max_date" in data:
+            if "consumption_detail_max_date" in data:
+                if not data["consumption_detail_max_date"] or data["consumption_detail_max_date"] is None:
+                    consumption_detail_max_date = None
+                else:
+                    consumption_detail_max_date = data["consumption_detail_max_date"]
+                    if not isinstance(consumption_detail_max_date, datetime):
+                        consumption_detail_max_date = datetime.strptime(consumption_detail_max_date,"%Y-%m-%d")
+        production_max_date = None
+        if "production_max_date" in data:
+            if not data["production_max_date"] or data["production_max_date"] is None:
+                production_max_date = None
+            else:
+                production_max_date = data["production_max_date"]
+                if not isinstance(production_max_date, datetime):
+                    production_max_date = datetime.strptime(production_max_date, "%Y-%m-%d")
+        production_detail_max_date = None
+        if "production_detail_max_date" in data:
+            if not data["production_detail_max_date"] or data["production_detail_max_date"] is None:
+                production_detail_max_date = None
+            else:
+                production_detail_max_date = data["production_detail_max_date"]
+                if isinstance(production_detail_max_date, datetime):
+                    production_detail_max_date = production_detail_max_date
+                else:
+                    production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
+
+        if "call_number" in data:
+            call_number = data["call_number"]
+        else:
+            call_number = 0
+        if "quota_reached" in data:
+            quota_reached = str2bool(data["quota_reached"])
+        else:
+            quota_reached = False
+        if "quota_limit" in data:
+            quota_limit = data["quota_limit"]
+        else:
+            quota_limit = 0
+        if "quota_reset_at" in data:
+            quota_reset_at = data["quota_reset_at"]
+        else:
+            quota_reset_at = None
+        if "last_call" in data:
+            last_call = data["last_call"]
+        else:
+            last_call = None
+        if "ban" in data:
+            ban = str2bool(data["ban"])
+        else:
+            ban = False
+        if "consentement_expiration" in data:
+            consentement_expiration = data["consentement_expiration"]
+        else:
+            consentement_expiration = None
+
         if usage_points is not None:
-            usage_points.name = data["name"]
-            usage_points.cache = str2bool(data["cache"])
-            usage_points.consumption = str2bool(data["consumption"])
-            usage_points.consumption_detail = str2bool(data["consumption_detail"])
-            usage_points.production = str2bool(data["production"])
-            usage_points.production_detail = str2bool(data["production_detail"])
-            usage_points.production_price = data["production_price"]
-            usage_points.consumption_price_base = data["consumption_price_base"]
-            usage_points.consumption_price_hc = data["consumption_price_hc"]
-            usage_points.consumption_price_hp = data["consumption_price_hp"]
-            usage_points.offpeak_hours_0 = data["offpeak_hours_0"]
-            usage_points.offpeak_hours_1 = data["offpeak_hours_1"]
-            usage_points.offpeak_hours_2 = data["offpeak_hours_2"]
-            usage_points.offpeak_hours_3 = data["offpeak_hours_3"]
-            usage_points.offpeak_hours_4 = data["offpeak_hours_4"]
-            usage_points.offpeak_hours_5 = data["offpeak_hours_5"]
-            usage_points.offpeak_hours_6 = data["offpeak_hours_6"]
-            usage_points.plan = data["plan"]
-            usage_points.refresh_addresse = str2bool(data["refresh_addresse"])
-            usage_points.refresh_contract = str2bool(data["refresh_contract"])
-            usage_points.token = data["token"]
+            usage_points.enable = str2bool(enable)
+            usage_points.name = name
+            usage_points.cache = str2bool(cache)
+            usage_points.consumption = str2bool(consumption)
+            usage_points.consumption_detail = str2bool(consumption_detail)
+            usage_points.production = str2bool(production)
+            usage_points.production_detail = str2bool(production_detail)
+            usage_points.production_price = production_price
+            usage_points.consumption_price_base = consumption_price_base
+            usage_points.consumption_price_hc = consumption_price_hc
+            usage_points.consumption_price_hp = consumption_price_hp
+            usage_points.offpeak_hours_0 = offpeak_hours_0
+            usage_points.offpeak_hours_1 = offpeak_hours_1
+            usage_points.offpeak_hours_2 = offpeak_hours_2
+            usage_points.offpeak_hours_3 = offpeak_hours_3
+            usage_points.offpeak_hours_4 = offpeak_hours_4
+            usage_points.offpeak_hours_5 = offpeak_hours_5
+            usage_points.offpeak_hours_6 = offpeak_hours_6
+            usage_points.offpeak_hours_6 = offpeak_hours_6
+            usage_points.plan = plan
+            usage_points.refresh_addresse = str2bool(refresh_addresse)
+            usage_points.refresh_contract = str2bool(refresh_contract)
+            usage_points.token = token
             usage_points.progress = progress
             usage_points.progress_status = progress_status
-            usage_points.enable = str2bool(data["enable"])
-            if "consumption_max_date" in data:
-                if not data["consumption_max_date"] or data["consumption_max_date"] is None:
-                    usage_points.consumption_max_date = None
-                else:
-                    consumption_max_date = data["consumption_max_date"]
-                    if isinstance(consumption_max_date, datetime):
-                        usage_points.consumption_max_date = consumption_max_date
-                    else:
-                        usage_points.consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
-            if "consumption_detail_max_date" in data:
-                if "consumption_detail_max_date" in data:
-                    if not data["consumption_detail_max_date"] or data["consumption_detail_max_date"] is None:
-                        usage_points.consumption_detail_max_date = None
-                    else:
-                        consumption_detail_max_date = data["consumption_detail_max_date"]
-                        if isinstance(consumption_detail_max_date, datetime):
-                            usage_points.consumption_detail_max_date = consumption_detail_max_date
-                        else:
-                            usage_points.consumption_detail_max_date = datetime.strptime(consumption_detail_max_date, "%Y-%m-%d")
-            if "production_max_date" in data:
-                if not data["production_max_date"] or data["production_max_date"] is None:
-                    usage_points.production_max_date = None
-                else:
-                    production_max_date = data["production_max_date"]
-                    if isinstance(production_max_date, datetime):
-                        usage_points.production_max_date = production_max_date
-                    else:
-                        usage_points.production_max_date = datetime.strptime(production_max_date, "%Y-%m-%d")
-            if "production_detail_max_date" in data:
-                if not data["production_detail_max_date"] or data["production_detail_max_date"] is None:
-                    usage_points.production_detail_max_date = None
-                else:
-                    production_detail_max_date = data["production_detail_max_date"]
-                    if isinstance(production_detail_max_date, datetime):
-                        usage_points.production_detail_max_date = production_detail_max_date
-                    else:
-                        usage_points.production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
+            usage_points.consumption_max_date = consumption_max_date
+            usage_points.consumption_detail_max_date = consumption_detail_max_date
+            usage_points.production_max_date = production_max_date
+            usage_points.production_detail_max_date = production_detail_max_date
+            usage_points.call_number = call_number
+            usage_points.quota_reached = str2bool(quota_reached)
+            usage_points.quota_limit = quota_limit
+            usage_points.quota_reset_at = quota_reset_at
+            usage_points.last_call = last_call
+            usage_points.ban = str2bool(ban)
+            usage_points.consentement_expiration = consentement_expiration
         else:
             self.session.add(
                 UsagePoints(
                     usage_point_id=usage_point_id,
-                    # TODO : Erreur si name est vide
-                    name=data["name"],
-                    cache=str2bool(data["cache"]),
-                    consumption=str2bool(data["consumption"]),
-                    consumption_detail=str2bool(data["consumption_detail"]),
-                    production=str2bool(data["production"]),
-                    production_detail=str2bool(data["production_detail"]),
-                    production_price=data["production_price"],
-                    consumption_price_base=data["consumption_price_base"],
-                    consumption_price_hc=data["consumption_price_hc"],
-                    consumption_price_hp=data["consumption_price_hp"],
-                    offpeak_hours_0=data["offpeak_hours_0"],
-                    offpeak_hours_1=data["offpeak_hours_1"],
-                    offpeak_hours_2=data["offpeak_hours_2"],
-                    offpeak_hours_3=data["offpeak_hours_3"],
-                    offpeak_hours_4=data["offpeak_hours_4"],
-                    offpeak_hours_5=data["offpeak_hours_5"],
-                    offpeak_hours_6=data["offpeak_hours_6"],
-                    plan=data["plan"],
-                    refresh_addresse=str2bool(data["refresh_addresse"]),
-                    refresh_contract=str2bool(data["refresh_contract"]),
-                    token=data["token"],
+                    name=name,
+                    cache=str2bool(cache),
+                    consumption=str2bool(consumption),
+                    consumption_detail=str2bool(consumption_detail),
+                    production=str2bool(production),
+                    production_detail=str2bool(production_detail),
+                    production_price=production_price,
+                    consumption_price_base=consumption_price_base,
+                    consumption_price_hc=consumption_price_hc,
+                    consumption_price_hp=consumption_price_hp,
+                    offpeak_hours_0=offpeak_hours_0,
+                    offpeak_hours_1=offpeak_hours_1,
+                    offpeak_hours_2=offpeak_hours_2,
+                    offpeak_hours_3=offpeak_hours_3,
+                    offpeak_hours_4=offpeak_hours_4,
+                    offpeak_hours_5=offpeak_hours_5,
+                    offpeak_hours_6=offpeak_hours_6,
+                    plan=plan,
+                    refresh_addresse=str2bool(refresh_addresse),
+                    refresh_contract=str2bool(refresh_contract),
+                    token=token,
                     progress=progress,
                     progress_status=progress_status,
-                    enable=str2bool(data["enable"]),
-                    consumption_max_date=None,
-                    consumption_detail_max_date=None,
-                    production_max_date=None,
-                    production_detail_max_date=None
+                    enable=str2bool(enable),
+                    consumption_max_date=consumption_max_date,
+                    consumption_detail_max_date=consumption_detail_max_date,
+                    production_max_date=production_max_date,
+                    production_detail_max_date=production_detail_max_date,
+                    call_number=call_number,
+                    quota_reached=str2bool(quota_reached),
+                    quota_limit=quota_limit,
+                    quota_reset_at=quota_reset_at,
+                    last_call=last_call,
+                    ban=str2bool(ban),
+                    consentement_expiration=consentement_expiration
                 )
             )
 
@@ -339,8 +472,7 @@ class Database:
         usage_points.last_call = last_call
         usage_points.ban = ban
 
-        ## ----------------------------------------------------------------------------------------------------------------
-
+    ## ----------------------------------------------------------------------------------------------------------------
     ## ADDRESSES
     ## ----------------------------------------------------------------------------------------------------------------
     def get_addresse(self, usage_point_id):
@@ -462,6 +594,7 @@ class Database:
         ).all()
 
     def get_daily_date(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -471,8 +604,7 @@ class Database:
         return self.session.scalars(
             select(table)
             .join(relation)
-            .where(table.usage_point_id == usage_point_id)
-            .where(table.date == date)
+            .where(table.id == unique_id)
         ).first()
 
     def get_daily_state(self, usage_point_id, date, measurement_direction="consumption"):
@@ -546,6 +678,7 @@ class Database:
             return 0
 
     def daily_fail_increment(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -554,8 +687,7 @@ class Database:
             relation = UsagePoints.relation_production_daily
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date))
+                 .where(table.id == unique_id))
         LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
@@ -565,6 +697,7 @@ class Database:
                 fail_count = 0
             else:
                 blacklist = 0
+            daily.id = unique_id
             daily.usage_point_id = usage_point_id
             daily.date = date
             daily.value = 0
@@ -574,6 +707,7 @@ class Database:
             fail_count = 0
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=0,
@@ -647,6 +781,7 @@ class Database:
 
     def insert_daily(self, usage_point_id, date, value, blacklist=0, fail_count=0,
                      measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -655,10 +790,11 @@ class Database:
             relation = UsagePoints.relation_production_daily
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date))
+                 .where(table.id == unique_id))
         daily = self.session.scalars(query).one_or_none()
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
         if daily is not None:
+            daily.id = unique_id
             daily.usage_point_id = usage_point_id
             daily.date = date
             daily.value = value
@@ -667,6 +803,7 @@ class Database:
         else:
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=value,
@@ -681,16 +818,17 @@ class Database:
         else:
             table = ProductionDaily
         if date is not None:
+            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
             self.session.execute(
                 delete(table)
-                .where(table.usage_point_id == usage_point_id)
-                .where(table.date == date)
+                .where(table.id == unique_id)
             )
         else:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
         return True
 
     def blacklist_daily(self, usage_point_id, date, action=True, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -699,8 +837,7 @@ class Database:
             relation = UsagePoints.relation_production_daily
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date)
+                 .where(table.id == unique_id)
                  )
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
@@ -708,6 +845,7 @@ class Database:
         else:
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=0,
@@ -751,6 +889,7 @@ class Database:
             ).all()
 
     def get_detail_date(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
@@ -760,8 +899,7 @@ class Database:
         return self.session.scalars(
             select(table)
             .join(relation)
-            .where(table.usage_point_id == usage_point_id)
-            .where(table.date == date)
+            .where(table.id == unique_id)
         ).first()
 
     def get_detail_range(self, usage_point_id, begin, end, measurement_direction="consumption"):
@@ -805,7 +943,9 @@ class Database:
             total_internal = 0
             for query in query_result:
                 total_internal = total_internal + query.interval
-            if abs(total_internal - time_delta) > 60:
+            total_time = abs(total_internal - time_delta)
+            if total_time > 300:
+                LOG.log(f" - {total_time}m absente du relevé.")
                 result["missing_data"] = True
             else:
                 for query in query_result:
@@ -818,6 +958,7 @@ class Database:
             return result
 
     def get_detail_state(self, usage_point_id, date, measurement_direction="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
@@ -827,38 +968,39 @@ class Database:
         current_data = self.session.scalars(
             select(table)
             .join(relation)
-            .where(table.usage_point_id == usage_point_id)
-            .where(table.date == date)
+            .where(table.id == unique_id)
         ).one_or_none()
         if current_data is None:
             return False
         else:
             return True
 
-    def insert_detail_bulk(self, data, mesure_type="consumption"):
-        if mesure_type == "consumption":
-            table = ConsumptionDetail
-        else:
-            table = ProductionDetail
-        begin = ""
-        end = ""
-        for scalar in data:
-            if begin == "":
-                begin = scalar.date
-            end = scalar.date
-        self.session.execute(
-            table.__table__.delete().filter(ConsumptionDetail.date.between(begin, end))
-        )
-        self.session.add_all(data)
+    # def insert_detail_bulk(self, data, mesure_type="consumption"):
+    #     if mesure_type == "consumption":
+    #         table = ConsumptionDetail
+    #     else:
+    #         table = ProductionDetail
+    #     begin = ""
+    #     end = ""
+    #     for scalar in data:
+    #         if begin == "":
+    #             begin = scalar.date
+    #         end = scalar.date
+    #     self.session.execute(
+    #         table.__table__.delete().filter(ConsumptionDetail.date.between(begin, end))
+    #     )
+    #     self.session.add_all(data)
 
     def insert_detail(self, usage_point_id, date, value, interval, measure_type, blacklist=0, fail_count=0,
                       mesure_type="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if mesure_type == "consumption":
             table = ConsumptionDetail
         else:
             table = ProductionDetail
         detail = self.get_detail_date(usage_point_id, date, mesure_type)
         if detail is not None:
+            detail.id = unique_id
             detail.usage_point_id = usage_point_id
             detail.date = date
             detail.value = value
@@ -869,6 +1011,7 @@ class Database:
         else:
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=value,
@@ -885,10 +1028,10 @@ class Database:
         else:
             table = ProductionDetail
         if date is not None:
+            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
             self.session.execute(
                 delete(table)
-                .where(table.usage_point_id == usage_point_id)
-                .where(table.date == date)
+                .where(table.id == unique_id)
             )
         else:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
@@ -908,6 +1051,7 @@ class Database:
         return self.get_detail_date(usage_point_id, date, mesure_type).fail_count
 
     def detail_fail_increment(self, usage_point_id, date, mesure_type="consumption"):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if mesure_type == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
@@ -916,8 +1060,7 @@ class Database:
             relation = UsagePoints.relation_production_detail
         query = (select(table)
                  .join(relation)
-                 .where(table.usage_point_id == usage_point_id)
-                 .where(table.date == date))
+                 .where(table.id == unique_id))
         detail = self.session.scalars(query).one_or_none()
         if detail is not None:
             fail_count = int(detail.fail_count) + 1
@@ -937,6 +1080,7 @@ class Database:
             fail_count = 0
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=0,

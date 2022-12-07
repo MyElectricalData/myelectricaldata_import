@@ -67,7 +67,7 @@ class Detail:
             endpoint += "/cache"
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
-            current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
+            # current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
             # last_week = False
             # if current_week <= begin:
             #     last_week = True
@@ -112,15 +112,23 @@ class Detail:
                                         result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
                                         if result:
                                             measure_type = "HC"
-                            bulk_insert.append(self.detail_table(
+                            self.db.insert_detail(
                                 usage_point_id=self.usage_point_id,
                                 date=date,
                                 value=value,
                                 interval=interval,
                                 measure_type=measure_type,
-                                blacklist=0
-                            ))
-                        self.db.insert_detail_bulk(bulk_insert, self.measure_type)
+                                blacklist=0,
+                            )
+                            # bulk_insert.append(self.detail_table(
+                            #     usage_point_id=self.usage_point_id,
+                            #     date=date,
+                            #     value=value,
+                            #     interval=interval,
+                            #     measure_type=measure_type,
+                            #     blacklist=0
+                            # ))
+                        # self.db.insert_detail_bulk(bulk_insert, self.measure_type)
                         return meter_reading["interval_reading"]
                     else:
                         return {
@@ -141,7 +149,8 @@ class Detail:
     def get(self):
 
         # REMOVE TODAY
-        end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
+        end = datetime.datetime.combine((datetime.datetime.now()), datetime.datetime.max.time())
         begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_detail), datetime.datetime.min.time())
         finish = True
         result = []

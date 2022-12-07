@@ -1,4 +1,4 @@
-from sqlalchemy import (Column, ForeignKey, Float, Integer, Text, Boolean, DateTime)
+from sqlalchemy import (Column, ForeignKey, Float, Integer, Text, Boolean, DateTime, String)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -351,9 +351,9 @@ class Contracts(Base):
 
 class ConsumptionDaily(Base):
     __tablename__ = 'consumption_daily'
-    __table_args__ = {'sqlite_autoincrement': True}
+    # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer,
+    id = Column(String,
                 primary_key=True,
                 index=True,
                 unique=True,
@@ -393,9 +393,9 @@ class ConsumptionDaily(Base):
 
 class ConsumptionDetail(Base):
     __tablename__ = 'consumption_detail'
-    __table_args__ = {'sqlite_autoincrement': True}
+    # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer,
+    id = Column(String,
                 primary_key=True,
                 index=True,
                 unique=True,
@@ -443,9 +443,9 @@ class ConsumptionDetail(Base):
 
 class ProductionDaily(Base):
     __tablename__ = 'production_daily'
-    __table_args__ = {'sqlite_autoincrement': True}
+    # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer,
+    id = Column(String,
                 primary_key=True,
                 index=True,
                 unique=True,
@@ -485,9 +485,9 @@ class ProductionDaily(Base):
 
 class ProductionDetail(Base):
     __tablename__ = 'production_detail'
-    __table_args__ = {'sqlite_autoincrement': True}
+    # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer,
+    id = Column(String,
                 primary_key=True,
                 index=True,
                 unique=True,

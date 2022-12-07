@@ -13,9 +13,19 @@ influxdb:
   org: myelectricaldata
   bucket: myelectricaldata
   # ATTENTION, L'activation de l'importation asynchrone va réduire fortement le temps d'importation dans InfluxDB
-  # mais va augmenter drastiquement la consommation mémoire & CPU.
-  # À activer uniquement sur un hardware robuste (et pas sur un Raspberry ou autre par exemple).
-  asynchronous: 'false'
+  # mais va augmenter la consommation mémoire & CPU et donc à activer uniquement sur un hardware robuste.
+  method: synchronous    # Mode disponible : synchronous / asynchronous / batching
+  # batching_options permet uniquement de configurer la methode `batching`.
+  # Pour plus d'information : https://github.com/influxdata/influxdb-client-python#batching
+  batching_options:
+    batch_size: 1000
+    flush_interval: 1000
+    jitter_interval: 0
+    retry_interval: 5000
+    max_retry_time: 180_000
+    max_retries: 5
+    max_retry_delay: 125_000
+    exponential_base: 2
 mqtt:
   enable: true
   hostname: mosquitto

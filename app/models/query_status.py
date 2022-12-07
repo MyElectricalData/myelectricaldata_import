@@ -5,6 +5,7 @@ import __main__ as app
 
 from config import URL
 from dependencies import *
+from models.config import get_version
 from models.log import Log
 from models.query import Query
 
@@ -25,6 +26,7 @@ class Status:
                 status = json.loads(response.text)
                 for key, value in status.items():
                     self.log.log(f"{key}: {value}")
+                status["version"] = get_version()
                 return status
             except LookupError:
                 return {

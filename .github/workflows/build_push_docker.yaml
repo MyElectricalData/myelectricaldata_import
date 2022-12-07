@@ -60,6 +60,9 @@ jobs:
         uses: Ilshidur/action-discord@master
         with:
           args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
+      - name: Switch app/VERSION
+        run: |
+          echo "${{ needs.informations.outputs.version }}" > app/VERSION
       ##################################################################################################################
       # VERSION
       - name: Build and push ${{ needs.informations.outputs.version }}
@@ -97,6 +100,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
+        if: ${{ github.event.release.prerelease }}
         with:
           args: '**MyElectricalData** : **latest-dev** image version is up to date'
 #      ##################################################################################################################
@@ -112,10 +116,10 @@ jobs:
             m4dm4rtig4n/enedisgateway2mqtt:latest
             m4dm4rtig4n/myelectricaldata:latest
       - name: Discord notification
+        if: ${{ !github.event.release.prerelease }}
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
-        if: github.event.release.prerelease == 'false'
         with:
           args: '**MyElectricalData** : **latest** image version is up to date'
       ##################################################################################################################

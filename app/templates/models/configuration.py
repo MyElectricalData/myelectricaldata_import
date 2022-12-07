@@ -25,7 +25,7 @@ class Configuration:
                 "enable": {
                     "title": "Actif ?",
                     "help": "Active ou non le lancement du job de récupération des données tous X secondes<br/>"
-                            "L'interval de récupération est défini par le \"cycle\" dans le config.yaml",
+                            "L'intervalle de récupération est définie par le \"cycle\" dans le config.yaml",
                     "type": True,
                     "default": True
                 },
@@ -73,16 +73,16 @@ class Configuration:
                 "consumption_max_date": {
                     "title": "Date max journalière",
                     "help": "Permet de définir la date de fin de récupération des données en mode journalier.  "
-                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                            "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
-                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
                             "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""
                 },
                 "consumption_detail": {
                     "title": "Consommation détaillée",
-                    "help": "Active/Désactive la récupération de la consommation détaillé.<br><br></b>ATTENTION</b>, pour "
+                    "help": "Active/Désactive la récupération de la consommation détaillée.<br><br></b>ATTENTION</b>, pour "
                             "fonctionner il vous faut activer le relevé de consommation horaire sur le site d'Enedis"
                             "Plus d'informations sont disponible <a href='https://www.myelectricaldata.fr/faq'>ici</a>",
                     "type": True,
@@ -90,10 +90,10 @@ class Configuration:
                 },
                 "consumption_detail_max_date": {
                     "title": "Date max détaillée",
-                    "help": "Permet de définir la date de fin de récupération des données en mode détaillée.  "
-                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                    "help": "Permet de définir la date de fin de récupération des données en mode détaillé.  "
+                            "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
-                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
                             "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""
@@ -177,16 +177,16 @@ class Configuration:
                 "production_max_date": {
                     "title": "Date max journalière",
                     "help": "Permet de définir la date de fin de récupération des données en mode journalier.  "
-                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                            "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
-                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
                             "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""
                 },
                 "production_detail": {
                     "title": "Production détaillée",
-                    "help": "Active/Désactive la récupération de la production détaillé via vos panneaux solaires."
+                    "help": "Active/Désactive la récupération de la production détaillée via vos panneaux solaires."
                             "<br><br></b>ATTENTION</b>, pour fonctionner il vous faut activer le relevé de consommation horaire"
                             "sur le site d'Enedis<br>Plus d'informations sont disponible "
                             "<a href='https://www.myelectricaldata.fr/faq'>ici</a>",
@@ -195,10 +195,10 @@ class Configuration:
                 },
                 "production_detail_max_date": {
                     "title": "Date max détaillée",
-                    "help": "Permet de définir la date de fin de récupération des données en mode détaillée.  "
-                            "<br><br>Si aucune valeur n'est défini ce sera la date 'last_activation_date' remontée "
+                    "help": "Permet de définir la date de fin de récupération des données en mode détaillé.  "
+                            "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
-                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement défini vous risquez de ne pas "
+                            "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
                             "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""

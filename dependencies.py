@@ -18,6 +18,10 @@ def cmd(cmd, path="./"):
     )
 
 
+def switch_version(version):
+    open("app/VERSION", "w").write(version)
+
+
 def wizard():
     app.LOG.title("Wizard Mode")
     skip = ["help"]
@@ -147,6 +151,8 @@ def create_release(prerelease=False):
             app.LOG.title_error("No problem!")
             return False
 
+    switch_version(version)
+
     if rebuild_confirm:
         app.LOG.log(f"Delete release {version} on remote")
         os.system(f"gh release delete {version} -y")
@@ -154,7 +160,6 @@ def create_release(prerelease=False):
         os.system(f"git tag -d {version}")
         app.LOG.log("  => Success")
         app.LOG.log(f"Delete tag {version} on remote")
-        print(f"git push --delete origin {version}")
         os.system(f"git push --delete origin {version}")
         app.LOG.log("  => Success")
 
@@ -170,5 +175,6 @@ def create_release(prerelease=False):
         prerelease_txt = "--prerelease"
     os.system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")
+
 
     app.LOG.log(f"Release {version} is online!!!!")
