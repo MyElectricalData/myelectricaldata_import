@@ -2,7 +2,7 @@
 
 ## Mon contrat
 
-* Les données ont était récupérées via les API d'Enedis et ne sont pas toujours correctement mises à jour par Enedis.
+* Les données ont été récupérées via les API d'Enedis et ne sont pas toujours correctement mises à jour par Enedis.
 Vérifiez bien vos horaires HC/HP et votre date d'activation. Vous pouvez surcharger ces valeurs dans la configuration du point de livraison.
 
 Adresse postale : **{{ address | default("Pas de données.") }}**
