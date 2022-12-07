@@ -697,6 +697,7 @@ class Database:
                 fail_count = 0
             else:
                 blacklist = 0
+            daily.id = unique_id
             daily.usage_point_id = usage_point_id
             daily.date = date
             daily.value = 0
@@ -706,6 +707,7 @@ class Database:
             fail_count = 0
             self.session.add(
                 table(
+                    id=unique_id,
                     usage_point_id=usage_point_id,
                     date=date,
                     value=0,
@@ -790,6 +792,7 @@ class Database:
                  .join(relation)
                  .where(table.id == unique_id))
         daily = self.session.scalars(query).one_or_none()
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
         if daily is not None:
             daily.id = unique_id
             daily.usage_point_id = usage_point_id

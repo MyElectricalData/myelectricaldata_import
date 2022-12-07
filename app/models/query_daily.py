@@ -60,6 +60,8 @@ class Daily:
             else:
                 app.LOG.log(f" => Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
+                from pprint import pprint
+                pprint(data.text)
                 blacklist = 0
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
