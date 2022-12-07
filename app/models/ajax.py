@@ -5,6 +5,7 @@ from models.config import get_version
 from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_status import Status
+from models.query_cache import Cache
 
 
 class Ajax:
@@ -65,6 +66,10 @@ class Ajax:
             "error": "false",
             "notif": "Toutes les données ont était supprimées.",
         }
+
+    def reset_gateway(self):
+        app.LOG.title(f"[{self.usage_point_id}] Reset de le cache de la passerelle.")
+        return Cache(self.usage_point_id).reset()
 
     def reset_data(self, target, date):
         result = {}

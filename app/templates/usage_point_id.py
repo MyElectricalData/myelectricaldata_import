@@ -115,13 +115,23 @@ class UsagePointId:
             menu = merge(
                 {
                     "delete_data": {
-                        "title": "Supprimer le cache",
+                        "title": "Supprimer le cache local",
                         "icon": "delete",
                         "css": "background-color: var(--text-warning);",
                         "loading_page": "loading",
                         "ajax": {
                             "method": "GET",
                             "url": f'/reset/{self.usage_point_id}'
+                        },
+                    },
+                    "delete_data_gateway": {
+                        "title": "Supprimer le cache de la passerelle",
+                        "icon": "delete_forever",
+                        "css": "background-color: var(--text-warning);",
+                        "loading_page": "loading_import",
+                        "ajax": {
+                            "method": "GET",
+                            "url": f'/reset_gateway/{self.usage_point_id}'
                         },
                     },
                     "config_data": {

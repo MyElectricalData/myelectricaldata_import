@@ -204,6 +204,12 @@ if __name__ == '__main__':
         return Ajax(usage_point_id).reset_all_data()
 
 
+    @APP.route("/reset_gateway/<usage_point_id>", methods=['GET'])
+    @APP.route("/reset_gateway/<usage_point_id>/", methods=['GET'])
+    def reset_gateway(usage_point_id):
+        return Ajax(usage_point_id).reset_gateway()
+
+
     @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>", methods=['GET'])
     @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>/", methods=['GET'])
     def reset_data(usage_point_id, target, date):
