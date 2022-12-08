@@ -39,7 +39,7 @@ class Configuration:
                     "title": "Cache",
                     "help": "L'activation du cache sur <a href='https://myelectricaldata.fr/'>MyElectricalData</a> "
                             "va vous permettre de réduire fortement les temps de réponse lors de la récupération des "
-                            "données chez Enedis et également palier au soucis d'indisponibilité de leur API (Si les "
+                            "données chez Enedis et également pallier au soucis d'indisponibilité de leur API (Si les "
                             "données ont déjà été récupérées au moins une fois dans les 30 derniers jours).",
                     "type": True,
                     "default": True
@@ -52,13 +52,13 @@ class Configuration:
                 },
                 "refresh_addresse": {
                     "title": "Rafraichir vos coordonnées",
-                    "help": "Permet de forcer le rafraichissement de vos cordonnées postales.",
+                    "help": "Permet de forcer le rafraichissement de vos coordonnées postales.",
                     "type": True,
                     "default": False
                 },
                 "refresh_contract": {
                     "title": "Rafraichir votre contrat",
-                    "help": "Permet de forcer le rafraichissement de informations liées à votre contrat.",
+                    "help": "Permet de forcer le rafraichissement des informations liées à votre contrat.",
                     "type": True,
                     "default": False
                 },
@@ -76,7 +76,7 @@ class Configuration:
                             "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
                             "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
-                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement du quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""
                 },
@@ -84,7 +84,7 @@ class Configuration:
                     "title": "Consommation détaillée",
                     "help": "Active/Désactive la récupération de la consommation détaillée.<br><br></b>ATTENTION</b>, pour "
                             "fonctionner il vous faut activer le relevé de consommation horaire sur le site d'Enedis"
-                            "Plus d'informations sont disponible <a href='https://www.myelectricaldata.fr/faq'>ici</a>",
+                            "Plus d'informations sont disponibles <a href='https://www.myelectricaldata.fr/faq'>ici</a>",
                     "type": True,
                     "default": True
                 },
@@ -94,7 +94,7 @@ class Configuration:
                             "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
                             "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
-                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement du quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""
                 },
@@ -180,7 +180,7 @@ class Configuration:
                             "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
                             "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
-                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement de quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""
                 },
@@ -188,7 +188,7 @@ class Configuration:
                     "title": "Production détaillée",
                     "help": "Active/Désactive la récupération de la production détaillée via vos panneaux solaires."
                             "<br><br></b>ATTENTION</b>, pour fonctionner il vous faut activer le relevé de consommation horaire"
-                            "sur le site d'Enedis<br>Plus d'informations sont disponible "
+                            "sur le site d'Enedis<br>Plus d'informations sont disponibles "
                             "<a href='https://www.myelectricaldata.fr/faq'>ici</a>",
                     "type": True,
                     "default": False
@@ -199,7 +199,7 @@ class Configuration:
                             "<br><br>Si aucune valeur n'est définie ce sera la date 'last_activation_date' remontée "
                             "par les API d'Enedis."
                             "<br><br><b>ATTENTION, si cette valeur n'est pas correctement définie vous risquez de ne pas "
-                            "récupérer la totalité de vos données ou encore d'avoir un dépassement quota</b>",
+                            "récupérer la totalité de vos données ou encore d'avoir un dépassement de quota</b>",
                     "type": datetime.datetime.now(),
                     "default": ""
                 },
