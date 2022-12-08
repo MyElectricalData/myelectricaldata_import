@@ -64,11 +64,11 @@ class Ajax:
         ).reset()
         return {
             "error": "false",
-            "notif": "Toutes les données ont était supprimées.",
+            "notif": "Toutes les données ont étéa supprimées.",
         }
 
     def reset_gateway(self):
-        app.LOG.title(f"[{self.usage_point_id}] Reset de le cache de la passerelle.")
+        app.LOG.title(f"[{self.usage_point_id}] Reset du cache de la passerelle.")
         return Cache(self.usage_point_id).reset()
 
     def reset_data(self, target, date):
@@ -80,7 +80,7 @@ class Ajax:
                 usage_point_id=self.usage_point_id
             ).reset(date)
         elif target == "consumption_detail":
-            app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillé du {date}:")
+            app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée du {date}:")
             result["consumption_detail"] = Detail(
                 headers=self.headers,
             ).reset(date)
@@ -92,7 +92,7 @@ class Ajax:
                 measure_type="production"
             ).reset(date)
         elif target == "production_detail":
-            app.LOG.title(f"[{self.usage_point_id}] Reset de la production détaillé du {date}:")
+            app.LOG.title(f"[{self.usage_point_id}] Reset de la production détaillée du {date}:")
             result["production_detail"] = Detail(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id,
@@ -128,7 +128,7 @@ class Ajax:
                 ).fetch(date)
         elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Importation de la consommation détaillé du {date}:")
+                app.LOG.title(f"[{self.usage_point_id}] Importation de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -143,7 +143,7 @@ class Ajax:
                 ).fetch(date)
         elif target == "production_detail":
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Importation de la production détaillé du {date}:")
+                app.LOG.title(f"[{self.usage_point_id}] Importation de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -187,7 +187,7 @@ class Ajax:
                 ).blacklist(date, True)
         if target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la consommation détaillé du {date}:")
+                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -202,7 +202,7 @@ class Ajax:
                 ).blacklist(date, True)
         elif target == "production_detail":
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la production détaillé du {date}:")
+                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -238,7 +238,7 @@ class Ajax:
                 ).blacklist(date, False)
         elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la consommation détaillé du {date}:")
+                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -253,7 +253,7 @@ class Ajax:
                 ).blacklist(date, False)
         elif target == "production_detail":
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la production détaillé du {date}:")
+                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
