@@ -311,7 +311,7 @@ make bash
 
 ### Si vous rencontrez des erreurs SQL au démarrage ?
 
-La plus simple est de supprimer le fichier cache.db et de relancer l’intégration, mais attention, vous allez perdre tt l’historique dans le cache.
+Le plus simple est de supprimer le fichier cache.db et de relancer l’intégration, mais attention, vous allez perdre tout l’historique dans le cache.
 Il est cependant possible de le récupérer via la procédure ci-dessous en nommant votre fichier de cache actuel en enedisgateway.db.
 
 ### Comment migrer de EnedisGateway2MQTT vers MyElectricalData ?
@@ -320,26 +320,26 @@ Pour migrer proprement depuis EnedisGateway2MQTT et avant de lancer la migration
 - Arrêter l’integration
 - Backup le fichier enedisgateway.db (au cas où)
 - Renommer l’actuel en enedisgateway.db.wait
-- Migrer en 0.8.X (Attention le fichier de config à changé vous pouvez reprendre l’exemple [ici](https://github.com/m4dm4rtig4n/myelectricaldata/blob/master/config.exemple.yaml))
+- Migrer en 0.8.X (Attention le fichier de config a changé vous pouvez reprendre l’exemple [ici](https://github.com/m4dm4rtig4n/myelectricaldata/blob/master/config.exemple.yaml))
 - Démarrer en 0.8.X pour initialiser le nouveau cache.
-- Arrêter l’integration.
+- Arrêter l’intégration.
 - Renommer le enedisgateway.db.wait en enedisgateway.db
-- Re-lance l’intégration, il va migrer les anciennes données du enedisgateway.db vers le cache.db (visible dans les logs)
+- Re-lancer l’intégration, il va migrer les anciennes données du enedisgateway.db vers le cache.db (visible dans les logs)
 
-Pour ceux qui auraient eu des soucis lors de la migration et souhaite récupérer leur anciennes données en cache: 
+Pour ceux qui auraient eu des soucis lors de la migration et souhaitent récupérer leurs anciennes données en cache: 
 - Arrêter l’intégration
 - Supprimer le cache.db
-- Démarré l’intégration pour initialiser correctement le cache.db.
+- Démarrer l’intégration pour initialiser correctement le cache.db.
 - Arrêter l’intégration
-- Reprendre le backup (où le enedisgateway.db.migrate) et le positionner au même endroit que le cache.db avec le nom enedisgateway.db
+- Reprendre le backup (ou le enedisgateway.db.migrate) et le positionner au même endroit que le cache.db avec le nom enedisgateway.db
 - Lancer l’intégration en v0.8.X
-- L’import du enedisgateway.db vers cache.db ce fera au lancement
+- L’import du enedisgateway.db vers cache.db se fera au lancement
 - Le fichier enedisgateway.db sera renommé en enedisgateway.db.migrate.
 
 ## Roadmap
 
 - Intégrer Tempo.
-- Gestion du **DJU18** pour une meilleure estimation de l'évolution de la vôtre consommation.
+- Gestion du **DJU18** pour une meilleure estimation de l'évolution de votre consommation.
 - Ajout d'un connecteur PostgreSQL / MariaDB.
 - [Remonter la puissance max](https://github.com/m4dm4rtig4n/enedisgateway2mqtt/issues/66).
 
