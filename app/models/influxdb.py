@@ -72,7 +72,7 @@ class InfluxDB:
             ])
         else:
             app.LOG.log([
-                f" => Aucune retention de données détecté."
+                f" => Aucune retention de données détectée."
             ])
 
 
@@ -97,7 +97,7 @@ class InfluxDB:
                 "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
             ])
 
-        app.LOG.log(f" => Methode d'importation : {self.method.upper()}")
+        app.LOG.log(f" => Méthode d'importation : {self.method.upper()}")
         if self.method.upper() == "ASYNCHRONOUS":
             app.LOG.warning(" <!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")
             self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
