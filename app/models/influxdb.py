@@ -134,14 +134,19 @@ class InfluxDB:
         app.LOG.warning(f" => Data reset")
 
     def get_list_retention_policies(self):
-        buckets = self.buckets_api.find_buckets().buckets
-        for bucket in buckets:
-            if bucket.name == self.bucket:
-                self.retention = bucket.retention_rules[0].every_seconds
-                self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
+        if self.org == f"-": # InfluxDB 1.8
+            self.retention = 0
+            self.max_retention = 0
+            return
+        else:
+            buckets = self.buckets_api.find_buckets().buckets
+            for bucket in buckets:
+                if bucket.name == self.bucket:
+                    self.retention = bucket.retention_rules[0].every_seconds
+                    self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
 
     def write(self, tags, date=None, fields=None, measurement="log"):
-        date_max = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
+        date_max = self.max_retention
         if date is None:
             date_object = datetime.datetime.now()
         else:
