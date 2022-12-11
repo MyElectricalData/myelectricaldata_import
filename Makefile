@@ -33,7 +33,7 @@ up:
 	
 ## Stop docker conatiners for dev
 down:
-	@echo "Start docker conatiner for dev"
+	@echo "Start docker container for dev"
 	$(COMPOSE) down
 
 ## Start in app
