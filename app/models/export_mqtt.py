@@ -11,7 +11,7 @@ class ExportMqtt:
         self.date_format = "%Y-%m-%d"
 
     def status(self):
-        app.LOG.title(f"[{self.usage_point_id}] Status du compte.")
+        app.LOG.title(f"[{self.usage_point_id}] Statut du compte.")
         usage_point_id_config = app.DB.get_usage_point(self.usage_point_id)
         # consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
         consentement_expiration = {
