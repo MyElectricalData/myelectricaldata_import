@@ -176,7 +176,6 @@ class Detail:
                     "error": True,
                     "description": "MyElectricalData est indisponible."
                 }
-                app.LOG.error(error)
             if "error" in response and response["error"]:
                 error = [
                     "Echec de la récupération des données.",
