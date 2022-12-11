@@ -68,7 +68,7 @@ class Job:
                             self.get_contract()
                     except Exception as e:
                         traceback.print_exc()
-                        LOG.critical([f"Erreur lors de la récupération des informations du contract", e])
+                        LOG.error([f"Erreur lors de la récupération des informations du contract", e])
                     try:
                         if target == "addresses" or target is None:
                             self.get_addresses()

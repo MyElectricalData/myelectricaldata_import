@@ -78,7 +78,7 @@ if (document.URL.indexOf("/usage_point_id/") >= 0) {
                 "<td class='stat_key'>Statut de la passerelle</td><td class='stat_value'><img src='/static/img/" + gateway_state + "' style='width: 18px;'></td>" +
                 "</tr>" +
                 "<tr>" +
-                "<td class='stat_key'>Version</td><td class='stat_value' style='width: 100px'>" + version + "</td>" +
+                "<td class='stat_key'>Version</td><td class='stat_value' style='width: 150px'>" + version + "</td>" +
                 "</tr>" +
                 "<tr>" +
                 "<td class='" + information_class + "' colspan='2'>" + information + "</td>" +

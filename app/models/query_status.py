@@ -1,5 +1,6 @@
 import datetime
 import json
+import traceback
 
 import __main__ as app
 
@@ -52,7 +53,7 @@ class Status:
                     app.LOG.log(f"{key}: {value}")
                 app.DB.usage_point_update(
                     usage_point_id,
-                    consentement_expiration=datetime.datetime.strptime(status["consent_expiration_date"], "%Y-%m-%dT%H:%M:%S.%f"),
+                    consentement_expiration=datetime.datetime.strptime(status["consent_expiration_date"], "%Y-%m-%dT%H:%M:%S"),
                     last_call=datetime.datetime.strptime(status["last_call"], "%Y-%m-%dT%H:%M:%S.%f"),
                     call_number=status["call_number"],
                     quota_limit=status["quota_limit"],
@@ -62,11 +63,13 @@ class Status:
                 )
                 return status
             except LookupError:
+                traceback.print_exc()
                 return {
                     "error": True,
                     "description": "Erreur lors de la récupération du statut du compte."
                 }
         else:
+            traceback.print_exc()
             return {
                 "error": True,
                 "description": "Erreur lors de la récupération du statut du compte."
