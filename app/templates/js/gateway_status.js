@@ -46,10 +46,10 @@ if (document.URL.indexOf("/usage_point_id/") >= 0) {
                 "<td class='stat_key'>Expiration des consentements</td><td class='stat_value'>" + consent_data + "</td>" +
                 "</tr>" +
                 "<tr>" +
-                "<td class='stat_key'>Nombre d'appel journalier</td><td class='" + quota_class + "'>" + call_number + " / " + quota_limit + "</td>" +
+                "<td class='stat_key'>Nombre d'appels journaliers</td><td class='" + quota_class + "'>" + call_number + " / " + quota_limit + "</td>" +
                 "</tr>" +
                 "<tr>" +
-                "<td class='stat_key'>Status du compte</td><td class='stat_value'><img src='/static/img/" + gateway_state + "' style='width: 18px;'></td>" +
+                "<td class='stat_key'>Statut du compte</td><td class='stat_value'><img src='/static/img/" + gateway_state + "' style='width: 18px;'></td>" +
                 "</tr>" +
                 "<tr>" +
                 "<td class='" + information_class + "' colspan='2'>" + information + "</td>" +
