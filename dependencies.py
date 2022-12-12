@@ -1,6 +1,7 @@
 import __main__ as app
 import os
 import subprocess
+import sys
 
 from InquirerPy import inquirer, prompt
 from InquirerPy.base import Choice
@@ -135,10 +136,16 @@ def create_release(prerelease=False):
 
     if version not in tags:
         prerelease = inquirer.confirm(
-            message="It's prerelease ? (deploy in sandbox)",
+            message="It's prerelease (beta version) ?",
         ).execute()
         if prerelease:
-            version = f"{version}-dev"
+            beta_version = f"{version}-beta"
+            found_version = []
+            for vers in tags:
+                if vers.startswith(beta_version):
+                    found_version.append(vers)
+            found_version.sort()
+            version = f"{beta_version}{len(found_version)+1}"
         else:
             version = f"{version}-release"
 
@@ -171,7 +178,7 @@ def create_release(prerelease=False):
     app.LOG.log("  => Success")
     app.LOG.title(f"Create release {version}")
     prerelease_txt = ""
-    if version.endswith("-dev"):
+    if "-beta" in version:
         prerelease_txt = "--prerelease"
     os.system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")

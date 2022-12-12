@@ -19,7 +19,8 @@ dependencies = [
     "art",
     "SQLAlchemy",
     "alembic",
-    "waitress"
+    "waitress",
+    "rauth"
 ]
 
 [project.optional-dependencies]
