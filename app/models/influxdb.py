@@ -67,12 +67,12 @@ class InfluxDB:
         if self.retention != 0:
             day = int(self.retention / 60 / 60 / 24)
             app.LOG.warning([
-                f"<!> ATTENTION, l'InfluxDB est configuré avec une durée de retention de {day} jours.",
+                f"<!> ATTENTION, InfluxDB est configuré avec une durée de retention de {day} jours.",
                 f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci."
             ])
         else:
             app.LOG.log([
-                f" => Aucune retention de données détecté."
+                f" => Aucune retention de données détectée."
             ])
 
 
@@ -97,7 +97,7 @@ class InfluxDB:
                 "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
             ])
 
-        app.LOG.log(f" => Methode d'importation : {self.method.upper()}")
+        app.LOG.log(f" => Méthode d'importation : {self.method.upper()}")
         if self.method.upper() == "ASYNCHRONOUS":
             app.LOG.warning(" <!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")
             self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
@@ -134,14 +134,19 @@ class InfluxDB:
         app.LOG.warning(f" => Data reset")
 
     def get_list_retention_policies(self):
-        buckets = self.buckets_api.find_buckets().buckets
-        for bucket in buckets:
-            if bucket.name == self.bucket:
-                self.retention = bucket.retention_rules[0].every_seconds
-                self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
+        if self.org == f"-": # InfluxDB 1.8
+            self.retention = 0
+            self.max_retention = 0
+            return
+        else:
+            buckets = self.buckets_api.find_buckets().buckets
+            for bucket in buckets:
+                if bucket.name == self.bucket:
+                    self.retention = bucket.retention_rules[0].every_seconds
+                    self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
 
     def write(self, tags, date=None, fields=None, measurement="log"):
-        date_max = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
+        date_max = self.max_retention
         if date is None:
             date_object = datetime.datetime.now()
         else:
