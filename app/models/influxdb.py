@@ -67,12 +67,12 @@ class InfluxDB:
         if self.retention != 0:
             day = int(self.retention / 60 / 60 / 24)
             app.LOG.warning([
-                f"<!> ATTENTION, InfluxDB est configuré avec une durée de retention de {day} jours.",
+                f"<!> ATTENTION, InfluxDB est configuré avec une durée de rétention de {day} jours.",
                 f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci."
             ])
         else:
             app.LOG.log([
-                f" => Aucune retention de données détectée."
+                f" => Aucune durée de rétention de données détectée."
             ])
 
 
