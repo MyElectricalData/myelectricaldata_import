@@ -17,6 +17,19 @@ class HomeAssistant:
         self.measurement_direction = measurement_direction
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
+        self.config = app.DB.get_usage_point(usage_point_id)
+        if hasattr(self.config, "consumption_price_base"):
+            self.price_base = self.config.consumption_price_base
+        else:
+            self.price_base = 0
+        if hasattr(self.config, "consumption_price_hp"):
+            self.price_hp = self.config.consumption_price_hp
+        else:
+            self.price_hp = 0
+        if hasattr(self.config, "consumption_price_hc"):
+            self.price_hc = self.config.consumption_price_hc
+        else:
+            self.price_hc = 0
         self.config_ha_config = app.CONFIG.home_assistant_config()
         if "card_myenedis" not in self.config_ha_config:
             self.card_myenedis = False
@@ -42,7 +55,7 @@ class HomeAssistant:
         self.topic = f"{self.discovery_prefix}/sensor/myelectricaldata/{self.usage_point_id}"
         self.stat = Stat(self.usage_point_id)
 
-    def export(self, price_base, price_hp, price_hc):
+    def export(self):
 
         app.LOG.title(f"[{self.usage_point_id}] Exportation des données dans Home Assistant (via MQTT)")
 
@@ -220,6 +233,20 @@ class HomeAssistant:
             subscribed_power = contract.subscribed_power
         else:
             subscribed_power = None
+
+        dailyweek_cost = []
+        if hasattr(self.config, "plan") and self.config.plan.upper() == "HC/HP":
+            for i in range(7):
+                value = (
+                        convert_kw_to_euro(self.stat.detail(i, "HP")["value"], self.price_hp)
+                        + convert_kw_to_euro(self.stat.detail(i, "HC")["value"], self.price_hc)
+                )
+                dailyweek_cost.append(round(value, 1))
+        else:
+            for i in range(7):
+                dailyweek_cost.append(convert_kw_to_euro(self.stat.daily(i)["value"], self.price_base))
+
+
         config = {
             f"attributes": json.dumps(
                 {
@@ -267,24 +294,16 @@ class HomeAssistant:
                         self.stat.daily(5)["begin"],
                         self.stat.daily(6)["begin"],
                     ],
-                    "dailyweek_cost": [
-                        convert_kw_to_euro(self.stat.daily(0)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(1)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(2)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(3)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(4)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(5)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(6)["value"], price_base),
-                    ],
+                    "dailyweek_cost": dailyweek_cost,
                     # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
                     "dailyweek_costHP": [
-                        convert_kw_to_euro(self.stat.detail(0, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(1, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(2, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(3, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(4, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(5, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(6, "HP")["value"], price_hp),
+                        convert_kw_to_euro(self.stat.detail(0, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(1, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(2, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(3, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(4, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(5, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(6, "HP")["value"], self.price_hp),
                     ],
                     "dailyweek_HP": [
                         convert_kw(self.stat.detail(0, "HP")["value"]),
@@ -295,8 +314,8 @@ class HomeAssistant:
                         convert_kw(self.stat.detail(5, "HP")["value"]),
                         convert_kw(self.stat.detail(6, "HP")["value"]),
                     ],
-                    "daily_cost": convert_kw_to_euro(self.stat.daily(0)["value"], price_base),
-                    "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, price_hp),
+                    "daily_cost": convert_kw_to_euro(self.stat.daily(0)["value"], self.price_base),
+                    "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.price_hp),
                     "yesterday_HP": convert_kw(yesterday_hp_value),
                     "day_1_HP": self.stat.detail(0, "HP")["value"],
                     "day_2_HP": self.stat.detail(1, "HP")["value"],
@@ -306,13 +325,13 @@ class HomeAssistant:
                     "day_6_HP": self.stat.detail(5, "HP")["value"],
                     "day_7_HP": self.stat.detail(6, "HP")["value"],
                     "dailyweek_costHC": [
-                        convert_kw_to_euro(self.stat.detail(0, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(1, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(2, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(3, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(4, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(5, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(6, "HC")["value"], price_hc),
+                        convert_kw_to_euro(self.stat.detail(0, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(1, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(2, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(3, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(4, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(5, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(6, "HC")["value"], self.price_hc),
                     ],
                     "dailyweek_HC": [
                         convert_kw(self.stat.detail(0, "HC")["value"]),
@@ -323,7 +342,7 @@ class HomeAssistant:
                         convert_kw(self.stat.detail(5, "HC")["value"]),
                         convert_kw(self.stat.detail(6, "HC")["value"]),
                     ],
-                    "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, price_hc),
+                    "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.price_hc),
                     "yesterday_HC": convert_kw(yesterday_hc_value),
                     "day_1_HC": self.stat.detail(0, "HC")["value"],
                     "day_2_HC": self.stat.detail(1, "HC")["value"],

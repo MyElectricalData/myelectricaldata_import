@@ -283,8 +283,8 @@ class Configuration:
                         configuration += '</tr>'
                     elif type(var_type) == list:
                         configuration += f'<tr><td class="key">{title}</td><td class="value"><select id="configuration_{key}" name="{key}">'
-                        selected = ""
                         for option in var_type:
+                            selected = ""
                             if option == value:
                                 selected = "selected"
                             configuration += f'<option value="{option}" {selected}>{option.upper()}</option>'

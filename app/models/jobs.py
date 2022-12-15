@@ -2,6 +2,7 @@ import __main__ as app
 import time
 import traceback
 
+from dependencies import str2bool
 from models.config import get_version
 from models.database import Database
 from models.export_home_assistant import HomeAssistant
@@ -37,10 +38,10 @@ class Job:
         else:
             DB.lock()
             if wait:
-                app.LOG.title("Démarrage du job d'importation dans 10s")
+                LOG.title("Démarrage du job d'importation dans 10s")
                 i = self.wait_job_start
                 while i > 0:
-                    app.LOG.log(f" => {i}s")
+                    LOG.log(f" => {i}s")
                     time.sleep(1)
                     i = i - 1
             if self.usage_point_id is None:
@@ -145,17 +146,13 @@ class Job:
                     #######################################################################################################
                     # HOME ASSISTANT
                     try:
-                        if "enable" in self.home_assistant_config and self.home_assistant_config["enable"]:
-                            if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+                        if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
+                            if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
                                 if target == "home_assistant" or target is None:
-                                    HomeAssistant(self.usage_point_id).export(
-                                        self.usage_point_config.consumption_price_base,
-                                        self.usage_point_config.consumption_price_hp,
-                                        self.usage_point_config.consumption_price_hc
-                                    )
+                                    HomeAssistant(self.usage_point_id).export()
                             else:
-                                app.LOG.critical("L'export Home Assistant est dépendant de MQTT, "
-                                                 "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
+                                LOG.critical("L'export Home Assistant est dépendant de MQTT, "
+                                             "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans Home Assistant", e])
@@ -193,7 +190,7 @@ class Job:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
                 else:
-                    app.LOG.log(f" => Point de livraison désactivé.")
+                    LOG.log(f" => Point de livraison désactivé.")
             LOG.finish()
             DB.unlock()
             return {
