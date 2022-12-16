@@ -6,6 +6,7 @@ import pytz
 from dateutil.relativedelta import relativedelta
 
 from models.stat import Stat
+from models.log import Log
 
 utc = pytz.UTC
 
@@ -123,8 +124,18 @@ class HomeAssistant:
             idx = 0
             while idx <= 6:
                 _offpeak_hours = []
-                for offpeak_hours_data in getattr(usage_point, f"offpeak_hours_{idx}").split(";"):
-                    _offpeak_hours.append(offpeak_hours_data.split("-"))
+                offpeak_hour = getattr(usage_point, f"offpeak_hours_{idx}")
+                if type(offpeak_hour) != str:
+                    Log().error([
+                        f"offpeak_hours_{idx} n'est pas une chaine de caractère",
+                        "  Format si une seul période : 00H00-06H00",
+                        "  Format si plusieurs périodes : 00H00-06H00;12H00-14H00"
+                    ])
+                else:
+                    for offpeak_hours_data in getattr(usage_point, f"offpeak_hours_{idx}").split(";"):
+                        if type(offpeak_hours_data) == str:
+                            _offpeak_hours.append(offpeak_hours_data.split("-"))
+
                 offpeak_hours.append(_offpeak_hours)
                 idx = idx + 1
 

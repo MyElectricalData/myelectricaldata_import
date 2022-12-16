@@ -27,6 +27,11 @@ La dépendance à MQTT n'est plus obligatoire et je supporte :
 * Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/myelectricaldata
 * Saniho Card pour Home Assistant : https://github.com/saniho/content-card-linky
 
+# Dashboard Grafana
+* https://github.com/geobar78/Myelectricaldata-Graphana-Dashbord
+
+<img src="imgs/grafana_geobar78.png" alt="drawing" style="width:200px;"/>
+
 ## Informations
 
 MyElectricalData utilise une [API](https://myelectricaldata.fr/) dédiée afin de récupérer toutes les informations auprès d'Enedis.

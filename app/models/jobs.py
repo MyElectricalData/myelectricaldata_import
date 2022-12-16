@@ -104,9 +104,9 @@ class Job:
                     try:
                         # #######################################################################################################
                         # # MQTT
-                        LOG.title("Exportation MQTT")
                         if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
                             if target == "mqtt" or target is None:
+                                LOG.title("Exportation MQTT")
                                 ExportMqtt(self.usage_point_id).status()
                                 ExportMqtt(self.usage_point_id).contract()
                                 ExportMqtt(self.usage_point_id).address()
@@ -140,7 +140,9 @@ class Job:
                                            "production_detail") and self.usage_point_config.production_detail:
                                     ExportMqtt("production").detail_annual(self.usage_point_config.production_price)
                                     ExportMqtt("production").detail_linear(self.usage_point_config.production_price)
+                            LOG.log(" => Export terminé")
                         else:
+                            LOG.title("Exportation MQTT")
                             LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
@@ -149,15 +151,17 @@ class Job:
                     #######################################################################################################
                     # HOME ASSISTANT
                     try:
-                        LOG.title("Exportation Home Assistant")
                         if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
                             if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
                                 if target == "home_assistant" or target is None:
+                                    LOG.title("Exportation Home Assistant")
                                     HomeAssistant(self.usage_point_id).export()
+                                    LOG.log(" => Export terminé")
                             else:
                                 LOG.critical("L'export Home Assistant est dépendant de MQTT, "
                                              "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
                         else:
+                            LOG.title("Exportation Home Assistant")
                             LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
@@ -166,10 +170,10 @@ class Job:
                     #######################################################################################################
                     # INFLUXDB
                     try:
-                        LOG.title("Exportation InfluxDB")
                         if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
                             # app.INFLUXDB.purge_influxdb()
                             if target == "influxdb" or target is None:
+                                LOG.title("Exportation InfluxDB")
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
                                     ExportInfluxDB(self.usage_point_id).daily(
@@ -193,7 +197,9 @@ class Job:
                                         self.usage_point_config.production_price,
                                         measurement_direction="production_detail"
                                     )
+                            LOG.log(" => Export terminé")
                         else:
+                            LOG.title("Exportation InfluxDB")
                             LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()

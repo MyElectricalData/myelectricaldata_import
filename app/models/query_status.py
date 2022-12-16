@@ -1,6 +1,7 @@
 import datetime
 import json
 import traceback
+from os import environ, getenv
 
 import __main__ as app
 
@@ -46,9 +47,9 @@ class Status:
         if hasattr(usage_point_id_config, "cache") and usage_point_id_config.cache:
             target += "/cache"
         response = Query(endpoint=target, headers=self.headers).get()
+        status = json.loads(response.text)
         if response.status_code == 200:
             try:
-                status = json.loads(response.text)
                 for key, value in status.items():
                     app.LOG.log(f"{key}: {value}")
                 app.DB.usage_point_update(
@@ -62,15 +63,19 @@ class Status:
                     ban=status["ban"]
                 )
                 return status
-            except LookupError:
-                traceback.print_exc()
+            except Exception as e:
+                if "DEBUG" in environ and getenv("DEBUG"):
+                    traceback.print_exc()
+                Log().error(e)
                 return {
                     "error": True,
                     "description": "Erreur lors de la récupération du statut du compte."
                 }
         else:
-            traceback.print_exc()
+            if "DEBUG" in environ and getenv("DEBUG"):
+                traceback.print_exc()
+            Log().error(status["detail"])
             return {
                 "error": True,
-                "description": "Erreur lors de la récupération du statut du compte."
+                "description": status["detail"]
             }

@@ -1,7 +1,8 @@
 import __main__ as app
-
 from datetime import datetime
+
 from dateutil.relativedelta import relativedelta
+
 
 class ExportMqtt:
 
@@ -14,18 +15,54 @@ class ExportMqtt:
         app.LOG.title(f"[{self.usage_point_id}] Statut du compte.")
         usage_point_id_config = app.DB.get_usage_point(self.usage_point_id)
         # consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
+        if hasattr(usage_point_id_config,
+                   "consentement_expiration") and usage_point_id_config.consentement_expiration is not None:
+            consentement_expiration = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            consentement_expiration = ""
+        if hasattr(usage_point_id_config,
+                   "call_number") and usage_point_id_config.call_number is not None:
+            call_number = usage_point_id_config.call_number
+        else:
+            call_number = ""
+        if hasattr(usage_point_id_config,
+                   "quota_reached") and usage_point_id_config.quota_reached is not None:
+            quota_reached = usage_point_id_config.quota_reached
+        else:
+            quota_reached = ""
+        if hasattr(usage_point_id_config,
+                   "quota_limit") and usage_point_id_config.quota_limit is not None:
+            quota_limit = usage_point_id_config.quota_limit
+        else:
+            quota_limit = ""
+        if hasattr(usage_point_id_config,
+                   "quota_reset_at") and usage_point_id_config.quota_reset_at is not None:
+            quota_reset_at = usage_point_id_config.quota_reset_at.strftime(
+                "%Y-%m-%d %H:%M:%S"),
+        else:
+            quota_reset_at = ""
+        if hasattr(usage_point_id_config,
+                   "last_call") and usage_point_id_config.last_call is not None:
+            last_call = usage_point_id_config.last_call.strftime(
+                "%Y-%m-%d %H:%M:%S"),
+        else:
+            last_call = ""
+        if hasattr(usage_point_id_config,
+                   "ban") and usage_point_id_config.ban is not None:
+            ban = usage_point_id_config.ban
+        else:
+            ban = ""
         consentement_expiration = {
-            f"{self.usage_point_id}/status/consentement_expiration": usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S"),
-            f"{self.usage_point_id}/status/call_number": usage_point_id_config.call_number,
-            f"{self.usage_point_id}/status/quota_reached": usage_point_id_config.quota_reached,
-            f"{self.usage_point_id}/status/quota_limit": usage_point_id_config.quota_limit,
-            f"{self.usage_point_id}/status/quota_reset_at": usage_point_id_config.quota_reset_at.strftime("%Y-%m-%d %H:%M:%S"),
-            f"{self.usage_point_id}/status/last_call": usage_point_id_config.last_call.strftime("%Y-%m-%d %H:%M:%S"),
-            f"{self.usage_point_id}/status/ban": usage_point_id_config.ban
+            f"{self.usage_point_id}/status/consentement_expiration": consentement_expiration,
+            f"{self.usage_point_id}/status/call_number": call_number,
+            f"{self.usage_point_id}/status/quota_reached": quota_reached,
+            f"{self.usage_point_id}/status/quota_limit": quota_limit,
+            f"{self.usage_point_id}/status/quota_reset_at": quota_reset_at,
+            f"{self.usage_point_id}/status/last_call": last_call,
+            f"{self.usage_point_id}/status/ban": ban
         }
         app.MQTT.publish_multiple(consentement_expiration)
         app.LOG.log(" => Finish")
-
 
     def contract(self):
         app.LOG.title(f"[{self.usage_point_id}] Exportation de données dans MQTT.")
@@ -169,7 +206,7 @@ class ExportMqtt:
             date_begin = datetime.combine(date_range["begin"], datetime.min.time())
             date_end = datetime.combine(date_range["end"], datetime.max.time())
             date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1),
-                                                           datetime.min.time())
+                                                  datetime.min.time())
             finish = False
             while not finish:
                 sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
@@ -328,7 +365,7 @@ class ExportMqtt:
             date_begin = datetime.combine(date_range["begin"], datetime.min.time())
             date_end = datetime.combine(date_range["end"], datetime.max.time())
             date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1),
-                                                           datetime.min.time())
+                                                  datetime.min.time())
             finish = False
             while not finish:
                 sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
