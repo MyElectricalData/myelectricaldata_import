@@ -104,6 +104,7 @@ class Job:
                     try:
                         # #######################################################################################################
                         # # MQTT
+                        LOG.title("Exportation MQTT")
                         if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
                             if target == "mqtt" or target is None:
                                 ExportMqtt(self.usage_point_id).status()
@@ -139,6 +140,8 @@ class Job:
                                            "production_detail") and self.usage_point_config.production_detail:
                                     ExportMqtt("production").detail_annual(self.usage_point_config.production_price)
                                     ExportMqtt("production").detail_linear(self.usage_point_config.production_price)
+                        else:
+                            LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans MQTT", e])
@@ -146,6 +149,7 @@ class Job:
                     #######################################################################################################
                     # HOME ASSISTANT
                     try:
+                        LOG.title("Exportation Home Assistant")
                         if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
                             if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
                                 if target == "home_assistant" or target is None:
@@ -153,6 +157,8 @@ class Job:
                             else:
                                 LOG.critical("L'export Home Assistant est dépendant de MQTT, "
                                              "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
+                        else:
+                            LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans Home Assistant", e])
@@ -160,6 +166,7 @@ class Job:
                     #######################################################################################################
                     # INFLUXDB
                     try:
+                        LOG.title("Exportation InfluxDB")
                         if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
                             # app.INFLUXDB.purge_influxdb()
                             if target == "influxdb" or target is None:
@@ -186,11 +193,13 @@ class Job:
                                         self.usage_point_config.production_price,
                                         measurement_direction="production_detail"
                                     )
+                        else:
+                            LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
                 else:
-                    LOG.log(f" => Point de livraison désactivé.")
+                    LOG.log(f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
             LOG.finish()
             DB.unlock()
             return {
