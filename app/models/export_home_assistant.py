@@ -1,5 +1,6 @@
 import __main__ as app
 import json
+from math import floor
 from datetime import datetime, timezone
 
 import pytz
@@ -61,10 +62,13 @@ class HomeAssistant:
         app.LOG.title(f"[{self.usage_point_id}] Exportation des données dans Home Assistant (via MQTT)")
 
         def convert_kw(value):
-            return round(value / 1000, 1)
+            return truncate(value / 1000, 2)
 
         def convert_kw_to_euro(value, price):
             return round(value / 1000 * price, 1)
+
+        def truncate(f, n):
+            return floor(f * 10 ** n) / 10 ** n
 
         config = {
             f"config": json.dumps(
@@ -247,6 +251,10 @@ class HomeAssistant:
 
         dailyweek_cost = []
         if hasattr(self.config, "plan") and self.config.plan.upper() == "HC/HP":
+            daily_cost = (
+                convert_kw_to_euro(self.stat.detail(0, "HC")["value"], self.price_hc)
+                + convert_kw_to_euro(self.stat.detail(0, "HP")["value"], self.price_hp)
+            )
             for i in range(7):
                 value = (
                         convert_kw_to_euro(self.stat.detail(i, "HP")["value"], self.price_hp)
@@ -254,6 +262,7 @@ class HomeAssistant:
                 )
                 dailyweek_cost.append(round(value, 1))
         else:
+            daily_cost = convert_kw_to_euro(self.stat.daily(0)["value"], self.price_base)
             for i in range(7):
                 dailyweek_cost.append(convert_kw_to_euro(self.stat.daily(i)["value"], self.price_base))
 
@@ -325,7 +334,7 @@ class HomeAssistant:
                         convert_kw(self.stat.detail(5, "HP")["value"]),
                         convert_kw(self.stat.detail(6, "HP")["value"]),
                     ],
-                    "daily_cost": convert_kw_to_euro(self.stat.daily(0)["value"], self.price_base),
+                    "daily_cost": daily_cost,
                     "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.price_hp),
                     "yesterday_HP": convert_kw(yesterday_hp_value),
                     "day_1_HP": self.stat.detail(0, "HP")["value"],
