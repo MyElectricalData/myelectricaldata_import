@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 from datetime import datetime, timedelta
+from os.path import exists
 
 from sqlalchemy import (create_engine, delete, inspect, select)
 from sqlalchemy.orm import sessionmaker
@@ -34,6 +35,8 @@ class Database:
         self.engine = create_engine(self.uri, echo=False, query_cache_size=0)
         self.session = sessionmaker(self.engine)(autocommit=True, autoflush=True)
         self.inspector = inspect(self.engine)
+
+        self.lock_file = f"{self.path}/.lock"
 
         # MIGRATE v7 to v8
         if os.path.isfile(f"{self.path}/enedisgateway.db"):
@@ -152,22 +155,28 @@ class Database:
             LOG.log(" => Not cache detected")
 
     def lock_status(self):
-        query = select(Config).where(Config.key == "lock")
-        if str(self.session.scalars(query).one_or_none()) == "1":
+        # query = select(Config).where(Config.key == "lock")
+        # if str(self.session.scalars(query).one_or_none()) == "1":
+        if exists(self.lock_file):
             return True
         else:
             return False
 
     def lock(self):
-        query = select(Config).where(Config.key == "lock")
-        lock = self.session.scalars(query).one_or_none()
-        lock.value = "1"
+        # query = select(Config).where(Config.key == "lock")
+        # lock = self.session.scalars(query).one_or_none()
+        # lock.value = "1"
+        with open(self.lock_file, "xt") as f:
+            f.write(str(datetime.now()))
+            f.close()
         return self.lock_status()
 
     def unlock(self):
-        query = select(Config).where(Config.key == "lock")
-        lock = self.session.scalars(query).one_or_none()
-        lock.value = "0"
+        # query = select(Config).where(Config.key == "lock")
+        # lock = self.session.scalars(query).one_or_none()
+        # lock.value = "0"
+        if os.path.exists(self.lock_file):
+            os.remove(self.lock_file)
         return self.lock_status()
 
     ## ----------------------------------------------------------------------------------------------------------------
