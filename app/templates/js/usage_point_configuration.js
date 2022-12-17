@@ -92,15 +92,19 @@ $("#formConfiguration").validate({
             required: true,
         },
         consumption_price_hc: {
+            required: true,
             number: true,
         },
         consumption_price_hp: {
+            required: true,
             number: true,
         },
         consumption_price_base: {
+            required: true,
             number: true,
         },
         production_price: {
+            required: true,
             number: true,
         },
         // activation_date_daily: {

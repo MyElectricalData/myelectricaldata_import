@@ -23,16 +23,8 @@ class Config:
         self.mandatory_parameters = {
             "myelectricaldata": {
                 "pdl": {
-                    "token"
-                }
-            }
-        }
-        self.default = {
-            "cycle": 14400,
-            "debug": False,
-            "myelectricaldata": {
-                "pdl": {
                     "enable": True,
+                    "name": "",
                     "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
                     "cache": True,
                     "plan": "BASE",
@@ -56,10 +48,46 @@ class Config:
                     "offpeak_hours_5": '',
                     "offpeak_hours_6": '',
                 }
+            }
+        }
+        self.default = {
+            "cycle": 14400,
+            "debug": False,
+            "myelectricaldata": {
+                "pdl": {
+                    "enable": True,
+                    "name": "",
+                    "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                    "cache": True,
+                    "plan": "BASE",
+                    "consumption": True,
+                    "consumption_detail": True,
+                    "consumption_price_hc": 0,
+                    "consumption_price_hp": 0,
+                    "consumption_price_base": 0,
+                    "consumption_max_date": "",
+                    "consumption_detail_max_date": "",
+                    "production": False,
+                    "production_detail": False,
+                    "production_max_date": "",
+                    "production_detail_max_date": "",
+                    "production_price": 0,
+                    "offpeak_hours_0": '',
+                    "offpeak_hours_1": '',
+                    "offpeak_hours_2": '',
+                    "offpeak_hours_3": '',
+                    "offpeak_hours_4": '',
+                    "offpeak_hours_5": '',
+                    "offpeak_hours_6": '',
+                    "activation_date_daily": '',
+                    "activation_date_detail": '',
+                    "refresh_addresse": False,
+                    "refresh_contract": False
+                }
             },
             "mqtt": {
                 "enable": False,
-                "host": "X.X.X.X",
+                "hostname": "X.X.X.X",
                 "port": 1883,
                 "username": "",
                 "password": "",
@@ -71,16 +99,15 @@ class Config:
             "home_assistant": {
                 "enable": False,
                 "discovery_prefix": "homeassistant",
-                "card_myenedis": True
             },
             "influxdb": {
                 "enable": False,
-                "host": "influxdb",
+                "hostname": "influxdb",
                 "port": 8086,
                 "token": "XXXXXXXXXXX",
                 "org": "myelectricaldata",
                 "bucket": "myelectricaldata",
-                "asynchronous": 'false'
+                "method": "synchronous"
             }
         }
 

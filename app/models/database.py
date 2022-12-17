@@ -1,6 +1,6 @@
+import hashlib
 import json
 import os
-import hashlib
 from datetime import datetime, timedelta
 
 from sqlalchemy import (create_engine, delete, inspect, select)
@@ -203,99 +203,111 @@ class Database:
             .where(UsagePoints.usage_point_id == usage_point_id)
         )
         usage_points = self.session.scalars(query).one_or_none()
-        if "enable" in data:
+        if "enable" in data and data["enable"] is not None:
             enable = data["enable"]
         else:
             enable = True
-        if "name" in data:
+        if "name" in data and data["name"] is not None:
             name = data["name"]
         else:
             name = ""
-        if "cache" in data:
+        if "cache" in data and data["cache"] is not None:
             cache = data["cache"]
         else:
             cache = True
-        if "consumption" in data:
+        if "consumption" in data and data["consumption"] is not None:
             consumption = data["consumption"]
         else:
             consumption = True
-        if "consumption_detail" in data:
+        if "consumption_detail" in data and data["consumption_detail"] is not None:
             consumption_detail = data["consumption_detail"]
         else:
             consumption_detail = True
-        if "production" in data:
+        if "production" in data and data["production"] is not None:
             production = data["production"]
         else:
             production = False
-        if "production_detail" in data:
+        if "production_detail" in data and data["production_detail"] is not None:
             production_detail = data["production_detail"]
         else:
             production_detail = False
-        if "production_price" in data:
+        if "production_price" in data and data["production_price"] is not None:
             production_price = data["production_price"]
         else:
             production_price = 0
-        if "consumption_price_base" in data:
+        if (
+            "consumption_price_base" in data
+            and data["consumption_price_base"] is not None
+            and data["consumption_price_base"] != ""
+        ):
             consumption_price_base = data["consumption_price_base"]
         else:
             consumption_price_base = 0
-        if "consumption_price_hc" in data:
+        if (
+            "consumption_price_hc" in data
+            and data["consumption_price_hc"] is not None
+            and data["consumption_price_hc"] != ""
+        ):
             consumption_price_hc = data["consumption_price_hc"]
         else:
             consumption_price_hc = 0
-        if "consumption_price_hp" in data:
+        if (
+            "consumption_price_hp" in data
+            and data["consumption_price_hp"] is not None
+            and data["consumption_price_hp"] != ""
+        ):
             consumption_price_hp = data["consumption_price_hp"]
         else:
             consumption_price_hp = 0
-        if "offpeak_hours_0" in data:
+        if "offpeak_hours_0" in data and data["offpeak_hours_0"] is not None:
             offpeak_hours_0 = data["offpeak_hours_0"]
         else:
             offpeak_hours_0 = ""
-        if "offpeak_hours_1" in data:
+        if "offpeak_hours_1" in data and data["offpeak_hours_1"] is not None:
             offpeak_hours_1 = data["offpeak_hours_1"]
         else:
             offpeak_hours_1 = ""
-        if "offpeak_hours_2" in data:
+        if "offpeak_hours_2" in data and data["offpeak_hours_2"] is not None:
             offpeak_hours_2 = data["offpeak_hours_2"]
         else:
             offpeak_hours_2 = ""
-        if "offpeak_hours_3" in data:
+        if "offpeak_hours_3" in data and data["offpeak_hours_3"] is not None:
             offpeak_hours_3 = data["offpeak_hours_3"]
         else:
             offpeak_hours_3 = ""
-        if "offpeak_hours_4" in data:
+        if "offpeak_hours_4" in data and data["offpeak_hours_4"] is not None:
             offpeak_hours_4 = data["offpeak_hours_4"]
         else:
             offpeak_hours_4 = ""
-        if "offpeak_hours_5" in data:
+        if "offpeak_hours_5" in data and data["offpeak_hours_5"] is not None:
             offpeak_hours_5 = data["offpeak_hours_5"]
         else:
             offpeak_hours_5 = ""
-        if "offpeak_hours_6" in data:
+        if "offpeak_hours_6" in data and data["offpeak_hours_6"] is not None:
             offpeak_hours_6 = data["offpeak_hours_6"]
         else:
             offpeak_hours_6 = ""
-        if "plan" in data:
+        if "plan" in data and data["plan"] is not None:
             plan = data["plan"]
         else:
             plan = "BASE"
-        if "refresh_addresse" in data:
+        if "refresh_addresse" in data and data["refresh_addresse"] is not None:
             refresh_addresse = data["refresh_addresse"]
         else:
             refresh_addresse = False
-        if "refresh_contract" in data:
+        if "refresh_contract" in data and data["refresh_contract"] is not None:
             refresh_contract = data["refresh_contract"]
         else:
             refresh_contract = False
-        if "token" in data:
+        if "token" in data and data["token"] is not None:
             token = data["token"]
         else:
             token = ""
         progress = 0
-        if "progress" in data:
+        if "progress" in data and data["progress"] is not None:
             progress = data["progress"]
         progress_status = ""
-        if "progress_status" in data:
+        if "progress_status" in data and data["progress_status"] is not None:
             progress_status = data["progress_status"]
         consumption_max_date = None
         if "consumption_max_date" in data:
@@ -307,13 +319,13 @@ class Database:
                     consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
         consumption_detail_max_date = None
         if "consumption_detail_max_date" in data:
-            if "consumption_detail_max_date" in data:
+            if "consumption_detail_max_date" in data or data["consumption_detail_max_date"] is None:
                 if not data["consumption_detail_max_date"] or data["consumption_detail_max_date"] is None:
                     consumption_detail_max_date = None
                 else:
                     consumption_detail_max_date = data["consumption_detail_max_date"]
                     if not isinstance(consumption_detail_max_date, datetime):
-                        consumption_detail_max_date = datetime.strptime(consumption_detail_max_date,"%Y-%m-%d")
+                        consumption_detail_max_date = datetime.strptime(consumption_detail_max_date, "%Y-%m-%d")
         production_max_date = None
         if "production_max_date" in data:
             if not data["production_max_date"] or data["production_max_date"] is None:
@@ -333,31 +345,31 @@ class Database:
                 else:
                     production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
 
-        if "call_number" in data:
+        if "call_number" in data and data["call_number"] is not None:
             call_number = data["call_number"]
         else:
             call_number = 0
-        if "quota_reached" in data:
+        if "quota_reached" in data and data["quota_reached"] is not None:
             quota_reached = str2bool(data["quota_reached"])
         else:
             quota_reached = False
-        if "quota_limit" in data:
+        if "quota_limit" in data and data["quota_limit"] is not None:
             quota_limit = data["quota_limit"]
         else:
             quota_limit = 0
-        if "quota_reset_at" in data:
+        if "quota_reset_at" in data and data["quota_reset_at"] is not None:
             quota_reset_at = data["quota_reset_at"]
         else:
             quota_reset_at = None
-        if "last_call" in data:
+        if "last_call" in data and data["last_call"] is not None:
             last_call = data["last_call"]
         else:
             last_call = None
-        if "ban" in data:
+        if "ban" in data and data["ban"] is not None:
             ban = str2bool(data["ban"])
         else:
             ban = False
-        if "consentement_expiration" in data:
+        if "consentement_expiration" in data and data["consentement_expiration"] is not None:
             consentement_expiration = data["consentement_expiration"]
         else:
             consentement_expiration = None
