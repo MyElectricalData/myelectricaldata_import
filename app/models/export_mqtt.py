@@ -17,9 +17,9 @@ class ExportMqtt:
         # consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
         if hasattr(usage_point_id_config,
                    "consentement_expiration") and usage_point_id_config.consentement_expiration is not None:
-            consentement_expiration = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
+            consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
         else:
-            consentement_expiration = ""
+            consentement_expiration_date = ""
         if hasattr(usage_point_id_config,
                    "call_number") and usage_point_id_config.call_number is not None:
             call_number = usage_point_id_config.call_number
@@ -53,14 +53,15 @@ class ExportMqtt:
         else:
             ban = ""
         consentement_expiration = {
-            f"{self.usage_point_id}/status/consentement_expiration": consentement_expiration,
-            f"{self.usage_point_id}/status/call_number": call_number,
-            f"{self.usage_point_id}/status/quota_reached": quota_reached,
-            f"{self.usage_point_id}/status/quota_limit": quota_limit,
-            f"{self.usage_point_id}/status/quota_reset_at": quota_reset_at,
-            f"{self.usage_point_id}/status/last_call": last_call,
-            f"{self.usage_point_id}/status/ban": ban
+            f"{self.usage_point_id}/status/consentement_expiration": consentement_expiration_date,
+            f"{self.usage_point_id}/status/call_number": str(call_number),
+            f"{self.usage_point_id}/status/quota_reached": str(quota_reached),
+            f"{self.usage_point_id}/status/quota_limit": str(quota_limit),
+            f"{self.usage_point_id}/status/quota_reset_at": str(quota_reset_at),
+            f"{self.usage_point_id}/status/last_call": str(last_call),
+            f"{self.usage_point_id}/status/ban": str(ban)
         }
+        print(consentement_expiration)
         app.MQTT.publish_multiple(consentement_expiration)
         app.LOG.log(" => Finish")
 
