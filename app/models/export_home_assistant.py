@@ -127,8 +127,8 @@ class HomeAssistant:
                 offpeak_hour = getattr(usage_point, f"offpeak_hours_{idx}")
                 if type(offpeak_hour) != str:
                     Log().error([
-                        f"offpeak_hours_{idx} n'est pas une chaine de caractère",
-                        "  Format si une seul période : 00H00-06H00",
+                        f"offpeak_hours_{idx} n'est pas une chaine de caractères",
+                        "  Format si une seule période : 00H00-06H00",
                         "  Format si plusieurs périodes : 00H00-06H00;12H00-14H00"
                     ])
                 else:
