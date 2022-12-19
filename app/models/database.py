@@ -17,6 +17,7 @@ from db_schema import (
     ProductionDaily,
     ConsumptionDetail,
     ProductionDetail,
+    ConsumptionDailyMaxPower
 )
 from dependencies import str2bool
 from models.config import get_version
@@ -228,6 +229,10 @@ class Database:
             consumption = data["consumption"]
         else:
             consumption = True
+        if "consumption_max_power" in data and data["consumption_max_power"] is not None:
+            consumption_max_power = data["consumption_max_power"]
+        else:
+            consumption_max_power = True
         if "consumption_detail" in data and data["consumption_detail"] is not None:
             consumption_detail = data["consumption_detail"]
         else:
@@ -389,6 +394,7 @@ class Database:
             usage_points.cache = str2bool(cache)
             usage_points.consumption = str2bool(consumption)
             usage_points.consumption_detail = str2bool(consumption_detail)
+            usage_points.consumption_max_power = str2bool(consumption_max_power)
             usage_points.production = str2bool(production)
             usage_points.production_detail = str2bool(production_detail)
             usage_points.production_price = production_price
@@ -428,6 +434,7 @@ class Database:
                     cache=str2bool(cache),
                     consumption=str2bool(consumption),
                     consumption_detail=str2bool(consumption_detail),
+                    consumption_max_power=str2bool(consumption_max_power),
                     production=str2bool(production),
                     production_detail=str2bool(production_detail),
                     production_price=production_price,
@@ -1157,6 +1164,168 @@ class Database:
             "end": self.get_detail_first_date(usage_point_id)
         }
 
+    ## -----------------------------------------------------------------------------------------------------------------
+    ## DAILY POWER
+    ## -----------------------------------------------------------------------------------------------------------------
+    def get_daily_max_power_all(self, usage_point_id):
+        return self.session.scalars(
+            select(ConsumptionDailyMaxPower)
+            .join(UsagePoints.relation_consumption_daily_max_power)
+            .where(UsagePoints.usage_point_id == usage_point_id)
+            .order_by(ConsumptionDailyMaxPower.date.desc())
+        ).all()
+
+    def get_daily_power(self, usage_point_id, begin, end):
+        delta = end - begin
+        result = {
+            "missing_data": False,
+            "date": {},
+            "count": 0
+        }
+        for i in range(delta.days + 1):
+            checkDate = begin + timedelta(days=i)
+            checkDate = datetime.combine(checkDate, datetime.min.time())
+            query_result = self.get_daily_max_power_date(usage_point_id, checkDate)
+            checkDate = checkDate.strftime('%Y-%m-%d')
+            if query_result is None:
+                # NEVER QUERY
+                result["date"][checkDate] = {
+                    "status": False,
+                    "blacklist": 0,
+                    "value": 0
+                }
+                result["missing_data"] = True
+            else:
+                consumption = query_result.value
+                blacklist = query_result.blacklist
+                if consumption == 0:
+                    # ENEDIS RETURN NO DATA
+                    result["date"][checkDate] = {
+                        "status": False,
+                        "blacklist": blacklist,
+                        "value": consumption
+                    }
+                    result["missing_data"] = True
+                else:
+                    # SUCCESS or BLACKLIST
+                    result["date"][checkDate] = {
+                        "status": True,
+                        "blacklist": blacklist,
+                        "value": consumption
+                    }
+        return result
+
+    def get_daily_max_power_last_date(self, usage_point_id):
+        current_data = self.session.scalars(
+            select(ConsumptionDailyMaxPower)
+            .join(UsagePoints.relation_consumption_daily_max_power)
+            .where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id)
+            .order_by(ConsumptionDailyMaxPower.date)
+        ).first()
+        if current_data is None:
+            return False
+        else:
+            return current_data.date
+
+    def get_daily_max_power_date(self, usage_point_id, date):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
+        return self.session.scalars(
+            select(ConsumptionDailyMaxPower)
+            .join(UsagePoints.relation_consumption_daily_max_power)
+            .where(ConsumptionDailyMaxPower.id == unique_id)
+        ).one_or_none()
+
+    def insert_daily_max_power(self, usage_point_id, date, event_date, value, blacklist=0, fail_count=0):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
+        daily = self.get_daily_max_power_date(usage_point_id, date)
+        if daily is not None:
+            daily.id = unique_id
+            daily.usage_point_id = usage_point_id
+            daily.date = date
+            daily.event_date = event_date
+            daily.value = value
+            daily.blacklist = blacklist
+            daily.fail_count = fail_count
+        else:
+            self.session.add(
+                ConsumptionDailyMaxPower(
+                    id=unique_id,
+                    usage_point_id=usage_point_id,
+                    date=date,
+                    event_date=event_date,
+                    value=value,
+                    blacklist=blacklist,
+                    fail_count=fail_count,
+                )
+            )
+
+    def daily_max_power_fail_increment(self, usage_point_id, date):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
+        daily = self.get_daily_max_power_date(usage_point_id, date)
+        if daily is not None:
+            fail_count = int(daily.fail_count) + 1
+            if fail_count >= MAX_IMPORT_TRY:
+                blacklist = 1
+                fail_count = 0
+            else:
+                blacklist = 0
+            daily.id = unique_id
+            daily.usage_point_id = usage_point_id
+            daily.date = date
+            daily.event_date = None
+            daily.value = 0
+            daily.blacklist = blacklist
+            daily.fail_count = fail_count
+        else:
+            fail_count = 0
+            self.session.add(
+                ConsumptionDailyMaxPower(
+                    id=unique_id,
+                    usage_point_id=usage_point_id,
+                    date=date,
+                    event_date=None,
+                    value=0,
+                    blacklist=0,
+                    fail_count=0,
+                )
+            )
+        return fail_count
+
+    def delete_daily_max_power(self, usage_point_id, date=None):
+        if date is not None:
+            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
+            self.session.execute(
+                delete(ConsumptionDailyMaxPower)
+                .where(ConsumptionDailyMaxPower.id == unique_id)
+            )
+        else:
+            self.session.execute(delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id))
+        return True
+
+    def blacklist_daily_max_power(self, usage_point_id, date, action=True):
+        unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
+        daily = self.get_daily_max_power_date(usage_point_id, date)
+        if daily is not None:
+            daily.blacklist = action
+        else:
+            self.session.add(
+                ConsumptionDailyMaxPower(
+                    id=unique_id,
+                    usage_point_id=usage_point_id,
+                    date=date,
+                    value=0,
+                    blacklist=action,
+                    fail_count=0,
+                )
+            )
+        return True
+
+    def get_daily_max_power_fail_count(self, usage_point_id, date):
+        result = self.get_daily_max_power_date(usage_point_id, date)
+        if hasattr(result, "fail_count"):
+            return result.fail_count
+        else:
+            return 0
 
 os.system("cd /app; alembic upgrade head")
 Database().init_database()

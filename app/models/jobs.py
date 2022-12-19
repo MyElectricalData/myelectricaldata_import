@@ -14,6 +14,7 @@ from models.query_contract import Contract
 from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_status import Status
+from models.query_power import Power
 
 DB = Database()
 LOG = Log()
@@ -100,6 +101,12 @@ class Job:
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de la récupération de votre production détaillée", e])
+                    try:
+                        # if target == "consumption_max_power" or target is None:
+                        self.get_consumption_max_power()
+                    except Exception as e:
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération de votre puissance maximum journalière", e])
 
                     try:
                         # #######################################################################################################
@@ -296,6 +303,16 @@ class Job:
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
                 measure_type="production"
+            ).get()
+        return result
+
+    def get_consumption_max_power(self):
+        result = {}
+        if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption_max_power:
+            LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la puissance maximun journalière :")
+            result = Power(
+                headers=self.header_generate(),
+                usage_point_id=self.usage_point_config.usage_point_id
             ).get()
         return result
 

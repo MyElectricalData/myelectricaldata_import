@@ -144,17 +144,21 @@ class UsagePoints(Base):
                  nullable=True,
                  )
     consumption_max_date = Column(DateTime,
-                 nullable=True,
-                 )
+                                  nullable=True,
+                                  )
     consumption_detail_max_date = Column(DateTime,
-                 nullable=True,
-                 )
+                                         nullable=True,
+                                         )
     production_max_date = Column(DateTime,
-                 nullable=True,
-                 )
+                                 nullable=True,
+                                 )
     production_detail_max_date = Column(DateTime,
-                 nullable=True,
-                 )
+                                        nullable=True,
+                                        )
+    consumption_max_power = Column(Boolean,
+                                   nullable=False,
+                                   default=True
+                                   )
 
     relation_addressess = relationship("Addresses", back_populates="usage_point")
     relation_contract = relationship("Contracts", back_populates="usage_point")
@@ -163,6 +167,7 @@ class UsagePoints(Base):
     relation_production_daily = relationship("ProductionDaily", back_populates="usage_point")
     relation_production_detail = relationship("ProductionDetail", back_populates="usage_point")
     relation_stats = relationship("Statistique", back_populates="usage_point")
+    relation_consumption_daily_max_power = relationship("ConsumptionDailyMaxPower", back_populates="usage_point")
 
     def __repr__(self):
         return f"UsagePoints(" \
@@ -177,6 +182,7 @@ class UsagePoints(Base):
                f"consumption_price_base={self.consumption_price_base!r}, " \
                f"consumption_price_hc={self.consumption_price_hc!r}, " \
                f"consumption_price_hp={self.consumption_price_hp!r}, " \
+               f"consumption_max_power={self.consumption_max_power!r}, " \
                f"offpeak_hours_0={self.offpeak_hours_0!r}, " \
                f"offpeak_hours_1={self.offpeak_hours_1!r}, " \
                f"offpeak_hours_2={self.offpeak_hours_2!r}, " \
@@ -562,4 +568,50 @@ class Statistique(Base):
                f"usage_point_id={self.usage_point_id!r}, " \
                f"key={self.key!r}," \
                f"value={self.value!r}, " \
+               f")"
+
+
+class ConsumptionDailyMaxPower(Base):
+    __tablename__ = 'consumption_daily_max_power'
+    # __table_args__ = {'sqlite_autoincrement': True}
+
+    id = Column(String,
+                primary_key=True,
+                index=True,
+                unique=True,
+                )
+    usage_point_id = Column(Text,
+                            ForeignKey("usage_points.usage_point_id"),
+                            nullable=False,
+                            index=True
+                            )
+    date = Column(DateTime,
+                  nullable=False
+                  )
+    event_date = Column(DateTime,
+                        nullable=True
+                        )
+    value = Column(Integer,
+                   nullable=False
+                   )
+    blacklist = Column(Integer,
+                       nullable=False,
+                       default=0
+                       )
+    fail_count = Column(Integer,
+                        nullable=False,
+                        default=0
+                        )
+
+    usage_point = relationship("UsagePoints", back_populates="relation_consumption_daily_max_power")
+
+    def __repr__(self):
+        return f"ConsumptionDailyMaxPower(" \
+               f"id={self.id!r}, " \
+               f"usage_point_id={self.usage_point_id!r}, " \
+               f"date={self.date!r}, " \
+               f"event_date={self.event_date!r}, " \
+               f"value={self.value!r}, " \
+               f"blacklist={self.blacklist!r}, " \
+               f"fail_count={self.fail_count!r}" \
                f")"

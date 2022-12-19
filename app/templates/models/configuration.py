@@ -70,6 +70,12 @@ class Configuration:
                     "type": True,
                     "default": True
                 },
+                "consumption_max_power": {
+                    "title": "Puissance maximale journalière",
+                    "help": "Active/Désactive la récupération de la puissance maximal journalière.",
+                    "type": True,
+                    "default": True
+                },
                 "consumption_max_date": {
                     "title": "Date max journalière",
                     "help": "Permet de définir la date de fin de récupération des données en mode journalier.  "

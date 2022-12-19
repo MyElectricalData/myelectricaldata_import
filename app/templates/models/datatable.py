@@ -11,31 +11,57 @@ class Datatable:
         self.usage_point_id = usage_point_id
 
     def html(self, title, tag, daily_data, cache_last_date):
-        result = f"""
-        <table id="dataTable{title}" class="display">
-            <thead>
-                <tr>
-                    <th class="title">Date</th>
-                    <th class="title">{title} (W)</th>
-                    <th class="title">{title} (kW)</th>
-                    <th class="title">Échec</th>
-                    <th class="title">En&nbsp;cache</th>
-                    <th class="title">Cache</th>
-                    <th class="title">Liste noire</th>
-                </tr>
-            </thead>
-            <tbody>
-        """
+        if tag != "consumption_max_power":
+            result = f"""
+            <table id="dataTable{title}" class="display">
+                <thead>
+                    <tr>
+                        <th class="title">Date</th>
+                        <th class="title">{title} (W)</th>
+                        <th class="title">{title} (kW)</th>
+                        <th class="title">Échec</th>
+                        <th class="title">En&nbsp;cache</th>
+                        <th class="title">Cache</th>
+                        <th class="title">Liste noire</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
+        else:
+            result = f"""
+            <table id="dataTable{title}" class="display">
+                <thead>
+                    <tr>
+                        <th class="title">Date</th>
+                        <th class="title">Événement</th>
+                        <th class="title">{title} (W)</th>
+                        <th class="title">{title} (kW)</th>
+                        <th class="title">Échec</th>
+                        <th class="title">En&nbsp;cache</th>
+                        <th class="title">Cache</th>
+                        <th class="title">Liste noire</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
         all_data = {}
         recap = {}
         if daily_data:
             for data in daily_data:
                 date_str = data.date.strftime("%Y-%m-%d")
-                all_data[date_str] = {
-                    "value": data.value,
-                    "blacklist": data.blacklist,
-                    "fail_count": data.fail_count,
-                }
+                if tag == "consumption_max_power":
+                    all_data[date_str] = {
+                        "event_date": data.event_date,
+                        "value": data.value,
+                        "blacklist": data.blacklist,
+                        "fail_count": data.fail_count,
+                    }
+                else:
+                    all_data[date_str] = {
+                        "value": data.value,
+                        "blacklist": data.blacklist,
+                        "fail_count": data.fail_count,
+                    }
             start_date = utc.localize(cache_last_date)
             end_date = datetime.now(timezone.utc)
             if start_date:
@@ -54,16 +80,20 @@ class Datatable:
                     date_text = single_date.strftime("%Y-%m-%d")
                     conso_w = "0"
                     conso_kw = "0"
+                    event_date = ""
                     cache_state = f'<div id="{tag}_icon_{date_text}" class="icon_failed">0</div>'
                     reset = f"""
-                    <div id="{tag}_import_{date_text}" name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import">
+                    <div id="{tag}_import_{date_text}" title="{tag}" name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import">
                         <input type="button" value="Importer"></div>
-                    <div id="{tag}_reset_{date_text}" name="reset_{self.usage_point_id}_{date_text}"  class="datatable_button" style="display: none">
+                    <div id="{tag}_reset_{date_text}"title="{tag}"  name="reset_{self.usage_point_id}_{date_text}"  class="datatable_button" style="display: none">
                         <input type="button" value="Vider"></div>
                     """
-
+                    # print(all_data)
                     if date_text in all_data:
                         fail_count = all_data[date_text]["fail_count"]
+                        if tag == "consumption_max_power":
+                            if isinstance(all_data[date_text]["event_date"], datetime):
+                                event_date = all_data[date_text]["event_date"].strftime("%H:%M:%S")
                         if fail_count == 0:
                             value = all_data[date_text]["value"]
                             blacklist_state = all_data[date_text]["blacklist"]
@@ -73,9 +103,9 @@ class Datatable:
                             conso_kw = f"{value / 1000}"
                             cache_state = f'<div id="{tag}_icon_{date_text}" class="icon_success">1</div>'
                             reset = f"""
-                            <div id="{tag}_import_{date_text}" name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import" style="display: none">
+                            <div id="{tag}_import_{date_text}" title="{tag}" name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import" style="display: none">
                                 <input type="button" value="Importer"></div>
-                            <div id="{tag}_reset_{date_text}"  name="reset_{self.usage_point_id}_{date_text}"  class="datatable_button">
+                            <div id="{tag}_reset_{date_text}" title="{tag}" name="reset_{self.usage_point_id}_{date_text}"  class="datatable_button">
                                 <input type="button" value="Vider"></div>
                             """
                             display_blacklist = ''
@@ -85,38 +115,50 @@ class Datatable:
                             else:
                                 display_whitelist = 'style="display: none"'
                             blacklist = f"""
-                            <div class="datatable_button datatable_blacklist datatable_button_disable" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}" {display_blacklist}>
+                            <div class="datatable_button datatable_blacklist datatable_button_disable" title="{tag}" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}" {display_blacklist}>
                                 <input type="button" value="Blacklist"></div>
-                            <div class="datatable_button datatable_whitelist" id="{tag}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}" {display_whitelist}>
+                            <div class="datatable_button datatable_whitelist" title="{tag}" id="{tag}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}" {display_whitelist}>
                                 <input type="button"  value="Whitelist"></div>
                             """
                         else:
 
                             blacklist = f"""
-                            <div class="datatable_button datatable_blacklist" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}">
+                            <div class="datatable_button datatable_blacklist" title="{tag}" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}">
                                 <input type="button" value="Blacklist"></div>
-                            <div class="datatable_button datatable_whitelist" id="{tag}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}">
+                            <div class="datatable_button datatable_whitelist" title="{tag}" id="{tag}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}">
                                 <input type="button"  value="Whitelist" style="display: none"></div>
                             """
                     else:
                         fail_count = 0
                         blacklist = f"""
-                        <div class="datatable_button datatable_blacklist" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}">
+                        <div class="datatable_button datatable_blacklist" title="{tag}" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}">
                            <input type="button" value="Blacklist"></div>
-                       <div class="datatable_button datatable_whitelist" id="{tag}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}">
+                       <div class="datatable_button datatable_whitelist" title="{tag}" id="{tag}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}">
                            <input type="button" value="Whitelist" style="display: none"></div>
                         """
-
-                    result += f"""
-                    <tr>
-                        <td><b>{date_text}</b></td>
-                        <td id="{tag}_conso_w_{date_text}">{conso_w}</td>
-                        <td id="{tag}_conso_kw_{date_text}">{conso_kw}</td>
-                        <td id="{tag}_fail_count_{date_text}">{fail_count}</td>
-                        <td>{cache_state}</td>
-                        <td class="loading_bg">{reset}</td>
-                        <td class="loading_bg">{blacklist}</td>
-                    </tr>"""
+                    if tag == "consumption_max_power":
+                        result += f"""
+                        <tr>
+                            <td><b>{date_text}</b></td>
+                            <td id="{tag}_conso_event_date_{date_text}">{event_date}</td>
+                            <td id="{tag}_conso_w_{date_text}">{conso_w}</td>
+                            <td id="{tag}_conso_kw_{date_text}">{conso_kw}</td>
+                            <td id="{tag}_fail_count_{date_text}">{fail_count}</td>
+                            <td>{cache_state}</td>
+                            <td class="loading_bg">{reset}</td>
+                            <td class="loading_bg">{blacklist}</td>
+                        </tr>"""
+                    else:
+                        result += f"""
+                        <tr>
+                            <td><b>{date_text}</b></td>
+                            <td id="{tag}_conso_w_{date_text}">{conso_w}</td>
+                            <td id="{tag}_conso_kw_{date_text}">{conso_kw}</td>
+                            <td id="{tag}_fail_count_{date_text}">{fail_count}</td>
+                            <td>{cache_state}</td>
+                            <td class="loading_bg">{reset}</td>
+                            <td class="loading_bg">{blacklist}</td>
+                        </tr>"""
             result += "</tbody></table>"
         return {
             "recap": recap,
