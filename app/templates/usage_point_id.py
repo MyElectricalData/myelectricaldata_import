@@ -4,13 +4,15 @@ from datetime import datetime
 import markdown
 from jinja2 import Template
 from mergedeep import Strategy, merge
+
 from models.config import get_version
+from templates.loading import Loading
 from templates.models.configuration import Configuration
 from templates.models.datatable import Datatable
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
-from templates.loading import Loading
+
 
 class UsagePointId:
 
@@ -229,7 +231,8 @@ class UsagePointId:
                 body += str(self.comsumption_datatable)
 
             # MAX POWER DATATABLE
-            if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power and self.consumption_max_power_datatable:
+            if hasattr(self.config,
+                       "consumption_max_power") and self.config.consumption_max_power and self.consumption_max_power_datatable:
                 body += f"<h2>Puissance Maximale</h2>"
                 body += str(self.consumption_max_power_datatable)
 
@@ -386,9 +389,12 @@ class UsagePointId:
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
             daily_result = Datatable(self.usage_point_id).html(
                 title="Puissance",
-                tag="consumption_max_power",
+                tag=f"consumption_max_power",
                 daily_data=self.db.get_daily_max_power_all(self.usage_point_id),
-                cache_last_date=self.db.get_daily_max_power_last_date(self.usage_point_id)
+                cache_last_date=self.db.get_daily_max_power_last_date(self.usage_point_id),
+                option={
+                    "max_power": self.contract.subscribed_power.split(' ')[0]
+                }
             )
             if daily_result['recap']:
                 self.recap_consumption_max_power = daily_result["recap"]

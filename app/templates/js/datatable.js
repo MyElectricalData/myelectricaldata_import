@@ -130,6 +130,14 @@ let french = {
 let datatable_config = {
     columnDefs: [
         {
+            targets: 1,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: 2,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
             targets: -1,
             className: 'dt-body-center dt-head-center',
         },
@@ -165,6 +173,18 @@ let datatable_config_power = {
             className: 'dt-body-center dt-head-center',
         },
         {
+            targets: 2,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: 3,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: 4,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
             targets: -1,
             className: 'dt-body-center dt-head-center',
         },
@@ -184,8 +204,9 @@ let datatable_config_power = {
     columns: [
         {"width": "30%"},
         {"width": "10%"},
-        {"width": "30%"},
-        {"width": "30%"},
+        {"width": "20%"},
+        {"width": "20%"},
+        {"width": "20%"},
         {"width": "10px"},
         {"width": "50px"},
         {"width": "50px"},

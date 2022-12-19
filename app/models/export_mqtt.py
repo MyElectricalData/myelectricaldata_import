@@ -328,12 +328,15 @@ class ExportMqtt:
                     output[measure_type]["week_watt"][date] = output[measure_type]["week_watt"][date] + watt
                     output[measure_type]["week_euro"][date] = output[measure_type]["week_euro"][date] + euro
 
+            # print(output)
+
             if current_this_month_year == "":
                 current_this_month_year = date.strftime("%Y")
             if date.strftime("%m") == datetime.now().strftime("%m") and date.strftime("%Y") == current_this_month_year:
                 output[measure_type]["this_month_watt"] = output[measure_type]["this_month_watt"] + watt
                 output[measure_type]["this_month_euro"] = output[measure_type]["this_month_euro"] + euro
             week_idx = week_idx + 1
+
         # MQTT FORMATTING
         for measure_type, data in output.items():
             mqtt_data = {

@@ -1,24 +1,29 @@
+from datetime import datetime, timezone
+
 import pytz
 
-from datetime import datetime, timezone
 from dependencies import daterange
 
-utc=pytz.UTC
+utc = pytz.UTC
+
 
 class Datatable:
 
     def __init__(self, usage_point_id):
         self.usage_point_id = usage_point_id
 
-    def html(self, title, tag, daily_data, cache_last_date):
-        if tag != "consumption_max_power":
+    def html(self, title, tag, daily_data, cache_last_date, option=None):
+        if tag == "consumption_max_power":
+            max_power = int(option["max_power"]) * 1000
             result = f"""
             <table id="dataTable{title}" class="display">
                 <thead>
                     <tr>
                         <th class="title">Date</th>
+                        <th class="title">Événement</th>
                         <th class="title">{title} (W)</th>
                         <th class="title">{title} (kW)</th>
+                        <th class="title">Ampère (A)</th>
                         <th class="title">Échec</th>
                         <th class="title">En&nbsp;cache</th>
                         <th class="title">Cache</th>
@@ -33,7 +38,6 @@ class Datatable:
                 <thead>
                     <tr>
                         <th class="title">Date</th>
-                        <th class="title">Événement</th>
                         <th class="title">{title} (W)</th>
                         <th class="title">{title} (kW)</th>
                         <th class="title">Échec</th>
@@ -80,6 +84,7 @@ class Datatable:
                     date_text = single_date.strftime("%Y-%m-%d")
                     conso_w = "0"
                     conso_kw = "0"
+                    conso_a = "0"
                     event_date = ""
                     cache_state = f'<div id="{tag}_icon_{date_text}" class="icon_failed">0</div>'
                     reset = f"""
@@ -101,6 +106,7 @@ class Datatable:
                             recap[year]['month'][month] = recap[year]['month'][month] + value
                             conso_w = f"{value}"
                             conso_kw = f"{value / 1000}"
+                            conso_a = f"{round(int(conso_w) / 220, 1)}"
                             cache_state = f'<div id="{tag}_icon_{date_text}" class="icon_success">1</div>'
                             reset = f"""
                             <div id="{tag}_import_{date_text}" title="{tag}" name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import" style="display: none">
@@ -137,12 +143,19 @@ class Datatable:
                            <input type="button" value="Whitelist" style="display: none"></div>
                         """
                     if tag == "consumption_max_power":
+                        if max_power <= int(conso_w):
+                            style = "color:#FF0000; font-weight:bolder"
+                        elif (max_power*80/100) <= int(conso_w):
+                            style = "color:#FFB600; font-weight:bolder"
+                        else:
+                            style = ""
                         result += f"""
-                        <tr>
+                        <tr style="{style}">
                             <td><b>{date_text}</b></td>
                             <td id="{tag}_conso_event_date_{date_text}">{event_date}</td>
                             <td id="{tag}_conso_w_{date_text}">{conso_w}</td>
                             <td id="{tag}_conso_kw_{date_text}">{conso_kw}</td>
+                            <td id="{tag}_conso_a_{date_text}">{conso_a}</td>
                             <td id="{tag}_fail_count_{date_text}">{fail_count}</td>
                             <td>{cache_state}</td>
                             <td class="loading_bg">{reset}</td>
