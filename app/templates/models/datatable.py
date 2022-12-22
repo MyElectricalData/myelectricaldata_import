@@ -21,8 +21,8 @@ class Datatable:
                     <tr>
                         <th class="title">Date</th>
                         <th class="title">Événement</th>
-                        <th class="title">{title} (W)</th>
-                        <th class="title">{title} (kW)</th>
+                        <th class="title">{title} (VA)</th>
+                        <th class="title">{title} (kVA)</th>
                         <th class="title">Ampère (A)</th>
                         <th class="title">Échec</th>
                         <th class="title">En&nbsp;cache</th>

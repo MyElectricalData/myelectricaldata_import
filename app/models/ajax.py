@@ -46,6 +46,11 @@ class Ajax:
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
+        app.LOG.title(f"[{self.usage_point_id}] Reset de la puissance maximum journalière.")
+        Power(
+            headers=self.headers,
+            usage_point_id=self.usage_point_id,
+        ).reset()
         app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée.")
         Detail(
             headers=self.headers,

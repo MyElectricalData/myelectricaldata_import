@@ -5,6 +5,7 @@ import __main__ as app
 from config import DAILY_MAX_DAYS, URL
 from dependencies import *
 from models.query import Query
+from dateutil.relativedelta import relativedelta
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
@@ -16,7 +17,7 @@ class Daily:
     def __init__(self, headers, usage_point_id, measure_type="consumption"):
         self.db = app.DB
         self.url = URL
-        self.max_daily = 36
+        self.max_daily = 1095
         self.date_format = '%Y-%m-%d'
         self.headers = headers
         self.usage_point_id = usage_point_id
@@ -107,7 +108,8 @@ class Daily:
         # REMOVE TODAY
         # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
         end = datetime.datetime.combine((datetime.datetime.now()), datetime.datetime.max.time())
-        begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_daily), datetime.datetime.min.time())
+        # begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_daily), datetime.datetime.min.time())
+        begin = datetime.datetime.combine(end - relativedelta(months=self.max_daily), datetime.datetime.min.time())
 
         finish = True
         result = []
@@ -126,8 +128,8 @@ class Daily:
                 response = self.run(begin, end)
             else:
                 response = self.run(begin, end)
-                begin = begin - datetime.timedelta(days=self.max_daily)
-                end = end - datetime.timedelta(days=self.max_daily)
+                begin = begin - relativedelta(months=self.max_daily)
+                end = end - relativedelta(months=self.max_daily)
             if response is not None:
                 result = [*result, *response]
             else:

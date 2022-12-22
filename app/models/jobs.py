@@ -145,8 +145,15 @@ class Job:
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
-                                    ExportMqtt("production").detail_annual(self.usage_point_config.production_price)
-                                    ExportMqtt("production").detail_linear(self.usage_point_config.production_price)
+                                    ExportMqtt(self.usage_point_id, "production").detail_annual(
+                                        self.usage_point_config.production_price
+                                    )
+                                    ExportMqtt(self.usage_point_id, "production").detail_linear(
+                                        self.usage_point_config.production_price
+                                    )
+                            if hasattr(self.usage_point_config,
+                                       "consumption_max_power") and self.usage_point_config.consumption_max_power:
+                                ExportMqtt(self.usage_point_id).max_power()
                             LOG.log(" => Export terminé")
                         else:
                             LOG.title("Exportation MQTT")

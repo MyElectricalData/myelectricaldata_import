@@ -1167,12 +1167,16 @@ class Database:
     ## -----------------------------------------------------------------------------------------------------------------
     ## DAILY POWER
     ## -----------------------------------------------------------------------------------------------------------------
-    def get_daily_max_power_all(self, usage_point_id):
+    def get_daily_max_power_all(self, usage_point_id, order="desc"):
+        if order == "desc":
+            order = ConsumptionDailyMaxPower.date.desc()
+        else:
+            order = ConsumptionDailyMaxPower.date.asc()
         return self.session.scalars(
             select(ConsumptionDailyMaxPower)
             .join(UsagePoints.relation_consumption_daily_max_power)
             .where(UsagePoints.usage_point_id == usage_point_id)
-            .order_by(ConsumptionDailyMaxPower.date.desc())
+            .order_by(order)
         ).all()
 
     def get_daily_power(self, usage_point_id, begin, end):

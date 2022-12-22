@@ -66,6 +66,38 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
+            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                menu = merge(
+                    {
+                        "import_detail": {
+                            "title": "Importer la consommation détaillée",
+                            "icon": "electric_bolt",
+                            "css": "background-color: #f39c12;",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/consumption_detail'
+                            }
+                        }
+                    },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
+            if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+                menu = merge(
+                    {
+                        "import_daily_max_power": {
+                            "title": "Importer la puissance maximum journalière.",
+                            "icon": "offline_bolt",
+                            "css": "background-color: #e74c3c;",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/consumption_max_power'
+                            }
+                        }
+                    },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
             if hasattr(self.config, "production") and self.config.production:
                 menu = merge(
                     {
@@ -82,29 +114,13 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
-            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
-                menu = merge(
-                    {
-                        "import_detail": {
-                            "title": "Importer la consommation détaillée",
-                            "icon": "electric_bolt",
-                            "css": "background-color: var(--text-color);",
-                            "loading_page": "loading_import",
-                            "ajax": {
-                                "method": "GET",
-                                "url": f'/import/{self.usage_point_id}/consumption_detail'
-                            }
-                        }
-                    },
-                    menu,
-                    strategy=Strategy.ADDITIVE)
             if hasattr(self.config, "production_detail") and self.config.production_detail:
                 menu = merge(
                     {
                         "import_production_detail": {
                             "title": "Importer la production détaillée",
                             "icon": "solar_power",
-                            "css": "background-color: #F1C40F;",
+                            "css": "background-color: #f39c12;",
                             "loading_page": "loading_import",
                             "ajax": {
                                 "method": "GET",
@@ -387,13 +403,17 @@ class UsagePointId:
 
     def consumption_max_power(self):
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+            if hasattr(self.contract, "subscribed_power"):
+                max_power = self.contract.subscribed_power.split(' ')[0]
+            else:
+                max_power = 6
             daily_result = Datatable(self.usage_point_id).html(
                 title="Puissance",
                 tag=f"consumption_max_power",
                 daily_data=self.db.get_daily_max_power_all(self.usage_point_id),
                 cache_last_date=self.db.get_daily_max_power_last_date(self.usage_point_id),
                 option={
-                    "max_power": self.contract.subscribed_power.split(' ')[0]
+                    "max_power": max_power
                 }
             )
             if daily_result['recap']:

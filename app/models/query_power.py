@@ -16,7 +16,7 @@ class Power:
     def __init__(self, headers, usage_point_id):
         self.db = app.DB
         self.url = URL
-        self.max_daily = 36
+        self.max_daily = 1095
         self.date_format = '%Y-%m-%d'
         self.date_format_detail = '%Y-%m-%d %H:%M:%S'
         self.headers = headers
