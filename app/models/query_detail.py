@@ -29,11 +29,25 @@ class Detail:
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = int(DETAIL_MAX_DAYS)
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
-        if measure_type == "consumption" and hasattr(self.usage_point_config, "consumption_detail_max_date"):
-            self.activation_date = self.usage_point_config.consumption_detail_max_date
-        elif measure_type == "production" and hasattr(self.usage_point_config, "production_detail_max_date"):
-            self.activation_date = self.usage_point_config.production_detail_max_date
-        elif hasattr(self.contract, "last_activation_date"):
+        if (
+                measure_type == "consumption"
+                and hasattr(self.usage_point_config, "consumption_max_date")
+                and self.usage_point_config.consumption_max_date != ""
+                and self.usage_point_config.consumption_max_date is not None
+        ):
+            self.activation_date = self.usage_point_config.consumption_max_date
+        elif (
+                measure_type == "production"
+                and hasattr(self.usage_point_config, "production_max_date")
+                and self.usage_point_config.production_max_date != ""
+                and self.usage_point_config.production_max_date is not None
+        ):
+            self.activation_date = self.usage_point_config.production_max_date
+        elif (
+                hasattr(self.contract, "last_activation_date")
+                and self.contract.last_activation_date != ""
+                and self.contract.last_activation_date is not None
+        ):
             self.activation_date = self.contract.last_activation_date
         else:
             self.activation_date = self.max_days_date

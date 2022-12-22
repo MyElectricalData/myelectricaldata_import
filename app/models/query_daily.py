@@ -1,11 +1,13 @@
+import __main__ as app
 import datetime
 import json
 
-import __main__ as app
+from dateutil.relativedelta import relativedelta
+
 from config import DAILY_MAX_DAYS, URL
 from dependencies import *
 from models.query import Query
-from dateutil.relativedelta import relativedelta
+
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
@@ -25,11 +27,25 @@ class Daily:
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = DAILY_MAX_DAYS
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
-        if measure_type == "consumption" and hasattr(self.usage_point_config, "consumption_max_date"):
+        if (
+                measure_type == "consumption"
+                and hasattr(self.usage_point_config, "consumption_max_date")
+                and self.usage_point_config.consumption_max_date != ""
+                and self.usage_point_config.consumption_max_date is not None
+        ):
             self.activation_date = self.usage_point_config.consumption_max_date
-        elif measure_type == "production" and hasattr(self.usage_point_config, "production_max_date"):
+        elif (
+                measure_type == "production"
+                and hasattr(self.usage_point_config, "production_max_date")
+                and self.usage_point_config.production_max_date != ""
+                and self.usage_point_config.production_max_date is not None
+        ):
             self.activation_date = self.usage_point_config.production_max_date
-        elif hasattr(self.contract, "last_activation_date"):
+        elif (
+                hasattr(self.contract, "last_activation_date")
+                and self.contract.last_activation_date != ""
+                and self.contract.last_activation_date is not None
+        ):
             self.activation_date = self.contract.last_activation_date
         else:
             self.activation_date = self.max_days_date
@@ -41,6 +57,7 @@ class Daily:
         else:
             if hasattr(self.usage_point_config, "production_price"):
                 self.base_price = self.usage_point_config.production_price
+
 
     def run(self, begin, end):
         begin_str = begin.strftime(self.date_format)
@@ -151,7 +168,7 @@ class Daily:
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
                 error = ["Arrêt de la récupération des données suite à une erreur.",
-                        f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
+                         f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
                 app.LOG.warning(error)
         return result
 

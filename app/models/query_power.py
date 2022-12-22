@@ -25,9 +25,17 @@ class Power:
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = DAILY_MAX_DAYS
         self.max_days_date = datetime.utcnow() - timedelta(days=self.daily_max_days)
-        if hasattr(self.usage_point_config, "consumption_power_max_date"):
-            self.activation_date = self.usage_point_config.consumption_power_max_date
-        elif hasattr(self.contract, "last_activation_date"):
+        if (
+                hasattr(self.usage_point_config, "consumption_max_date")
+                and self.usage_point_config.consumption_max_date != ""
+                and self.usage_point_config.consumption_max_date is not None
+        ):
+            self.activation_date = self.usage_point_config.consumption_max_date
+        elif (
+                hasattr(self.contract, "last_activation_date")
+                and self.contract.last_activation_date != ""
+                and self.contract.last_activation_date is not None
+        ):
             self.activation_date = self.contract.last_activation_date
         else:
             self.activation_date = self.max_days_date
