@@ -13,11 +13,15 @@ from models.query_address import Address
 from models.query_contract import Contract
 from models.query_daily import Daily
 from models.query_detail import Detail
-from models.query_status import Status
 from models.query_power import Power
+from models.query_status import Status
 
 DB = Database()
 LOG = Log()
+
+
+def export_finish():
+    LOG.title("Export terminé")
 
 
 class Job:
@@ -154,7 +158,7 @@ class Job:
                             if hasattr(self.usage_point_config,
                                        "consumption_max_power") and self.usage_point_config.consumption_max_power:
                                 ExportMqtt(self.usage_point_id).max_power()
-                            LOG.log(" => Export terminé")
+                            export_finish()
                         else:
                             LOG.title("Exportation MQTT")
                             LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
@@ -170,7 +174,7 @@ class Job:
                                 if target == "home_assistant" or target is None:
                                     LOG.title("Exportation Home Assistant")
                                     HomeAssistant(self.usage_point_id).export()
-                                    LOG.log(" => Export terminé")
+                                    export_finish()
                             else:
                                 LOG.critical("L'export Home Assistant est dépendant de MQTT, "
                                              "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
@@ -211,7 +215,7 @@ class Job:
                                         self.usage_point_config.production_price,
                                         measurement_direction="production_detail"
                                     )
-                            LOG.log(" => Export terminé")
+                            export_finish()
                         else:
                             LOG.title("Exportation InfluxDB")
                             LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
@@ -219,7 +223,8 @@ class Job:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
                 else:
-                    LOG.log(f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
+                    LOG.log(
+                        f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
             LOG.finish()
             DB.unlock()
             return {

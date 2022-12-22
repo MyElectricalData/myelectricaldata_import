@@ -1,5 +1,3 @@
-import os
-
 from flask import Flask, request, send_file
 from flask_apscheduler import APScheduler
 from waitress import serve
