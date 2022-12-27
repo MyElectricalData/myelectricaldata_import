@@ -1,6 +1,7 @@
 $(".datatable_button").click(function () {
     let name = $(this).attr("name");
-    let tag = $(this).attr("id").split("_")[0];
+    // let tag = $(this).attr("id").split("_")[0];
+    let tag = $(this).attr("title")
     let type = name.split("_")[0]
     let usage_point_id = name.split("_")[1]
     let date = name.split("_")[2]
@@ -29,6 +30,7 @@ $(".datatable_button").click(function () {
                         $('#' + tag + '_import_' + date).css("display", "block");
                         $('#' + tag + '_icon_' + date).removeClass("icon_success");
                         $('#' + tag + '_icon_' + date).addClass("icon_failed");
+                        $('#' + tag + '_conso_event_date_' + date).html("");
                         $('#' + tag + '_conso_w_' + date).html("0");
                         $('#' + tag + '_conso_kw_' + date).html("0");
                         $('#' + tag + '_fail_count_' + date).html(data["result"]['fail_count']);
@@ -41,6 +43,7 @@ $(".datatable_button").click(function () {
                             $('#' + tag + '_import_' + date).css("display", "none");
                             $('#' + tag + '_icon_' + date).removeClass("icon_failed");
                             $('#' + tag + '_icon_' + date).addClass("icon_success");
+                            $('#' + tag + '_conso_event_date_' + date).html(data["result"]['event_date']);
                             $('#' + tag + '_conso_w_' + date).html(data["result"]['value']);
                             $('#' + tag + '_conso_kw_' + date).html(data["result"]['value'] / 1000);
                             $('#' + tag + '_fail_count_' + date).html(data["result"]['fail_count']);
@@ -127,23 +130,16 @@ let french = {
 let datatable_config = {
     columnDefs: [
         {
+            targets: 1,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: 2,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
             targets: -1,
             className: 'dt-body-center dt-head-center',
-            // orderDataType: "dom-select",
-            // render: function (data, type, row, meta) {
-            //     if (type === 'sort') {
-            //         switch (data) {
-            //             case 'Blaclist':
-            //                 return 0;
-            //             case 'Uncommon':
-            //                 return 1;
-            //             case 'Rare':
-            //                 return 2;
-            //             case 'Lengendary':
-            //                 return 3;
-            //         }
-            //     }
-            // }
         },
         {
             targets: -2,
@@ -170,5 +166,55 @@ let datatable_config = {
     order: [[0, 'desc']],
     language: french
 }
+let datatable_config_power = {
+    columnDefs: [
+        {
+            targets: 1,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: 2,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: 3,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: 4,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: -1,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: -2,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
+            targets: -3,
+            className: 'dt-head-center',
+        },
+        {
+            targets: -4,
+            className: 'dt-body-center dt-head-center',
+        }
+    ],
+    columns: [
+        {"width": "30%"},
+        {"width": "10%"},
+        {"width": "20%"},
+        {"width": "20%"},
+        {"width": "20%"},
+        {"width": "10px"},
+        {"width": "50px"},
+        {"width": "50px"},
+        {"width": "50px"},
+    ],
+    order: [[0, 'desc']],
+    language: french
+}
 $('#dataTableConsommation').DataTable(datatable_config);
 $('#dataTableProduction').DataTable(datatable_config);
+$('#dataTablePuissance').DataTable(datatable_config_power);

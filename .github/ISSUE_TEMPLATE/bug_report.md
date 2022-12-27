@@ -10,7 +10,7 @@ assignees: m4dm4rtig4n
 MERCI DE RESPECTER LES DIFFERENTS CHAMPS SINON JE CLOS L'ISSUE.
 
 **Description du bug**
-Merci de me détaillé au mieux le bug et une procédure pour le reproduire si possible.
+Merci de me détailler au mieux le bug et une procédure pour le reproduire si possible.
 
 **Configuration**
 Il me faut la partie enedis_gateway de votre config.yml, sans les PDL et Token.

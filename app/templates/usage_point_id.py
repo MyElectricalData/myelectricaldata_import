@@ -4,13 +4,15 @@ from datetime import datetime
 import markdown
 from jinja2 import Template
 from mergedeep import Strategy, merge
+
 from models.config import get_version
+from templates.loading import Loading
 from templates.models.configuration import Configuration
 from templates.models.datatable import Datatable
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
-from templates.loading import Loading
+
 
 class UsagePointId:
 
@@ -64,6 +66,38 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
+            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                menu = merge(
+                    {
+                        "import_detail": {
+                            "title": "Importer la consommation détaillée",
+                            "icon": "electric_bolt",
+                            "css": "background-color: #f39c12;",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/consumption_detail'
+                            }
+                        }
+                    },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
+            if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+                menu = merge(
+                    {
+                        "import_daily_max_power": {
+                            "title": "Importer la puissance maximum journalière.",
+                            "icon": "offline_bolt",
+                            "css": "background-color: #e74c3c;",
+                            "loading_page": "loading_import",
+                            "ajax": {
+                                "method": "GET",
+                                "url": f'/import/{self.usage_point_id}/consumption_max_power'
+                            }
+                        }
+                    },
+                    menu,
+                    strategy=Strategy.ADDITIVE)
             if hasattr(self.config, "production") and self.config.production:
                 menu = merge(
                     {
@@ -80,29 +114,13 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
-            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
-                menu = merge(
-                    {
-                        "import_detail": {
-                            "title": "Importer la consommation détaillée",
-                            "icon": "electric_bolt",
-                            "css": "background-color: var(--text-color);",
-                            "loading_page": "loading_import",
-                            "ajax": {
-                                "method": "GET",
-                                "url": f'/import/{self.usage_point_id}/consumption_detail'
-                            }
-                        }
-                    },
-                    menu,
-                    strategy=Strategy.ADDITIVE)
             if hasattr(self.config, "production_detail") and self.config.production_detail:
                 menu = merge(
                     {
                         "import_production_detail": {
                             "title": "Importer la production détaillée",
                             "icon": "solar_power",
-                            "css": "background-color: #F1C40F;",
+                            "css": "background-color: #f39c12;",
                             "loading_page": "loading_import",
                             "ajax": {
                                 "method": "GET",
@@ -149,9 +167,11 @@ class UsagePointId:
             self.address = self.db.get_addresse(self.usage_point_id)
             self.javascript = ""
             self.recap_consumption_data = {}
+            self.recap_consumption_max_power = {}
             self.recap_production_data = {}
             self.recap_hc_hp = "Pas de données."
             self.comsumption_datatable = "Pas de données."
+            self.consumption_max_power_datatable = "Pas de données."
             self.production_datatable = "Pas de données."
 
     def display(self):
@@ -178,6 +198,7 @@ class UsagePointId:
             body += self.offpeak_hours_table()
 
             self.consumption()
+            self.consumption_max_power()
             self.production()
 
             body += "<h1>Récapitulatif</h1>"
@@ -187,6 +208,13 @@ class UsagePointId:
                 body += f"<h2>Consommation</h2>"
                 body += str(recap_consumption)
                 body += '<div id="chart_daily_consumption"></div>'
+
+            # MAX POWER CONSUMPTION
+            # if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+            #     recap_consumption_max_power = self.recap(data=self.recap_consumption_max_power)
+            #     body += f"<h2>Puissance maximun</h2>"
+            #     body += str(recap_consumption_max_power)
+            #     body += '<div id="chart_daily_consumption_max_power"></div>'
 
             # RATIO HP/HC
             if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
@@ -217,6 +245,12 @@ class UsagePointId:
             if hasattr(self.config, "consumption") and self.config.consumption and self.comsumption_datatable:
                 body += f"<h2>Consommation</h2>"
                 body += str(self.comsumption_datatable)
+
+            # MAX POWER DATATABLE
+            if hasattr(self.config,
+                       "consumption_max_power") and self.config.consumption_max_power and self.consumption_max_power_datatable:
+                body += f"<h2>Puissance Maximale</h2>"
+                body += str(self.consumption_max_power_datatable)
 
             # PRODUCTION DATATABLE
             if hasattr(self.config, "production") and self.config.production and self.production_datatable:
@@ -363,6 +397,62 @@ class UsagePointId:
                             };
     
                             var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption'));
+                            chart.draw(data, options);
+                        }
+                            """
+
+    def consumption_max_power(self):
+        if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+            if hasattr(self.contract, "subscribed_power"):
+                max_power = self.contract.subscribed_power.split(' ')[0]
+            else:
+                max_power = 6
+            daily_result = Datatable(self.usage_point_id).html(
+                title="Puissance",
+                tag=f"consumption_max_power",
+                daily_data=self.db.get_daily_max_power_all(self.usage_point_id),
+                cache_last_date=self.db.get_daily_max_power_last_date(self.usage_point_id),
+                option={
+                    "max_power": max_power
+                }
+            )
+            if daily_result['recap']:
+                self.recap_consumption_max_power = daily_result["recap"]
+                self.consumption_max_power_datatable = daily_result["html"]
+                self.javascript += """            
+                google.charts.load("current", {packages:["corechart"]});
+                google.charts.setOnLoadCallback(drawChartConsumptionMaxPower);
+                function drawChartConsumptionMaxPower() {
+                    var data = google.visualization.arrayToDataTable([
+                """
+                format_table = {}
+                years_array = ""
+                max_history = self.current_years - self.max_history_chart
+                for years, data in self.recap_consumption_max_power.items():
+                    if years > str(max_history):
+                        years_array += f"'{years}', "
+                        for month, value in data['month'].items():
+                            if month not in format_table:
+                                format_table[month] = []
+                            format_table[month].append(value)
+                self.javascript += f"['Month', {years_array}],"
+                for month, val in format_table.items():
+                    table_value = ""
+                    for idx, c in enumerate(val):
+                        table_value += str(c / 1000)
+                        if idx + 1 < len(val):
+                            table_value += ", "
+                    self.javascript += f"['{month}', {table_value}],"
+                self.javascript += """]);
+                            var options = {
+                              title : '',
+                              vAxis: {title: 'Puissance Maximale (Watt)'},
+                              hAxis: {title: 'Mois'},
+                              seriesType: 'bars',
+                              series: {5: {type: 'line'}}
+                            };
+    
+                            var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption_max_power'));
                             chart.draw(data, options);
                         }
                             """

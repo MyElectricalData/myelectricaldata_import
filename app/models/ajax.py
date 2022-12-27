@@ -3,6 +3,7 @@ from dependencies import reformat_json
 from models.jobs import Job
 from models.config import get_version
 from models.query_daily import Daily
+from models.query_power import Power
 from models.query_detail import Detail
 from models.query_status import Status
 from models.query_cache import Cache
@@ -45,6 +46,11 @@ class Ajax:
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
+        app.LOG.title(f"[{self.usage_point_id}] Reset de la puissance maximum journalière.")
+        Power(
+            headers=self.headers,
+            usage_point_id=self.usage_point_id,
+        ).reset()
         app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée.")
         Detail(
             headers=self.headers,
@@ -83,6 +89,13 @@ class Ajax:
             app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée du {date}:")
             result["consumption_detail"] = Detail(
                 headers=self.headers,
+                usage_point_id=self.usage_point_id
+            ).reset(date)
+        elif target == "consumption_max_power":
+            app.LOG.title(f"[{self.usage_point_id}] Reset de la puissance maximum du {date}:")
+            result["consumption_max_power"] = Power(
+                headers=self.headers,
+                usage_point_id=self.usage_point_id
             ).reset(date)
         elif target == "production":
             app.LOG.title(f"[{self.usage_point_id}] Reset de la production journalière du {date}:")
@@ -126,6 +139,13 @@ class Ajax:
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).fetch(date)
+        elif target == "consumption_max_power":
+            if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption:
+                app.LOG.title(f"[{self.usage_point_id}] Importation de la puissance maximum journalière du {date}:")
+                result["consumption_max_power"] = Power(
+                    headers=self.headers,
+                    usage_point_id=self.usage_point_id,
+                ).fetch(date)
         elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
                 app.LOG.title(f"[{self.usage_point_id}] Importation de la consommation détaillée du {date}:")
@@ -156,7 +176,7 @@ class Ajax:
                 "result": ""
             }
         if "error" in result[target] and result[target]["error"]:
-            return {
+            data = {
                 "error": "true",
                 "notif": result[target]['notif'],
                 "result": {
@@ -165,8 +185,11 @@ class Ajax:
                     "fail_count": result[target]["fail_count"]
                 }
             }
+            if "event_date" in result[target]:
+                data["result"]["event_date"] = result[target]["event_date"]
+            return data
         else:
-            return {
+            data = {
                 "error": "false",
                 "notif": f"Importation de la {target} journalière du {date}",
                 "result": {
@@ -175,8 +198,12 @@ class Ajax:
                     "fail_count": 0
                 }
             }
+            if "event_date" in result[target]:
+                data["result"]["event_date"] = result[target]["event_date"]
+            return data
 
     def blacklist(self, target, date):
+        print(target)
         result = {}
         if target == "consumption":
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
@@ -185,7 +212,14 @@ class Ajax:
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, True)
-        if target == "consumption_detail":
+        elif target == "consumption_max_power":
+            if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption_max_power:
+                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la puissance maximum du {date}:")
+                result["consumption_max_power"] = Power(
+                    headers=self.headers,
+                    usage_point_id=self.usage_point_id,
+                ).blacklist(date, True)
+        elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
                 app.LOG.title(f"[{self.usage_point_id}] Blacklist de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
@@ -233,6 +267,13 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 app.LOG.title(f"[{self.usage_point_id}] Whitelist de la consommation journalière du {date}:")
                 result["consumption"] = Daily(
+                    headers=self.headers,
+                    usage_point_id=self.usage_point_id,
+                ).blacklist(date, False)
+        elif target == "consumption_max_power":
+            if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption_max_power:
+                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la puissance maximale journalière du {date}:")
+                result["consumption_max_power"] = Power(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, False)

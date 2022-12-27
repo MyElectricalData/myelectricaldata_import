@@ -63,9 +63,9 @@ def wizard():
 
 def run(dev=False, debug=False):
     if debug:
-        app.LOG.title(["Boot DynAPI in debug mode", "CTRL + C to exit"])
+        app.LOG.title(["Boot MyElectricalData in debug mode", "CTRL + C to exit"])
     else:
-        app.LOG.title(["Boot DynAPI", "CTRL + C to exit"])
+        app.LOG.title(["Boot MyElectricalData", "CTRL + C to exit"])
     mode_debug = ""
     mode_dev = ""
     if debug:

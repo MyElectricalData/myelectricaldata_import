@@ -2,6 +2,7 @@ import __main__ as app
 import time
 import traceback
 
+from dependencies import str2bool
 from models.config import get_version
 from models.database import Database
 from models.export_home_assistant import HomeAssistant
@@ -12,10 +13,15 @@ from models.query_address import Address
 from models.query_contract import Contract
 from models.query_daily import Daily
 from models.query_detail import Detail
+from models.query_power import Power
 from models.query_status import Status
 
 DB = Database()
 LOG = Log()
+
+
+def export_finish():
+    LOG.title("Export terminé")
 
 
 class Job:
@@ -37,10 +43,10 @@ class Job:
         else:
             DB.lock()
             if wait:
-                app.LOG.title("Démarrage du job d'importation dans 10s")
+                LOG.title("Démarrage du job d'importation dans 10s")
                 i = self.wait_job_start
                 while i > 0:
-                    app.LOG.log(f" => {i}s")
+                    LOG.log(f" => {i}s")
                     time.sleep(1)
                     i = i - 1
             if self.usage_point_id is None:
@@ -99,12 +105,19 @@ class Job:
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de la récupération de votre production détaillée", e])
+                    try:
+                        # if target == "consumption_max_power" or target is None:
+                        self.get_consumption_max_power()
+                    except Exception as e:
+                        traceback.print_exc()
+                        LOG.error([f"Erreur lors de la récupération de votre puissance maximum journalière", e])
 
                     try:
                         # #######################################################################################################
                         # # MQTT
                         if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
                             if target == "mqtt" or target is None:
+                                LOG.title("Exportation MQTT")
                                 ExportMqtt(self.usage_point_id).status()
                                 ExportMqtt(self.usage_point_id).contract()
                                 ExportMqtt(self.usage_point_id).address()
@@ -136,8 +149,19 @@ class Job:
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
-                                    ExportMqtt("production").detail_annual(self.usage_point_config.production_price)
-                                    ExportMqtt("production").detail_linear(self.usage_point_config.production_price)
+                                    ExportMqtt(self.usage_point_id, "production").detail_annual(
+                                        self.usage_point_config.production_price
+                                    )
+                                    ExportMqtt(self.usage_point_id, "production").detail_linear(
+                                        self.usage_point_config.production_price
+                                    )
+                            if hasattr(self.usage_point_config,
+                                       "consumption_max_power") and self.usage_point_config.consumption_max_power:
+                                ExportMqtt(self.usage_point_id).max_power()
+                            export_finish()
+                        else:
+                            LOG.title("Exportation MQTT")
+                            LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans MQTT", e])
@@ -145,17 +169,18 @@ class Job:
                     #######################################################################################################
                     # HOME ASSISTANT
                     try:
-                        if "enable" in self.home_assistant_config and self.home_assistant_config["enable"]:
-                            if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+                        if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
+                            if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
                                 if target == "home_assistant" or target is None:
-                                    HomeAssistant(self.usage_point_id).export(
-                                        self.usage_point_config.consumption_price_base,
-                                        self.usage_point_config.consumption_price_hp,
-                                        self.usage_point_config.consumption_price_hc
-                                    )
+                                    LOG.title("Exportation Home Assistant")
+                                    HomeAssistant(self.usage_point_id).export()
+                                    export_finish()
                             else:
-                                app.LOG.critical("L'export Home Assistant est dépendant de MQTT, "
-                                                 "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
+                                LOG.critical("L'export Home Assistant est dépendant de MQTT, "
+                                             "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
+                        else:
+                            LOG.title("Exportation Home Assistant")
+                            LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans Home Assistant", e])
@@ -166,6 +191,7 @@ class Job:
                         if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
                             # app.INFLUXDB.purge_influxdb()
                             if target == "influxdb" or target is None:
+                                LOG.title("Exportation InfluxDB")
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
                                     ExportInfluxDB(self.usage_point_id).daily(
@@ -189,11 +215,16 @@ class Job:
                                         self.usage_point_config.production_price,
                                         measurement_direction="production_detail"
                                     )
+                            export_finish()
+                        else:
+                            LOG.title("Exportation InfluxDB")
+                            LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
                 else:
-                    app.LOG.log(f" => Point de livraison désactivé.")
+                    LOG.log(
+                        f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
             LOG.finish()
             DB.unlock()
             return {
@@ -284,6 +315,16 @@ class Job:
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
                 measure_type="production"
+            ).get()
+        return result
+
+    def get_consumption_max_power(self):
+        result = {}
+        if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption_max_power:
+            LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la puissance maximun journalière :")
+            result = Power(
+                headers=self.header_generate(),
+                usage_point_id=self.usage_point_config.usage_point_id
             ).get()
         return result
 

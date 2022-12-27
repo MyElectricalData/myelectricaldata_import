@@ -1,13 +1,27 @@
 import __main__ as app
 import json
 from datetime import datetime, timezone
+from math import floor
 
 import pytz
 from dateutil.relativedelta import relativedelta
 
+from models.log import Log
 from models.stat import Stat
 
 utc = pytz.UTC
+
+
+def convert_kw(value):
+    return truncate(value / 1000, 2)
+
+
+def convert_kw_to_euro(value, price):
+    return round(value / 1000 * price, 1)
+
+
+def truncate(f, n):
+    return floor(f * 10 ** n) / 10 ** n
 
 
 class HomeAssistant:
@@ -17,6 +31,19 @@ class HomeAssistant:
         self.measurement_direction = measurement_direction
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
+        self.config = app.DB.get_usage_point(usage_point_id)
+        if hasattr(self.config, "consumption_price_base"):
+            self.price_base = self.config.consumption_price_base
+        else:
+            self.price_base = 0
+        if hasattr(self.config, "consumption_price_hp"):
+            self.price_hp = self.config.consumption_price_hp
+        else:
+            self.price_hp = 0
+        if hasattr(self.config, "consumption_price_hc"):
+            self.price_hc = self.config.consumption_price_hc
+        else:
+            self.price_hc = 0
         self.config_ha_config = app.CONFIG.home_assistant_config()
         if "card_myenedis" not in self.config_ha_config:
             self.card_myenedis = False
@@ -38,27 +65,77 @@ class HomeAssistant:
             self.hourly = False
         else:
             self.hourly = self.config_ha_config["hourly"]
-
-        self.topic = f"{self.discovery_prefix}/sensor/myelectricaldata/{self.usage_point_id}"
+        self.contract = app.DB.get_contract(self.usage_point_id)
+        if hasattr(self.contract, "last_activation_date"):
+            self.activation_date = self.contract.last_activation_date.strftime(self.date_format_detail)
+        else:
+            self.activation_date = None
+        if hasattr(self.contract, "subscribed_power"):
+            self.subscribed_power = self.contract.subscribed_power
+        else:
+            self.subscribed_power = None
+        self.usage_point = app.DB.get_usage_point(self.usage_point_id)
         self.stat = Stat(self.usage_point_id)
-
-    def export(self, price_base, price_hp, price_hc):
+    def export(self):
 
         app.LOG.title(f"[{self.usage_point_id}] Exportation des données dans Home Assistant (via MQTT)")
+        self.myelectricaldata_usage_point_id()
+        self.history_usage_point_id()
 
-        def convert_kw(value):
-            return round(value / 1000, 1)
+    def history_usage_point_id(self):
+        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_history/{self.usage_point_id}"
+        config = {
+            "name": f"myelectricaldata_history_{self.usage_point_id}",
+            "uniq_id": f"myelectricaldata_history.{self.usage_point_id}",
+            "stat_t": f"{topic}/state",
+            "json_attr_t": f"{topic}/attributes",
+            "unit_of_measurement": "kWh",
+            "device": {
+                "identifiers": [
+                    f"linky_history_{self.usage_point_id}"
+                ],
+                "name": f"Linky {self.usage_point_id}",
+                "model": "Linky",
+                "manufacturer": "MyElectricalData"
+            }
+        }
+        config = json.dumps(config)
 
-        def convert_kw_to_euro(value, price):
-            return round(value / 1000 * price, 1)
+        state = app.DB.get_daily_last(self.usage_point_id, self.measurement_direction)
+        if state:
+            state = state.value
+        else:
+            state = 0
+        state = {
+            f"state": convert_kw(state)
+        }
+        state = json.dumps(state)
 
+        attributes = {
+            "numPDL": self.usage_point_id,
+            "activationDate": self.activation_date,
+            "lastUpdate": datetime.now().strftime(self.date_format_detail),
+            "timeLastCall": datetime.now().strftime(self.date_format_detail),
+            "yesterdayDate": self.stat.daily(0)["begin"]
+        }
+        attributes = json.dumps(attributes)
+        data = {
+            "config": config,
+            "state": state,
+            "attributes": attributes
+        }
+        print(data)
+        app.MQTT.publish_multiple(data, topic)
+
+    def myelectricaldata_usage_point_id(self):
+        topic = f"{self.discovery_prefix}/sensor/myelectricaldata/{self.usage_point_id}"
         config = {
             f"config": json.dumps(
                 {
                     "name": f"myelectricaldata_{self.usage_point_id}",
                     "uniq_id": f"myelectricaldata.{self.usage_point_id}",
-                    "stat_t": f"{self.topic}/state",
-                    "json_attr_t": f"{self.topic}/attributes",
+                    "stat_t": f"{topic}/state",
+                    "json_attr_t": f"{topic}/attributes",
                     "unit_of_measurement": "kWh",
                     "device": {
                         "identifiers": [
@@ -70,7 +147,8 @@ class HomeAssistant:
                     }
                 })
         }
-        app.MQTT.publish_multiple(config, self.topic)
+        app.MQTT.publish_multiple(config, topic)
+
         state = app.DB.get_daily_last(self.usage_point_id, self.measurement_direction)
         if state:
             state = state.value
@@ -79,43 +157,48 @@ class HomeAssistant:
 
         app.MQTT.publish_multiple({
             f"state": convert_kw(state)
-        }, self.topic)
-
-        now = datetime.now(timezone.utc)
-        contract = app.DB.get_contract(self.usage_point_id)
-        usage_point = app.DB.get_usage_point(self.usage_point_id)
+        }, topic)
 
         offpeak_hours_enedis = ""
         offpeak_hours = []
         if (
-                hasattr(usage_point, "offpeak_hours_0") and usage_point.offpeak_hours_0 is not None or
-                hasattr(usage_point, "offpeak_hours_1") and usage_point.offpeak_hours_1 is not None or
-                hasattr(usage_point, "offpeak_hours_2") and usage_point.offpeak_hours_2 is not None or
-                hasattr(usage_point, "offpeak_hours_3") and usage_point.offpeak_hours_3 is not None or
-                hasattr(usage_point, "offpeak_hours_4") and usage_point.offpeak_hours_4 is not None or
-                hasattr(usage_point, "offpeak_hours_5") and usage_point.offpeak_hours_5 is not None or
-                hasattr(usage_point, "offpeak_hours_6") and usage_point.offpeak_hours_6 is not None
+                hasattr(self.usage_point, "offpeak_hours_0") and self.usage_point.offpeak_hours_0 is not None or
+                hasattr(self.usage_point, "offpeak_hours_1") and self.usage_point.offpeak_hours_1 is not None or
+                hasattr(self.usage_point, "offpeak_hours_2") and self.usage_point.offpeak_hours_2 is not None or
+                hasattr(self.usage_point, "offpeak_hours_3") and self.usage_point.offpeak_hours_3 is not None or
+                hasattr(self.usage_point, "offpeak_hours_4") and self.usage_point.offpeak_hours_4 is not None or
+                hasattr(self.usage_point, "offpeak_hours_5") and self.usage_point.offpeak_hours_5 is not None or
+                hasattr(self.usage_point, "offpeak_hours_6") and self.usage_point.offpeak_hours_6 is not None
         ):
             offpeak_hours_enedis = (
-                f"Lundi ({usage_point.offpeak_hours_0});"
-                f"Mardi ({usage_point.offpeak_hours_1});"
-                f"Mercredi ({usage_point.offpeak_hours_2});"
-                f"Jeudi ({usage_point.offpeak_hours_3});"
-                f"Vendredi ({usage_point.offpeak_hours_4});"
-                f"Samedi ({usage_point.offpeak_hours_5});"
-                f"Dimanche ({usage_point.offpeak_hours_6});"
+                f"Lundi ({self.usage_point.offpeak_hours_0});"
+                f"Mardi ({self.usage_point.offpeak_hours_1});"
+                f"Mercredi ({self.usage_point.offpeak_hours_2});"
+                f"Jeudi ({self.usage_point.offpeak_hours_3});"
+                f"Vendredi ({self.usage_point.offpeak_hours_4});"
+                f"Samedi ({self.usage_point.offpeak_hours_5});"
+                f"Dimanche ({self.usage_point.offpeak_hours_6});"
             )
 
-            usage_point = app.DB.get_usage_point(self.usage_point_id)
             idx = 0
             while idx <= 6:
                 _offpeak_hours = []
-                for offpeak_hours_data in getattr(usage_point, f"offpeak_hours_{idx}").split(";"):
-                    _offpeak_hours.append(offpeak_hours_data.split("-"))
+                offpeak_hour = getattr(self.usage_point, f"offpeak_hours_{idx}")
+                if type(offpeak_hour) != str:
+                    Log().error([
+                        f"offpeak_hours_{idx} n'est pas une chaine de caractères",
+                        "  Format si une seule période : 00H00-06H00",
+                        "  Format si plusieurs périodes : 00H00-06H00;12H00-14H00"
+                    ])
+                else:
+                    for offpeak_hours_data in getattr(self.usage_point, f"offpeak_hours_{idx}").split(";"):
+                        if type(offpeak_hours_data) == str:
+                            _offpeak_hours.append(offpeak_hours_data.split("-"))
+
                 offpeak_hours.append(_offpeak_hours)
                 idx = idx + 1
 
-        yesterday = datetime.combine(now - relativedelta(days=1), datetime.max.time())
+        yesterday = datetime.combine(datetime.now() - relativedelta(days=1), datetime.max.time())
         previous_week = datetime.combine(yesterday - relativedelta(days=7), datetime.min.time())
         yesterday_last_year = yesterday - relativedelta(years=1)
 
@@ -212,24 +295,34 @@ class HomeAssistant:
         monthly_evolution = self.stat.monthly_evolution()
 
         yesterday_last_year = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
-        if hasattr(contract, "last_activation_date"):
-            activation_date = contract.last_activation_date.strftime(self.date_format_detail)
+
+        dailyweek_cost = []
+        if hasattr(self.config, "plan") and self.config.plan.upper() == "HC/HP":
+            daily_cost = (
+                    convert_kw_to_euro(self.stat.detail(0, "HC")["value"], self.price_hc)
+                    + convert_kw_to_euro(self.stat.detail(0, "HP")["value"], self.price_hp)
+            )
+            for i in range(7):
+                value = (
+                        convert_kw_to_euro(self.stat.detail(i, "HP")["value"], self.price_hp)
+                        + convert_kw_to_euro(self.stat.detail(i, "HC")["value"], self.price_hc)
+                )
+                dailyweek_cost.append(round(value, 1))
         else:
-            activation_date = None
-        if hasattr(contract, "subscribed_power"):
-            subscribed_power = contract.subscribed_power
-        else:
-            subscribed_power = None
+            daily_cost = convert_kw_to_euro(self.stat.daily(0)["value"], self.price_base)
+            for i in range(7):
+                dailyweek_cost.append(convert_kw_to_euro(self.stat.daily(i)["value"], self.price_base))
+
         config = {
             f"attributes": json.dumps(
                 {
                     "numPDL": self.usage_point_id,
-                    "activationDate": activation_date,
-                    "lastUpdate": now.strftime(self.date_format_detail),
-                    "timeLastCall": now.strftime(self.date_format_detail),
+                    "activationDate": self.activation_date,
+                    "lastUpdate": datetime.now().strftime(self.date_format_detail),
+                    "timeLastCall": datetime.now().strftime(self.date_format_detail),
                     "yesterdayDate": self.stat.daily(0)["begin"],
                     "yesterday": convert_kw(self.stat.daily(0)["value"]),
-                    "yesterdayLastYearDate": (now - relativedelta(years=1)).strftime(self.date_format),
+                    "yesterdayLastYearDate": (datetime.now() - relativedelta(years=1)).strftime(self.date_format),
                     "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year,
                                                                                           "value") else 0,
                     "daily": [
@@ -267,24 +360,16 @@ class HomeAssistant:
                         self.stat.daily(5)["begin"],
                         self.stat.daily(6)["begin"],
                     ],
-                    "dailyweek_cost": [
-                        convert_kw_to_euro(self.stat.daily(0)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(1)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(2)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(3)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(4)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(5)["value"], price_base),
-                        convert_kw_to_euro(self.stat.daily(6)["value"], price_base),
-                    ],
+                    "dailyweek_cost": dailyweek_cost,
                     # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
                     "dailyweek_costHP": [
-                        convert_kw_to_euro(self.stat.detail(0, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(1, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(2, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(3, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(4, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(5, "HP")["value"], price_hp),
-                        convert_kw_to_euro(self.stat.detail(6, "HP")["value"], price_hp),
+                        convert_kw_to_euro(self.stat.detail(0, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(1, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(2, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(3, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(4, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(5, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(self.stat.detail(6, "HP")["value"], self.price_hp),
                     ],
                     "dailyweek_HP": [
                         convert_kw(self.stat.detail(0, "HP")["value"]),
@@ -295,8 +380,8 @@ class HomeAssistant:
                         convert_kw(self.stat.detail(5, "HP")["value"]),
                         convert_kw(self.stat.detail(6, "HP")["value"]),
                     ],
-                    "daily_cost": convert_kw_to_euro(self.stat.daily(0)["value"], price_base),
-                    "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, price_hp),
+                    "daily_cost": daily_cost,
+                    "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.price_hp),
                     "yesterday_HP": convert_kw(yesterday_hp_value),
                     "day_1_HP": self.stat.detail(0, "HP")["value"],
                     "day_2_HP": self.stat.detail(1, "HP")["value"],
@@ -306,13 +391,13 @@ class HomeAssistant:
                     "day_6_HP": self.stat.detail(5, "HP")["value"],
                     "day_7_HP": self.stat.detail(6, "HP")["value"],
                     "dailyweek_costHC": [
-                        convert_kw_to_euro(self.stat.detail(0, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(1, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(2, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(3, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(4, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(5, "HC")["value"], price_hc),
-                        convert_kw_to_euro(self.stat.detail(6, "HC")["value"], price_hc),
+                        convert_kw_to_euro(self.stat.detail(0, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(1, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(2, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(3, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(4, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(5, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(self.stat.detail(6, "HC")["value"], self.price_hc),
                     ],
                     "dailyweek_HC": [
                         convert_kw(self.stat.detail(0, "HC")["value"]),
@@ -323,7 +408,7 @@ class HomeAssistant:
                         convert_kw(self.stat.detail(5, "HC")["value"]),
                         convert_kw(self.stat.detail(6, "HC")["value"]),
                     ],
-                    "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, price_hc),
+                    "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.price_hc),
                     "yesterday_HC": convert_kw(yesterday_hc_value),
                     "day_1_HC": self.stat.detail(0, "HC")["value"],
                     "day_2_HC": self.stat.detail(1, "HC")["value"],
@@ -343,9 +428,9 @@ class HomeAssistant:
                     "current_week_number": yesterday.strftime("%V"),
                     "offpeak_hours_enedis": offpeak_hours_enedis,
                     "offpeak_hours": offpeak_hours,
-                    "subscribed_power": subscribed_power
+                    "subscribed_power": self.subscribed_power
                 })
         }
         for key, value in info.items():
             config[f"info/{key}"] = json.dumps(value)
-        app.MQTT.publish_multiple(config, self.topic)
+        app.MQTT.publish_multiple(config, topic)

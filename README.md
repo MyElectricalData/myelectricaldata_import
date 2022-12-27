@@ -27,6 +27,12 @@ La dépendance à MQTT n'est plus obligatoire et je supporte :
 * Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/myelectricaldata
 * Saniho Card pour Home Assistant : https://github.com/saniho/content-card-linky
 
+# Dashboard Grafana
+* https://github.com/geobar78/Myelectricaldata-Graphana-Dashbord
+
+<img src="imgs/grafana_geobar78.png" alt="drawing" style="width:200px;"/>
+
+
 ## Informations
 
 MyElectricalData utilise une [API](https://myelectricaldata.fr/) dédiée afin de récupérer toutes les informations auprès d'Enedis.
@@ -121,8 +127,8 @@ Ces 2 propriétés vont vous permettre de jouer sur la rapidité d'importation d
 > ATTENTION, en fonction de la configuration, vous risquez de surcharger votre serveur.
 
 - **synchronous** : Mode classique assez lent sur l'importation, mais évite de surcharger le CPU & la mémoire.
-- **asynchronous** : Mode "bourrin", la totalité des valeurs seront envoyée en même temps et donc consommer énormément de ressources le temps du traimement 
-- **batching** : Mode custom qui va vous permettre de jouer sur divers paramètres. A utilisé si le mode synchronous est encore trop gourmand. Plus d'information disponible [ici](https://github.com/influxdata/influxdb-client-python#batching).
+- **asynchronous** : Mode "bourrin", la totalité des valeurs sera envoyée en même temps et donc consommera énormément de ressources le temps du traimement 
+- **batching** : Mode custom qui va vous permettre de jouer sur divers paramètres. A utiliser si le mode synchronous est encore trop gourmand. Plus d'informations disponible [ici](https://github.com/influxdata/influxdb-client-python#batching).
 
 #### Configuration par version :
 

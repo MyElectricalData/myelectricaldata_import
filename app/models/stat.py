@@ -1,6 +1,6 @@
 import __main__ as app
 import calendar
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 
 import pytz
 from dateutil.relativedelta import relativedelta
@@ -106,6 +106,19 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
+
+    # def get_week(self, year, measurement_direction="consumption"):
+    #     app.LOG.log(f"[{year}] current_week")
+    #     begin = datetime.combine(self.now_date - relativedelta(weeks=1), datetime.min.time())
+    #     end = datetime.combine(self.yesterday_date, datetime.max.time())
+    #     for data in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
+    #         self.value_current_week = self.value_current_week + data.value
+    #     app.LOG.log(f" => {self.value_current_week}")
+    #     return {
+    #         "value": self.value_current_week,
+    #         "begin": begin.strftime(self.date_format),
+    #         "end": end.strftime(self.date_format)
+    #     }
 
     def last_week(self, measurement_direction="consumption"):
         app.LOG.log("last_week")
@@ -357,3 +370,114 @@ class Stat:
                 ) - 100
         app.LOG.log(f" => {self.value_peak_offpeak_percent_hp_vs_hc}")
         return self.value_peak_offpeak_percent_hp_vs_hc
+
+    # STAT V2
+    def get_year(self, year, measure_type=None, measurement_direction="consumption"):
+        begin = datetime.combine(self.now_date.replace(year=year).replace(month=1).replace(day=1), datetime.min.time())
+        end = datetime.combine(self.now_date.replace(year=year).replace(month=12).replace(day=31), datetime.max.time())
+        value = 0
+        if measure_type is None:
+            for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
+                value = value + day.value
+        else:
+            for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
+                if day.measure_type == measure_type:
+                    value = value + (day.value / (60 / day.interval))
+        return {
+            "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+
+    def get_year_linear(self, idx, measure_type=None, measurement_direction="consumption"):
+        end = datetime.combine(self.yesterday_date - relativedelta(years=idx), datetime.max.time())
+        begin = datetime.combine(end - relativedelta(years=1), datetime.min.time())
+        value = 0
+        if measure_type is None:
+            for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
+                value = value + day.value
+        else:
+            for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
+                if day.measure_type == measure_type:
+                    value = value + (day.value / (60 / day.interval))
+        return {
+            "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+
+    def get_month(self, year, month=None, measure_type=None, measurement_direction="consumption"):
+        if month is None:
+            month = int(datetime.now().strftime('%m'))
+        begin = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=1), datetime.min.time())
+        last_day_of_month = calendar.monthrange(year, month)[1]
+        end = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=last_day_of_month), datetime.max.time())
+        value = 0
+        if measure_type is None:
+            for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
+                value = value + day.value
+        else:
+            for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
+                if day.measure_type == measure_type:
+                    value = value + (day.value / (60 / day.interval))
+        return {
+            "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+
+    def get_month_linear(self, idx, measure_type=None, measurement_direction="consumption"):
+        end = datetime.combine(self.yesterday_date - relativedelta(years=idx), datetime.max.time())
+        begin = datetime.combine(end - relativedelta(months=1), datetime.min.time())
+        value = 0
+        if measure_type is None:
+            for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
+                value = value + day.value
+        else:
+            for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
+                if day.measure_type == measure_type:
+                    value = value + (day.value / (60 / day.interval))
+        return {
+            "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+
+    def get_week(self, year, month=None, measure_type=None, measurement_direction="consumption"):
+        if month is None:
+            month = int(datetime.now().strftime('%m'))
+        today = date.today()
+        start = today - timedelta(days=today.weekday())
+        end = start + timedelta(days=6)
+        begin = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=int(start.strftime("%d"))), datetime.min.time())
+        end = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=int(end.strftime("%d"))), datetime.max.time())
+        value = 0
+        if measure_type is None:
+            for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
+                value = value + day.value
+        else:
+            for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
+                if day.measure_type == measure_type:
+                    value = value + (day.value / (60 / day.interval))
+        return {
+            "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+
+    def get_week_linear(self, idx, measure_type=None, measurement_direction="consumption"):
+        end = datetime.combine(self.yesterday_date - relativedelta(years=idx), datetime.max.time())
+        begin = datetime.combine(end - timedelta(days=7), datetime.min.time())
+        value = 0
+        if measure_type is None:
+            for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
+                value = value + day.value
+        else:
+            for day in app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction):
+                    if day.measure_type == measure_type:
+                        value = value + (day.value / (60 / day.interval))
+        return {
+            "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }

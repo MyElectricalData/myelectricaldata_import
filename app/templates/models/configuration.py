@@ -70,6 +70,12 @@ class Configuration:
                     "type": True,
                     "default": True
                 },
+                "consumption_max_power": {
+                    "title": "Puissance maximale journalière",
+                    "help": "Active/Désactive la récupération de la puissance maximal journalière.",
+                    "type": True,
+                    "default": True
+                },
                 "consumption_max_date": {
                     "title": "Date max journalière",
                     "help": "Permet de définir la date de fin de récupération des données en mode journalier.  "
@@ -283,8 +289,8 @@ class Configuration:
                         configuration += '</tr>'
                     elif type(var_type) == list:
                         configuration += f'<tr><td class="key">{title}</td><td class="value"><select id="configuration_{key}" name="{key}">'
-                        selected = ""
                         for option in var_type:
+                            selected = ""
                             if option == value:
                                 selected = "selected"
                             configuration += f'<option value="{option}" {selected}>{option.upper()}</option>'
