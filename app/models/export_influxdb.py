@@ -40,7 +40,7 @@ class ExportInfluxDB:
                     "month": daily.date.strftime("%m"),
                 },
                 fields={
-                    "Wh": float(watt),
+                    "Wh": int(watt),
                     "kWh": float(forceRound(kwatt, 5)),
                     "price": float(forceRound(euro, 5))
                 },
@@ -73,7 +73,7 @@ class ExportInfluxDB:
                     "measure_type": detail.measure_type,
                 },
                 fields={
-                    "W": float(watt),
+                    "W": int(watt),
                     "kW": float(forceRound(kwatt, 5)),
                     "Wh": float(watth),
                     "kWh": float(forceRound(kwatth, 5)),
