@@ -1,6 +1,6 @@
 import __main__ as app
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from math import floor
 
 import pytz
@@ -81,6 +81,49 @@ class HomeAssistant:
         app.LOG.title(f"[{self.usage_point_id}] Exportation des données dans Home Assistant (via MQTT)")
         self.myelectricaldata_usage_point_id()
         self.history_usage_point_id()
+        self.last_x_day(5)
+
+    def last_x_day(self, days):
+        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_last_{days}_day/{self.usage_point_id}"
+        config = {
+            "name": f"myelectricaldata_last{days}day_{self.usage_point_id}",
+            "uniq_id": f"myelectricaldata_last{days}day.{self.usage_point_id}",
+            "stat_t": f"{topic}/state",
+            "json_attr_t": f"{topic}/attributes",
+            "unit_of_measurement": "d",
+            "device": {
+                "identifiers": [
+                    f"linky_history_{self.usage_point_id}"
+                ],
+                "name": f"Linky {self.usage_point_id}",
+                "model": "Linky",
+                "manufacturer": "MyElectricalData"
+            }
+        }
+        config = json.dumps(config)
+        state = days
+        attributes = {
+            "numPDL": self.usage_point_id,
+            "activationDate": self.activation_date,
+            "lastUpdate": datetime.now().strftime(self.date_format_detail),
+            "timeLastCall": datetime.now().strftime(self.date_format_detail),
+            "time": [],
+            "consumption": []
+        }
+        end = datetime.now() - timedelta(days=1)
+        begin = end - timedelta(days)
+        range = app.DB.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction)
+        for data in range:
+            attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
+            attributes["consumption"].append(data.value)
+        attributes = json.dumps(attributes)
+
+        data = {
+            "config": config,
+            "state": state,
+            "attributes": attributes
+        }
+        app.MQTT.publish_multiple(data, topic)
 
     def history_usage_point_id(self):
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_history/{self.usage_point_id}"
@@ -106,10 +149,7 @@ class HomeAssistant:
             state = state.value
         else:
             state = 0
-        state = {
-            f"state": convert_kw(state)
-        }
-        state = json.dumps(state)
+        state = convert_kw(state)
 
         attributes = {
             "numPDL": self.usage_point_id,
@@ -124,7 +164,6 @@ class HomeAssistant:
             "state": state,
             "attributes": attributes
         }
-        print(data)
         app.MQTT.publish_multiple(data, topic)
 
     def myelectricaldata_usage_point_id(self):

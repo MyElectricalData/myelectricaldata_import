@@ -83,13 +83,6 @@ def run(dev=False, debug=False):
 def create_release(prerelease=False):
     rebuild_confirm = False
 
-    commit = cmd("git status --porcelain").stdout.decode()
-    if commit != "":
-        app.LOG.warning("Your code it's not commit!!")
-        commit_msg = inquirer.text(message="Commit message").execute()
-        os.system("git add --all")
-        os.system(f"git commit -m \"{commit_msg}\"")
-
     app.LOG.title("Get remote tag")
     remote_tag = cmd(f"git ls-remote --tags origin").stdout.decode()
     tags = []
@@ -159,6 +152,13 @@ def create_release(prerelease=False):
             return False
 
     switch_version(version)
+
+    commit = cmd("git status --porcelain").stdout.decode()
+    if commit != "":
+        app.LOG.warning("Your code it's not commit!!")
+        commit_msg = inquirer.text(message="Commit message").execute()
+        os.system("git add --all")
+        os.system(f"git commit -m \"{commit_msg}\"")
 
     if rebuild_confirm:
         app.LOG.log(f"Delete release {version} on remote")

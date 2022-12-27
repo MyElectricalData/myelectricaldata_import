@@ -135,15 +135,16 @@ class Daily:
         result = []
 
         while finish:
+            print(self.activation_date)
 
-            if self.activation_date and self.activation_date > begin:
-                # Activation date reached
-                begin = self.activation_date
-                finish = False
-                response = self.run(begin, end)
-            elif self.max_days_date > begin:
+            if self.max_days_date > begin:
                 # Max day reached
                 begin = self.max_days_date
+                finish = False
+                response = self.run(begin, end)
+            elif self.activation_date and self.activation_date > begin:
+                # Activation date reached
+                begin = self.activation_date
                 finish = False
                 response = self.run(begin, end)
             else:
