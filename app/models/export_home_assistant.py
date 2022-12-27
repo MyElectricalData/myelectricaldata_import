@@ -90,7 +90,7 @@ class HomeAssistant:
             "uniq_id": f"myelectricaldata_last{days}day.{self.usage_point_id}",
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
-            "unit_of_measurement": "d",
+            "unit_of_measurement": "W",
             "device": {
                 "identifiers": [
                     f"linky_history_{self.usage_point_id}"

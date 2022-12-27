@@ -28,10 +28,16 @@ La dépendance à MQTT n'est plus obligatoire et je supporte :
 * Saniho Card pour Home Assistant : https://github.com/saniho/content-card-linky
 
 # Dashboard Grafana
+
+Voici une liste de divers dashbard Grafana créée par la communauté :
+ 
 * https://github.com/geobar78/Myelectricaldata-Graphana-Dashbord
 
 <img src="imgs/grafana_geobar78.png" alt="drawing" style="width:200px;"/>
 
+* https://github.com/HermesHonshappo/MyElectricalData-dashboard
+
+<img src="imgs/grafana_LilY0d4.png" alt="drawing" style="width:200px;"/>
 
 ## Informations
 

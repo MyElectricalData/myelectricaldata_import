@@ -23,6 +23,7 @@ class InfluxDB:
         self.org = org
         self.bucket = bucket
         self.influxdb = {}
+        self.query_api = {}
         self.write_api = {}
         self.delete_api = {}
         self.buckets_api = {}
@@ -112,6 +113,7 @@ class InfluxDB:
                 max_retries=self.write_options["max_retries"],
                 max_retry_delay=self.write_options["max_retry_delay"],
                 exponential_base=self.write_options["exponential_base"]))
+        self.query_api = self.influxdb.query_api()
         self.delete_api = self.influxdb.delete_api()
         self.buckets_api = self.influxdb.buckets_api()
         self.get_list_retention_policies()
@@ -144,6 +146,13 @@ class InfluxDB:
                 if bucket.name == self.bucket:
                     self.retention = bucket.retention_rules[0].every_seconds
                     self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
+
+    # def get(self, date, measurement):
+    #     self.query_api.get(date)
+
+    def delete(self, date, measurement):
+        self.delete_api.delete(date, date, f'_measurement="{measurement}"', self.bucket,
+                               org=self.org)
 
     def write(self, tags, date=None, fields=None, measurement="log"):
         date_max = self.max_retention
