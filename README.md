@@ -30,3 +30,10 @@ Tout est disponible directement sur le [Wiki](https://github.com/m4dm4rtig4n/mye
 * Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/myelectricaldata
 * Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/myelectricaldata
 * Saniho Card pour Home Assistant : https://github.com/saniho/content-card-linky
+
+[smb-shield]: https://img.shields.io/badge/SMB--green?style=plastic.svg
+[repository]: https://github.com/alexbelgium/hassio-addons
+[aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
+[amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
+[armhf-shield]: https://img.shields.io/badge/armhf-yes-green.svg
+[armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
