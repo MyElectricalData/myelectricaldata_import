@@ -20,11 +20,13 @@ La dépendance à MQTT n'est plus obligatoire et je supporte :
 - Home Assistant (Via MQTT Auto Discovery)
 - InfluxDB
 
+# [Documentation / Wiki](https://github.com/m4dm4rtig4n/myelectricaldata/wiki/01.-Home)
+
+Tout est disponible directement sur le [Wiki](https://github.com/m4dm4rtig4n/myelectricaldata/wiki/01.-Home) du projet.
+
 # Links
 
 * Github Repository : https://github.com/m4dm4rtig4n/myelectricaldata
 * Docker Hub Images : https://hub.docker.com/r/m4dm4rtig4n/myelectricaldata
 * Hassio Addons : https://github.com/alexbelgium/hassio-addons/tree/master/myelectricaldata
 * Saniho Card pour Home Assistant : https://github.com/saniho/content-card-linky
-
-# [Documentation](https://github.com/m4dm4rtig4n/myelectricaldata/wiki/01.-Home)
