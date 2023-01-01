@@ -135,8 +135,6 @@ class Daily:
         result = []
 
         while finish:
-            print(self.activation_date)
-
             if self.max_days_date > begin:
                 # Max day reached
                 begin = self.max_days_date

@@ -97,8 +97,6 @@ if CYCLE < cycle_minimun:
     CYCLE = cycle_minimun
     CONFIG.set("cycle", cycle_minimun)
 
-CYCLE = 60
-
 
 class FetchAllDataScheduler(object):
     JOBS = [{

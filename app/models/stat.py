@@ -290,7 +290,7 @@ class Stat:
 
     def current_year(self, measurement_direction="consumption"):
         app.LOG.log("current_year")
-        begin = datetime.combine(self.now_date.replace(month=1).replace(day=1), datetime.min.time())
+        begin = datetime.combine(self.now_date.replace(day=1).replace(month=1), datetime.min.time())
         end = self.yesterday_date
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
             self.value_current_year = self.value_current_year + day.value
@@ -304,7 +304,7 @@ class Stat:
     def current_year_last_year(self, measurement_direction="consumption"):
         app.LOG.log("current_year_last_year")
         begin = datetime.combine(
-            datetime.combine(self.now_date.replace(month=1).replace(day=1), datetime.min.time()) - relativedelta(
+            datetime.combine(self.now_date.replace(day=1).replace(month=1), datetime.min.time()) - relativedelta(
                 years=1),
             datetime.min.time())
         end = self.yesterday_date - relativedelta(years=1)
@@ -319,7 +319,7 @@ class Stat:
 
     def last_year(self, measurement_direction="consumption"):
         app.LOG.log("last_year")
-        begin = datetime.combine(self.now_date.replace(month=1).replace(day=1) - relativedelta(years=1),
+        begin = datetime.combine(self.now_date.replace(day=1).replace(month=1) - relativedelta(years=1),
                                  datetime.min.time())
         last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
         end = datetime.combine(begin.replace(day=last_day_of_month).replace(month=12), datetime.max.time())
@@ -373,8 +373,9 @@ class Stat:
 
     # STAT V2
     def get_year(self, year, measure_type=None, measurement_direction="consumption"):
-        begin = datetime.combine(self.now_date.replace(year=year).replace(month=1).replace(day=1), datetime.min.time())
-        end = datetime.combine(self.now_date.replace(year=year).replace(month=12).replace(day=31), datetime.max.time())
+        begin = datetime.combine(self.now_date.replace(year=year).replace(day=1).replace(month=1), datetime.min.time())
+        last_day_of_month = calendar.monthrange(year, 12)[1]
+        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=12), datetime.max.time())
         value = 0
         if measure_type is None:
             for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
@@ -409,9 +410,9 @@ class Stat:
     def get_month(self, year, month=None, measure_type=None, measurement_direction="consumption"):
         if month is None:
             month = int(datetime.now().strftime('%m'))
-        begin = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=1), datetime.min.time())
+        begin = datetime.combine(self.now_date.replace(year=year).replace(day=1).replace(month=month), datetime.min.time())
         last_day_of_month = calendar.monthrange(year, month)[1]
-        end = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=last_day_of_month), datetime.max.time())
+        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=month), datetime.max.time())
         value = 0
         if measure_type is None:
             for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):
@@ -449,8 +450,8 @@ class Stat:
         today = date.today()
         start = today - timedelta(days=today.weekday())
         end = start + timedelta(days=6)
-        begin = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=int(start.strftime("%d"))), datetime.min.time())
-        end = datetime.combine(self.now_date.replace(year=year).replace(month=month).replace(day=int(end.strftime("%d"))), datetime.max.time())
+        begin = datetime.combine(self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month), datetime.min.time())
+        end = datetime.combine(self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month), datetime.max.time())
         value = 0
         if measure_type is None:
             for day in app.DB.get_daily_range(self.usage_point_id, begin, end, measurement_direction):

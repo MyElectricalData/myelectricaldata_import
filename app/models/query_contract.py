@@ -1,9 +1,8 @@
 import __main__ as app
-import datetime
 import json
 import re
-
-from sqlalchemy.sql import func
+import traceback
+import datetime
 
 from dependencies import *
 from models.query import Query
@@ -36,16 +35,26 @@ class Contract:
                 response = response_json["customer"]["usage_points"][0]
                 usage_point = response["usage_point"]
                 contracts = response["contracts"]
+                response = contracts
+                response.update(usage_point)
+
                 if contracts['offpeak_hours'] is not None:
                     offpeak_hours = re.search('HC \((.*)\)', contracts['offpeak_hours']).group(1)
                 else:
                     offpeak_hours = ""
-                last_activation_date = (
-                    datetime.datetime.strptime(contracts['last_activation_date'], '%Y-%m-%d%z')
-                ).replace(tzinfo=None)
-                last_distribution_tariff_change_date = (
-                    datetime.datetime.strptime(contracts['last_distribution_tariff_change_date'], '%Y-%m-%d%z')
-                ).replace(tzinfo=None)
+                if "last_activation_date" in contracts and contracts["last_activation_date"] is not None:
+                    last_activation_date = (
+                        datetime.datetime.strptime(contracts['last_activation_date'], '%Y-%m-%d%z')
+                    ).replace(tzinfo=None)
+                else:
+                    last_activation_date = contracts['last_activation_date']
+                if "last_distribution_tariff_change_date" in contracts and contracts[
+                    "last_distribution_tariff_change_date"] is not None:
+                    last_distribution_tariff_change_date = (
+                        datetime.datetime.strptime(contracts['last_distribution_tariff_change_date'], '%Y-%m-%d%z')
+                    ).replace(tzinfo=None)
+                else:
+                    last_distribution_tariff_change_date = contracts['last_distribution_tariff_change_date']
                 self.db.set_contract(self.usage_point_id, {
                     "usage_point_status": usage_point["usage_point_status"],
                     "meter_type": usage_point["meter_type"],
@@ -65,6 +74,7 @@ class Contract:
                 })
             except Exception as e:
                 app.LOG.error(e)
+                traceback.print_exc()
                 response = {
                     "error": True,
                     "description": "Erreur lors de la récupération du contrat."
