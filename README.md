@@ -4,7 +4,7 @@
 [![Paypal][donation-paypal]](https://www.paypal.com/donate?token=4VJxlUnkdDFmdOVTUUV3wC-mx5CHjey1g4oC-4YVJivIljEYY_MLgZDbUF9TYT4yXd9pDbb8-q7XDXsL)
 
 [donation-badge]: https://img.shields.io/badge/Buy%20me%20a%20coffee-%23d32f2f?logo=buy-me-a-coffee&style=flat&logoColor=white
-[donation-paypal]: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwpformation.com%2Fintegrer-paypal-wordpress%2F&psig=AOvVaw3Yw3DOJBh4yCnCTaRzINUS&ust=1672755443907000&source=images&cd=vfe&ved=0CBAQjRxqFwoTCMC0nuOJqfwCFQAAAAAdAAAAABAS
+[donation-paypal]: https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/PayPal_logo.svg/2560px-PayPal_logo.svg.png
 
 ![Supports aarch64 Architecture][aarch64-shield] ![Supports amd64 Architecture][amd64-shield] ![Supports armhf Architecture][armhf-shield] ![Supports armv7 Architecture][armv7-shield]
 
