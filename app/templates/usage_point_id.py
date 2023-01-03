@@ -403,10 +403,10 @@ class UsagePointId:
 
     def consumption_max_power(self):
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
-            if hasattr(self.contract, "subscribed_power"):
+            if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
                 max_power = self.contract.subscribed_power.split(' ')[0]
             else:
-                max_power = 6
+                max_power = 999
             daily_result = Datatable(self.usage_point_id).html(
                 title="Puissance",
                 tag=f"consumption_max_power",

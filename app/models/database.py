@@ -1179,6 +1179,22 @@ class Database:
             .order_by(order)
         ).all()
 
+    def get_daily_max_power_range(self, usage_point_id, begin, end):
+        query = (
+            select(ConsumptionDailyMaxPower)
+            .join(UsagePoints.relation_consumption_daily_max_power)
+            .where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id)
+            .where(ConsumptionDailyMaxPower.date >= begin)
+            .where(ConsumptionDailyMaxPower.date <= end)
+            .order_by(ConsumptionDailyMaxPower.date.desc())
+        )
+        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        current_data = self.session.scalars(query).all()
+        if current_data is None:
+            return False
+        else:
+            return current_data
+
     def get_daily_power(self, usage_point_id, begin, end):
         delta = end - begin
         result = {

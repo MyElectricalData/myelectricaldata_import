@@ -2,9 +2,7 @@ import __main__ as app
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
-
 from models.stat import Stat
-from models.config import Config
 
 
 class ExportMqtt:
@@ -13,7 +11,7 @@ class ExportMqtt:
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
         self.date_format = "%Y-%m-%d"
-        self.stat = Stat(self.usage_point_id)
+        self.stat = Stat(self.usage_point_id, measurement_direction)
 
     def status(self):
         app.LOG.title(f"[{self.usage_point_id}] Statut du compte.")
@@ -65,7 +63,7 @@ class ExportMqtt:
             f"{self.usage_point_id}/status/last_call": str(last_call),
             f"{self.usage_point_id}/status/ban": str(ban)
         }
-        print(consentement_expiration)
+        # print(consentement_expiration)
         app.MQTT.publish_multiple(consentement_expiration)
         app.LOG.log(" => Finish")
 
@@ -106,9 +104,9 @@ class ExportMqtt:
             finish = False
             while not finish:
                 year = int(date_begin_current.strftime('%Y'))
-                get_daily_year = self.stat.get_year(year=year, measurement_direction=self.measurement_direction)
-                get_daily_month = self.stat.get_month(year=year, measurement_direction=self.measurement_direction)
-                get_daily_week = self.stat.get_week(year=year, measurement_direction=self.measurement_direction)
+                get_daily_year = self.stat.get_year(year=year)
+                get_daily_month = self.stat.get_month(year=year)
+                get_daily_week = self.stat.get_week(year=year)
                 sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{year}"
                 mqtt_data = {
                     # thisYear
@@ -132,10 +130,10 @@ class ExportMqtt:
                 }
 
                 for week in range(7):
-                    begin = self.stat.daily(week, measurement_direction=self.measurement_direction)["begin"]
+                    begin = self.stat.daily(week)["begin"]
                     begin_day = datetime.strptime(self.stat.daily(week)["begin"], self.date_format).strftime("%A")
-                    end = self.stat.daily(week, measurement_direction=self.measurement_direction)["end"]
-                    value = self.stat.daily(week, measurement_direction=self.measurement_direction)["value"]
+                    end = self.stat.daily(week)["end"]
+                    value = self.stat.daily(week)["value"]
                     mqtt_data[f"{sub_prefix}/week/{begin_day}/dateBegin"] = begin
                     mqtt_data[f"{sub_prefix}/week/{begin_day}/dateEnd"] = end
                     mqtt_data[f"{sub_prefix}/week/{begin_day}/base/Wh"] = value
@@ -143,8 +141,7 @@ class ExportMqtt:
                     mqtt_data[f"{sub_prefix}/week/{begin_day}/base/euro"] = round(value / 1000 * price, 2)
 
                 for month in range(1, 13):
-                    get_daily_month = self.stat.get_month(year=year, month=month,
-                                                          measurement_direction=self.measurement_direction)
+                    get_daily_month = self.stat.get_month(year=year, month=month)
                     mqtt_data[f"{sub_prefix}/month/{month}/dateBegin"] = get_daily_month["begin"]
                     mqtt_data[f"{sub_prefix}/month/{month}/dateEnd"] = get_daily_month["end"]
                     mqtt_data[f"{sub_prefix}/month/{month}/base/Wh"] = get_daily_month["value"]
@@ -182,12 +179,9 @@ class ExportMqtt:
                 else:
                     key = f"year-{idx}"
                 sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/linear/{key}"
-                get_daily_year_linear = self.stat.get_year_linear(idx,
-                                                                  measurement_direction=self.measurement_direction)
-                get_daily_month_linear = self.stat.get_month_linear(idx,
-                                                                    measurement_direction=self.measurement_direction)
-                get_daily_week_linear = self.stat.get_week_linear(idx,
-                                                                  measurement_direction=self.measurement_direction)
+                get_daily_year_linear = self.stat.get_year_linear(idx, )
+                get_daily_month_linear = self.stat.get_month_linear(idx)
+                get_daily_week_linear = self.stat.get_week_linear(idx)
                 mqtt_data = {
                     # thisYear
                     f"{sub_prefix}/thisYear/dateBegin": get_daily_year_linear["begin"],
@@ -238,18 +232,12 @@ class ExportMqtt:
             while not finish:
                 year = int(date_begin_current.strftime('%Y'))
                 month = int(datetime.now().strftime('%m'))
-                get_detail_year_hp = self.stat.get_year(year=year, measure_type="HP",
-                                                        measurement_direction=self.measurement_direction)
-                get_detail_year_hc = self.stat.get_year(year=year, measure_type="HC",
-                                                        measurement_direction=self.measurement_direction)
-                get_detail_month_hp = self.stat.get_month(year=year, month=month, measure_type="HP",
-                                                          measurement_direction=self.measurement_direction)
-                get_detail_month_hc = self.stat.get_month(year=year, month=month, measure_type="HC",
-                                                          measurement_direction=self.measurement_direction)
-                get_detail_week_hp = self.stat.get_week(year=year, month=month, measure_type="HP",
-                                                        measurement_direction=self.measurement_direction)
-                get_detail_week_hc = self.stat.get_week(year=year, month=month, measure_type="HC",
-                                                        measurement_direction=self.measurement_direction)
+                get_detail_year_hp = self.stat.get_year(year=year, measure_type="HP")
+                get_detail_year_hc = self.stat.get_year(year=year, measure_type="HC")
+                get_detail_month_hp = self.stat.get_month(year=year, month=month, measure_type="HP")
+                get_detail_month_hc = self.stat.get_month(year=year, month=month, measure_type="HC")
+                get_detail_week_hp = self.stat.get_week(year=year, month=month, measure_type="HP", )
+                get_detail_week_hc = self.stat.get_week(year=year, month=month, measure_type="HC", )
                 sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{year}"
                 mqtt_data = {
                     # thisYear - HP
@@ -283,7 +271,7 @@ class ExportMqtt:
                     begin_hp_day = (
                         datetime.strptime(self.stat.detail(week, "HP")["begin"], self.date_format).strftime("%A")
                     )
-                    value_hp = self.stat.detail(week, "HP", measurement_direction=self.measurement_direction)["value"]
+                    value_hp = self.stat.detail(week, "HP")["value"]
                     prefix = f"{sub_prefix}/week/{begin_hp_day}/hp"
                     mqtt_data[f"{prefix}/Wh"] = value_hp
                     mqtt_data[f"{prefix}/kWh"] = round(value_hp / 1000, 2)
@@ -291,7 +279,7 @@ class ExportMqtt:
                     # HC
                     begin_hc_day = (
                         datetime.strptime(
-                            self.stat.detail(week, "HC", measurement_direction=self.measurement_direction)["begin"],
+                            self.stat.detail(week, "HC")["begin"],
                             self.date_format).strftime("%A")
                     )
                     value_hc = self.stat.detail(week, "HC")["value"]
@@ -303,15 +291,13 @@ class ExportMqtt:
                 for month in range(12):
                     month = month + 1
                     # HP
-                    get_detail_month_hp = self.stat.get_month(year=year, month=month, measure_type="HP",
-                                                              measurement_direction=self.measurement_direction)
+                    get_detail_month_hp = self.stat.get_month(year=year, month=month, measure_type="HP")
                     prefix = f"{sub_prefix}/month/{month}/hp"
                     mqtt_data[f"{prefix}/Wh"] = get_detail_month_hp["value"]
                     mqtt_data[f"{prefix}/kWh"] = round(get_detail_month_hp["value"] / 1000, 2)
                     mqtt_data[f"{prefix}/euro"] = round(get_detail_month_hp["value"] / 1000 * price_hp, 2)
                     # HC
-                    get_detail_month_hc = self.stat.get_month(year=year, month=month, measure_type="HC",
-                                                              measurement_direction=self.measurement_direction)
+                    get_detail_month_hc = self.stat.get_month(year=year, month=month, measure_type="HC")
                     prefix = f"{sub_prefix}/month/{month}/hc"
                     mqtt_data[f"{prefix}/Wh"] = get_detail_month_hc["value"]
                     mqtt_data[f"{prefix}/kWh"] = round(get_detail_month_hc["value"] / 1000, 2)
@@ -346,30 +332,12 @@ class ExportMqtt:
                 else:
                     key = f"year-{idx}"
                 sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/linear/{key}"
-                get_daily_year_linear_hp = self.stat.get_year_linear(
-                    idx, "HP",
-                    measurement_direction=self.measurement_direction
-                )
-                get_daily_year_linear_hc = self.stat.get_year_linear(
-                    idx, "HC",
-                    measurement_direction=self.measurement_direction
-                )
-                get_detail_month_linear_hp = self.stat.get_month_linear(
-                    idx, "HP",
-                    measurement_direction=self.measurement_direction
-                )
-                get_detail_month_linear_hc = self.stat.get_month_linear(
-                    idx, "HC",
-                    measurement_direction=self.measurement_direction
-                )
-                get_detail_week_linear_hp = self.stat.get_week_linear(
-                    idx, "HP",
-                    measurement_direction=self.measurement_direction
-                )
-                get_detail_week_linear_hc = self.stat.get_week_linear(
-                    idx, "HC",
-                    measurement_direction=self.measurement_direction
-                )
+                get_daily_year_linear_hp = self.stat.get_year_linear(idx, "HP")
+                get_daily_year_linear_hc = self.stat.get_year_linear(idx, "HC")
+                get_detail_month_linear_hp = self.stat.get_month_linear(idx, "HP")
+                get_detail_month_linear_hc = self.stat.get_month_linear(idx, "HC")
+                get_detail_week_linear_hp = self.stat.get_week_linear(idx, "HP")
+                get_detail_week_linear_hc = self.stat.get_week_linear(idx, "HC", )
                 mqtt_data = {
                     # thisYear
                     f"{sub_prefix}/thisYear/hp/Wh": get_daily_year_linear_hp["value"],
@@ -433,6 +401,5 @@ class ExportMqtt:
                     mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 1
                 threshold_usage = int(100 * value_w / max_value)
                 mqtt_data[f"{sub_prefix}/percentage_usage"] = threshold_usage
-        print(mqtt_data)
+        # print(mqtt_data)
         app.MQTT.publish_multiple(mqtt_data)
-

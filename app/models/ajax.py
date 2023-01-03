@@ -203,7 +203,7 @@ class Ajax:
             return data
 
     def blacklist(self, target, date):
-        print(target)
+        # print(target)
         result = {}
         if target == "consumption":
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:

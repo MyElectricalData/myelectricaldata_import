@@ -61,7 +61,7 @@ class ExportMqtt:
             f"{self.usage_point_id}/status/last_call": str(last_call),
             f"{self.usage_point_id}/status/ban": str(ban)
         }
-        print(consentement_expiration)
+        # print(consentement_expiration)
         app.MQTT.publish_multiple(consentement_expiration)
         app.LOG.log(" => Finish")
 
