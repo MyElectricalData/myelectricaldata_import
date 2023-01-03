@@ -38,8 +38,8 @@ class Datatable:
                 <thead>
                     <tr>
                         <th class="title">Date</th>
-                        <th class="title">{title} (W)</th>
-                        <th class="title">{title} (kW)</th>
+                        <th class="title">{title} (Wh)</th>
+                        <th class="title">{title} (kWh)</th>
                         <th class="title">Échec</th>
                         <th class="title">En&nbsp;cache</th>
                         <th class="title">Cache</th>
