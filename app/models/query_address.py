@@ -1,9 +1,11 @@
-import json
-
 import __main__ as app
-from config import URL
+import json
+import traceback
+
 from dependencies import *
 from models.query import Query
+
+from config import URL
 
 
 class Address:
@@ -31,17 +33,28 @@ class Address:
                 response = response_json["customer"]["usage_points"][0]
                 usage_point = response["usage_point"]
                 usage_point_addresses = usage_point["usage_point_addresses"]
+                response = usage_point_addresses
+                response.update(usage_point)
                 self.db.set_addresse(self.usage_point_id, {
-                    "usage_points": str(usage_point["usage_point_id"]) if usage_point["usage_point_id"] is not None else "",
-                    "street": str(usage_point_addresses["street"]) if usage_point_addresses["street"] is not None else "",
-                    "locality": str(usage_point_addresses["locality"]) if usage_point_addresses["locality"] is not None else "",
-                    "postal_code": str(usage_point_addresses["postal_code"]) if usage_point_addresses["postal_code"] is not None else "",
-                    "insee_code": str(usage_point_addresses["insee_code"]) if usage_point_addresses["insee_code"] is not None else "",
+                    "usage_points": str(usage_point["usage_point_id"]) if usage_point[
+                                                                              "usage_point_id"] is not None else "",
+                    "street": str(usage_point_addresses["street"]) if usage_point_addresses[
+                                                                          "street"] is not None else "",
+                    "locality": str(usage_point_addresses["locality"]) if usage_point_addresses[
+                                                                              "locality"] is not None else "",
+                    "postal_code": str(usage_point_addresses["postal_code"]) if usage_point_addresses[
+                                                                                    "postal_code"] is not None else "",
+                    "insee_code": str(usage_point_addresses["insee_code"]) if usage_point_addresses[
+                                                                                  "insee_code"] is not None else "",
                     "city": str(usage_point_addresses["city"]) if usage_point_addresses["city"] is not None else "",
-                    "country": str(usage_point_addresses["country"]) if usage_point_addresses["country"] is not None else "",
-                    "geo_points": str(usage_point_addresses["geo_points"]) if usage_point_addresses["geo_points"] is not None else "",
+                    "country": str(usage_point_addresses["country"]) if usage_point_addresses[
+                                                                            "country"] is not None else "",
+                    "geo_points": str(usage_point_addresses["geo_points"]) if usage_point_addresses[
+                                                                                  "geo_points"] is not None else "",
                 })
-            except LookupError:
+            except Exception as e:
+                app.LOG.error(e)
+                traceback.print_exc()
                 response = {
                     "error": True,
                     "description": "Erreur lors de la récupération du contrat."
@@ -75,10 +88,7 @@ class Address:
                 app.LOG.debug(f" => {result}")
         if "error" not in result:
             for key, value in result.items():
-                if isinstance(value, dict):
-                    for k, v in value.items():
-                        app.LOG.log(f"  {k}: {v}")
-                else:
-                    app.LOG.log(f"{key}: {value}")
-
+                app.LOG.log(f"{key}: {value}")
+        else:
+            app.LOG.error(result)
         return result

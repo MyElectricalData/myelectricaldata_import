@@ -7,5 +7,5 @@ URL = "https://myelectricaldata.fr"
 MAX_IMPORT_TRY = 20
 cycle_minimun = 3600
 
-DAILY_MAX_DAYS = 1095
-DETAIL_MAX_DAYS = 729
+DAILY_MAX_DAYS = 1094
+DETAIL_MAX_DAYS = 728

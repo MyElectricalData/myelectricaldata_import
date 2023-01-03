@@ -31,6 +31,7 @@ class ExportInfluxDB:
             euro = kwatt * price
             if current_month != date.strftime('%m'):
                 app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
+            # app.INFLUXDB.delete(utc.localize(date), measurement_direction)
             app.INFLUXDB.write(
                 measurement=measurement_direction,
                 date=utc.localize(date),
