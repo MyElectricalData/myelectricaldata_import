@@ -31,18 +31,18 @@ class Detail:
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
         if (
                 measure_type == "consumption"
-                and hasattr(self.usage_point_config, "consumption_max_date")
-                and self.usage_point_config.consumption_max_date != ""
-                and self.usage_point_config.consumption_max_date is not None
+                and hasattr(self.usage_point_config, "consumption_detail_max_date")
+                and self.usage_point_config.consumption_detail_max_date != ""
+                and self.usage_point_config.consumption_detail_max_date is not None
         ):
-            self.activation_date = self.usage_point_config.consumption_max_date
+            self.activation_date = self.usage_point_config.production_detail_max_date
         elif (
                 measure_type == "production"
-                and hasattr(self.usage_point_config, "production_max_date")
-                and self.usage_point_config.production_max_date != ""
-                and self.usage_point_config.production_max_date is not None
+                and hasattr(self.usage_point_config, "production_detail_max_date")
+                and self.usage_point_config.production_detail_max_date != ""
+                and self.usage_point_config.production_detail_max_date is not None
         ):
-            self.activation_date = self.usage_point_config.production_max_date
+            self.activation_date = self.usage_point_config.production_detail_max_date
         elif (
                 hasattr(self.contract, "last_activation_date")
                 and self.contract.last_activation_date != ""
@@ -72,6 +72,9 @@ class Detail:
                 self.base_price = self.usage_point_config.production_price
 
     def run(self, begin, end):
+        print(begin, end)
+        if begin.strftime(self.date_format) == end.strftime(self.date_format):
+            end = end + datetime.timedelta(days=1)
         begin_str = begin.strftime(self.date_format)
         end_str = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
@@ -161,7 +164,6 @@ class Detail:
             app.LOG.error(e)
 
     def get(self):
-
         # REMOVE TODAY
         # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
         end = datetime.datetime.combine((datetime.datetime.now()), datetime.datetime.max.time())

@@ -362,6 +362,7 @@ class HomeAssistant:
             for i in range(7):
                 dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.price_base))
 
+        yesterday_consumption_max_power = 0
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
             yesterday_consumption_max_power = stats.max_power(0)["value"]
 
