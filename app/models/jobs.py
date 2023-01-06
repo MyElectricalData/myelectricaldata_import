@@ -226,6 +226,7 @@ class Job:
                     LOG.log(
                         f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
             LOG.finish()
+            self.usage_point_id = None
             DB.unlock()
             return {
                 "status": True,

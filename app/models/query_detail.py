@@ -72,7 +72,6 @@ class Detail:
                 self.base_price = self.usage_point_config.production_price
 
     def run(self, begin, end):
-        print(begin, end)
         if begin.strftime(self.date_format) == end.strftime(self.date_format):
             end = end + datetime.timedelta(days=1)
         begin_str = begin.strftime(self.date_format)
