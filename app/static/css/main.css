@@ -75,21 +75,21 @@ h1 {
 }
 
 h2 {
-    color: var(--main-bg-color);
-    letter-spacing: 2px;
+    color: var(--text-color);
     font-size: 17px;
-    background: var(--sde-bg-color);
-    border: 1px solid var(--main-bg-color);
-    border-radius: 10px;
+    background: var(--logo);
+    border: 1px solid var(--text-title);
+    border-radius: 15px;
     padding: 10px;
 }
 
 h3 {
-    color: var(--text-color);
+    color: var(--main-bg-color);
+    letter-spacing: 2px;
     font-size: 15px;
-    background: var(--logo);
-    border: 1px solid var(--text-title);
-    border-radius: 15px;
+    background: var(--sde-bg-color);
+    border: 1px solid var(--main-bg-color);
+    border-radius: 10px;
     padding: 10px;
 }
 

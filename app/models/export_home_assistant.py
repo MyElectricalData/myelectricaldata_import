@@ -31,17 +31,21 @@ class HomeAssistant:
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
         self.config = app.DB.get_usage_point(usage_point_id)
         if hasattr(self.config, "consumption_price_base"):
-            self.price_base = self.config.consumption_price_base
+            self.consumption_price_base = self.config.consumption_price_base
         else:
-            self.price_base = 0
+            self.consumption_price_base = 0
         if hasattr(self.config, "consumption_price_hp"):
-            self.price_hp = self.config.consumption_price_hp
+            self.consumption_price_hp = self.config.consumption_price_hp
         else:
-            self.price_hp = 0
+            self.consumption_price_hp = 0
         if hasattr(self.config, "consumption_price_hc"):
-            self.price_hc = self.config.consumption_price_hc
+            self.consumption_price_hc = self.config.consumption_price_hc
         else:
-            self.price_hc = 0
+            self.consumption_price_hc = 0
+        if hasattr(self.config, "production_price"):
+            self.production_price = self.config.production_price
+        else:
+            self.production_price = 0
         self.config_ha_config = app.CONFIG.home_assistant_config()
         if "card_myenedis" not in self.config_ha_config:
             self.card_myenedis = False
@@ -343,24 +347,37 @@ class HomeAssistant:
         yesterday_evolution = stats.yesterday_evolution()
         monthly_evolution = stats.monthly_evolution()
 
-        yesterday_last_year = app.DB.get_daily_date(self.usage_point_id, yesterday_last_year)
+        # app.LOG.show(yesterday_last_year)
+
+        yesterday_last_year = app.DB.get_daily_date(
+            self.usage_point_id,
+            datetime.combine(yesterday_last_year, datetime.min.time())
+        )
+
+        # app.LOG.show(yesterday_last_year)
 
         dailyweek_cost = []
-        if hasattr(self.config, "plan") and self.config.plan.upper() == "HC/HP":
-            daily_cost = (
-                    convert_kw_to_euro(stats.detail(0, "HC")["value"], self.price_hc)
-                    + convert_kw_to_euro(stats.detail(0, "HP")["value"], self.price_hp)
-            )
-            for i in range(7):
-                value = (
-                        convert_kw_to_euro(stats.detail(i, "HP")["value"], self.price_hp)
-                        + convert_kw_to_euro(stats.detail(i, "HC")["value"], self.price_hc)
+
+        if measurement_direction == "consumption":
+            if hasattr(self.config, "plan") and self.config.plan.upper() == "HC/HP":
+                daily_cost = (
+                        convert_kw_to_euro(stats.detail(0, "HC")["value"], self.consumption_price_hc)
+                        + convert_kw_to_euro(stats.detail(0, "HP")["value"], self.consumption_price_hp)
                 )
-                dailyweek_cost.append(round(value, 1))
+                for i in range(7):
+                    value = (
+                            convert_kw_to_euro(stats.detail(i, "HP")["value"], self.consumption_price_hp)
+                            + convert_kw_to_euro(stats.detail(i, "HC")["value"], self.consumption_price_hc)
+                    )
+                    dailyweek_cost.append(round(value, 1))
+            else:
+                daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.consumption_price_base)
+                for i in range(7):
+                    dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.consumption_price_base))
         else:
-            daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.price_base)
+            daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.production_price)
             for i in range(7):
-                dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.price_base))
+                dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.production_price))
 
         yesterday_consumption_max_power = 0
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
@@ -417,13 +434,13 @@ class HomeAssistant:
                     "dailyweek_cost": dailyweek_cost,
                     # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
                     "dailyweek_costHP": [
-                        convert_kw_to_euro(stats.detail(0, "HP")["value"], self.price_hp),
-                        convert_kw_to_euro(stats.detail(1, "HP")["value"], self.price_hp),
-                        convert_kw_to_euro(stats.detail(2, "HP")["value"], self.price_hp),
-                        convert_kw_to_euro(stats.detail(3, "HP")["value"], self.price_hp),
-                        convert_kw_to_euro(stats.detail(4, "HP")["value"], self.price_hp),
-                        convert_kw_to_euro(stats.detail(5, "HP")["value"], self.price_hp),
-                        convert_kw_to_euro(stats.detail(6, "HP")["value"], self.price_hp),
+                        convert_kw_to_euro(stats.detail(0, "HP")["value"], self.consumption_price_hp),
+                        convert_kw_to_euro(stats.detail(1, "HP")["value"], self.consumption_price_hp),
+                        convert_kw_to_euro(stats.detail(2, "HP")["value"], self.consumption_price_hp),
+                        convert_kw_to_euro(stats.detail(3, "HP")["value"], self.consumption_price_hp),
+                        convert_kw_to_euro(stats.detail(4, "HP")["value"], self.consumption_price_hp),
+                        convert_kw_to_euro(stats.detail(5, "HP")["value"], self.consumption_price_hp),
+                        convert_kw_to_euro(stats.detail(6, "HP")["value"], self.consumption_price_hp),
                     ],
                     "dailyweek_HP": [
                         convert_kw(stats.detail(0, "HP")["value"]),
@@ -435,7 +452,7 @@ class HomeAssistant:
                         convert_kw(stats.detail(6, "HP")["value"]),
                     ],
                     "daily_cost": daily_cost,
-                    "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.price_hp),
+                    "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.consumption_price_hp),
                     "yesterday_HP": convert_kw(yesterday_hp_value),
                     "day_1_HP": stats.detail(0, "HP")["value"],
                     "day_2_HP": stats.detail(1, "HP")["value"],
@@ -445,13 +462,13 @@ class HomeAssistant:
                     "day_6_HP": stats.detail(5, "HP")["value"],
                     "day_7_HP": stats.detail(6, "HP")["value"],
                     "dailyweek_costHC": [
-                        convert_kw_to_euro(stats.detail(0, "HC")["value"], self.price_hc),
-                        convert_kw_to_euro(stats.detail(1, "HC")["value"], self.price_hc),
-                        convert_kw_to_euro(stats.detail(2, "HC")["value"], self.price_hc),
-                        convert_kw_to_euro(stats.detail(3, "HC")["value"], self.price_hc),
-                        convert_kw_to_euro(stats.detail(4, "HC")["value"], self.price_hc),
-                        convert_kw_to_euro(stats.detail(5, "HC")["value"], self.price_hc),
-                        convert_kw_to_euro(stats.detail(6, "HC")["value"], self.price_hc),
+                        convert_kw_to_euro(stats.detail(0, "HC")["value"], self.consumption_price_hc),
+                        convert_kw_to_euro(stats.detail(1, "HC")["value"], self.consumption_price_hc),
+                        convert_kw_to_euro(stats.detail(2, "HC")["value"], self.consumption_price_hc),
+                        convert_kw_to_euro(stats.detail(3, "HC")["value"], self.consumption_price_hc),
+                        convert_kw_to_euro(stats.detail(4, "HC")["value"], self.consumption_price_hc),
+                        convert_kw_to_euro(stats.detail(5, "HC")["value"], self.consumption_price_hc),
+                        convert_kw_to_euro(stats.detail(6, "HC")["value"], self.consumption_price_hc),
                     ],
                     "dailyweek_HC": [
                         convert_kw(stats.detail(0, "HC")["value"]),
@@ -462,7 +479,7 @@ class HomeAssistant:
                         convert_kw(stats.detail(5, "HC")["value"]),
                         convert_kw(stats.detail(6, "HC")["value"]),
                     ],
-                    "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.price_hc),
+                    "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.consumption_price_hc),
                     "yesterday_HC": convert_kw(yesterday_hc_value),
                     "day_1_HC": stats.detail(0, "HC")["value"],
                     "day_2_HC": stats.detail(1, "HC")["value"],

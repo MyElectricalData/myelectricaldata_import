@@ -122,6 +122,8 @@ def create_release(prerelease=False):
         choices=[*[Choice("custom", "Custom release version")], *new_version, *tags],
     ).execute()
 
+    branch = version
+
     if version == "custom":
         version = inquirer.text(
             message="Which release would you create ?",
@@ -159,6 +161,7 @@ def create_release(prerelease=False):
         commit_msg = inquirer.text(message="Commit message").execute()
         os.system("git add --all")
         os.system(f"git commit -m \"{commit_msg}\"")
+        os.system(f"git push origin {branch}")
 
     if rebuild_confirm:
         app.LOG.log(f"Delete release {version} on remote")

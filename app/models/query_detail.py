@@ -165,7 +165,7 @@ class Detail:
     def get(self):
         # REMOVE TODAY
         # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
-        end = datetime.datetime.combine((datetime.datetime.now()), datetime.datetime.max.time())
+        end = datetime.datetime.combine((datetime.datetime.now() + datetime.timedelta(days=2)), datetime.datetime.min.time())
         begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_detail), datetime.datetime.min.time())
         finish = True
         result = []
@@ -207,14 +207,36 @@ class Detail:
 
         return result
 
+    def reset_daily(self, date):
+        begin = datetime.datetime.combine(datetime.datetime.strptime(date, self.date_format), datetime.datetime.min.time())
+        end = datetime.datetime.combine(datetime.datetime.strptime(date, self.date_format), datetime.datetime.max.time())
+        self.db.reset_detail_range(self.usage_point_id, begin, end, self.measure_type)
+        return True
+
+    def delete_daily(self, date):
+        begin = datetime.datetime.combine(datetime.datetime.strptime(date, self.date_format), datetime.datetime.min.time())
+        end = datetime.datetime.combine(datetime.datetime.strptime(date, self.date_format), datetime.datetime.max.time())
+        self.db.delete_detail_range(self.usage_point_id, begin, end, self.measure_type)
+        return True
+
     def reset(self, date=None):
+        if date is not None:
+            date = datetime.datetime.strptime(date, self.date_detail_format)
+        self.db.reset_detail(self.usage_point_id, date, self.measure_type)
+        return True
+
+    def delete(self, date=None):
+        if date is not None:
+            date = datetime.datetime.strptime(date, self.date_detail_format)
         self.db.delete_detail(self.usage_point_id, date, self.measure_type)
         return True
 
     def fetch(self, date):
+        if date is not None:
+            date = datetime.datetime.strptime(date, self.date_format)
         result = self.run(
-            datetime.datetime.strptime(date, self.date_format) - datetime.timedelta(days=1),
-            datetime.datetime.strptime(date, self.date_format) + datetime.timedelta(days=1),
+            date - datetime.timedelta(days=1),
+            date + datetime.timedelta(days=1),
         )
         if "error" in result and result["error"]:
             return {
@@ -222,9 +244,15 @@ class Detail:
                 "notif": result['description'],
                 "fail_count": self.db.get_detail_fail_count(self.usage_point_id, date, self.measure_type)
             }
+
         for item in result:
-            if date in item['date']:
+            if type(item['date']) == str:
+              item['date'] = datetime.datetime.strptime(item['date'], self.date_detail_format)
+            result_date = item['date'].strftime(self.date_format)
+            if date.strftime(self.date_format) in result_date:
+                item["date"] = result_date
                 return item
+
         return {
             "error": True,
             "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({date})",

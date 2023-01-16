@@ -127,7 +127,6 @@ class Datatable:
                                 <input type="button"  value="Whitelist"></div>
                             """
                         else:
-
                             blacklist = f"""
                             <div class="datatable_button datatable_blacklist" title="{tag}" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}">
                                 <input type="button" value="Blacklist"></div>

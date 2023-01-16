@@ -78,9 +78,6 @@ class Daily:
             else:
                 app.LOG.log(f" => Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
-                # print("----------------------")
-                # print(data.text)
-                # print("----------------------")
                 blacklist = 0
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
@@ -127,7 +124,7 @@ class Daily:
 
         # REMOVE TODAY
         # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
-        end = datetime.datetime.combine((datetime.datetime.now()), datetime.datetime.max.time())
+        end = datetime.datetime.combine((datetime.datetime.now() + datetime.timedelta(days=2)), datetime.datetime.max.time())
         # begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_daily), datetime.datetime.min.time())
         begin = datetime.datetime.combine(end - relativedelta(months=self.max_daily), datetime.datetime.min.time())
 
@@ -172,6 +169,12 @@ class Daily:
         return result
 
     def reset(self, date=None):
+        if date is not None:
+            date = datetime.datetime.strptime(date, self.date_format)
+        self.db.reset_daily(self.usage_point_id, date, self.measure_type)
+        return True
+
+    def delete(self, date=None):
         if date is not None:
             date = datetime.datetime.strptime(date, self.date_format)
         self.db.delete_daily(self.usage_point_id, date, self.measure_type)
