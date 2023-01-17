@@ -10,7 +10,7 @@ Si vous souhaitez participer au projet :
   <input type="hidden" name="business" value="FY25JLXDYLXAJ">
   <input type="hidden" name="no_recurring" value="0">
   <input type="hidden" name="currency_code" value="EUR">
-  <input type="image" id="paypal_img" src="/static/img/paypal.png" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Bouton Faites un don avec PayPal">
+  <input type="image" id="paypal_img" src="https://companieslogo.com/img/orig/PYPL-3570673e.png?t=1633695449" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Bouton Faites un don avec PayPal">
   <img alt="" border="0" src="https://www.paypal.com/fr_FR/i/scr/pixel.gif" width="1" height="1">
 </form>
 
