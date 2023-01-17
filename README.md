@@ -5,7 +5,8 @@
 Si vous souhaitez participer au projet :
 
 [![Donate][donation-badge]](https://www.buymeacoffee.com/m4dm4rtig4n)
-[![Donate][donation-paypal]](paypal.me/m4dm4rtig4n)
+
+[![Donate][donation-paypal]](https://www.paypal.me/m4dm4rtig4n)
 
 <form action="https://www.paypal.com/donate" method="post" target="_top" style="height: 55px;" id="paypal_form">
   <input type="hidden" name="business" value="FY25JLXDYLXAJ">
