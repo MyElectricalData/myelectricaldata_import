@@ -40,6 +40,7 @@ class Stat:
         self.value_current_month_evolution = 0
         self.value_peak_offpeak_percent_hp_vs_hc = 0
         self.value_monthly_evolution = 0
+        self.usage_point_id_contract = app.DB.get_contract(self.usage_point_id)
 
     def daily(self, index=0):
         begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
@@ -81,6 +82,25 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
+        
+    def max_power_over(self, index=0):
+        max_power = 0
+        if hasattr(self.usage_point_id_contract,
+                   "subscribed_power") and self.usage_point_id_contract.subscribed_power is not None:
+            max_power = int(self.usage_point_id_contract.subscribed_power.split(' ')[0])
+        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        end = datetime.combine(begin, datetime.max.time())
+        value = 0
+        boolv = "true"
+        for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
+            value = value + data.value
+            if (value / 1000) < max_power:
+                boolv = "false"
+        return {
+            "value": boolv,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }  
 
     def current_week_array(self):
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
