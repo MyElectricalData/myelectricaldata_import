@@ -518,7 +518,7 @@ class Ajax:
                 1: "date",
                 2: "value",
                 3: "value",
-                4: "ampere",
+                4: "value",
                 5: "fail_count",
                 6: "cache",
                 7: "import_clean",
@@ -647,7 +647,7 @@ class Ajax:
     def datatable_max_power(self, all_data, start_index, end_index):
         index = 0
         result = []
-        measurement_direction = "maxpower"
+        measurement_direction = "consumption_max_power"
         event_date = ""
         target = "daily"
         contract = self.db.get_contract(self.usage_point_id)
@@ -658,19 +658,20 @@ class Ajax:
         for db_data in all_data:
             if start_index <= index <= end_index:
                 date_text = db_data.date.strftime(self.date_format)
-                ampere = f"{round(int(db_data.value) / 220, 1)}"
+                ampere = f"{round(int(db_data.value) / 230, 2)}"
                 if isinstance(db_data.event_date, datetime):
                     event_date = db_data.event_date.strftime("%H:%M:%S")
                 # VALUE
                 if max_power <= int(db_data.value):
                     style = 'style="color:#FF0000; font-weight:bolder"'
-                elif (max_power * 80 / 100) <= db_data.value:
+                elif (max_power * 90 / 100) <= db_data.value:
                     style = 'style="color:#FFB600; font-weight:bolder"'
                 else:
                     style = ""
+                data_text_event_date = f"""<div id="{measurement_direction}_conso_event_date_{date_text}" {style}>{event_date}</div>"""
                 conso_w = f"""<div id="{measurement_direction}_conso_w_{date_text}" {style}>{db_data.value}</div>"""
                 conso_kw = f"""<div id="{measurement_direction}_conso_kw_{date_text}" {style}>{db_data.value / 1000}</div>"""
-                conso_a = f"""<div id="{measurement_direction}_fail_count_{date_text}" {style}>{ampere}</div>"""
+                conso_a = f"""<div id="{measurement_direction}_conso_a_{date_text}" {style}>{ampere}</div>"""
                 fail_count = f"""<div id="{measurement_direction}_fail_count_{date_text}" {style}>{db_data.fail_count}</div>"""
 
                 # CACHE STATE
@@ -680,7 +681,7 @@ class Ajax:
                     cache_state = f'<div id="{measurement_direction}_icon_{target}_{date_text}" class="icon_failed">0</div>'
                 day_data = [
                     date_text,
-                    event_date,
+                    data_text_event_date,
                     conso_w,
                     conso_kw,
                     conso_a,

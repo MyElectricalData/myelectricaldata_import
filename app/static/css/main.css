@@ -66,12 +66,12 @@ a {
 
 h1 {
     font-size: 24px;
-    background: #FFF;
-    color: var(--sde-bg-color);
     border-radius: 10px;
     padding: 10px;
-    border: 1px solid var(--sde-bg-color);
     margin-top: 50px;
+    color: var(--main-bg-color);
+    background: var(--sde-bg-color);
+    border: 1px solid var(--main-bg-color);
 }
 
 h2 {
@@ -84,13 +84,13 @@ h2 {
 }
 
 h3 {
-    color: var(--main-bg-color);
     letter-spacing: 2px;
     font-size: 15px;
-    background: var(--sde-bg-color);
-    border: 1px solid var(--main-bg-color);
     border-radius: 10px;
     padding: 10px;
+    background: #FFF;
+    color: var(--sde-bg-color);
+    border: 1px solid var(--sde-bg-color);
 }
 
 #footer {

@@ -196,6 +196,9 @@ class UsagePointId:
             body += "<h1>Récapitulatif</h1>"
             # RECAP CONSUMPTION
             if hasattr(self.config, "consumption") and self.config.consumption:
+                self.generate_data("consumption")
+                self.consumption()
+                print(self.recap_consumption_data)
                 recap_consumption = self.recap(data=self.recap_consumption_data)
                 body += f"<h2>Consommation</h2>"
                 body += str(recap_consumption)
@@ -211,6 +214,8 @@ class UsagePointId:
 
             # RECAP PRODUCTION
             if hasattr(self.config, "production") and self.config.production:
+                self.generate_data("production")
+                self.production()
                 recap_production = self.recap(data=self.recap_production_data)
                 body += f"<h2>Production</h2>"
                 body += str(recap_production)
@@ -291,6 +296,23 @@ class UsagePointId:
             if hasattr(self.config,
                        "consumption_max_power") and self.config.consumption_max_power:
                 body += f"<h2>Puissance Maximale</h2>"
+                if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
+                    max_power = self.contract.subscribed_power.split(' ')[0]
+                else:
+                    max_power = 999
+                body += f"Votre abonnement : <b>{max_power}kVA</b>"
+                body += f"<input style='display: none' type='text' value='{max_power}' id='consumption_max_power'>"
+                body += f"""
+                <table style='border: none;'>
+                    <tr>
+                        <td style='width: 30px; background-color: #FFB600'>&nbsp;</td>
+                        <td style='border: none'>Seuil des 90% de l'abonnement atteint.</td>
+                    </tr>
+                    <tr>
+                        <td style='width: 30px; background-color: #FF0000'>&nbsp;</td>
+                        <td style='border: none'>Dépassement de l'abonnement maximal.</td>
+                    </tr>
+                </table>"""
                 body += f"""
                 <table id="dataTablePuissance" class="display">
                     <thead>
@@ -479,159 +501,135 @@ class UsagePointId:
         else:
             return None
 
-    # def consumption(self):
-    #     if hasattr(self.config, "consumption") and self.config.consumption:
-    #         daily_result = Datatable(self.usage_point_id).html(
-    #             title="Consommation",
-    #             tag="consumption",
-    #             daily_data=self.db.get_daily_all(self.usage_point_id, "consumption"),
-    #             cache_last_date=self.db.get_daily_last_date(self.usage_point_id, "consumption")
-    #         )
-    #         if daily_result['recap']:
-    #             self.recap_consumption_data = daily_result["recap"]
-    #             self.comsumption_datatable = daily_result["html"]
-    #             self.javascript += """
-    #             google.charts.load("current", {packages:["corechart"]});
-    #             google.charts.setOnLoadCallback(drawChartConsumption);
-    #             function drawChartConsumption() {
-    #                 var data = google.visualization.arrayToDataTable([
-    #             """
-    #             format_table = {}
-    #             years_array = ""
-    #             max_history = self.current_years - self.max_history_chart
-    #             for years, data in self.recap_consumption_data.items():
-    #                 if years > str(max_history):
-    #                     years_array += f"'{years}', "
-    #                     for month, value in data['month'].items():
-    #                         if month not in format_table:
-    #                             format_table[month] = []
-    #                         format_table[month].append(value)
-    #             self.javascript += f"['Month', {years_array}],"
-    #             for month, val in format_table.items():
-    #                 table_value = ""
-    #                 for idx, c in enumerate(val):
-    #                     table_value += str(c / 1000)
-    #                     if idx + 1 < len(val):
-    #                         table_value += ", "
-    #                 self.javascript += f"['{month}', {table_value}],"
-    #             self.javascript += """]);
-    #                         var options = {
-    #                           title : '',
-    #                           vAxis: {title: 'Consommation (kWh)'},
-    #                           hAxis: {title: 'Mois'},
-    #                           seriesType: 'bars',
-    #                           series: {5: {type: 'line'}}
-    #                         };
-    #
-    #                         var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption'));
-    #                         chart.draw(data, options);
-    #                     }
-    #                         """
-    #
-    # def consumption_max_power(self):
-    #     if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
-    #         if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
-    #             max_power = self.contract.subscribed_power.split(' ')[0]
-    #         else:
-    #             max_power = 999
-    #         daily_result = Datatable(self.usage_point_id).html(
-    #             title="Puissance",
-    #             tag=f"consumption_max_power",
-    #             daily_data=self.db.get_daily_max_power_all(self.usage_point_id),
-    #             cache_last_date=self.db.get_daily_max_power_last_date(self.usage_point_id),
-    #             option={
-    #                 "max_power": max_power
-    #             }
-    #         )
-    #         if daily_result['recap']:
-    #             self.recap_consumption_max_power = daily_result["recap"]
-    #             self.consumption_max_power_datatable = daily_result["html"]
-    #             self.javascript += """
-    #             google.charts.load("current", {packages:["corechart"]});
-    #             google.charts.setOnLoadCallback(drawChartConsumptionMaxPower);
-    #             function drawChartConsumptionMaxPower() {
-    #                 var data = google.visualization.arrayToDataTable([
-    #             """
-    #             format_table = {}
-    #             years_array = ""
-    #             max_history = self.current_years - self.max_history_chart
-    #             for years, data in self.recap_consumption_max_power.items():
-    #                 if years > str(max_history):
-    #                     years_array += f"'{years}', "
-    #                     for month, value in data['month'].items():
-    #                         if month not in format_table:
-    #                             format_table[month] = []
-    #                         format_table[month].append(value)
-    #             self.javascript += f"['Month', {years_array}],"
-    #             for month, val in format_table.items():
-    #                 table_value = ""
-    #                 for idx, c in enumerate(val):
-    #                     table_value += str(c / 1000)
-    #                     if idx + 1 < len(val):
-    #                         table_value += ", "
-    #                 self.javascript += f"['{month}', {table_value}],"
-    #             self.javascript += """]);
-    #                         var options = {
-    #                           title : '',
-    #                           vAxis: {title: 'Puissance Maximale (Watt)'},
-    #                           hAxis: {title: 'Mois'},
-    #                           seriesType: 'bars',
-    #                           series: {5: {type: 'line'}}
-    #                         };
-    #
-    #                         var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption_max_power'));
-    #                         chart.draw(data, options);
-    #                     }
-    #                         """
-    #
-    # def production(self):
-    #     if hasattr(self.config, "production") and self.config.production:
-    #         daily_result = Datatable(self.usage_point_id).html(
-    #             title="Production",
-    #             tag="production",
-    #             daily_data=self.db.get_daily_all(self.usage_point_id, "production"),
-    #             cache_last_date=self.db.get_daily_last_date(self.usage_point_id, "production")
-    #         )
-    #         if daily_result['recap']:
-    #             self.recap_production_data = daily_result["recap"]
-    #             self.production_datatable = daily_result["html"]
-    #             self.javascript += """
-    #             google.charts.load("current", {packages:["corechart"]});
-    #             google.charts.setOnLoadCallback(drawChartProduction);
-    #             function drawChartProduction() {
-    #                 var data = google.visualization.arrayToDataTable([
-    #             """
-    #             format_table = {}
-    #             years_array = ""
-    #             max_history = self.current_years - self.max_history_chart
-    #             for years, data in self.recap_production_data.items():
-    #                 if years > str(max_history):
-    #                     years_array += f"'{years}', "
-    #                     for month, value in data['month'].items():
-    #                         if month not in format_table:
-    #                             format_table[month] = []
-    #                         format_table[month].append(value)
-    #             self.javascript += f"['Month', {years_array}],"
-    #             for month, val in format_table.items():
-    #                 table_value = ""
-    #                 for idx, c in enumerate(val):
-    #                     table_value += str(c / 1000)
-    #                     if idx + 1 < len(val):
-    #                         table_value += ", "
-    #                 self.javascript += f"['{month}', {table_value}],"
-    #             self.javascript += """]);
-    #                             var options = {
-    #                               title : 'Production journalière',
-    #                               vAxis: {title: 'Consommation (kWh)'},
-    #                               hAxis: {title: 'Mois'},
-    #                               seriesType: 'bars',
-    #                               series: {5: {type: 'line'}}
-    #                             };
-    #
-    #                             var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production'));
-    #                             chart.draw(data, options);
-    #                         }
-    #                         """
+    def consumption(self):
+        if hasattr(self.config, "consumption") and self.config.consumption:
+            if self.recap_consumption_data:
+                self.javascript += """
+                google.charts.load("current", {packages:["corechart"]});
+                google.charts.setOnLoadCallback(drawChartConsumption);
+                function drawChartConsumption() {
+                    var data = google.visualization.arrayToDataTable([
+                """
+                format_table = {}
+                years_array = ""
+                max_history = self.current_years - self.max_history_chart
+                for years, data in self.recap_consumption_data.items():
+                    if years > str(max_history):
+                        years_array += f"'{years}', "
+                        for month, value in data['month'].items():
+                            if month not in format_table:
+                                format_table[month] = []
+                            format_table[month].append(value)
+                self.javascript += f"['Month', {years_array}],"
+                for month, val in format_table.items():
+                    table_value = ""
+                    for idx, c in enumerate(val):
+                        table_value += str(c / 1000)
+                        if idx + 1 < len(val):
+                            table_value += ", "
+                    self.javascript += f"['{month}', {table_value}],"
+                self.javascript += """]);
+                            var options = {
+                              title : '',
+                              vAxis: {title: 'Consommation (kWh)'},
+                              hAxis: {title: 'Mois'},
+                              seriesType: 'bars',
+                              series: {5: {type: 'line'}}
+                            };
+
+                            var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption'));
+                            chart.draw(data, options);
+                        }
+                            """
+
+    def consumption_max_power(self):
+        if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+            if self.recap_consumption_max_power:
+                self.javascript += """
+                google.charts.load("current", {packages:["corechart"]});
+                google.charts.setOnLoadCallback(drawChartConsumptionMaxPower);
+                function drawChartConsumptionMaxPower() {
+                    var data = google.visualization.arrayToDataTable([
+                """
+                format_table = {}
+                years_array = ""
+                max_history = self.current_years - self.max_history_chart
+                for years, data in self.recap_consumption_max_power.items():
+                    if years > str(max_history):
+                        years_array += f"'{years}', "
+                        for month, value in data['month'].items():
+                            if month not in format_table:
+                                format_table[month] = []
+                            format_table[month].append(value)
+                self.javascript += f"['Month', {years_array}],"
+                for month, val in format_table.items():
+                    table_value = ""
+                    for idx, c in enumerate(val):
+                        table_value += str(c / 1000)
+                        if idx + 1 < len(val):
+                            table_value += ", "
+                    self.javascript += f"['{month}', {table_value}],"
+                self.javascript += """]);
+                            var options = {
+                              title : '',
+                              vAxis: {title: 'Puissance Maximale (Watt)'},
+                              hAxis: {title: 'Mois'},
+                              seriesType: 'bars',
+                              series: {5: {type: 'line'}}
+                            };
+
+                            var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption_max_power'));
+                            chart.draw(data, options);
+                        }
+                            """
+
+    def production(self):
+        if hasattr(self.config, "production") and self.config.production:
+            # daily_result = Datatable(self.usage_point_id).html(
+            #     title="Production",
+            #     tag="production",
+            #     daily_data=self.db.get_daily_all(self.usage_point_id, "production"),
+            #     cache_last_date=self.db.get_daily_last_date(self.usage_point_id, "production")
+            # )
+            if self.recap_production_data:
+                # self.production_datatable = daily_result["html"]
+                self.javascript += """
+                google.charts.load("current", {packages:["corechart"]});
+                google.charts.setOnLoadCallback(drawChartProduction);
+                function drawChartProduction() {
+                    var data = google.visualization.arrayToDataTable([
+                """
+                format_table = {}
+                years_array = ""
+                max_history = self.current_years - self.max_history_chart
+                for years, data in self.recap_production_data.items():
+                    if years > str(max_history):
+                        years_array += f"'{years}', "
+                        for month, value in data['month'].items():
+                            if month not in format_table:
+                                format_table[month] = []
+                            format_table[month].append(value)
+                self.javascript += f"['Month', {years_array}],"
+                for month, val in format_table.items():
+                    table_value = ""
+                    for idx, c in enumerate(val):
+                        table_value += str(c / 1000)
+                        if idx + 1 < len(val):
+                            table_value += ", "
+                    self.javascript += f"['{month}', {table_value}],"
+                self.javascript += """]);
+                                var options = {
+                                  title : 'Production journalière',
+                                  vAxis: {title: 'Consommation (kWh)'},
+                                  hAxis: {title: 'Mois'},
+                                  seriesType: 'bars',
+                                  series: {5: {type: 'line'}}
+                                };
+
+                                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production'));
+                                chart.draw(data, options);
+                            }
+                            """
 
     def consumption_vs_production(self):
         if (
@@ -719,6 +717,24 @@ class UsagePointId:
             self.javascript += f"var chart = new google.visualization.PieChart(document.getElementById('piChart{year}'));"
             self.javascript += """chart.draw(data, options);
             }"""
+
+    def generate_data(self, measurement_direction):
+        data = app.DB.get_daily_all(self.usage_point_id, measurement_direction)
+        result = {}
+        for item in data:
+            year = item.date.strftime("%Y")
+            month = item.date.strftime("%m")
+            if year not in result:
+                result[year] = {"value": 0, "month": {}}
+            if month not in result[year]:
+                result[year]["month"][month] = 0
+            result[year]["value"] = result[year]["value"] + item.value
+            result[year]["month"][month] = result[year]["month"][month] + item.value
+
+        if measurement_direction == "consumption":
+            self.recap_consumption_data = result
+        else:
+            self.recap_production_data = result
 
     def recap(self, data):
         if data:

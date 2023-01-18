@@ -21,11 +21,12 @@ class Daily:
         self.url = URL
         self.max_daily = 1095
         self.date_format = '%Y-%m-%d'
+        self.date_detail_format = '%Y-%m-%d %H:%M:%S'
         self.headers = headers
         self.usage_point_id = usage_point_id
         self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
         self.contract = self.db.get_contract(self.usage_point_id)
-        self.daily_max_days = DAILY_MAX_DAYS
+        self.daily_max_days = int(DAILY_MAX_DAYS)
         self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
         if (
                 measure_type == "consumption"

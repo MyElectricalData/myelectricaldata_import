@@ -37,6 +37,7 @@ $(document.body).on('click', '.datatable_button', function () {
                             $('[id="' + tag + '_conso_event_date_' + date + '"]').html("");
                             $('[id="' + tag + '_conso_w_' + date + '"]').html("0");
                             $('[id="' + tag + '_conso_kw_' + date + '"]').html("0");
+                            $('[id="' + tag + '_conso_a_' + date + '"]').html("0");
                             $('[id="' + tag + '_fail_count_' + date + '"]').html(data["result"]['fail_count']);
                             $('[id="' + tag + '_blacklist_' + date + '"]').css("display", "block");
                             $('[id="' + tag + '_whitelist_' + date + '"]').css("display", "none")
@@ -50,6 +51,9 @@ $(document.body).on('click', '.datatable_button', function () {
                                 $('[id="' + tag + '_conso_event_date_' + date + '"]').html(data["result"]['event_date']);
                                 $('[id="' + tag + '_conso_w_' + date + '"]').html(data["result"]['value']);
                                 $('[id="' + tag + '_conso_kw_' + date + '"]').html(data["result"]['value'] / 1000);
+                                ampere = data["result"]['value'] / 230
+                                ampere = Math.round((ampere + Number.EPSILON) * 100) / 100
+                                $('[id="' + tag + '_conso_a_' + date + '"]').html(ampere);
                                 $('[id="' + tag + '_fail_count_' + date + '"]').html(data["result"]['fail_count']);
                                 $('[id="' + tag + '_blacklist_' + date + '"]').css("display", "block");
                                 $('[id="' + tag + '_whitelist_' + date + '"]').css("display", "none");
@@ -252,14 +256,14 @@ let datatable_consumption_detail = {
         },
     ],
     columns: [
-        {"width": "30%"},
-        {"width": "30%"},
-        {"width": "30%"},
-        {"width": "30%"},
+        {"width": "20%"},
+        {"width": "20%"},
+        {"width": "20%"},
+        {"width": "20%"},
         {"width": "10px"},
-        {"width": "50px"},
-        {"width": "50px"},
-        {"width": "50px"},
+        {"width": "10px"},
+        {"width": "10px"},
+        {"width": "10px"},
     ],
     order: [[0, 'asc']],
     language: french
@@ -381,14 +385,14 @@ let datatable_production_detail = {
         },
     ],
     columns: [
-        {"width": "30%"},
-        {"width": "30%"},
-        {"width": "30%"},
-        {"width": "30%"},
+        {"width": "20%"},
+        {"width": "20%"},
+        {"width": "20%"},
+        {"width": "20%"},
         {"width": "10px"},
-        {"width": "50px"},
-        {"width": "50px"},
-        {"width": "50px"},
+        {"width": "10px"},
+        {"width": "10px"},
+        {"width": "10px"},
     ],
     order: [[0, 'asc']],
     language: french
@@ -408,6 +412,10 @@ let datatable_config_power = {
     },
     columnDefs: [
         {
+            targets: 0,
+            className: 'dt-body-center dt-head-center',
+        },
+        {
             targets: 1,
             className: 'dt-body-center dt-head-center',
         },
@@ -424,21 +432,22 @@ let datatable_config_power = {
             className: 'dt-body-center dt-head-center',
         },
         {
-            targets: -1,
+            targets: 5,
             className: 'dt-body-center dt-head-center',
         },
         {
-            targets: -2,
-            className: 'dt-body-center dt-head-center',
-        },
-        {
-            targets: -3,
+            targets: 6,
             className: 'dt-head-center',
         },
         {
-            targets: -4,
-            className: 'dt-body-center dt-head-center',
-        }
+            targets: 7,
+            className: 'dt-body-center dt-head-center loading_bg',
+        },
+        {
+            targets: 8,
+            className: 'dt-body-center dt-head-center loading_bg',
+        },
+
     ],
     columns: [
         {"width": "30%"},
@@ -451,7 +460,7 @@ let datatable_config_power = {
         {"width": "50px"},
         {"width": "50px"},
     ],
-    order: [[0, 'desc']],
+    order: [[0, 'asc']],
     language: french
 }
 $('#dataTableConsommation').DataTable(datatable_consumption);
