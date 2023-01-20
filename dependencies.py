@@ -20,7 +20,7 @@ def cmd(cmd, path="./"):
     )
 
 def system(cmd):
-    app.LOG.warning(cmd)
+    app.LOG.title_warning(cmd)
     os.system(cmd)
 
 def switch_version(version):
