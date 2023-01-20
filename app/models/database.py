@@ -4,10 +4,6 @@ import os
 from datetime import datetime, timedelta
 from os.path import exists
 
-from sqlalchemy import (create_engine, delete, inspect, select)
-from sqlalchemy.orm import sessionmaker
-
-from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
     Contracts,
@@ -22,6 +18,10 @@ from db_schema import (
 from dependencies import str2bool
 from models.config import get_version
 from models.log import Log
+from sqlalchemy import (create_engine, delete, inspect, select, func, desc, asc)
+from sqlalchemy.orm import sessionmaker
+
+from config import MAX_IMPORT_TRY
 
 LOG = Log()
 
@@ -39,6 +39,8 @@ class Database:
 
         self.lock_file = f"{self.path}/.lock"
 
+        self.yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
+
         # MIGRATE v7 to v8
         if os.path.isfile(f"{self.path}/enedisgateway.db"):
             LOG.title_warning("Migration de l'ancienne base de données vers la nouvelle structure.")
@@ -46,7 +48,7 @@ class Database:
 
     def migratev7tov8(self):
         uri = f'sqlite:///{self.path}/enedisgateway.db'
-        engine = create_engine(uri, echo=False, query_cache_size=0)
+        engine = create_engine(uri, echo=True, query_cache_size=0)
         session = sessionmaker(engine)(autocommit=True, autoflush=True)
 
         for measurement_direction in ["consumption", "production"]:
@@ -250,25 +252,25 @@ class Database:
         else:
             production_price = 0
         if (
-            "consumption_price_base" in data
-            and data["consumption_price_base"] is not None
-            and data["consumption_price_base"] != ""
+                "consumption_price_base" in data
+                and data["consumption_price_base"] is not None
+                and data["consumption_price_base"] != ""
         ):
             consumption_price_base = data["consumption_price_base"]
         else:
             consumption_price_base = 0
         if (
-            "consumption_price_hc" in data
-            and data["consumption_price_hc"] is not None
-            and data["consumption_price_hc"] != ""
+                "consumption_price_hc" in data
+                and data["consumption_price_hc"] is not None
+                and data["consumption_price_hc"] != ""
         ):
             consumption_price_hc = data["consumption_price_hc"]
         else:
             consumption_price_hc = 0
         if (
-            "consumption_price_hp" in data
-            and data["consumption_price_hp"] is not None
-            and data["consumption_price_hp"] != ""
+                "consumption_price_hp" in data
+                and data["consumption_price_hp"] is not None
+                and data["consumption_price_hp"] != ""
         ):
             consumption_price_hp = data["consumption_price_hp"]
         else:
@@ -621,6 +623,46 @@ class Database:
             .order_by(table.date.desc())
         ).all()
 
+    def get_daily_datatable(self, usage_point_id, order_column="date", order_dir="asc", search=None,
+                            measurement_direction="consumption"):
+        if measurement_direction == "consumption":
+            table = ConsumptionDaily
+            relation = UsagePoints.relation_consumption_daily
+        else:
+            table = ProductionDaily
+            relation = UsagePoints.relation_production_daily
+
+        sort = asc(order_column) if order_dir == "desc" else desc(order_column)
+
+        if search is not None and search != "":
+            result = self.session.scalars(select(table)
+                                          .join(relation)
+                                          .where(UsagePoints.usage_point_id == usage_point_id)
+                                          .where((table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%")))
+                                          .where(table.date <= self.yesterday)
+                                          .order_by(sort)
+                                          )
+        else:
+            result = self.session.scalars(select(table)
+                                          .join(relation)
+                                          .where(UsagePoints.usage_point_id == usage_point_id)
+                                          .where(table.date <= self.yesterday)
+                                          .order_by(sort)
+                                          )
+        return result.all()
+
+    def get_daily_count(self, usage_point_id, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
+            table = ConsumptionDaily
+            relation = UsagePoints.relation_consumption_daily
+        else:
+            table = ProductionDaily
+            relation = UsagePoints.relation_production_daily
+        return self.session.scalars(
+            select([func.count()]).select_from(table).join(relation)
+            .where(UsagePoints.usage_point_id == usage_point_id)
+        ).one_or_none()
+
     def get_daily_date(self, usage_point_id, date, measurement_direction="consumption"):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         if measurement_direction == "consumption":
@@ -840,6 +882,16 @@ class Database:
                 )
             )
 
+    def reset_daily(self, usage_point_id, date=None, mesure_type="consumption"):
+        daily = self.get_daily_date(usage_point_id, date, mesure_type)
+        if daily is not None:
+            daily.value = 0
+            daily.blacklist = 0
+            daily.fail_count = 0
+            return True
+        else:
+            return False
+
     def delete_daily(self, usage_point_id, date=None, measurement_direction="consumption"):
         if measurement_direction == "consumption":
             table = ConsumptionDaily
@@ -915,6 +967,45 @@ class Database:
                 .filter(table.date >= begin)
                 .order_by(table.date)
             ).all()
+
+    def get_detail_datatable(self, usage_point_id, order_column="date", order_dir="asc", search=None,
+                             measurement_direction="consumption"):
+        if measurement_direction == "consumption":
+            table = ConsumptionDetail
+            relation = UsagePoints.relation_consumption_detail
+        else:
+            table = ProductionDetail
+            relation = UsagePoints.relation_production_detail
+
+        sort = asc(order_column) if order_dir == "desc" else desc(order_column)
+        if search is not None and search != "":
+            result = self.session.scalars(select(table)
+                                          .join(relation)
+                                          .where(UsagePoints.usage_point_id == usage_point_id)
+                                          .where((table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%")))
+                                          .where(table.date <= self.yesterday)
+                                          .order_by(sort)
+                                          )
+        else:
+            result = self.session.scalars(select(table)
+                                          .join(relation)
+                                          .where(UsagePoints.usage_point_id == usage_point_id)
+                                          .where(table.date <= self.yesterday)
+                                          .order_by(sort)
+                                          )
+        return result.all()
+
+    def get_detail_count(self, usage_point_id, measurement_direction="consumption"):
+        if measurement_direction == "consumption":
+            table = ConsumptionDetail
+            relation = UsagePoints.relation_consumption_detail
+        else:
+            table = ProductionDetail
+            relation = UsagePoints.relation_production_detail
+        return self.session.scalars(
+            select([func.count()]).select_from(table).join(relation)
+            .where(UsagePoints.usage_point_id == usage_point_id)
+        ).one_or_none()
 
     def get_detail_date(self, usage_point_id, date, measurement_direction="consumption"):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
@@ -1050,7 +1141,47 @@ class Database:
                 )
             )
 
+    def reset_detail(self, usage_point_id, date=None, mesure_type="consumption"):
+        detail = self.get_detail_date(usage_point_id, date, mesure_type)
+        if detail is not None:
+            detail.value = 0
+            detail.interval = 0
+            detail.blacklist = 0
+            detail.fail_count = 0
+            self.session.flush()
+            return True
+        else:
+            return False
+
+    def reset_detail_range(self, usage_point_id, begin, end, mesure_type="consumption"):
+        detail = self.get_detail_range(usage_point_id, begin, end, mesure_type)
+        if detail is not None:
+            for row in detail:
+                row.value = 0
+                row.interval = 0
+                row.blacklist = 0
+                row.fail_count = 0
+            self.session.flush()
+            return True
+        else:
+            return False
+
     def delete_detail(self, usage_point_id, date=None, mesure_type="consumption"):
+        if mesure_type == "consumption":
+            table = ConsumptionDetail
+        else:
+            table = ProductionDetail
+        if date is not None:
+            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
+            self.session.execute(
+                delete(table)
+                .where(table.id == unique_id)
+            )
+        else:
+            self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
+        return True
+
+    def delete_detail_range(self, usage_point_id, begin, end, mesure_type="consumption"):
         if mesure_type == "consumption":
             table = ConsumptionDetail
         else:
@@ -1279,6 +1410,31 @@ class Database:
                 )
             )
 
+    def get_daily_max_power_count(self, usage_point_id):
+        return self.session.scalars(
+            select([func.count()]).select_from(ConsumptionDailyMaxPower).join(UsagePoints.relation_consumption_daily_max_power)
+            .where(UsagePoints.usage_point_id == usage_point_id)
+        ).one_or_none()
+
+    def get_daily_max_power_datatable(self, usage_point_id, order_column="date", order_dir="asc", search=None):
+        sort = asc(order_column) if order_dir == "desc" else desc(order_column)
+        if search is not None and search != "":
+            result = self.session.scalars(select(ConsumptionDailyMaxPower)
+                                          .join(UsagePoints.relation_consumption_daily_max_power)
+                                          .where(UsagePoints.usage_point_id == usage_point_id)
+                                          .where((ConsumptionDailyMaxPower.date.like(f"%{search}%")) | (ConsumptionDailyMaxPower.value.like(f"%{search}%")))
+                                          .where(ConsumptionDailyMaxPower.date <= self.yesterday)
+                                          .order_by(sort)
+                                          )
+        else:
+            result = self.session.scalars(select(ConsumptionDailyMaxPower)
+                                          .join(UsagePoints.relation_consumption_daily_max_power)
+                                          .where(UsagePoints.usage_point_id == usage_point_id)
+                                          .where(ConsumptionDailyMaxPower.date <= self.yesterday)
+                                          .order_by(sort)
+                                          )
+        return result.all()
+
     def daily_max_power_fail_increment(self, usage_point_id, date):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
         daily = self.get_daily_max_power_date(usage_point_id, date)
@@ -1311,6 +1467,17 @@ class Database:
             )
         return fail_count
 
+    def reset_daily_max_power(self, usage_point_id, date=None):
+        daily = self.get_daily_max_power_date(usage_point_id, date)
+        if daily is not None:
+            daily.event_date = None
+            daily.value = 0
+            daily.blacklist = 0
+            daily.fail_count = 0
+            return True
+        else:
+            return False
+
     def delete_daily_max_power(self, usage_point_id, date=None):
         if date is not None:
             unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
@@ -1319,7 +1486,8 @@ class Database:
                 .where(ConsumptionDailyMaxPower.id == unique_id)
             )
         else:
-            self.session.execute(delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id))
+            self.session.execute(
+                delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id))
         return True
 
     def blacklist_daily_max_power(self, usage_point_id, date, action=True):
@@ -1346,6 +1514,7 @@ class Database:
             return result.fail_count
         else:
             return 0
+
 
 os.system("cd /app; alembic upgrade head")
 Database().init_database()

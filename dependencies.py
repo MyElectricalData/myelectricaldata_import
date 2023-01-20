@@ -8,6 +8,7 @@ from InquirerPy.base import Choice
 from packaging.version import parse as parse_version
 
 docker_compose = "docker-compose -f dev/docker-compose.dev.yaml"
+docker_compose_test = "docker-compose -f dev/docker-compose.test.yaml"
 
 
 def cmd(cmd, path="./"):
@@ -18,6 +19,9 @@ def cmd(cmd, path="./"):
         stdout=subprocess.PIPE,
     )
 
+def system(cmd):
+    app.LOG.warning(cmd)
+    os.system(cmd)
 
 def switch_version(version):
     open("app/VERSION", "w").write(version)
@@ -61,7 +65,7 @@ def wizard():
         app.LOG.error("Good bye!!")
 
 
-def run(dev=False, debug=False):
+def run(dev=False, debug=False, test=False):
     if debug:
         app.LOG.title(["Boot MyElectricalData in debug mode", "CTRL + C to exit"])
     else:
@@ -72,8 +76,12 @@ def run(dev=False, debug=False):
         mode_debug = "-e DEBUG=true"
     if dev:
         mode_dev = "-e DEV=true"
+    if test:
+        compose = docker_compose_test
+    else:
+        compose = docker_compose
     command = (
-        f"{docker_compose} run -p 5000:5000 "
+        f"{compose} run -p 5000:5000 "
         f"{mode_debug} {mode_dev} myelectricaldata_import"
     )
     app.LOG.log(command)
@@ -127,6 +135,8 @@ def create_release(prerelease=False):
             message="Which release would you create ?",
         ).execute()
 
+    branch = version
+
     if version not in tags:
         prerelease = inquirer.confirm(
             message="It's prerelease (beta version) ?",
@@ -157,30 +167,31 @@ def create_release(prerelease=False):
     if commit != "":
         app.LOG.warning("Your code it's not commit!!")
         commit_msg = inquirer.text(message="Commit message").execute()
-        os.system("git add --all")
-        os.system(f"git commit -m \"{commit_msg}\"")
+        system("git add --all")
+        system(f"git commit -m \"{commit_msg}\"")
+        system(f"git push origin {branch}")
 
     if rebuild_confirm:
         app.LOG.log(f"Delete release {version} on remote")
-        os.system(f"gh release delete {version} -y")
+        system(f"gh release delete {version} -y")
         app.LOG.log(f"Delete tag {version} in local")
-        os.system(f"git tag -d {version}")
+        system(f"git tag -d {version}")
         app.LOG.log("  => Success")
         app.LOG.log(f"Delete tag {version} on remote")
-        os.system(f"git push --delete origin {version}")
+        system(f"git push --delete origin {version}")
         app.LOG.log("  => Success")
 
     app.LOG.log(f"Create {version} in local")
-    os.system(f"git tag {version}")
+    system(f"git tag {version}")
     app.LOG.log("  => Success")
     app.LOG.title(f"Push tag {version}")
-    os.system(f"git push origin {version}")
+    system(f"git push origin {version}")
     app.LOG.log("  => Success")
     app.LOG.title(f"Create release {version}")
     prerelease_txt = ""
     if "-beta" in version:
         prerelease_txt = "--prerelease"
-    os.system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
+    system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")
 
 

@@ -38,8 +38,8 @@ class Datatable:
                 <thead>
                     <tr>
                         <th class="title">Date</th>
-                        <th class="title">{title} (W)</th>
-                        <th class="title">{title} (kW)</th>
+                        <th class="title">{title} (Wh)</th>
+                        <th class="title">{title} (kWh)</th>
                         <th class="title">Échec</th>
                         <th class="title">En&nbsp;cache</th>
                         <th class="title">Cache</th>
@@ -127,7 +127,6 @@ class Datatable:
                                 <input type="button"  value="Whitelist"></div>
                             """
                         else:
-
                             blacklist = f"""
                             <div class="datatable_button datatable_blacklist" title="{tag}" id="{tag}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}">
                                 <input type="button" value="Blacklist"></div>
