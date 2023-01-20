@@ -122,8 +122,8 @@ class HomeAssistant:
             "time": [],
             f"{measurement_direction}": []
         }
-        end = datetime.now()
-        begin = end - timedelta(days)
+        end =  datetime.combine(datetime.now(), datetime.max.time())
+        begin = datetime.combine(end - timedelta(days), datetime.min.time()),
         range = app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
         for data in range:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
