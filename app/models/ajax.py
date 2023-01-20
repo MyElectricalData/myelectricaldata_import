@@ -1,8 +1,7 @@
 import __main__ as app
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
 import pytz
-from dependencies import daterange
 from models.config import get_version
 from models.jobs import Job
 from models.query_cache import Cache
@@ -115,7 +114,7 @@ class Ajax:
 
     def reset_gateway(self):
         app.LOG.title(f"[{self.usage_point_id}] Reset du cache de la passerelle.")
-        return Cache(self.usage_point_id).reset()
+        return Cache(headers=self.headers, usage_point_id=self.usage_point_id).reset()
 
     def reset_data(self, target, date):
         result = {}
@@ -538,7 +537,7 @@ class Ajax:
         }
         return result
 
-    def datatable_button(self,measurement_direction, db_data):
+    def datatable_button(self, measurement_direction, db_data):
         date_text = db_data.date.strftime(self.date_format)
         value = db_data.value
         blacklist = db_data.blacklist
@@ -652,7 +651,7 @@ class Ajax:
         target = "daily"
         contract = self.db.get_contract(self.usage_point_id)
         if hasattr(contract, "subscribed_power") and contract.subscribed_power is not None:
-            max_power = int(contract.subscribed_power.split(' ')[0])*1000
+            max_power = int(contract.subscribed_power.split(' ')[0]) * 1000
         else:
             max_power = 999000
         for db_data in all_data:

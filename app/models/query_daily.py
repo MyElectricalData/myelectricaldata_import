@@ -1,17 +1,18 @@
 import __main__ as app
-import datetime
 import json
+
+from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 
 from config import DAILY_MAX_DAYS, URL
-from dependencies import *
+# from dependencies import *
 from models.query import Query
 
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
-        yield start_date + datetime.timedelta(n)
+        yield start_date + timedelta(n)
 
 
 class Daily:
@@ -27,7 +28,7 @@ class Daily:
         self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = int(DAILY_MAX_DAYS)
-        self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
+        self.max_days_date = datetime.utcnow() - timedelta(days=self.daily_max_days)
         if (
                 measure_type == "consumption"
                 and hasattr(self.usage_point_config, "consumption_max_date")
@@ -65,7 +66,7 @@ class Daily:
         end_str = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"daily_{self.measure_type}/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        # if begin < datetime.datetime.now() - datetime.timedelta(days=7):
+        # if begin < now() - timedelta(days=7):
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
             endpoint += "/cache"
         try:
@@ -80,6 +81,9 @@ class Daily:
                 app.LOG.log(f" => Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 blacklist = 0
+                print("-----------------------------")
+                print(data.text)
+                print("-----------------------------")
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
@@ -92,7 +96,7 @@ class Daily:
                                 # FOUND
                                 self.db.insert_daily(
                                     usage_point_id=self.usage_point_id,
-                                    date=datetime.datetime.combine(single_date, datetime.datetime.min.time()),
+                                    date=datetime.combine(single_date, datetime.min.time()),
                                     value=interval_reading_tmp[single_date.strftime(self.date_format)],
                                     blacklist=blacklist,
                                     measurement_direction=self.measure_type
@@ -101,7 +105,7 @@ class Daily:
                                 # NOT FOUND
                                 self.db.daily_fail_increment(
                                     usage_point_id=self.usage_point_id,
-                                    date=datetime.datetime.combine(single_date, datetime.datetime.min.time()),
+                                    date=datetime.combine(single_date, datetime.min.time()),
                                     measurement_direction=self.measure_type
                                 )
                         return interval_reading
@@ -122,16 +126,10 @@ class Daily:
             app.LOG.error(e)
 
     def get(self):
-
-        # REMOVE TODAY
-        # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
-        end = datetime.datetime.combine((datetime.datetime.now() + datetime.timedelta(days=2)), datetime.datetime.max.time())
-        # begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_daily), datetime.datetime.min.time())
-        begin = datetime.datetime.combine(end - relativedelta(months=self.max_daily), datetime.datetime.min.time())
-
+        end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
+        begin = datetime.combine(end - relativedelta(months=self.max_daily), datetime.min.time())
         finish = True
         result = []
-
         while finish:
             if self.max_days_date > begin:
                 # Max day reached
@@ -165,28 +163,28 @@ class Daily:
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
                 error = ["Arrêt de la récupération des données suite à une erreur.",
-                         f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
+                         f"Prochain lancement à {datetime.now() + timedelta(seconds=app.CONFIG.get('cycle'))}"]
                 app.LOG.warning(error)
         return result
 
     def reset(self, date=None):
         if date is not None:
-            date = datetime.datetime.strptime(date, self.date_format)
+            date = datetime.strptime(date, self.date_format)
         self.db.reset_daily(self.usage_point_id, date, self.measure_type)
         return True
 
     def delete(self, date=None):
         if date is not None:
-            date = datetime.datetime.strptime(date, self.date_format)
+            date = datetime.strptime(date, self.date_format)
         self.db.delete_daily(self.usage_point_id, date, self.measure_type)
         return True
 
     def fetch(self, date):
         if date is not None:
-            date = datetime.datetime.strptime(date, self.date_format)
+            date = datetime.strptime(date, self.date_format)
         result = self.run(
-            date - datetime.timedelta(days=1),
-            date + datetime.timedelta(days=1),
+            datetime.combine(date - timedelta(days=2), datetime.min.time()),
+            datetime.combine(date + timedelta(days=2), datetime.min.time()),
         )
         if "error" in result and result["error"]:
             return {
@@ -205,6 +203,6 @@ class Daily:
 
     def blacklist(self, date, action):
         if date is not None:
-            date = datetime.datetime.strptime(date, self.date_format)
+            date = datetime.strptime(date, self.date_format)
         self.db.blacklist_daily(self.usage_point_id, date, action, self.measure_type)
         return True

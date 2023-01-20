@@ -198,11 +198,17 @@ class UsagePointId:
             if hasattr(self.config, "consumption") and self.config.consumption:
                 self.generate_data("consumption")
                 self.consumption()
-                print(self.recap_consumption_data)
                 recap_consumption = self.recap(data=self.recap_consumption_data)
                 body += f"<h2>Consommation</h2>"
                 body += str(recap_consumption)
                 body += '<div id="chart_daily_consumption"></div>'
+
+            # # MAX POWER CONSUMPTION
+            # if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+            #     recap_consumption_max_power = self.recap(data=self.recap_consumption_max_power)
+            #     body += f"<h2>Puissance maximun</h2>"
+            #     body += str(recap_consumption_max_power)
+            #     body += '<div id="chart_daily_consumption_max_power"></div>'
 
             # RATIO HP/HC
             if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
@@ -227,8 +233,12 @@ class UsagePointId:
                     hasattr(self.config, "production") and self.config.production
             ):
                 body += "<h2>Consommation VS Production</h2>"
-                body += f'<div>{self.consumption_vs_production()}</div>'
-                body += '<div id="chart_daily_production_compare"></div>'
+                for year, data in self.recap_consumption_data.items():
+                    if data["value"] != 0:
+                        # body += f'<div><h3>{year}</h3></div>'
+                        # body += f'<div>{self.consumption_vs_production(year)}</div>'
+                        self.consumption_vs_production(year)
+                        body += f'<div id="chart_daily_production_compare_{year}"></div>'
 
             body += "<h1>Mes données</h1>"
             # CONSUMPTION DATATABLE
@@ -311,6 +321,18 @@ class UsagePointId:
                     <tr>
                         <td style='width: 30px; background-color: #FF0000'>&nbsp;</td>
                         <td style='border: none'>Dépassement de l'abonnement maximal.</td>
+                    </tr>
+                    <tr>
+                        <td style='border: none'></td>
+                        <td style='border: none'>ATTENTION, Un dépassement d'abonnement ne veut pas forcement dire 
+                        qu'il est nécessaire de basculer sur un abonnement supérieur.
+                        Le compteur Linky vous autorise à dépasser un certain seuil pendant un certain temps afin
+                        d'absorber un pic de consommation anormal sans pour autant disjoncter.                        
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='border: none'></td>
+                        <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Liens vers la documentation officiel d'Enedis.</a> (cf. chapitre 7)</td>
                     </tr>
                 </table>"""
                 body += f"""
@@ -516,10 +538,14 @@ class UsagePointId:
                 for years, data in self.recap_consumption_data.items():
                     if years > str(max_history):
                         years_array += f"'{years}', "
-                        for month, value in data['month'].items():
+                        for month in range(1, 13):
+                            month_2digit = "{:02d}".format(month)
                             if month not in format_table:
                                 format_table[month] = []
-                            format_table[month].append(value)
+                            if month_2digit in data["month"]:
+                                format_table[month].append(data["month"][month_2digit])
+                            else:
+                                format_table[month].append(0)
                 self.javascript += f"['Month', {years_array}],"
                 for month, val in format_table.items():
                     table_value = ""
@@ -557,10 +583,14 @@ class UsagePointId:
                 for years, data in self.recap_consumption_max_power.items():
                     if years > str(max_history):
                         years_array += f"'{years}', "
-                        for month, value in data['month'].items():
+                        for month in range(1, 13):
+                            month_2digit = "{:02d}".format(month)
                             if month not in format_table:
                                 format_table[month] = []
-                            format_table[month].append(value)
+                            if month_2digit in data["month"]:
+                                format_table[month].append(data["month"][month_2digit])
+                            else:
+                                format_table[month].append(0)
                 self.javascript += f"['Month', {years_array}],"
                 for month, val in format_table.items():
                     table_value = ""
@@ -585,14 +615,7 @@ class UsagePointId:
 
     def production(self):
         if hasattr(self.config, "production") and self.config.production:
-            # daily_result = Datatable(self.usage_point_id).html(
-            #     title="Production",
-            #     tag="production",
-            #     daily_data=self.db.get_daily_all(self.usage_point_id, "production"),
-            #     cache_last_date=self.db.get_daily_last_date(self.usage_point_id, "production")
-            # )
             if self.recap_production_data:
-                # self.production_datatable = daily_result["html"]
                 self.javascript += """
                 google.charts.load("current", {packages:["corechart"]});
                 google.charts.setOnLoadCallback(drawChartProduction);
@@ -605,10 +628,14 @@ class UsagePointId:
                 for years, data in self.recap_production_data.items():
                     if years > str(max_history):
                         years_array += f"'{years}', "
-                        for month, value in data['month'].items():
+                        for month in range(1, 13):
+                            month_2digit = "{:02d}".format(month)
                             if month not in format_table:
                                 format_table[month] = []
-                            format_table[month].append(value)
+                            if month_2digit in data["month"]:
+                                format_table[month].append(data["month"][month_2digit])
+                            else:
+                                format_table[month].append(0)
                 self.javascript += f"['Month', {years_array}],"
                 for month, val in format_table.items():
                     table_value = ""
@@ -619,8 +646,7 @@ class UsagePointId:
                     self.javascript += f"['{month}', {table_value}],"
                 self.javascript += """]);
                                 var options = {
-                                  title : 'Production journalière',
-                                  vAxis: {title: 'Consommation (kWh)'},
+                                  vAxis: {title: 'Production (kWh)'},
                                   hAxis: {title: 'Mois'},
                                   seriesType: 'bars',
                                   series: {5: {type: 'line'}}
@@ -631,34 +657,27 @@ class UsagePointId:
                             }
                             """
 
-    def consumption_vs_production(self):
+    def consumption_vs_production(self, year):
         if (
                 self.recap_production_data != {}
                 and self.config.production != {}
         ):
             compare_compsuption_production = {}
-            max_year = 1
-            max_history = self.current_years - max_year
-            for years, data in self.recap_consumption_data.items():
-                if int(years) > max_history:
-                    for month, value in data['month'].items():
-                        if month not in compare_compsuption_production:
-                            compare_compsuption_production[month] = []
-                        compare_compsuption_production[month].append(float(value) / 1000)
+            for month, value in self.recap_consumption_data[year]["month"].items():
+                if month not in compare_compsuption_production:
+                    compare_compsuption_production[month] = []
+                compare_compsuption_production[month].append(float(value) / 1000)
 
-            for years, data in self.recap_production_data.items():
-                if int(years) >= max_history:
-                    for month, value in data['month'].items():
-                        if month not in compare_compsuption_production:
-                            compare_compsuption_production[month] = []
-                        compare_compsuption_production[month].append(float(value) / 1000)
-
+            for month, value in self.recap_production_data[year]["month"].items():
+                if month not in compare_compsuption_production:
+                    compare_compsuption_production[month] = []
+                compare_compsuption_production[month].append(float(value) / 1000)
             self.javascript += """            
             google.charts.load("current", {packages:["corechart"]});
-            google.charts.setOnLoadCallback(drawChartProductionVsConsumption);
-            function drawChartProductionVsConsumption() {
+            google.charts.setOnLoadCallback(drawChartProductionVsConsumption"""+year+""");
+            function drawChartProductionVsConsumption"""+year+"""() {
                 var data = google.visualization.arrayToDataTable([
-                ['Année', 'Consommation', 'Production'],
+                ['Mois', 'Consommation', 'Production'],
             """
             for month, data in compare_compsuption_production.items():
                 table_value = ""
@@ -670,16 +689,17 @@ class UsagePointId:
                         table_value += ", "
                 self.javascript += f"['{month}', {table_value}],"
             self.javascript += """
-                ]);
+                ])
+                data.sort([{column: 0}]);
                 var options = {
-                  title : 'Consommation VS Production',
+                  title : '"""+year+"""',
                   vAxis: {title: 'Consommation (kWh)'},
                   hAxis: {title: 'Mois'},
                   seriesType: 'bars',
                   series: {5: {type: 'line'}}
                 };
     
-                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare'));
+                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_"""+year+"""'));
                 chart.draw(data, options);
             }
             """
@@ -726,11 +746,10 @@ class UsagePointId:
             month = item.date.strftime("%m")
             if year not in result:
                 result[year] = {"value": 0, "month": {}}
-            if month not in result[year]:
+            if month not in result[year]["month"]:
                 result[year]["month"][month] = 0
             result[year]["value"] = result[year]["value"] + item.value
             result[year]["month"][month] = result[year]["month"][month] + item.value
-
         if measurement_direction == "consumption":
             self.recap_consumption_data = result
         else:
@@ -738,15 +757,15 @@ class UsagePointId:
 
     def recap(self, data):
         if data:
-            self.current_years = int(datetime.now().strftime("%Y"))
-            current_month = int(datetime.now().strftime("%m"))
-            max_history = self.current_years - self.max_history
+            current_years = int(datetime.now().strftime("%Y"))
+            current_month = datetime.now().strftime("%m")
+            max_history = current_years - self.max_history
             linear_years = {}
             mount_count = 0
             first_occurance = False
             for linear_year, linear_data in reversed(sorted(data.items())):
                 for linear_month, linear_value in reversed(sorted(linear_data["month"].items())):
-                    key = f"{current_month}/{self.current_years} => {current_month}/{self.current_years - 1}"
+                    key = f"{current_month}/{current_years} => {current_month}/{current_years - 1}"
                     if not first_occurance and linear_value != 0:
                         first_occurance = True
                     if first_occurance:
@@ -755,12 +774,11 @@ class UsagePointId:
                         linear_years[key] = linear_years[key] + linear_value
                         mount_count = mount_count + 1
                         if mount_count >= 12:
-                            self.current_years = self.current_years - 1
+                            current_years = current_years - 1
                             mount_count = 0
-
             body = '<table class="table_recap"><tr>'
             body += '<th class="table_recap_header">Annuel</th>'
-            self.current_years = int(datetime.now().strftime("%Y"))
+            current_years = int(datetime.now().strftime("%Y"))
             for year, data in reversed(sorted(data.items())):
                 if int(year) > max_history:
                     body += f"""
@@ -769,21 +787,21 @@ class UsagePointId:
                     <div class='recap_years_value'>{round(data['value'] / 1000)} kWh</div>
                 </td>    
                 """
-                    self.current_years = self.current_years - 1
+                    current_years = current_years - 1
             body += "</tr>"
             body += "<tr>"
             body += '<th class="table_recap_header">Annuel linéaire</th>'
-            self.current_years = int(datetime.now().strftime("%Y"))
+            current_years = int(datetime.now().strftime("%Y"))
             for year, data in linear_years.items():
-                if self.current_years > max_history:
+                if current_years > max_history:
                     data_last_years_class = ""
                     data_last_years = 0
-                    key = f"{current_month}/{self.current_years - 1} => {current_month}/{self.current_years - 2}"
+                    key = f"{current_month}/{current_years - 1} => {current_month}/{current_years - 2}"
                     if str(key) in linear_years:
                         data_last_years = linear_years[str(key)]
                         if data_last_years != 0:
                             data_last_years = round((100 * int(data)) / int(data_last_years) - 100, 2)
-                        self.current_years = self.current_years - 1
+                        current_years = current_years - 1
                         if data_last_years >= 0:
                             if data_last_years == 0:
                                 data_last_years_class = "blue"

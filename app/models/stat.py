@@ -14,6 +14,7 @@ class Stat:
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
         self.usage_point_id_config = app.DB.get_usage_point(self.usage_point_id)
+        self.usage_point_id_contract = app.DB.get_contract(self.usage_point_id)
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
         self.now_date = datetime.now(timezone.utc)
@@ -272,8 +273,9 @@ class Stat:
         app.LOG.log("current_month_evolution")
         if self.value_current_month_last_year != 0:
             self.value_current_month_evolution = (
-                        (100 * self.value_current_month) / self.value_current_month_last_year
-                ) - 100
+                                                         (
+                                                                     100 * self.value_current_month) / self.value_current_month_last_year
+                                                 ) - 100
         app.LOG.log(f" => {self.value_current_month_evolution}")
         return self.value_current_month_evolution
 
@@ -390,7 +392,8 @@ class Stat:
     def get_year(self, year, measure_type=None):
         begin = datetime.combine(self.now_date.replace(year=year).replace(day=1).replace(month=1), datetime.min.time())
         last_day_of_month = calendar.monthrange(year, 12)[1]
-        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=12), datetime.max.time())
+        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=12),
+                               datetime.max.time())
         value = 0
         if measure_type is None:
             for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -425,9 +428,11 @@ class Stat:
     def get_month(self, year, month=None, measure_type=None):
         if month is None:
             month = int(datetime.now().strftime('%m'))
-        begin = datetime.combine(self.now_date.replace(year=year).replace(day=1).replace(month=month), datetime.min.time())
+        begin = datetime.combine(self.now_date.replace(year=year).replace(day=1).replace(month=month),
+                                 datetime.min.time())
         last_day_of_month = calendar.monthrange(year, month)[1]
-        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=month), datetime.max.time())
+        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=month),
+                               datetime.max.time())
         value = 0
         if measure_type is None:
             for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -465,8 +470,12 @@ class Stat:
         today = date.today()
         start = today - timedelta(days=today.weekday())
         end = start + timedelta(days=6)
-        begin = datetime.combine(self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month), datetime.min.time())
-        end = datetime.combine(self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month), datetime.max.time())
+        begin = datetime.combine(
+            self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month),
+            datetime.min.time())
+        end = datetime.combine(
+            self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month),
+            datetime.max.time())
         value = 0
         if measure_type is None:
             for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -490,10 +499,29 @@ class Stat:
                 value = value + day.value
         else:
             for day in app.DB.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-                    if day.measure_type == measure_type:
-                        value = value + (day.value / (60 / day.interval))
+                if day.measure_type == measure_type:
+                    value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+
+    def max_power_over(self, index=0):
+        max_power = 9999
+        if hasattr(self.usage_point_id_contract,
+                   "subscribed_power") and self.usage_point_id_contract.subscribed_power is not None:
+            max_power = int(self.usage_point_id_contract.subscribed_power.split(' ')[0])
+        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        end = datetime.combine(begin, datetime.max.time())
+        value = 0
+        boolv = "false"
+        for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
+            value = value + data.value
+            if (value / 1000) > max_power:
+                boolv = "true"
+        return {
+            "value": boolv,
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }

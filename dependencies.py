@@ -8,6 +8,7 @@ from InquirerPy.base import Choice
 from packaging.version import parse as parse_version
 
 docker_compose = "docker-compose -f dev/docker-compose.dev.yaml"
+docker_compose_test = "docker-compose -f dev/docker-compose.test.yaml"
 
 
 def cmd(cmd, path="./"):
@@ -61,7 +62,7 @@ def wizard():
         app.LOG.error("Good bye!!")
 
 
-def run(dev=False, debug=False):
+def run(dev=False, debug=False, test=False):
     if debug:
         app.LOG.title(["Boot MyElectricalData in debug mode", "CTRL + C to exit"])
     else:
@@ -72,8 +73,12 @@ def run(dev=False, debug=False):
         mode_debug = "-e DEBUG=true"
     if dev:
         mode_dev = "-e DEV=true"
+    if test:
+        compose = docker_compose_test
+    else:
+        compose = docker_compose
     command = (
-        f"{docker_compose} run -p 5000:5000 "
+        f"{compose} run -p 5000:5000 "
         f"{mode_debug} {mode_dev} myelectricaldata_import"
     )
     app.LOG.log(command)
