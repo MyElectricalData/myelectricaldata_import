@@ -106,8 +106,8 @@ class Job:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de la récupération de votre production détaillée", e])
                     try:
-                        # if target == "consumption_max_power" or target is None:
-                        self.get_consumption_max_power()
+                        if target == "consumption_max_power" or target is None:
+                            self.get_consumption_max_power()
                     except Exception as e:
                         traceback.print_exc()
                         LOG.error([f"Erreur lors de la récupération de votre puissance maximum journalière", e])
@@ -226,6 +226,7 @@ class Job:
                     LOG.log(
                         f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
             LOG.finish()
+            self.usage_point_id = None
             DB.unlock()
             return {
                 "status": True,

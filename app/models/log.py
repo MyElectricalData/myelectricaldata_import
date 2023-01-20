@@ -32,7 +32,7 @@ class Log:
         self.separator_warning()
         if type(message) is list:
             for msg in message:
-                pprint(f" {msg}")
+                pprint(f"{msg}")
         else:
             pprint(f" {message}")
         self.separator_warning()

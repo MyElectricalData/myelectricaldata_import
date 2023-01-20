@@ -4,30 +4,42 @@
     <title>MyElectricalData</title>
     {{ javascript_loader }}
     <style>
-    {{ css }}
+        {{ css }}
     </style>
     <script>
         $(document).ready(function () {
             function retry() {
                 setTimeout(function () {
-                        ajaxCall()
+                    ajaxCall()
                 }, 5000);
             }
+
             function ajaxCall() {
+
                 $.ajax({
                     url: "/lock_status",
                     type: 'GET',
-                }).done(function (data, textStatus, jqXHR) {
-                    const html = jqXHR.responseText
-                    if (html === "True") {
-                        $.LoadingOverlay("show", loading_import);
-                        retry()
-                    }else{
-                        $.LoadingOverlay("hide", loading_import);
+                    {#tryCount: 5,#}
+                    {#retryLimit: 5,#}
+                    success: function (data, textStatus, jqXHR) {
+                        console.log("MyElectricalData lock_status ok")
+                        const html = jqXHR.responseText
+                        if (html === "True") {
+                            $.LoadingOverlay("show", loading_import);
+                            retry()
+                        } else {
+                            $.LoadingOverlay("hide", loading_import);
+                            retry()
+                        }
+                    },
+                    error: function (xhr, textStatus) {
+                        console.log("MyElectricalData is unreachable!")
                         retry()
                     }
                 });
+
             }
+
             retry()
             {{ javascript }}
         });

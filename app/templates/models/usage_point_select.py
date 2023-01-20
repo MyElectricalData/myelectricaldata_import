@@ -39,7 +39,7 @@ class UsagePointSelect:
                 select = "selected"
             list_usage_points_id += f'<option value="{usage_point}" style="{style}" {select}>{disable}{text}</option>'
         list_usage_points_id += '</select>'
-        result = f'<h3 style="line-height: 45px; font-size: 25px;">Choix du point de livraison {list_usage_points_id}</h3>'
+        result = f'<h1 style="line-height: 45px; font-size: 25px;">Choix du point de livraison {list_usage_points_id}</h1>'
         if self.selected_usage_point is not None:
             result += f'<input type="text" id="usage_point_id" value="{self.selected_usage_point}" style="display: none">'
         return result

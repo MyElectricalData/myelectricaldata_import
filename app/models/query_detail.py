@@ -1,9 +1,9 @@
 import __main__ as app
-import datetime
+from datetime import datetime, timedelta
 import json
 import re
 
-from dependencies import *
+# from dependencies import *
 from models.database import ConsumptionDetail, ProductionDetail
 from models.query import Query
 
@@ -12,7 +12,7 @@ from config import DETAIL_MAX_DAYS, URL
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
-        yield start_date + datetime.timedelta(n)
+        yield start_date + timedelta(n)
 
 
 class Detail:
@@ -28,21 +28,21 @@ class Detail:
         self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
         self.contract = self.db.get_contract(self.usage_point_id)
         self.daily_max_days = int(DETAIL_MAX_DAYS)
-        self.max_days_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.daily_max_days)
+        self.max_days_date = datetime.utcnow() - timedelta(days=self.daily_max_days)
         if (
                 measure_type == "consumption"
-                and hasattr(self.usage_point_config, "consumption_max_date")
-                and self.usage_point_config.consumption_max_date != ""
-                and self.usage_point_config.consumption_max_date is not None
+                and hasattr(self.usage_point_config, "consumption_detail_max_date")
+                and self.usage_point_config.consumption_detail_max_date != ""
+                and self.usage_point_config.consumption_detail_max_date is not None
         ):
-            self.activation_date = self.usage_point_config.consumption_max_date
+            self.activation_date = self.usage_point_config.consumption_detail_max_date
         elif (
                 measure_type == "production"
-                and hasattr(self.usage_point_config, "production_max_date")
-                and self.usage_point_config.production_max_date != ""
-                and self.usage_point_config.production_max_date is not None
+                and hasattr(self.usage_point_config, "production_detail_max_date")
+                and self.usage_point_config.production_detail_max_date != ""
+                and self.usage_point_config.production_detail_max_date is not None
         ):
-            self.activation_date = self.usage_point_config.production_max_date
+            self.activation_date = self.usage_point_config.production_detail_max_date
         elif (
                 hasattr(self.contract, "last_activation_date")
                 and self.contract.last_activation_date != ""
@@ -72,16 +72,18 @@ class Detail:
                 self.base_price = self.usage_point_config.production_price
 
     def run(self, begin, end):
+        if begin.strftime(self.date_format) == end.strftime(self.date_format):
+            end = end + timedelta(days=1)
         begin_str = begin.strftime(self.date_format)
         end_str = end.strftime(self.date_format)
         app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"{self.measure_type}_load_curve/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        # if begin <= (datetime.datetime.now() - datetime.timedelta(days=8)):
+        # if begin <= (datetime.now() - timedelta(days=8)):
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
             endpoint += "/cache"
         try:
             current_data = self.db.get_detail(self.usage_point_id, begin, end, self.measure_type)
-            # current_week = datetime.datetime.now() - datetime.timedelta(days=self.max_detail + 1)
+            # current_week = datetime.now() - timedelta(days=self.max_detail + 1)
             # last_week = False
             # if current_week <= begin:
             #     last_week = True
@@ -95,7 +97,6 @@ class Detail:
             else:
                 app.LOG.log(f" => Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
-                bulk_insert = []
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
@@ -103,9 +104,9 @@ class Detail:
                             value = interval_reading["value"]
                             interval = re.findall(r'\d+', interval_reading['interval_length'])[0]
                             date = interval_reading["date"]
-                            dateObject = datetime.datetime.strptime(date, self.date_detail_format)
+                            dateObject = datetime.strptime(date, self.date_detail_format)
                             # CHANGE DATE TO BEGIN RANGE
-                            date = dateObject - datetime.timedelta(minutes=int(interval))
+                            date = dateObject - timedelta(minutes=int(interval))
                             # date = date.strftime(self.date_detail_format)
                             # GET WEEKDAY
                             dateDays = dateObject.weekday()
@@ -117,12 +118,12 @@ class Detail:
                                     if offpeak_hour != "None" and offpeak_hour != "" and offpeak_hour is not None:
                                         offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
                                         # FORMAT HOUR WITH 2 DIGIT
-                                        offpeak_begin = datetime.datetime.strptime(offpeak_begin, '%H:%M')
-                                        offpeak_begin = datetime.datetime.strftime(offpeak_begin, '%H:%M')
+                                        offpeak_begin = datetime.strptime(offpeak_begin, '%H:%M')
+                                        offpeak_begin = datetime.strftime(offpeak_begin, '%H:%M')
                                         offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
                                         # FORMAT HOUR WITH 2 DIGIT
-                                        offpeak_stop = datetime.datetime.strptime(offpeak_stop, '%H:%M')
-                                        offpeak_stop = datetime.datetime.strftime(offpeak_stop, '%H:%M')
+                                        offpeak_stop = datetime.strptime(offpeak_stop, '%H:%M')
+                                        offpeak_stop = datetime.strftime(offpeak_stop, '%H:%M')
                                         result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
                                         if result:
                                             measure_type = "HC"
@@ -134,15 +135,6 @@ class Detail:
                                 measure_type=measure_type,
                                 blacklist=0,
                             )
-                            # bulk_insert.append(self.detail_table(
-                            #     usage_point_id=self.usage_point_id,
-                            #     date=date,
-                            #     value=value,
-                            #     interval=interval,
-                            #     measure_type=measure_type,
-                            #     blacklist=0
-                            # ))
-                        # self.db.insert_detail_bulk(bulk_insert, self.measure_type)
                         return meter_reading["interval_reading"]
                     else:
                         return {
@@ -161,28 +153,25 @@ class Detail:
             app.LOG.error(e)
 
     def get(self):
-
-        # REMOVE TODAY
-        # end = datetime.datetime.combine((datetime.datetime.now() - datetime.timedelta(days=1)), datetime.datetime.max.time())
-        end = datetime.datetime.combine((datetime.datetime.now()), datetime.datetime.max.time())
-        begin = datetime.datetime.combine(end - datetime.timedelta(days=self.max_detail), datetime.datetime.min.time())
+        end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
+        begin = datetime.combine(end - timedelta(days=self.max_detail), datetime.min.time())
         finish = True
         result = []
         while finish:
-            if self.activation_date and self.activation_date > begin:
-                # Activation date reached
-                begin = self.activation_date
-                finish = False
-                response = self.run(begin, end)
-            elif self.max_days_date > begin:
+            if self.max_days_date > begin:
                 # Max day reached
                 begin = self.max_days_date
                 finish = False
                 response = self.run(begin, end)
+            elif self.activation_date and self.activation_date > begin:
+                # Activation date reached
+                begin = self.activation_date
+                finish = False
+                response = self.run(begin, end)
             else:
                 response = self.run(begin, end)
-                begin = begin - datetime.timedelta(days=self.max_detail)
-                end = end - datetime.timedelta(days=self.max_detail)
+                begin = begin - timedelta(days=self.max_detail)
+                end = end - timedelta(days=self.max_detail)
             if response is not None:
                 result = [*result, *response]
             else:
@@ -201,19 +190,40 @@ class Detail:
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
                 error = ["Arrêt de la récupération des données suite à une erreur.",
-                        f"Prochain lancement à {datetime.datetime.now() + datetime.timedelta(seconds=app.CONFIG.get('cycle'))}"]
+                         f"Prochain lancement à {datetime.now() + timedelta(seconds=app.CONFIG.get('cycle'))}"]
                 app.LOG.warning(error)
-
         return result
 
+    def reset_daily(self, date):
+        begin = datetime.combine(datetime.strptime(date, self.date_format), datetime.min.time())
+        end = datetime.combine(datetime.strptime(date, self.date_format), datetime.max.time())
+        self.db.reset_detail_range(self.usage_point_id, begin, end, self.measure_type)
+        return True
+
+    def delete_daily(self, date):
+        begin = datetime.combine(datetime.strptime(date, self.date_format), datetime.min.time())
+        end = datetime.combine(datetime.strptime(date, self.date_format), datetime.max.time())
+        self.db.delete_detail_range(self.usage_point_id, begin, end, self.measure_type)
+        return True
+
     def reset(self, date=None):
+        if date is not None:
+            date = datetime.strptime(date, self.date_detail_format)
+        self.db.reset_detail(self.usage_point_id, date, self.measure_type)
+        return True
+
+    def delete(self, date=None):
+        if date is not None:
+            date = datetime.strptime(date, self.date_detail_format)
         self.db.delete_detail(self.usage_point_id, date, self.measure_type)
         return True
 
     def fetch(self, date):
+        if date is not None:
+            date = datetime.strptime(date, self.date_format)
         result = self.run(
-            datetime.datetime.strptime(date, self.date_format) - datetime.timedelta(days=1),
-            datetime.datetime.strptime(date, self.date_format) + datetime.timedelta(days=1),
+            datetime.combine(date - timedelta(days=2), datetime.min.time()),
+            datetime.combine(date + timedelta(days=2), datetime.min.time()),
         )
         if "error" in result and result["error"]:
             return {
@@ -221,9 +231,15 @@ class Detail:
                 "notif": result['description'],
                 "fail_count": self.db.get_detail_fail_count(self.usage_point_id, date, self.measure_type)
             }
+
         for item in result:
-            if date in item['date']:
+            if type(item['date']) == str:
+              item['date'] = datetime.strptime(item['date'], self.date_detail_format)
+            result_date = item['date'].strftime(self.date_format)
+            if date.strftime(self.date_format) in result_date:
+                item["date"] = result_date
                 return item
+
         return {
             "error": True,
             "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({date})",

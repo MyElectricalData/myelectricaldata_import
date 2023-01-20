@@ -66,31 +66,31 @@ a {
 
 h1 {
     font-size: 24px;
-    background: #FFF;
-    color: var(--sde-bg-color);
     border-radius: 10px;
     padding: 10px;
-    border: 1px solid var(--sde-bg-color);
     margin-top: 50px;
+    color: var(--main-bg-color);
+    background: var(--sde-bg-color);
+    border: 1px solid var(--main-bg-color);
 }
 
 h2 {
-    color: var(--main-bg-color);
-    letter-spacing: 2px;
-    font-size: 17px;
-    background: var(--sde-bg-color);
-    border: 1px solid var(--main-bg-color);
-    border-radius: 10px;
-    padding: 10px;
-}
-
-h3 {
     color: var(--text-color);
-    font-size: 15px;
+    font-size: 17px;
     background: var(--logo);
     border: 1px solid var(--text-title);
     border-radius: 15px;
     padding: 10px;
+}
+
+h3 {
+    letter-spacing: 2px;
+    font-size: 15px;
+    border-radius: 10px;
+    padding: 10px;
+    background: #FFF;
+    color: var(--sde-bg-color);
+    border: 1px solid var(--sde-bg-color);
 }
 
 #footer {

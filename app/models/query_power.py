@@ -106,12 +106,10 @@ class Power:
             app.LOG.error(e)
 
     def get(self):
-        end = datetime.combine((datetime.now()), datetime.max.time())
+        end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.min.time())
         begin = datetime.combine(end - timedelta(days=self.max_daily), datetime.min.time())
-
         finish = True
         result = []
-
         while finish:
 
             if self.activation_date and self.activation_date > begin:
@@ -151,6 +149,12 @@ class Power:
         return result
 
     def reset(self, date=None):
+        if date is not None:
+            date = datetime.strptime(date, self.date_format)
+        self.db.reset_daily_max_power(self.usage_point_id, date)
+        return True
+
+    def delete(self, date=None):
         if date is not None:
             date = datetime.strptime(date, self.date_format)
         self.db.delete_daily_max_power(self.usage_point_id, date)

@@ -165,6 +165,11 @@ if __name__ == '__main__':
     def gateway_status():
         return Ajax().gateway_status()
 
+    @APP.route("/datatable/<usage_point_id>/<measurement_direction>", methods=['GET'])
+    @APP.route("/datatable/<usage_point_id>/<measurement_direction>/", methods=['GET'])
+    def datatable(usage_point_id, measurement_direction):
+        return Ajax(usage_point_id).datatable(measurement_direction, request.args)
+
 
     @APP.route("/configuration/<usage_point_id>", methods=['POST'])
     @APP.route("/configuration/<usage_point_id>/", methods=['POST'])
@@ -200,6 +205,11 @@ if __name__ == '__main__':
     @APP.route("/reset/<usage_point_id>/", methods=['GET'])
     def reset_all_data(usage_point_id):
         return Ajax(usage_point_id).reset_all_data()
+
+    @APP.route("/delete/<usage_point_id>", methods=['GET'])
+    @APP.route("/delete/<usage_point_id>/", methods=['GET'])
+    def delete_all_data(usage_point_id):
+        return Ajax(usage_point_id).delete_all_data()
 
 
     @APP.route("/reset_gateway/<usage_point_id>", methods=['GET'])

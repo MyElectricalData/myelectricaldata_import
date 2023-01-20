@@ -1,4 +1,5 @@
 COMPOSE=docker compose -f dev/docker-compose.dev.yaml
+COMPOSE_TEST=docker compose -f dev/docker-compose.test.yaml
 
 .DEFAULT_GOAL := wizard
 ## Run wizard
@@ -16,6 +17,12 @@ run:
 	$(COMPOSE) stop myelectricaldata_import
 	$(COMPOSE) rm -f myelectricaldata_import
 	python3 main.py action=run
+
+## Connect to EnedisGateway container : DEV
+run-test:
+	$(COMPOSE_TEST) stop myelectricaldata_import
+	$(COMPOSE_TEST) rm -f myelectricaldata_import
+	python3 main.py action=run env=test
 
 ## Connect to EnedisGateway container : DEV
 run-production:
