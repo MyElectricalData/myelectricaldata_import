@@ -130,12 +130,12 @@ def create_release(prerelease=False):
         choices=[*[Choice("custom", "Custom release version")], *new_version, *tags],
     ).execute()
 
-    branch = version
-
     if version == "custom":
         version = inquirer.text(
             message="Which release would you create ?",
         ).execute()
+
+    branch = version
 
     if version not in tags:
         prerelease = inquirer.confirm(
