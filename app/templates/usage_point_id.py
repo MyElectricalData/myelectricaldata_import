@@ -309,7 +309,7 @@ class UsagePointId:
                 if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
                     max_power = self.contract.subscribed_power.split(' ')[0]
                 else:
-                    max_power = 999
+                    max_power = 0
                 body += f"Votre abonnement : <b>{max_power}kVA</b>"
                 body += f"<input style='display: none' type='text' value='{max_power}' id='consumption_max_power'>"
                 body += f"""
