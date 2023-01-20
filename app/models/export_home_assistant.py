@@ -122,8 +122,8 @@ class HomeAssistant:
             "time": [],
             f"{measurement_direction}": []
         }
-        end = datetime.now() - timedelta(days=1)
-        begin = end - timedelta(days)
+        end =  datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
+        begin = datetime.combine(end - timedelta(days), datetime.min.time())
         range = app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
         for data in range:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
@@ -490,6 +490,24 @@ class HomeAssistant:
                     "day_7_HC": stats.detail(6, "HC")["value"],
                     "peak_offpeak_percent": round(peak_offpeak_percent, 2),
                     "YesterdayConsumptionMaxPower": yesterday_consumption_max_power,
+                    "dailyweek_MP": [
+                        convert_kw(stats.max_power(0)["value"]),
+                        convert_kw(stats.max_power(1)["value"]),
+                        convert_kw(stats.max_power(2)["value"]),
+                        convert_kw(stats.max_power(3)["value"]),
+                        convert_kw(stats.max_power(4)["value"]),
+                        convert_kw(stats.max_power(5)["value"]),
+                        convert_kw(stats.max_power(6)["value"]),
+                    ],
+                    "dailyweek_MP_over": [
+                        stats.max_power_over(0)["value"],
+                        stats.max_power_over(1)["value"],
+                        stats.max_power_over(2)["value"],
+                        stats.max_power_over(3)["value"],
+                        stats.max_power_over(4)["value"],
+                        stats.max_power_over(5)["value"],
+                        stats.max_power_over(6)["value"],                        
+                    ],
                     "monthly_evolution": round(monthly_evolution, 2),
                     "current_week_evolution": round(current_week_evolution, 2),
                     "current_month_evolution": round(current_month_evolution, 2),
