@@ -332,7 +332,7 @@ class UsagePointId:
                     </tr>
                     <tr>
                         <td style='border: none'></td>
-                        <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Liens vers la documentation officiel d'Enedis.</a> (cf. chapitre 7)</td>
+                        <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Lien vers la documentation officielle d’Enedis.</a> (cf. chapitre 7)</td>
                     </tr>
                 </table>"""
                 body += f"""

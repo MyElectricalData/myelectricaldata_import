@@ -22,7 +22,6 @@ class Cache:
 
         target = f"{self.url}/cache/{self.usage_point_id}"
         response = Query(endpoint=target, headers=self.headers).delete()
-        print(response.text)
         if response.status_code == 200:
             try:
                 status = json.loads(response.text)

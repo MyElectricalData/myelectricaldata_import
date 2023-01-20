@@ -94,7 +94,6 @@ class HomeAssistant:
             self.last_x_day(5, "production")
             self.history_usage_point_id("production")
 
-
     def last_x_day(self, days, measurement_direction):
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}"
         config = {
@@ -122,7 +121,7 @@ class HomeAssistant:
             "time": [],
             f"{measurement_direction}": []
         }
-        end =  datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
+        end = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
         range = app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
         for data in range:
@@ -506,7 +505,7 @@ class HomeAssistant:
                         stats.max_power_over(3)["value"],
                         stats.max_power_over(4)["value"],
                         stats.max_power_over(5)["value"],
-                        stats.max_power_over(6)["value"],                        
+                        stats.max_power_over(6)["value"],
                     ],
                     "monthly_evolution": round(monthly_evolution, 2),
                     "current_week_evolution": round(current_week_evolution, 2),
