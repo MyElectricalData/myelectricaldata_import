@@ -498,6 +498,15 @@ class HomeAssistant:
                         convert_kw(stats.max_power(5)["value"]),
                         convert_kw(stats.max_power(6)["value"]),
                     ],
+                    "dailyweek_MP_time": [
+                        (stats.max_power_time(0)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(1)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(2)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(3)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(4)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(5)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(6)["value"]).strftime(self.date_format_detail),                      
+                    ],
                     "dailyweek_MP_over": [
                         stats.max_power_over(0)["value"],
                         stats.max_power_over(1)["value"],
