@@ -101,7 +101,21 @@ class Stat:
             "value": boolv,
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
-        }  
+        } 
+
+    def max_power_time(self, index=0):
+        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        end = datetime.combine(begin, datetime.max.time())
+        max_power_time = ''
+        # print(app.DB.get_daily_max_power_range(self.usage_point_id, begin, end))
+        for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
+            # print(data)
+            max_power_time = data.event_date
+        return {
+            "value": max_power_time,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }         
 
     def current_week_array(self):
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
@@ -523,25 +537,6 @@ class Stat:
                     value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
-
-    def max_power_over(self, index=0):
-        max_power = 9999
-        if hasattr(self.usage_point_id_contract,
-                   "subscribed_power") and self.usage_point_id_contract.subscribed_power is not None:
-            max_power = int(self.usage_point_id_contract.subscribed_power.split(' ')[0])
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
-        end = datetime.combine(begin, datetime.max.time())
-        value = 0
-        boolv = "false"
-        for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
-            value = value + data.value
-            if (value / 1000) > max_power:
-                boolv = "true"
-        return {
-            "value": boolv,
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
