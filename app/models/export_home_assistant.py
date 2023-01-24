@@ -5,7 +5,6 @@ from math import floor
 
 import pytz
 from dateutil.relativedelta import relativedelta
-from models.log import Log
 from models.stat import Stat
 
 utc = pytz.UTC
@@ -237,7 +236,7 @@ class HomeAssistant:
                 _offpeak_hours = []
                 offpeak_hour = getattr(self.usage_point, f"offpeak_hours_{idx}")
                 if type(offpeak_hour) != str:
-                    Log().error([
+                    app.LOG.error([
                         f"offpeak_hours_{idx} n'est pas une chaine de caractères",
                         "  Format si une seule période : 00H00-06H00",
                         "  Format si plusieurs périodes : 00H00-06H00;12H00-14H00"

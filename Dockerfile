@@ -16,4 +16,7 @@ RUN pip install --upgrade pip
 RUN pip install -r /app/requirements.txt
 RUN pip install git+https://github.com/influxdata/influxdb-client-python.git@master
 
+RUN mkdir /data
+RUN mkdir /log
+
 CMD ["python", "-u", "/app/main.py"]

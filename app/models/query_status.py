@@ -15,7 +15,6 @@ from models.query import Query
 class Status:
 
     def __init__(self, headers=None):
-        self.log = Log()
         self.url = URL
         self.headers = headers
 
@@ -27,7 +26,7 @@ class Status:
             try:
                 status = json.loads(response.text)
                 for key, value in status.items():
-                    self.log.log(f"{key}: {value}")
+                    app.LOG.log(f"{key}: {value}")
                 status["version"] = get_version()
                 return status
             except LookupError:
@@ -66,7 +65,7 @@ class Status:
             except Exception as e:
                 if "DEBUG" in environ and getenv("DEBUG"):
                     traceback.print_exc()
-                Log().error(e)
+                app.LOG.error(e)
                 return {
                     "error": True,
                     "description": "Erreur lors de la récupération du statut du compte."
@@ -74,7 +73,7 @@ class Status:
         else:
             if "DEBUG" in environ and getenv("DEBUG"):
                 traceback.print_exc()
-            Log().error(status["detail"])
+            app.LOG.error(status["detail"])
             return {
                 "error": True,
                 "description": status["detail"]

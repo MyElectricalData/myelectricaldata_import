@@ -15,7 +15,8 @@ def get_version():
 
 class Config:
 
-    def __init__(self, path="/data"):
+    def __init__(self, log, path="/data"):
+        self.log = log
         self.path = path
         self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
@@ -53,6 +54,7 @@ class Config:
         self.default = {
             "cycle": 14400,
             "debug": False,
+            "log2file": False,
             "myelectricaldata": {
                 "pdl": {
                     "enable": True,
@@ -135,8 +137,8 @@ class Config:
             }
 
     def check(self):
-        app.LOG.separator()
-        app.LOG.log(f"Check {self.file} :")
+        self.log.separator()
+        self.log.log(f"Check {self.file} :")
         lost_params = []
         # CHECK HOME ASSISTANT CONFIGURATION
         config_name = "home_assistant"
@@ -182,36 +184,36 @@ class Config:
             msg.append("")
             msg.append("You can get list of parameters here :")
             msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
-            app.LOG.critical(msg)
+            self.log.critical(msg)
         else:
-            app.LOG.log(" => Config valid")
+            self.log.log(" => Config valid")
 
         return lost_params
 
     def display(self):
-        app.LOG.log("Display configuration :")
+        self.log.log("Display configuration :")
         for key, value in self.usage_point_config.items():
             if type(value) is dict:
-                app.LOG.log(f"  {key}:")
+                self.log.log(f"  {key}:")
                 for dic_key, dic_value in value.items():
                     if type(dic_value) is dict:
-                        app.LOG.log(f"    {dic_key}:")
+                        self.log.log(f"    {dic_key}:")
                         for dic1_key, dic1_value in dic_value.items():
                             if dic1_key == "password" or dic1_key == "token":
                                 dic1_value = "** hidden **"
                             if dic1_value is None or dic1_value == "None":
                                 dic1_value = "''"
-                            app.LOG.log(f"      {dic1_key}: {dic1_value}")
+                            self.log.log(f"      {dic1_key}: {dic1_value}")
                     else:
                         if dic_key == "password" or dic_key == "token":
                             dic_value = "** hidden **"
                         if dic_value is None or dic_value == "None":
                             dic_value = "''"
-                        app.LOG.log(f"    {dic_key}: {dic_value}")
+                        self.log.log(f"    {dic_key}: {dic_value}")
             else:
                 if key == "password" or key == "token":
                     value = "** hidden **"
-                app.LOG.log(f"  {key}: {value}")
+                self.log.log(f"  {key}: {value}")
 
     def get(self, path=None):
         if path:
@@ -223,7 +225,7 @@ class Config:
             return self.usage_point_config
 
     def set(self, path, value):
-        app.LOG.log(f" => Switch {path} to {value}")
+        self.log.log(f" => Switch {path} to {value}")
         with open(f'{self.path_file}', 'r+') as f:
             text = f.read()
             text = re.sub(fr'(?<={path}: ).*', str(value).lower(), text)

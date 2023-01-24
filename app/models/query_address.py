@@ -88,7 +88,8 @@ class Address:
                 app.LOG.debug(f" => {result}")
         if "error" not in result:
             for key, value in result.items():
-                app.LOG.log(f"{key}: {value}")
+                if key != "usage_point_addresses":
+                    app.LOG.log(f"{key}: {value}")
         else:
             app.LOG.error(result)
         return result

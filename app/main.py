@@ -16,27 +16,30 @@ from templates.usage_point_id import UsagePointId
 
 LOG = Log()
 
-if "DEV" in os.environ or "DEBUG" in os.environ:
-    LOG.title_warning("Run in Development mode")
-else:
-    LOG.title("Run in production mode")
-
 if "APPLICATION_PATH_DATA" in os.environ:
     APPLICATION_PATH_DATA = os.getenv("APPLICATION_PATH_DATA")
 else:
     APPLICATION_PATH_DATA = "/data"
 CONFIG = Config(
+    log=LOG,
     path=APPLICATION_PATH_DATA
 )
+
 CONFIG.load()
-
-LOG.logo(get_version())
-
 CONFIG.display()
 CONFIG.check()
 
-DB = Database()
+DB = Database(LOG)
+DB.init_database()
 
+if "DEV" in os.environ or "DEBUG" in os.environ:
+    LOG.title_warning("Run in Development mode")
+else:
+    LOG.title("Run in production mode")
+
+LOG.logo(get_version())
+
+DB.unlock()
 DB.lock()
 
 LOG.title("Loading configuration...")

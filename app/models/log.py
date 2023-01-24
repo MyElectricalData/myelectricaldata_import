@@ -14,15 +14,25 @@ def str2bool(v):
 class Log:
     def __init__(self):
         self.message = None
+        handlers = []
         if os.path.exists("/data/config.yaml"):
             with open(f'/data/config.yaml') as file:
                 self.usage_point_config = yaml.load(file, Loader=yaml.FullLoader)
+                if "log2file" in self.usage_point_config and self.usage_point_config["log2file"]:
+                    log_path = "/log"
+                    if not os.path.exists(log_path):
+                        os.makedirs(log_path)
+                    handlers.append(logging.FileHandler(f"{log_path}/myelectricaldata.log", mode="w"))
+
+        handlers.append(logging.StreamHandler(sys.stdout))
 
         logging.basicConfig(
-            format='%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
+            handlers=handlers,
+            format="%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
         self.logging = logging.getLogger(__name__)
+
         if "DEBUG" in os.environ and str2bool(os.getenv("DEBUG")):
             self.logging.setLevel("DEBUG")
         else:
