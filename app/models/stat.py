@@ -107,10 +107,13 @@ class Stat:
         begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         max_power_time = ''
-        # print(app.DB.get_daily_max_power_range(self.usage_point_id, begin, end))
+        #print(app.DB.get_daily_max_power_range(self.usage_point_id, begin, end))
         for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
-            # print(data)
-            max_power_time = data.event_date
+            #print(data)
+            if data.event_date is None or data.event_date == "":
+                max_power_time = data.date
+            else:
+                max_power_time = data.event_date
         return {
             "value": max_power_time,
             "begin": begin.strftime(self.date_format),
