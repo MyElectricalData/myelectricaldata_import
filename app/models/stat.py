@@ -385,6 +385,15 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
+    
+    def yearly_evolution(self):
+        app.LOG.log("yearly_evolution")
+        self.current_year()
+        self.current_year_last_year()
+        if self.value_last_month_last_year != 0:
+            self.value_yearly_evolution = ((100 * self.value_current_year) / self.value_current_year_last_year) - 100
+        app.LOG.log(f" => {self.value_yearly_evolution}")
+        return self.value_yearly_evolution    
 
     def yesterday_hc_hp(self):
         app.LOG.log("yesterday_hp / yesterday_hc")
