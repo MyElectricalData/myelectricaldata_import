@@ -41,6 +41,7 @@ class Stat:
         self.value_current_month_evolution = 0
         self.value_peak_offpeak_percent_hp_vs_hc = 0
         self.value_monthly_evolution = 0
+        self.value_yearly_evolution = 0
         self.usage_point_id_contract = app.DB.get_contract(self.usage_point_id)
 
     def daily(self, index=0):
