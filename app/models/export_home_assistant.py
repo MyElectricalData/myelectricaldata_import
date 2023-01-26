@@ -345,6 +345,7 @@ class HomeAssistant:
         current_month_evolution = stats.current_month_evolution()
         yesterday_evolution = stats.yesterday_evolution()
         monthly_evolution = stats.monthly_evolution()
+        yearly_evolution =  stats.yearly_evolution()
 
         # app.LOG.show(yesterday_last_year)
 
@@ -520,6 +521,7 @@ class HomeAssistant:
                     "current_week_evolution": round(current_week_evolution, 2),
                     "current_month_evolution": round(current_month_evolution, 2),
                     "yesterday_evolution": round(yesterday_evolution, 2),
+                    "yearly_evolution": round(yearly_evolution, 2),
                     "friendly_name": f"myelectricaldata.{self.usage_point_id}",
                     "errorLastCall": "",
                     "errorLastCallInterne": "",
