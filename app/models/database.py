@@ -180,6 +180,17 @@ class Database:
             os.remove(self.lock_file)
         return self.lock_status()
 
+    def clean_database(self, current_usage_point_id):
+        for usage_point in self.get_usage_point_all():
+            if usage_point.usage_point_id not in current_usage_point_id:
+                self.log.warning(f"- Suppression du point de livraison {usage_point.usage_point_id}")
+                self.delete_usage_point(usage_point.usage_point_id)
+                self.delete_addresse(usage_point.usage_point_id)
+                self.delete_daily(usage_point.usage_point_id)
+                self.delete_detail(usage_point.usage_point_id)
+                self.delete_daily_max_power(usage_point.usage_point_id)
+        return True
+
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONFIG
     ## ----------------------------------------------------------------------------------------------------------------
@@ -504,6 +515,11 @@ class Database:
         usage_points.ban = ban
         self.session.flush()
 
+    def delete_usage_point(self, usage_point_id):
+        self.session.execute(delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id))
+        self.session.flush()
+        return True
+
     ## ----------------------------------------------------------------------------------------------------------------
     ## ADDRESSES
     ## ----------------------------------------------------------------------------------------------------------------
@@ -545,6 +561,11 @@ class Database:
                     count=count)
             )
         self.session.flush()
+
+    def delete_addresse(self, usage_point_id):
+        self.session.execute(delete(Addresses).where(Addresses.usage_point_id == usage_point_id))
+        self.session.flush()
+        return True
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONTRACTS

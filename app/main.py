@@ -42,12 +42,20 @@ LOG.logo(get_version())
 DB.unlock()
 DB.lock()
 
-LOG.title("Loading configuration...")
+LOG.title("Chargement du config.yaml...")
+usage_point_list = []
+if CONFIG.list_usage_point() is not None:
+    for usage_point_id, data in CONFIG.list_usage_point().items():
+        LOG.log(f"{usage_point_id}")
+        DB.set_usage_point(usage_point_id, data)
+        usage_point_list.append(usage_point_id)
+        LOG.log("  => Success")
+else:
+    LOG.warning("Aucun point de livraison détecté.")
 
-for usage_point_id, data in CONFIG.list_usage_point().items():
-    LOG.log(f"{usage_point_id}")
-    DB.set_usage_point(usage_point_id, data)
-    LOG.log("  => Success")
+LOG.title("Nettoyage de la base de données...")
+DB.clean_database(usage_point_list)
+
 
 MQTT_CONFIG = CONFIG.mqtt_config()
 MQTT_ENABLE = False

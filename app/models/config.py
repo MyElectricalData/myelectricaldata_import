@@ -21,36 +21,36 @@ class Config:
         self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
         self.usage_point_config = {}
-        self.mandatory_parameters = {
-            "myelectricaldata": {
-                "pdl": {
-                    "enable": True,
-                    "name": "",
-                    "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                    "cache": True,
-                    "plan": "BASE",
-                    "consumption": True,
-                    "consumption_detail": True,
-                    "consumption_price_hc": 0,
-                    "consumption_price_hp": 0,
-                    "consumption_price_base": 0,
-                    "consumption_max_date": "",
-                    "consumption_detail_max_date": "",
-                    "production": False,
-                    "production_detail": False,
-                    "production_max_date": "",
-                    "production_detail_max_date": "",
-                    "production_price": 0,
-                    "offpeak_hours_0": '',
-                    "offpeak_hours_1": '',
-                    "offpeak_hours_2": '',
-                    "offpeak_hours_3": '',
-                    "offpeak_hours_4": '',
-                    "offpeak_hours_5": '',
-                    "offpeak_hours_6": '',
-                }
-            }
-        }
+        self.mandatory_parameters = {}
+        #     "myelectricaldata": {
+        #         "pdl": {
+        #             "enable": True,
+        #             "name": "",
+        #             "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        #             "cache": True,
+        #             "plan": "BASE",
+        #             "consumption": True,
+        #             "consumption_detail": True,
+        #             "consumption_price_hc": 0,
+        #             "consumption_price_hp": 0,
+        #             "consumption_price_base": 0,
+        #             "consumption_max_date": "",
+        #             "consumption_detail_max_date": "",
+        #             "production": False,
+        #             "production_detail": False,
+        #             "production_max_date": "",
+        #             "production_detail_max_date": "",
+        #             "production_price": 0,
+        #             "offpeak_hours_0": '',
+        #             "offpeak_hours_1": '',
+        #             "offpeak_hours_2": '',
+        #             "offpeak_hours_3": '',
+        #             "offpeak_hours_4": '',
+        #             "offpeak_hours_5": '',
+        #             "offpeak_hours_6": '',
+        #         }
+        #     }
+        # }
         self.default = {
             "cycle": 14400,
             "debug": False,
@@ -153,27 +153,27 @@ class Config:
                     self.usage_point_config[config_name][key] = data
 
         # CHECK ENEDIS GATEWAY CONFIGURATION
-        if "myelectricaldata" not in self.usage_point_config:
-            lost_params.append("myelectricaldata")
-        else:
-            if not isinstance(self.usage_point_config["myelectricaldata"], dict):
-                lost_params.append("myelectricaldata.PDL")
-            else:
-                for pdl, pdl_data in self.usage_point_config["myelectricaldata"].items():
-                    if len(str(pdl)) != 14:
-                        lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
-                    if not isinstance(self.usage_point_config["myelectricaldata"][pdl], dict):
-                        lost_params.append(f"myelectricaldata.{pdl}.TOKEN")
-                    else:
-                        for key, data in self.default['myelectricaldata']['pdl'].items():
-                            mandatory = False
-                            if key in self.mandatory_parameters:
-                                mandatory = True
-                            if mandatory and not key in self.usage_point_config["myelectricaldata"][pdl]:
-                                lost_params.append(f"myelectricaldata.{pdl}.{key.upper()}")
-                            else:
-                                if key not in self.usage_point_config["myelectricaldata"][pdl]:
-                                    self.usage_point_config["myelectricaldata"][pdl][key] = data
+        # if "myelectricaldata" not in self.usage_point_config:
+        #     lost_params.append("myelectricaldata")
+        # else:
+        #     if not isinstance(self.usage_point_config["myelectricaldata"], dict):
+        #         lost_params.append("myelectricaldata.PDL")
+        #     else:
+        #         for pdl, pdl_data in self.usage_point_config["myelectricaldata"].items():
+        #             if len(str(pdl)) != 14:
+        #                 lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
+        #             if not isinstance(self.usage_point_config["myelectricaldata"][pdl], dict):
+        #                 lost_params.append(f"myelectricaldata.{pdl}.TOKEN")
+        #             else:
+        #                 for key, data in self.default['myelectricaldata']['pdl'].items():
+        #                     mandatory = False
+        #                     if key in self.mandatory_parameters:
+        #                         mandatory = True
+        #                     if mandatory and not key in self.usage_point_config["myelectricaldata"][pdl]:
+        #                         lost_params.append(f"myelectricaldata.{pdl}.{key.upper()}")
+        #                     else:
+        #                         if key not in self.usage_point_config["myelectricaldata"][pdl]:
+        #                             self.usage_point_config["myelectricaldata"][pdl][key] = data
 
         if lost_params:
             msg = [

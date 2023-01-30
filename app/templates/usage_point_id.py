@@ -25,12 +25,15 @@ class UsagePointId:
             self.max_history_chart = 6
             if self.usage_point_id is not None:
                 self.config = self.db.get_usage_point(self.usage_point_id)
-                self.headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': self.config.token,
-                    'call-service': "myelectricaldata",
-                    'version': get_version()
-                }
+                if hasattr(self.config, "token"):
+                    self.headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': self.config.token,
+                        'call-service': "myelectricaldata",
+                        'version': get_version()
+                    }
+                else:
+                    self.headers = None
             self.usage_point_select = UsagePointSelect(usage_point_id)
             self.side_menu = SideMenu()
             menu = {}
@@ -171,286 +174,302 @@ class UsagePointId:
             self.recap_hc_hp = "Pas de données."
 
     def display(self):
+
         if app.DB.lock_status():
             return Loading().display()
         else:
-            address = self.get_address()
-            if address is None:
-                address = "Inconnue"
-            if hasattr(self.config, "name"):
-                title = f"{self.usage_point_id} - {self.config.name}"
+            if self.headers is None:
+                self.javascript = "window.location.href = '/';"
+                with open(f'{self.application_path}/templates/html/usage_point_id.html') as file_:
+                    index_template = Template(file_.read())
+                html = index_template.render(
+                    select_usage_points=self.usage_point_select.html(),
+                    javascript_loader=open(f'{self.application_path}/templates/html/head.html').read(),
+                    side_menu=self.side_menu.html(),
+                    javascript=self.javascript,
+                    # configuration=self.configuration_div.html().strip(),
+                    menu=self.menu.html(),
+                    css=self.menu.css()
+                )
+                return html
             else:
-                title = address
-
-            with open(f'{self.application_path}/templates/md/usage_point_id.md') as file_:
-                homepage_template = Template(file_.read())
-            body = homepage_template.render(
-                title=title,
-                address=address,
-                contract_data=self.contract_data(),
-                address_data=address,
-            )
-            body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
-            body += self.offpeak_hours_table()
-
-            body += "<h1>Récapitulatif</h1>"
-            # RECAP CONSUMPTION
-            if hasattr(self.config, "consumption") and self.config.consumption:
-                self.generate_data("consumption")
-                self.consumption()
-                recap_consumption = self.recap(data=self.recap_consumption_data)
-                body += f"<h2>Consommation</h2>"
-                body += str(recap_consumption)
-                body += '<div id="chart_daily_consumption"></div>'
-
-            # # MAX POWER CONSUMPTION
-            # if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
-            #     recap_consumption_max_power = self.recap(data=self.recap_consumption_max_power)
-            #     body += f"<h2>Puissance maximun</h2>"
-            #     body += str(recap_consumption_max_power)
-            #     body += '<div id="chart_daily_consumption_max_power"></div>'
-
-            # RATIO HP/HC
-            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
-                self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id))
-                body += "<h2>Ratio HC/HP</h2>"
-                body += "<table class='table_hchp'><tr>"
-                body += str(self.recap_hc_hp)
-                body += "</tr></table>"
-
-            # RECAP PRODUCTION
-            if hasattr(self.config, "production") and self.config.production:
-                self.generate_data("production")
-                self.production()
-                recap_production = self.recap(data=self.recap_production_data)
-                body += f"<h2>Production</h2>"
-                body += str(recap_production)
-                body += '<div id="chart_daily_production"></div>'
-
-            # RECAP CONSUMPTION VS PRODUCTION
-            if (
-                    hasattr(self.config, "consumption") and self.config.consumption and
-                    hasattr(self.config, "production") and self.config.production
-            ):
-                body += "<h2>Consommation VS Production</h2>"
-                for year, data in self.recap_consumption_data.items():
-                    if data["value"] != 0:
-                        # body += f'<div><h3>{year}</h3></div>'
-                        # body += f'<div>{self.consumption_vs_production(year)}</div>'
-                        self.consumption_vs_production(year)
-                        body += f'<div id="chart_daily_production_compare_{year}"></div>'
-
-            body += "<h1>Mes données</h1>"
-            # CONSUMPTION DATATABLE
-            if hasattr(self.config, "consumption") and self.config.consumption:
-                body += f"<h2>Consommation</h2>"
-                body += f"<h3>Journalière</h2>"
-                body += f"""
-                <table id="dataTableConsommation" class="display">
-                    <thead>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Consommation (Wh)</th>
-                            <th class="title">Consommation (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </thead>
-                    <tfoot>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Consommation (Wh)</th>
-                            <th class="title">Consommation (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </tfoot>
-                </table>
-                """
-            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
-                body += f"<h3>Horaires</h2>"
-                body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
-                body += f"""
-                <table id="dataTableConsommationDetail" class="display">
-                    <thead>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Horaire</th>
-                            <th class="title">Consommation (Wh)</th>
-                            <th class="title">Consommation (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </thead>
-                    <tfoot>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Horaire</th>
-                            <th class="title">Consommation (Wh)</th>
-                            <th class="title">Consommation (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </tfoot>
-                </table>
-                """
-            # MAX POWER DATATABLE
-            if hasattr(self.config,
-                       "consumption_max_power") and self.config.consumption_max_power:
-                body += f"<h2>Puissance Maximale</h2>"
-                if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
-                    max_power = self.contract.subscribed_power.split(' ')[0]
+                address = self.get_address()
+                if address is None:
+                    address = "Inconnue"
+                if hasattr(self.config, "name"):
+                    title = f"{self.usage_point_id} - {self.config.name}"
                 else:
-                    max_power = 0
-                body += f"Votre abonnement : <b>{max_power}kVA</b>"
-                body += f"<input style='display: none' type='text' value='{max_power}' id='consumption_max_power'>"
-                body += f"""
-                <table style='border: none;'>
-                    <tr>
-                        <td style='width: 30px; background-color: #FFB600'>&nbsp;</td>
-                        <td style='border: none'>Seuil des 90% de l'abonnement atteint.</td>
-                    </tr>
-                    <tr>
-                        <td style='width: 30px; background-color: #FF0000'>&nbsp;</td>
-                        <td style='border: none'>Dépassement de l'abonnement maximal.</td>
-                    </tr>
-                    <tr>
-                        <td style='border: none'></td>
-                        <td style='border: none'>ATTENTION, Un dépassement d'abonnement ne veut pas forcement dire 
-                        qu'il est nécessaire de basculer sur un abonnement supérieur.
-                        Le compteur Linky vous autorise à dépasser un certain seuil pendant un certain temps afin
-                        d'absorber un pic de consommation anormal sans pour autant disjoncter.                        
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style='border: none'></td>
-                        <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Lien vers la documentation officielle d’Enedis.</a> (cf. chapitre 7)</td>
-                    </tr>
-                </table>"""
-                body += f"""
-                <table id="dataTablePuissance" class="display">
-                    <thead>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Événement</th>
-                            <th class="title">Puissance (VA)</th>
-                            <th class="title">Puissance (kVA)</th>
-                            <th class="title">Ampère (A)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </thead>
-                    <tfoot>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Événement</th>
-                            <th class="title">Puissance (VA)</th>
-                            <th class="title">Puissance (kVA)</th>
-                            <th class="title">Ampère (A)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </tfoot>
-                </table>
-                """
+                    title = address
 
-            # PRODUCTION DATATABLE
-            if hasattr(self.config, "production") and self.config.production:
-                body += f"<h2>Production</h2>"
-                body += f"<h3>Journalière</h2>"
-                body += f"""
-                <table id="dataTableProduction" class="display">
-                    <thead>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Production (Wh)</th>
-                            <th class="title">Production (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </thead>
-                    <tfoot>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Production (Wh)</th>
-                            <th class="title">Production (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </tfoot>
-                </table>
-                """
-            if hasattr(self.config, "production_detail") and self.config.production_detail:
-                body += f"<h3>Horaires</h2>"
-                body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
-                body += f"""
-                <table id="dataTableProductionDetail" class="display">
-                    <thead>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Horaire</th>
-                            <th class="title">Production (Wh)</th>
-                            <th class="title">Production (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </thead>
-                    <tfoot>
-                        <tr>
-                            <th class="title">Date</th>
-                            <th class="title">Horaire</th>
-                            <th class="title">Production (Wh)</th>
-                            <th class="title">Production (kWh)</th>
-                            <th class="title">Échec</th>
-                            <th class="title">En&nbsp;cache</th>
-                            <th class="title">Cache</th>
-                            <th class="title">Liste noire</th>
-                        </tr>
-                    </tfoot>
-                </table>
-                """
+                with open(f'{self.application_path}/templates/md/usage_point_id.md') as file_:
+                    homepage_template = Template(file_.read())
+                body = homepage_template.render(
+                    title=title,
+                    address=address,
+                    contract_data=self.contract_data(),
+                    address_data=address,
+                )
+                body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
+                body += self.offpeak_hours_table()
 
-            with open(f'{self.application_path}/templates/html/usage_point_id.html') as file_:
-                index_template = Template(file_.read())
-            html = index_template.render(
-                select_usage_points=self.usage_point_select.html(),
-                javascript_loader=open(f'{self.application_path}/templates/html/head.html').read(),
-                body=body,
-                side_menu=self.side_menu.html(),
-                javascript=(
-                        self.configuration_div.javascript()
-                        + self.side_menu.javascript()
-                        + self.usage_point_select.javascript()
-                        + self.menu.javascript()
-                        + open(f'{self.application_path}/templates/js/loading.js').read()
-                        + open(f'{self.application_path}/templates/js/notif.js').read()
-                        + open(f'{self.application_path}/templates/js/gateway_status.js').read()
-                        + open(f'{self.application_path}/templates/js/datatable.js').read()
-                        + open(f'{self.application_path}/templates/js/loading.js').read()
-                        + self.javascript
-                ),
-                configuration=self.configuration_div.html().strip(),
-                menu=self.menu.html(),
-                css=self.menu.css()
-            )
+                body += "<h1>Récapitulatif</h1>"
+                # RECAP CONSUMPTION
+                if hasattr(self.config, "consumption") and self.config.consumption:
+                    self.generate_data("consumption")
+                    self.consumption()
+                    recap_consumption = self.recap(data=self.recap_consumption_data)
+                    body += f"<h2>Consommation</h2>"
+                    body += str(recap_consumption)
+                    body += '<div id="chart_daily_consumption"></div>'
+
+                # # MAX POWER CONSUMPTION
+                # if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+                #     recap_consumption_max_power = self.recap(data=self.recap_consumption_max_power)
+                #     body += f"<h2>Puissance maximun</h2>"
+                #     body += str(recap_consumption_max_power)
+                #     body += '<div id="chart_daily_consumption_max_power"></div>'
+
+                # RATIO HP/HC
+                if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                    self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id))
+                    body += "<h2>Ratio HC/HP</h2>"
+                    body += "<table class='table_hchp'><tr>"
+                    body += str(self.recap_hc_hp)
+                    body += "</tr></table>"
+
+                # RECAP PRODUCTION
+                if hasattr(self.config, "production") and self.config.production:
+                    self.generate_data("production")
+                    self.production()
+                    recap_production = self.recap(data=self.recap_production_data)
+                    body += f"<h2>Production</h2>"
+                    body += str(recap_production)
+                    body += '<div id="chart_daily_production"></div>'
+
+                # RECAP CONSUMPTION VS PRODUCTION
+                if (
+                        hasattr(self.config, "consumption") and self.config.consumption and
+                        hasattr(self.config, "production") and self.config.production
+                ):
+                    body += "<h2>Consommation VS Production</h2>"
+                    for year, data in self.recap_consumption_data.items():
+                        if data["value"] != 0:
+                            # body += f'<div><h3>{year}</h3></div>'
+                            # body += f'<div>{self.consumption_vs_production(year)}</div>'
+                            self.consumption_vs_production(year)
+                            body += f'<div id="chart_daily_production_compare_{year}"></div>'
+
+                body += "<h1>Mes données</h1>"
+                # CONSUMPTION DATATABLE
+                if hasattr(self.config, "consumption") and self.config.consumption:
+                    body += f"<h2>Consommation</h2>"
+                    body += f"<h3>Journalière</h2>"
+                    body += f"""
+                    <table id="dataTableConsommation" class="display">
+                        <thead>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Consommation (Wh)</th>
+                                <th class="title">Consommation (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Consommation (Wh)</th>
+                                <th class="title">Consommation (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    """
+                if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                    body += f"<h3>Horaires</h2>"
+                    body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
+                    body += f"""
+                    <table id="dataTableConsommationDetail" class="display">
+                        <thead>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Horaire</th>
+                                <th class="title">Consommation (Wh)</th>
+                                <th class="title">Consommation (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Horaire</th>
+                                <th class="title">Consommation (Wh)</th>
+                                <th class="title">Consommation (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    """
+                # MAX POWER DATATABLE
+                if hasattr(self.config,
+                           "consumption_max_power") and self.config.consumption_max_power:
+                    body += f"<h2>Puissance Maximale</h2>"
+                    if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
+                        max_power = self.contract.subscribed_power.split(' ')[0]
+                    else:
+                        max_power = 0
+                    body += f"Votre abonnement : <b>{max_power}kVA</b>"
+                    body += f"<input style='display: none' type='text' value='{max_power}' id='consumption_max_power'>"
+                    body += f"""
+                    <table style='border: none;'>
+                        <tr>
+                            <td style='width: 30px; background-color: #FFB600'>&nbsp;</td>
+                            <td style='border: none'>Seuil des 90% de l'abonnement atteint.</td>
+                        </tr>
+                        <tr>
+                            <td style='width: 30px; background-color: #FF0000'>&nbsp;</td>
+                            <td style='border: none'>Dépassement de l'abonnement maximal.</td>
+                        </tr>
+                        <tr>
+                            <td style='border: none'></td>
+                            <td style='border: none'>ATTENTION, Un dépassement d'abonnement ne veut pas forcement dire 
+                            qu'il est nécessaire de basculer sur un abonnement supérieur.
+                            Le compteur Linky vous autorise à dépasser un certain seuil pendant un certain temps afin
+                            d'absorber un pic de consommation anormal sans pour autant disjoncter.                        
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style='border: none'></td>
+                            <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Lien vers la documentation officielle d’Enedis.</a> (cf. chapitre 7)</td>
+                        </tr>
+                    </table>"""
+                    body += f"""
+                    <table id="dataTablePuissance" class="display">
+                        <thead>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Événement</th>
+                                <th class="title">Puissance (VA)</th>
+                                <th class="title">Puissance (kVA)</th>
+                                <th class="title">Ampère (A)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Événement</th>
+                                <th class="title">Puissance (VA)</th>
+                                <th class="title">Puissance (kVA)</th>
+                                <th class="title">Ampère (A)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    """
+
+                # PRODUCTION DATATABLE
+                if hasattr(self.config, "production") and self.config.production:
+                    body += f"<h2>Production</h2>"
+                    body += f"<h3>Journalière</h2>"
+                    body += f"""
+                    <table id="dataTableProduction" class="display">
+                        <thead>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Production (Wh)</th>
+                                <th class="title">Production (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Production (Wh)</th>
+                                <th class="title">Production (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    """
+                if hasattr(self.config, "production_detail") and self.config.production_detail:
+                    body += f"<h3>Horaires</h2>"
+                    body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
+                    body += f"""
+                    <table id="dataTableProductionDetail" class="display">
+                        <thead>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Horaire</th>
+                                <th class="title">Production (Wh)</th>
+                                <th class="title">Production (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th class="title">Date</th>
+                                <th class="title">Horaire</th>
+                                <th class="title">Production (Wh)</th>
+                                <th class="title">Production (kWh)</th>
+                                <th class="title">Échec</th>
+                                <th class="title">En&nbsp;cache</th>
+                                <th class="title">Cache</th>
+                                <th class="title">Liste noire</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    """
+
+                with open(f'{self.application_path}/templates/html/usage_point_id.html') as file_:
+                    index_template = Template(file_.read())
+                html = index_template.render(
+                    select_usage_points=self.usage_point_select.html(),
+                    javascript_loader=open(f'{self.application_path}/templates/html/head.html').read(),
+                    body=body,
+                    side_menu=self.side_menu.html(),
+                    javascript=(
+                            self.configuration_div.javascript()
+                            + self.side_menu.javascript()
+                            + self.usage_point_select.javascript()
+                            + self.menu.javascript()
+                            + open(f'{self.application_path}/templates/js/loading.js').read()
+                            + open(f'{self.application_path}/templates/js/notif.js').read()
+                            + open(f'{self.application_path}/templates/js/gateway_status.js').read()
+                            + open(f'{self.application_path}/templates/js/datatable.js').read()
+                            + open(f'{self.application_path}/templates/js/loading.js').read()
+                            + self.javascript
+                    ),
+                    configuration=self.configuration_div.html().strip(),
+                    menu=self.menu.html(),
+                    css=self.menu.css()
+                )
             return html
 
     def contract_data(self):
