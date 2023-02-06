@@ -615,3 +615,23 @@ class ConsumptionDailyMaxPower(Base):
                f"blacklist={self.blacklist!r}, " \
                f"fail_count={self.fail_count!r}" \
                f")"
+
+
+class Tempo(Base):
+    __tablename__ = 'tempo'
+
+    date = Column(DateTime,
+                  primary_key=True,
+                  index=True,
+                  unique=True,
+                  )
+    color = Column(Text,
+                   nullable=False,
+                   index=True
+                   )
+
+    def __repr__(self):
+        return f"Tempo(" \
+               f"date={self.date!r}, " \
+               f"color={self.color!r}, " \
+               f")"

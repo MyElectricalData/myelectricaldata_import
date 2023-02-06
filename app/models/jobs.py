@@ -13,6 +13,8 @@ from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_power import Power
 from models.query_status import Status
+from models.query_tempo import Tempo
+from models.stat import Stat
 
 
 def export_finish():
@@ -48,6 +50,20 @@ class Job:
                 self.usage_points = app.DB.get_usage_point_all()
             else:
                 self.usage_points = [app.DB.get_usage_point(self.usage_point_id)]
+
+            #######################################################################################################
+            # FETCH TEMPO DATA
+            try:
+                tempo_config = self.config.tempo_config()
+                if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                    self.get_tempo()
+                else:
+                    app.LOG.title(
+                        [f"Import Tempo désactivé"])
+            except Exception as e:
+                traceback.print_exc()
+                app.LOG.error([f"Erreur lors de la récupération des données tempo", e])
+
             for self.usage_point_config in self.usage_points:
                 self.usage_point_id = self.usage_point_config.usage_point_id
                 app.LOG.log_usage_point_id(self.usage_point_id)
@@ -106,7 +122,18 @@ class Job:
                     except Exception as e:
                         traceback.print_exc()
                         app.LOG.error([f"Erreur lors de la récupération de votre puissance maximum journalière", e])
-
+                    try:
+                        if target == "price" or target is None:
+                            self.stat_price(self.usage_point_id)
+                    except Exception as e:
+                        traceback.print_exc()
+                        app.LOG.error([f"Erreur lors de la génération des statistique tarifaire de consommation", e])
+                    try:
+                        if target == "price" and target is None:
+                            self.stat_price(self.usage_point_id, "production")
+                    except Exception as e:
+                        traceback.print_exc()
+                        app.LOG.error([f"Erreur lors de la génération des statistique tarifaire de production", e])
                     try:
                         # #######################################################################################################
                         # # MQTT
@@ -324,6 +351,16 @@ class Job:
                 usage_point_id=self.usage_point_config.usage_point_id
             ).get()
         return result
+
+    def get_tempo(self):
+        app.LOG.title(
+            f"Récupération des données Tempo :")
+        return Tempo().get()
+
+    def stat_price(self, usage_point_id, measurement_direction="consumption"):
+        app.LOG.title(
+            f"Génération des statistiques Tarifaire de {measurement_direction}:")
+        return Stat(usage_point_id=usage_point_id, measurement_direction=measurement_direction).price()
 
     def home_assistant(self):
         if "enable" in self.home_assistant_config and self.home_assistant_config["enable"]:

@@ -55,6 +55,15 @@ class Config:
             "cycle": 14400,
             "debug": False,
             "log2file": False,
+            "tempo": {
+                "enable": True,
+                "price_blue_hc": 0.097,
+                "price_blue_hp": 0.1249,
+                "price_red_hc": 0.1216,
+                "price_red_hp": 0.6712,
+                "price_white_hc": 0.114,
+                "price_white_hp": 0.1508,
+            },
             "myelectricaldata": {
                 "pdl": {
                     "enable": True,
@@ -235,8 +244,11 @@ class Config:
         self.usage_point_config = yaml.load(text, Loader=yaml.FullLoader)
         app.DB.set_config(path, value)
 
-    # def reload(self):
-
+    def tempo_config(self):
+        if "tempo" in self.usage_point_config:
+            return self.usage_point_config["tempo"]
+        else:
+            return False
 
     def mqtt_config(self):
         if "mqtt" in self.usage_point_config:

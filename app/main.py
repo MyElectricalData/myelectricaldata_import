@@ -180,6 +180,11 @@ if __name__ == '__main__':
     def gateway_status():
         return Ajax().gateway_status()
 
+    @APP.route("/tempo", methods=['GET'])
+    @APP.route("/tempo/", methods=['GET'])
+    def tempo():
+        return Ajax().tempo()
+
 
     @APP.route("/datatable/<usage_point_id>/<measurement_direction>", methods=['GET'])
     @APP.route("/datatable/<usage_point_id>/<measurement_direction>/", methods=['GET'])

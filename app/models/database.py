@@ -13,7 +13,9 @@ from db_schema import (
     ProductionDaily,
     ConsumptionDetail,
     ProductionDetail,
-    ConsumptionDailyMaxPower
+    ConsumptionDailyMaxPower,
+    Tempo,
+    Statistique
 )
 from dependencies import str2bool
 from models.config import get_version
@@ -207,7 +209,6 @@ class Database:
             self.session.add(Config(key=key, value=json.dumps(value)))
         self.session.flush()
         self.session.expire_all()
-
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## USAGE POINTS
@@ -1556,5 +1557,72 @@ class Database:
         else:
             return 0
 
+    ## -----------------------------------------------------------------------------------------------------------------
+    ## TEMPO
+    ## -----------------------------------------------------------------------------------------------------------------
+    def get_tempo(self, order="desc"):
+        if order == "desc":
+            order = Tempo.date.desc()
+        else:
+            order = Tempo.date.asc()
+        return self.session.scalars(
+            select(Tempo)
+            .order_by(order)
+        ).all()
+
+    def get_tempo_range(self, begin, end, order="desc"):
+        if order == "desc":
+            order = Tempo.date.desc()
+        else:
+            order = Tempo.date.asc()
+        return self.session.scalars(
+            select(Tempo)
+            .where(Tempo.date >= begin)
+            .where(Tempo.date <= end)
+            .order_by(order)
+        ).all()
+
+    def set_tempo(self, date, color):
+        date = datetime.combine(date, datetime.min.time())
+        tempo = self.get_tempo_range(date, date)
+        if tempo:
+            for item in tempo:
+                item.color = color
+        else:
+            self.session.add(
+                Tempo(
+                    date=date,
+                    color=color
+                )
+            )
+        self.session.flush()
+        return True
+
+    ## ----------------------------------------------------------------------------------------------------------------
+    ## STATISTIQUES
+    ## ----------------------------------------------------------------------------------------------------------------
+    def get_stat(self, usage_point_id, key):
+        return self.session.scalars(
+            select(Statistique)
+            .join(UsagePoints.relation_stats)
+            .where(Statistique.usage_point_id == usage_point_id)
+            .where(Statistique.key == key)
+        ).all()
+
+    def set_stat(self, usage_point_id, key, value):
+        current_value = self.get_stat(usage_point_id, key)
+        if current_value:
+            for item in current_value:
+                item.value = value
+        else:
+            self.session.add(
+                Statistique(
+                    usage_point_id=usage_point_id,
+                    key=key,
+                    value=value
+                )
+            )
+        self.session.flush()
+        return True
 
 os.system("cd /app; alembic upgrade head")

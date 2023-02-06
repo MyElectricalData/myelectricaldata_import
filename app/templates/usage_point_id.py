@@ -1,13 +1,13 @@
 import __main__ as app
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import markdown
+import json
 from jinja2 import Template
 from mergedeep import Strategy, merge
 from models.config import get_version
 from templates.loading import Loading
 from templates.models.configuration import Configuration
-from templates.models.datatable import Datatable
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
@@ -18,17 +18,18 @@ class UsagePointId:
     def __init__(self, usage_point_id):
         if not app.DB.lock_status():
             self.db = app.DB
+            self.config = app.CONFIG
             self.application_path = app.APPLICATION_PATH
             self.usage_point_id = usage_point_id
             self.current_years = int(datetime.now().strftime("%Y"))
             self.max_history = 4
             self.max_history_chart = 6
             if self.usage_point_id is not None:
-                self.config = self.db.get_usage_point(self.usage_point_id)
-                if hasattr(self.config, "token"):
+                self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
+                if hasattr(self.usage_point_config, "token"):
                     self.headers = {
                         'Content-Type': 'application/json',
-                        'Authorization': self.config.token,
+                        'Authorization': self.usage_point_config.token,
                         'call-service': "myelectricaldata",
                         'version': get_version()
                     }
@@ -52,7 +53,7 @@ class UsagePointId:
                 },
                 menu,
                 strategy=Strategy.ADDITIVE)
-            if hasattr(self.config, "consumption") and self.config.consumption:
+            if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 menu = merge(
                     {
                         "import_daily": {
@@ -68,7 +69,7 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
-            if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+            if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
                 menu = merge(
                     {
                         "import_detail": {
@@ -84,7 +85,8 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
-            if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+            if hasattr(self.usage_point_config,
+                       "consumption_max_power") and self.usage_point_config.consumption_max_power:
                 menu = merge(
                     {
                         "import_daily_max_power": {
@@ -100,7 +102,7 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
-            if hasattr(self.config, "production") and self.config.production:
+            if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
                 menu = merge(
                     {
                         "import_production_daily": {
@@ -116,7 +118,7 @@ class UsagePointId:
                     },
                     menu,
                     strategy=Strategy.ADDITIVE)
-            if hasattr(self.config, "production_detail") and self.config.production_detail:
+            if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
                 menu = merge(
                     {
                         "import_production_detail": {
@@ -169,8 +171,10 @@ class UsagePointId:
             self.address = self.db.get_addresse(self.usage_point_id)
             self.javascript = ""
             self.recap_consumption_data = {}
+            self.recap_consumption_price = {}
             self.recap_consumption_max_power = {}
             self.recap_production_data = {}
+            self.recap_production_price = {}
             self.recap_hc_hp = "Pas de données."
 
     def display(self):
@@ -196,8 +200,8 @@ class UsagePointId:
                 address = self.get_address()
                 if address is None:
                     address = "Inconnue"
-                if hasattr(self.config, "name"):
-                    title = f"{self.usage_point_id} - {self.config.name}"
+                if hasattr(self.usage_point_config, "name"):
+                    title = f"{self.usage_point_id} - {self.usage_point_config.name}"
                 else:
                     title = address
 
@@ -212,9 +216,68 @@ class UsagePointId:
                 body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
                 body += self.offpeak_hours_table()
 
+                # TEMPO
+                tempo_config = self.config.tempo_config()
+                if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                    body += f"<h1>Tempo</h1>"
+                    today = datetime.combine(datetime.now(), datetime.min.time())
+                    tomorow = datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time())
+                    tempo = app.DB.get_tempo_range(today, tomorow, "asc")
+                    body += f"""
+                    <table style="width:100%" class="table_recap">
+                        <tr>
+                            <td style="width:50%; text-align: center">Aujourd'hui <br> {today.strftime("%d-%m-%Y")}</td>
+                            <td style="width:50%; text-align: center">Demain <br> {tomorow.strftime("%d-%m-%Y")}</td>
+                        </tr>
+                        <tr>"""
+                    tempo_template = {
+                        "?": {
+                            "color": "background-color: #000000",
+                            "text_color": "color: #FFFFFF",
+                            "text": "En attente..."
+                        },
+                        "RED": {
+                            "color": "background-color: #E74C3C",
+                            "text_color": "color: #ECF0F1",
+                            "text": f"""Rouge<br>
+                            06h00 -> 22h00 = {tempo_config['price_red_hp']}€ / kWh<br>
+                            22h00 -> 06h00 = {tempo_config['price_red_hc']}€ / kWh<br>
+                            """
+                        },
+                        "WHITE": {
+                            "color": "background-color: #ECF0F1",
+                            "text_color": "color: #34495E",
+                            "text": f"""Blanc<br>
+                            06h00 -> 22h00 = {tempo_config['price_white_hp']}€ / kWh<br>
+                            22h00 -> 06h00 = {tempo_config['price_white_hc']}€ / kWh
+                            """
+                        },
+                        "BLUE": {
+                            "color": "background-color: #3498DB",
+                            "text_color": "color: #ECF0F1",
+                            "text": f"""Bleu<br>
+                            06h00 -> 22h00 = {tempo_config['price_blue_hp']}€ / kWh<br>
+                            22h00 -> 06h00 = {tempo_config['price_blue_hc']}€ / kWh
+                            """
+                        }
+                    }
+                    if len(tempo) > 0:
+                        color = tempo[0].color
+                    else:
+                        color = "?"
+                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
+                    if len(tempo) > 1:
+                        color = tempo[1].color
+                    else:
+                        color = "?"
+                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
+                    body += """</tr>
+                    </table>
+                    """
+
                 body += "<h1>Récapitulatif</h1>"
                 # RECAP CONSUMPTION
-                if hasattr(self.config, "consumption") and self.config.consumption:
+                if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                     self.generate_data("consumption")
                     self.consumption()
                     recap_consumption = self.recap(data=self.recap_consumption_data)
@@ -222,23 +285,36 @@ class UsagePointId:
                     body += str(recap_consumption)
                     body += '<div id="chart_daily_consumption"></div>'
 
-                # # MAX POWER CONSUMPTION
-                # if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
-                #     recap_consumption_max_power = self.recap(data=self.recap_consumption_max_power)
-                #     body += f"<h2>Puissance maximun</h2>"
-                #     body += str(recap_consumption_max_power)
-                #     body += '<div id="chart_daily_consumption_max_power"></div>'
-
                 # RATIO HP/HC
-                if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                if hasattr(self.usage_point_config,
+                           "consumption_detail") and self.usage_point_config.consumption_detail:
                     self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id))
                     body += "<h2>Ratio HC/HP</h2>"
                     body += "<table class='table_hchp'><tr>"
                     body += str(self.recap_hc_hp)
                     body += "</tr></table>"
 
+                # TARIFICATION
+                body += f"<h2>Comparatif abonnements</h2>"
+                if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
+                    datatable = str(self.get_price("consumption"))
+                    if datatable:
+                        lien_tempo = "https://particulier.edf.fr/fr/accueil/gestion-contrat/options/tempo/details.html"
+                        body += f"Ce tableau à pour but de vous aider à choisir le forfait le plus adapté à votre mode " \
+                                "de consommation.<br><br>"
+                        body += datatable
+                        if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                            body += "<br>Le forfait Tempo (uniquement disponible chez EDF) est soumis à une " \
+                                    "tarification à 6 niveaux avec un prix du kWh très élévé 22j dans l'années. " \
+                                    "Généralement lorsque le réseau électrique est tendu ou les jours les plus froids " \
+                                    f"de l'années. Tout est expliqué <a href='{lien_tempo}'>ici</a>.<br>"
+                        body += "<br><code>Les prix indiqué sont approximatif et ne tiennent pas compte du prix de " \
+                                "l'abonnement mensuel.</code>"
+                    else:
+                        body += "Pas de données."
+
                 # RECAP PRODUCTION
-                if hasattr(self.config, "production") and self.config.production:
+                if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
                     self.generate_data("production")
                     self.production()
                     recap_production = self.recap(data=self.recap_production_data)
@@ -248,8 +324,8 @@ class UsagePointId:
 
                 # RECAP CONSUMPTION VS PRODUCTION
                 if (
-                        hasattr(self.config, "consumption") and self.config.consumption and
-                        hasattr(self.config, "production") and self.config.production
+                        hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption and
+                        hasattr(self.usage_point_config, "production") and self.usage_point_config.production
                 ):
                     body += "<h2>Consommation VS Production</h2>"
                     for year, data in self.recap_consumption_data.items():
@@ -261,7 +337,7 @@ class UsagePointId:
 
                 body += "<h1>Mes données</h1>"
                 # CONSUMPTION DATATABLE
-                if hasattr(self.config, "consumption") and self.config.consumption:
+                if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                     body += f"<h2>Consommation</h2>"
                     body += f"<h3>Journalière</h2>"
                     body += f"""
@@ -290,7 +366,8 @@ class UsagePointId:
                         </tfoot>
                     </table>
                     """
-                if hasattr(self.config, "consumption_detail") and self.config.consumption_detail:
+                if hasattr(self.usage_point_config,
+                           "consumption_detail") and self.usage_point_config.consumption_detail:
                     body += f"<h3>Horaires</h2>"
                     body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
                     body += f"""
@@ -322,8 +399,8 @@ class UsagePointId:
                     </table>
                     """
                 # MAX POWER DATATABLE
-                if hasattr(self.config,
-                           "consumption_max_power") and self.config.consumption_max_power:
+                if hasattr(self.usage_point_config,
+                           "consumption_max_power") and self.usage_point_config.consumption_max_power:
                     body += f"<h2>Puissance Maximale</h2>"
                     if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
                         max_power = self.contract.subscribed_power.split(' ')[0]
@@ -386,7 +463,7 @@ class UsagePointId:
                     """
 
                 # PRODUCTION DATATABLE
-                if hasattr(self.config, "production") and self.config.production:
+                if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
                     body += f"<h2>Production</h2>"
                     body += f"<h3>Journalière</h2>"
                     body += f"""
@@ -415,7 +492,7 @@ class UsagePointId:
                         </tfoot>
                     </table>
                     """
-                if hasattr(self.config, "production_detail") and self.config.production_detail:
+                if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
                     body += f"<h3>Horaires</h2>"
                     body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
                     body += f"""
@@ -476,10 +553,11 @@ class UsagePointId:
         contract_data = {}
         if self.contract is not None:
             last_activation_date = self.contract.last_activation_date
-            if hasattr(self.config, "activation_date_daily") and hasattr(self.config, "activation_date_detail"):
+            if hasattr(self.usage_point_config, "activation_date_daily") and hasattr(self.usage_point_config,
+                                                                                     "activation_date_detail"):
                 last_activation_date = f"<b style='text-decoration-line: line-through;'>{last_activation_date}</b><br>" \
-                                       f"Date d'activation journalière : {self.config.activation_date_daily} <br>" \
-                                       f"Date d'activation détaillé : {self.config.activation_date_detail} "
+                                       f"Date d'activation journalière : {self.usage_point_config.activation_date_daily} <br>" \
+                                       f"Date d'activation détaillé : {self.usage_point_config.activation_date_detail} "
             contract_data = {
                 "usage_point_status": self.contract.usage_point_status,
                 "meter_type": self.contract.meter_type,
@@ -520,11 +598,11 @@ class UsagePointId:
             week_day = f"offpeak_hours_{day}"
             if (
                     hasattr(self.contract, week_day) and getattr(self.contract, week_day) != ""
-                    and hasattr(self.config, week_day) and getattr(self.config, week_day) != ""
+                    and hasattr(self.usage_point_config, week_day) and getattr(self.usage_point_config, week_day) != ""
             ):
                 contract_offpeak_hours = split(getattr(self.contract, week_day))
-                config_offpeak_hours = split(getattr(self.config, week_day))
-                if getattr(self.config, week_day) != getattr(self.contract, week_day):
+                config_offpeak_hours = split(getattr(self.usage_point_config, week_day))
+                if getattr(self.usage_point_config, week_day) != getattr(self.contract, week_day):
                     offpeak_hours += f"<td><i style='text-decoration:line-through;'>{contract_offpeak_hours}</i><br>{config_offpeak_hours}</td>"
                 else:
                     offpeak_hours += f"<td>{contract_offpeak_hours}</td>"
@@ -543,7 +621,7 @@ class UsagePointId:
             return None
 
     def consumption(self):
-        if hasattr(self.config, "consumption") and self.config.consumption:
+        if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
             if self.recap_consumption_data:
                 self.javascript += """
                 google.charts.load("current", {packages:["corechart"]});
@@ -587,53 +665,8 @@ class UsagePointId:
                         }
                             """
 
-    def consumption_max_power(self):
-        if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
-            if self.recap_consumption_max_power:
-                self.javascript += """
-                google.charts.load("current", {packages:["corechart"]});
-                google.charts.setOnLoadCallback(drawChartConsumptionMaxPower);
-                function drawChartConsumptionMaxPower() {
-                    var data = google.visualization.arrayToDataTable([
-                """
-                format_table = {}
-                years_array = ""
-                max_history = self.current_years - self.max_history_chart
-                for years, data in self.recap_consumption_max_power.items():
-                    if years > str(max_history):
-                        years_array += f"'{years}', "
-                        for month in range(1, 13):
-                            month_2digit = "{:02d}".format(month)
-                            if month not in format_table:
-                                format_table[month] = []
-                            if month_2digit in data["month"]:
-                                format_table[month].append(data["month"][month_2digit])
-                            else:
-                                format_table[month].append(0)
-                self.javascript += f"['Month', {years_array}],"
-                for month, val in format_table.items():
-                    table_value = ""
-                    for idx, c in enumerate(val):
-                        table_value += str(c / 1000)
-                        if idx + 1 < len(val):
-                            table_value += ", "
-                    self.javascript += f"['{month}', {table_value}],"
-                self.javascript += """]);
-                            var options = {
-                              title : '',
-                              vAxis: {title: 'Puissance Maximale (Watt)'},
-                              hAxis: {title: 'Mois'},
-                              seriesType: 'bars',
-                              series: {5: {type: 'line'}}
-                            };
-
-                            var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption_max_power'));
-                            chart.draw(data, options);
-                        }
-                            """
-
     def production(self):
-        if hasattr(self.config, "production") and self.config.production:
+        if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
             if self.recap_production_data:
                 self.javascript += """
                 google.charts.load("current", {packages:["corechart"]});
@@ -679,7 +712,7 @@ class UsagePointId:
     def consumption_vs_production(self, year):
         if (
                 self.recap_production_data != {}
-                and self.config.production != {}
+                and self.usage_point_config.production != {}
         ):
             compare_compsuption_production = {}
             for month, value in self.recap_consumption_data[year]["month"].items():
@@ -693,8 +726,8 @@ class UsagePointId:
                 compare_compsuption_production[month].append(float(value) / 1000)
             self.javascript += """            
             google.charts.load("current", {packages:["corechart"]});
-            google.charts.setOnLoadCallback(drawChartProductionVsConsumption"""+year+""");
-            function drawChartProductionVsConsumption"""+year+"""() {
+            google.charts.setOnLoadCallback(drawChartProductionVsConsumption""" + year + """);
+            function drawChartProductionVsConsumption""" + year + """() {
                 var data = google.visualization.arrayToDataTable([
                 ['Mois', 'Consommation', 'Production'],
             """
@@ -711,14 +744,14 @@ class UsagePointId:
                 ])
                 data.sort([{column: 0}]);
                 var options = {
-                  title : '"""+year+"""',
+                  title : '""" + year + """',
                   vAxis: {title: 'Consommation (kWh)'},
                   hAxis: {title: 'Mois'},
                   seriesType: 'bars',
                   series: {5: {type: 'line'}}
                 };
     
-                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_"""+year+"""'));
+                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_""" + year + """'));
                 chart.draw(data, options);
             }
             """
@@ -773,6 +806,39 @@ class UsagePointId:
             self.recap_consumption_data = result
         else:
             self.recap_production_data = result
+
+    def get_price(self, measurement_direction):
+        data = app.DB.get_stat(self.usage_point_id, f"price_{measurement_direction}")
+        html = ""
+        if len(data) > 0:
+            data = data[0]
+            html = """
+            <table style='width: 100%; text-align: center' class='table_recap'>
+                <tr class='table_recap_header'>
+                    <td>Années</td>
+                    <td>Base</td>
+                    <td>HP/HC</td>
+            """
+            tempo_config = self.config.tempo_config()
+            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                html += "<td>Tempo</td>"
+            html += "</tr>"
+            if data:
+                data_value = json.loads(data.value)
+                for years, value in data_value.items():
+                    html += "<tr>"
+                    html += f"<td class='table_recap_header'>{years}</td>"
+                    html += f"<td>{round(value['BASE'],2)} €</td>"
+                    html += f"<td>{round(value['HC']+value['HP'], 2)} €</td>"
+                    tempo_config = self.config.tempo_config()
+                    if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                        value_tempo = 0
+                        for color, tempo in value["TEMPO"].items():
+                            value_tempo = value_tempo + tempo
+                        html += f"<td>{round(value_tempo, 2)} €</td>"
+                    # html += str(value)
+            html += "</table>"
+        return html
 
     def recap(self, data):
         if data:
