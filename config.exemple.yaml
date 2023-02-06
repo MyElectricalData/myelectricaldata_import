@@ -1,6 +1,6 @@
 cycle: 14400  # 4H
 debug: true
-log2file: false,
+log2file: false
 wipe_influxdb: false
 tempo:
   enable: true
