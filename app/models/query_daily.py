@@ -124,7 +124,7 @@ class Daily:
 
     def get(self):
         end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
-        begin = datetime.combine(end - relativedelta(months=self.max_daily), datetime.min.time())
+        begin = datetime.combine(end - relativedelta(days=self.max_daily), datetime.min.time())
         finish = True
         result = []
         while finish:
