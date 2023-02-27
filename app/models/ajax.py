@@ -10,6 +10,8 @@ from models.query_detail import Detail
 from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
+from models.query_ecowatt import Ecowatt
+from models.stat import Stat
 
 utc = pytz.UTC
 
@@ -50,6 +52,14 @@ class Ajax:
     def tempo(self):
         app.LOG.title(f"Récupération des jours Tempo")
         return Tempo().get()
+
+    def ecowatt(self):
+        app.LOG.title(f"Récupération des jours Ecowatt")
+        return Ecowatt().get()
+
+    def price(self):
+        app.LOG.title(f"[{self.usage_point_id}] Récupération des jours Ecowatt")
+        return Stat(self.usage_point_id, "consumption").price()
 
     def reset_all_data(self):
         app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation journalière.")

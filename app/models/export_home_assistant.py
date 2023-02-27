@@ -96,8 +96,8 @@ class HomeAssistant:
     def last_x_day(self, days, measurement_direction):
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}"
         config = {
-            "name": f"myelectricaldata_{measurement_direction}_last{days}day_{self.usage_point_id}",
-            "uniq_id": f"myelectricaldata_{measurement_direction}_last{days}day.{self.usage_point_id}",
+            "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.last{days}day_",
+            "uniq_id": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_last{days}day",
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
             "unit_of_measurement": "W",
@@ -139,8 +139,8 @@ class HomeAssistant:
         stats = Stat(self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_history/{self.usage_point_id}"
         config = {
-            "name": f"myelectricaldata_{measurement_direction}_history_{self.usage_point_id}",
-            "uniq_id": f"myelectricaldata_{measurement_direction}_history.{self.usage_point_id}",
+            "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.history",
+            "uniq_id": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_history",
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
             "unit_of_measurement": "kWh",
@@ -177,14 +177,76 @@ class HomeAssistant:
         }
         app.MQTT.publish_multiple(data, topic)
 
+    # def ecowatt_usage_point_id(self):
+    #     stats = Stat(self.usage_point_id)
+    #     topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
+    #     config = {
+    #         "name": f"myelectricaldata_{self.usage_point_id}_ecowatt",
+    #         "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}.EcoWatt",
+    #         "stat_t": f"{topic}/state",
+    #         "json_attr_t": f"{topic}/attributes",
+    #         # "unit_of_measurement": "kWh",
+    #         "device": {
+    #             "identifiers": [
+    #                 f"linky_{self.usage_point_id}_ecowatt"
+    #             ],
+    #             "name": f"Linky {self.usage_point_id} EcoWatt",
+    #             "model": "Linky",
+    #             "manufacturer": "MyElectricalData"
+    #         }
+    #     }
+    #     config = json.dumps(config)
+    #
+    #     # state = app.DB.get_daily_last(self.usage_point_id, measurement_direction)
+    #     # if state:
+    #     #     state = state.value
+    #     # else:
+    #     #     state = 0
+    #     # state = convert_kw(state)
+    #
+    #     attributes = {
+    #         "Version": "2.3.0",
+    #         "LastSensorCall": "21 février 2023 à 13:51:13",
+    #         "Forecast": []
+    #         13 h: 1
+    #         14 h: 1
+    #         15 h: 1
+    #         16 h: 1
+    #         17 h: 1
+    #         18 h: 1
+    #         19 h: 1
+    #         20 h: 1
+    #         21 h: 1
+    #         22 h: 1
+    #         23 h: 1
+    #         00 h: 1
+    #         Begin
+    #         21 février 2023 à 13:00:00
+    #         End
+    #         22 février 2023 à 01:00:00
+    #
+    #         "numPDL": self.usage_point_id,
+    #         "activationDate": self.activation_date,
+    #         "lastUpdate": datetime.now().strftime(self.date_format_detail),
+    #         "timeLastCall": datetime.now().strftime(self.date_format_detail),
+    #         "yesterdayDate": stats.daily(0)["begin"]
+    #     }
+    #     attributes = json.dumps(attributes)
+    #     data = {
+    #         "config": config,
+    #         "state": 123456.00,
+    #         "attributes": attributes
+    #     }
+    #     app.MQTT.publish_multiple(data, topic)
+
     def myelectricaldata_usage_point_id(self, measurement_direction):
         stats = Stat(self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}/{self.usage_point_id}"
         config = {
             f"config": json.dumps(
                 {
-                    "name": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}",
-                    "uniq_id": f"myelectricaldata_{measurement_direction}.{self.usage_point_id}",
+                    "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}",
+                    "uniq_id": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}",
                     "stat_t": f"{topic}/state",
                     "json_attr_t": f"{topic}/attributes",
                     "unit_of_measurement": "kWh",

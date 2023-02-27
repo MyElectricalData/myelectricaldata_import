@@ -14,6 +14,7 @@ from models.query_detail import Detail
 from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
+from models.query_ecowatt import Ecowatt
 from models.stat import Stat
 
 
@@ -63,6 +64,14 @@ class Job:
             except Exception as e:
                 traceback.print_exc()
                 app.LOG.error([f"Erreur lors de la récupération des données tempo", e])
+
+            #######################################################################################################
+            # FETCH ECOWATT DATA
+            try:
+                self.get_ecowatt()
+            except Exception as e:
+                traceback.print_exc()
+                app.LOG.error([f"Erreur lors de la récupération des données EcoWatt", e])
 
             for self.usage_point_config in self.usage_points:
                 self.usage_point_id = self.usage_point_config.usage_point_id
@@ -356,6 +365,11 @@ class Job:
         app.LOG.title(
             f"Récupération des données Tempo :")
         return Tempo().get()
+
+    def get_ecowatt(self):
+        app.LOG.title(
+            f"Récupération des données EcoWatt :")
+        return Ecowatt().get()
 
     def stat_price(self, usage_point_id, measurement_direction="consumption"):
         app.LOG.title(

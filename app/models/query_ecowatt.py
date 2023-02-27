@@ -11,7 +11,7 @@ from models.query import Query
 from config import URL
 
 
-class Tempo:
+class Ecowatt:
 
     def __init__(self):
         self.db = app.DB
@@ -21,21 +21,22 @@ class Tempo:
     def run(self):
         start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
         end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
-        target = f"{self.url}/rte/tempo/{start}/{end}"
+        target = f"{self.url}/rte/ecowatt/{start}/{end}"
         query_response = Query(endpoint=target).get()
         if query_response.status_code == 200:
             try:
                 response_json = json.loads(query_response.text)
-                for date, color in response_json.items():
+                print(response_json)
+                for date, data in response_json.items():
                     date = datetime.strptime(date, "%Y-%m-%d")
-                    self.db.set_tempo(date, color)
+                    self.db.set_ecowatt(date, data["value"], data["message"], str(data["detail"]))
                 response = response_json
             except Exception as e:
                 app.LOG.error(e)
                 traceback.print_exc()
                 response = {
                     "error": True,
-                    "description": "Erreur lors de la récupération de données Tempo."
+                    "description": "Erreur lors de la récupération des données Ecowatt."
                 }
             return response
         else:
@@ -45,7 +46,7 @@ class Tempo:
             }
 
     def get(self):
-        current_cache = self.db.get_tempo()
+        current_cache = self.db.get_ecowatt()
         result = {}
         if not current_cache:
             # No cache

@@ -185,6 +185,16 @@ if __name__ == '__main__':
     def tempo():
         return Ajax().tempo()
 
+    @APP.route("/ecowatt", methods=['GET'])
+    @APP.route("/ecowatt/", methods=['GET'])
+    def ecowatt():
+        return Ajax().ecowatt()
+
+    @APP.route("/price/<usage_point_id>", methods=['GET'])
+    @APP.route("/price/<usage_point_id>/", methods=['GET'])
+    def price(usage_point_id):
+        return Ajax(usage_point_id).price()
+
 
     @APP.route("/datatable/<usage_point_id>/<measurement_direction>", methods=['GET'])
     @APP.route("/datatable/<usage_point_id>/<measurement_direction>/", methods=['GET'])

@@ -15,6 +15,7 @@ from db_schema import (
     ProductionDetail,
     ConsumptionDailyMaxPower,
     Tempo,
+    Ecowatt,
     Statistique
 )
 from dependencies import str2bool
@@ -1593,6 +1594,51 @@ class Database:
                 Tempo(
                     date=date,
                     color=color
+                )
+            )
+        self.session.flush()
+        return True
+
+    ## -----------------------------------------------------------------------------------------------------------------
+    ## ECOWATT
+    ## -----------------------------------------------------------------------------------------------------------------
+    def get_ecowatt(self, order="desc"):
+        if order == "desc":
+            order = Ecowatt.date.desc()
+        else:
+            order = Ecowatt.date.asc()
+        return self.session.scalars(
+            select(Ecowatt)
+            .order_by(order)
+        ).all()
+
+    def get_ecowatt_range(self, begin, end, order="desc"):
+        if order == "desc":
+            order = Ecowatt.date.desc()
+        else:
+            order = Ecowatt.date.asc()
+        return self.session.scalars(
+            select(Ecowatt)
+            .where(Ecowatt.date >= begin)
+            .where(Ecowatt.date <= end)
+            .order_by(order)
+        ).all()
+
+    def set_ecowatt(self, date, value, message, detail):
+        date = datetime.combine(date, datetime.min.time())
+        ecowatt = self.get_ecowatt_range(date, date)
+        if ecowatt:
+            for item in ecowatt:
+                item.value = value
+                item.message = message
+                item.detail = detail
+        else:
+            self.session.add(
+                Ecowatt(
+                    date=date,
+                    value=value,
+                    message=message,
+                    detail=detail
                 )
             )
         self.session.flush()
