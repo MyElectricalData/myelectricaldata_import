@@ -50,15 +50,15 @@ class Ajax:
         return Status(headers=self.headers).status(self.usage_point_id)
 
     def tempo(self):
-        app.LOG.title(f"Récupération des jours Tempo")
+        app.LOG.title(f"Récupération des jours Tempo.")
         return Tempo().get()
 
     def ecowatt(self):
-        app.LOG.title(f"Récupération des jours Ecowatt")
+        app.LOG.title(f"Récupération des jours Ecowatt.")
         return Ecowatt().get()
 
     def price(self):
-        app.LOG.title(f"[{self.usage_point_id}] Récupération des jours Ecowatt")
+        app.LOG.title(f"[{self.usage_point_id}] Calcul des coûts par type d'abonnements.")
         return Stat(self.usage_point_id, "consumption").price()
 
     def reset_all_data(self):

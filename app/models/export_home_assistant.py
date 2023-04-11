@@ -93,6 +93,8 @@ class HomeAssistant:
             self.last_x_day(5, "production")
             self.history_usage_point_id("production")
 
+        self.ecowatt()
+
     def last_x_day(self, days, measurement_direction):
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}"
         config = {
@@ -177,67 +179,57 @@ class HomeAssistant:
         }
         app.MQTT.publish_multiple(data, topic)
 
-    # def ecowatt_usage_point_id(self):
-    #     stats = Stat(self.usage_point_id)
-    #     topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
-    #     config = {
-    #         "name": f"myelectricaldata_{self.usage_point_id}_ecowatt",
-    #         "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}.EcoWatt",
-    #         "stat_t": f"{topic}/state",
-    #         "json_attr_t": f"{topic}/attributes",
-    #         # "unit_of_measurement": "kWh",
-    #         "device": {
-    #             "identifiers": [
-    #                 f"linky_{self.usage_point_id}_ecowatt"
-    #             ],
-    #             "name": f"Linky {self.usage_point_id} EcoWatt",
-    #             "model": "Linky",
-    #             "manufacturer": "MyElectricalData"
-    #         }
-    #     }
-    #     config = json.dumps(config)
-    #
-    #     # state = app.DB.get_daily_last(self.usage_point_id, measurement_direction)
-    #     # if state:
-    #     #     state = state.value
-    #     # else:
-    #     #     state = 0
-    #     # state = convert_kw(state)
-    #
-    #     attributes = {
-    #         "Version": "2.3.0",
-    #         "LastSensorCall": "21 février 2023 à 13:51:13",
-    #         "Forecast": []
-    #         13 h: 1
-    #         14 h: 1
-    #         15 h: 1
-    #         16 h: 1
-    #         17 h: 1
-    #         18 h: 1
-    #         19 h: 1
-    #         20 h: 1
-    #         21 h: 1
-    #         22 h: 1
-    #         23 h: 1
-    #         00 h: 1
-    #         Begin
-    #         21 février 2023 à 13:00:00
-    #         End
-    #         22 février 2023 à 01:00:00
-    #
-    #         "numPDL": self.usage_point_id,
-    #         "activationDate": self.activation_date,
-    #         "lastUpdate": datetime.now().strftime(self.date_format_detail),
-    #         "timeLastCall": datetime.now().strftime(self.date_format_detail),
-    #         "yesterdayDate": stats.daily(0)["begin"]
-    #     }
-    #     attributes = json.dumps(attributes)
-    #     data = {
-    #         "config": config,
-    #         "state": 123456.00,
-    #         "attributes": attributes
-    #     }
-    #     app.MQTT.publish_multiple(data, topic)
+    def ecowatt(self):
+        # Get ecowatt data
+        begin = datetime.combine(datetime.now(), datetime.min.time())
+        ecowatt_data = app.DB.get_ecowatt_range(begin, begin)
+        print(ecowatt_data)
+        if ecowatt_data:
+            stats = Stat(self.usage_point_id)
+            topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
+            config = {
+                "name": f"myelectricaldata_{self.usage_point_id}_ecowatt",
+                "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}.EcoWatt",
+                "stat_t": f"{topic}/state",
+                "json_attr_t": f"{topic}/attributes",
+                # "unit_of_measurement": "kWh",
+                "device": {
+                    "identifiers": [
+                        f"linky_{self.usage_point_id}_ecowatt"
+                    ],
+                    "name": f"Linky {self.usage_point_id} EcoWatt",
+                    "model": "Linky",
+                    "manufacturer": "MyElectricalData"
+                }
+            }
+            config = json.dumps(config)
+            max_history = 13
+            now = datetime.now().replace(minute=0, second=0)
+            for data in ecowatt_data:
+                i = 0
+                for date, value in json.loads(data.detail.replace("'", '"')).items():
+                    date = datetime.strptime(date, self.date_format_detail)
+                    if date >= now and i <= max_history:
+                        print(date, value)
+                    i = i + 1
+
+            attributes = {
+                "Version": "2.3.0",
+                "LastSensorCall": "21 février 2023 à 13:51:13",
+                "Forecast": [],
+                "numPDL": self.usage_point_id,
+                "activationDate": self.activation_date,
+                "lastUpdate": datetime.now().strftime(self.date_format_detail),
+                "timeLastCall": datetime.now().strftime(self.date_format_detail),
+                "yesterdayDate": stats.daily(0)["begin"]
+            }
+            attributes = json.dumps(attributes)
+            data = {
+                "config": config,
+                "state": 123456.00,
+                "attributes": attributes
+            }
+            app.MQTT.publish_multiple(data, topic)
 
     def myelectricaldata_usage_point_id(self, measurement_direction):
         stats = Stat(self.usage_point_id, measurement_direction)
@@ -406,6 +398,7 @@ class HomeAssistant:
         current_month_evolution = stats.current_month_evolution()
         yesterday_evolution = stats.yesterday_evolution()
         monthly_evolution = stats.monthly_evolution()
+        yearly_evolution =  stats.yearly_evolution()
 
         # app.LOG.show(yesterday_last_year)
 
@@ -559,6 +552,15 @@ class HomeAssistant:
                         convert_kw(stats.max_power(5)["value"]),
                         convert_kw(stats.max_power(6)["value"]),
                     ],
+                    "dailyweek_MP_time": [
+                        (stats.max_power_time(0)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(1)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(2)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(3)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(4)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(5)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(6)["value"]).strftime(self.date_format_detail),
+                    ],
                     "dailyweek_MP_over": [
                         stats.max_power_over(0)["value"],
                         stats.max_power_over(1)["value"],
@@ -572,6 +574,7 @@ class HomeAssistant:
                     "current_week_evolution": round(current_week_evolution, 2),
                     "current_month_evolution": round(current_month_evolution, 2),
                     "yesterday_evolution": round(yesterday_evolution, 2),
+                    "yearly_evolution": round(yearly_evolution, 2),
                     "friendly_name": f"myelectricaldata.{self.usage_point_id}",
                     "errorLastCall": "",
                     "errorLastCallInterne": "",

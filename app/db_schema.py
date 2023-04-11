@@ -661,6 +661,6 @@ class Ecowatt(Base):
         return f"Ecowatt(" \
                f"date={self.date!r}, " \
                f"value={self.value!r}, " \
-               f"message={self.color!r}, " \
+               f"message={self.message!r}, " \
                f"detail={self.detail!r}, " \
                f")"

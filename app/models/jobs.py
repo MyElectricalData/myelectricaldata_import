@@ -226,25 +226,25 @@ class Job:
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
                                     ExportInfluxDB(self.usage_point_id).daily(
-                                        self.usage_point_config.consumption_price_base,
+                                        price_hc=self.usage_point_config.consumption_price_base,
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production") and self.usage_point_config.production:
                                     ExportInfluxDB(self.usage_point_id).daily(
-                                        self.usage_point_config.production_price,
-                                        "production"
+                                        price_prod=self.usage_point_config.production_price,
+                                        measurement_direction="production"
                                     )
                                 if hasattr(self.usage_point_config,
                                            "consumption_detail") and self.usage_point_config.consumption_detail:
                                     ExportInfluxDB(self.usage_point_id).detail(
-                                        self.usage_point_config.consumption_price_hp,
-                                        self.usage_point_config.consumption_price_hc
+                                        price_hp=self.usage_point_config.consumption_price_hp,
+                                        price_hc=self.usage_point_config.consumption_price_hc
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
                                     ExportInfluxDB(self.usage_point_id).detail(
-                                        self.usage_point_config.production_price,
-                                        measurement_direction="production_detail"
+                                        price_prod=self.usage_point_config.production_price,
+                                        measurement_direction="production"
                                     )
                             export_finish()
                         else:

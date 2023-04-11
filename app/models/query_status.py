@@ -46,35 +46,43 @@ class Status:
         if hasattr(usage_point_id_config, "cache") and usage_point_id_config.cache:
             target += "/cache"
         response = Query(endpoint=target, headers=self.headers).get()
-        status = json.loads(response.text)
-        if response.status_code == 200:
-            try:
-                for key, value in status.items():
-                    app.LOG.log(f"{key}: {value}")
-                app.DB.usage_point_update(
-                    usage_point_id,
-                    consentement_expiration=datetime.datetime.strptime(status["consent_expiration_date"], "%Y-%m-%dT%H:%M:%S"),
-                    last_call=datetime.datetime.strptime(status["last_call"], "%Y-%m-%dT%H:%M:%S.%f"),
-                    call_number=status["call_number"],
-                    quota_limit=status["quota_limit"],
-                    quota_reached=status["quota_reached"],
-                    quota_reset_at=datetime.datetime.strptime(status["quota_reset_at"], "%Y-%m-%dT%H:%M:%S.%f"),
-                    ban=status["ban"]
-                )
-                return status
-            except Exception as e:
+        if response:
+            status = json.loads(response.text)
+            if response.status_code == 200:
+                try:
+                    for key, value in status.items():
+                        app.LOG.log(f"{key}: {value}")
+                    app.DB.usage_point_update(
+                        usage_point_id,
+                        consentement_expiration=datetime.datetime.strptime(status["consent_expiration_date"], "%Y-%m-%dT%H:%M:%S"),
+                        last_call=datetime.datetime.strptime(status["last_call"], "%Y-%m-%dT%H:%M:%S.%f"),
+                        call_number=status["call_number"],
+                        quota_limit=status["quota_limit"],
+                        quota_reached=status["quota_reached"],
+                        quota_reset_at=datetime.datetime.strptime(status["quota_reset_at"], "%Y-%m-%dT%H:%M:%S.%f"),
+                        ban=status["ban"]
+                    )
+                    return status
+                except Exception as e:
+                    if "DEBUG" in environ and getenv("DEBUG"):
+                        traceback.print_exc()
+                    app.LOG.error(e)
+                    return {
+                        "error": True,
+                        "description": "Erreur lors de la récupération du statut du compte."
+                    }
+            else:
                 if "DEBUG" in environ and getenv("DEBUG"):
                     traceback.print_exc()
-                app.LOG.error(e)
+                app.LOG.error(status["detail"])
                 return {
                     "error": True,
-                    "description": "Erreur lors de la récupération du statut du compte."
+                    "description": status["detail"]
                 }
         else:
             if "DEBUG" in environ and getenv("DEBUG"):
                 traceback.print_exc()
-            app.LOG.error(status["detail"])
             return {
                 "error": True,
-                "description": status["detail"]
+                "description": "MyElectricalData indisponible."
             }

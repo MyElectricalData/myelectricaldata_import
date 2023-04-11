@@ -48,10 +48,10 @@ class ExportInfluxDB:
             )
             current_month = date.strftime("%m")
 
-    def detail(self, price_hp, price_hc=0, measurement_direction="consumption_detail"):
+    def detail(self, price_hp=0, price_hc=0, price_prod=0, measurement_direction="consumption"):
         current_month = ""
         app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement_direction}" dans influxdb')
-        for detail in app.DB.get_detail_all(self.usage_point_id):
+        for detail in app.DB.get_detail_all(self.usage_point_id, measurement_direction):
             date = detail.date
             watt = detail.value
             kwatt = watt / 1000
@@ -59,10 +59,13 @@ class ExportInfluxDB:
             kwatth = watth / 1000
             if current_month != date.strftime('%m'):
                 app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-            if detail.measure_type == "HP":
-                euro = kwatth * price_hp
+            if measurement_direction != "production":
+                if detail.measure_type == "HP":
+                    euro = kwatth * price_hp
+                else:
+                    euro = kwatth * price_hc
             else:
-                euro = kwatth * price_hc
+                euro = kwatth * price_prod
             app.INFLUXDB.write(
                 measurement=measurement_direction,
                 date=utc.localize(date),

@@ -15,6 +15,7 @@ dependencies = [
     "mergedeep",
     "Flask",
     "Flask-APScheduler",
+    "flask-swagger-ui",
     "jinja2",
     "art",
     "SQLAlchemy",

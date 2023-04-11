@@ -43,6 +43,7 @@ class Stat:
         self.value_current_month_evolution = 0
         self.value_peak_offpeak_percent_hp_vs_hc = 0
         self.value_monthly_evolution = 0
+        self.value_yearly_evolution = 0
         self.usage_point_id_contract = app.DB.get_contract(self.usage_point_id)
 
     def daily(self, index=0):
@@ -85,7 +86,7 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
-        
+
     def max_power_over(self, index=0):
         max_power = 0
         if hasattr(self.usage_point_id_contract,
@@ -103,7 +104,24 @@ class Stat:
             "value": boolv,
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
-        }  
+        }
+
+    def max_power_time(self, index=0):
+        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        end = datetime.combine(begin, datetime.max.time())
+        max_power_time = ''
+        #print(app.DB.get_daily_max_power_range(self.usage_point_id, begin, end))
+        for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
+            #print(data)
+            if data.event_date is None or data.event_date == "":
+                max_power_time = data.date
+            else:
+                max_power_time = data.event_date
+        return {
+            "value": max_power_time,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
 
     def current_week_array(self):
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
@@ -296,7 +314,7 @@ class Stat:
         if self.value_current_month_last_year != 0:
             self.value_current_month_evolution = (
                                                          (
-                                                                     100 * self.value_current_month) / self.value_current_month_last_year
+                                                                 100 * self.value_current_month) / self.value_current_month_last_year
                                                  ) - 100
         app.LOG.log(f" => {self.value_current_month_evolution}")
         return self.value_current_month_evolution
@@ -370,6 +388,15 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
+
+    def yearly_evolution(self):
+        app.LOG.log("yearly_evolution")
+        self.current_year()
+        self.current_year_last_year()
+        if self.value_last_month_last_year != 0:
+            self.value_yearly_evolution = ((100 * self.value_current_year) / self.value_current_year_last_year) - 100
+        app.LOG.log(f" => {self.value_yearly_evolution}")
+        return self.value_yearly_evolution
 
     def yesterday_hc_hp(self):
         app.LOG.log("yesterday_hp / yesterday_hc")
@@ -602,9 +629,11 @@ class Stat:
                     color = tempo_data[0].color
 
                     tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
-                    result[year]["TEMPO"][f"{color}_{measure_type}"] = result[year]["TEMPO"][f"{color}_{measure_type}"] + (
-                                kw * tempo_price)
-                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] = result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] + (
+                    result[year]["TEMPO"][f"{color}_{measure_type}"] = result[year]["TEMPO"][
+                                                                           f"{color}_{measure_type}"] + (
+                                                                               kw * tempo_price)
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] = \
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] + (
                             kw * tempo_price)
             last_month = month
         app.DB.set_stat(self.usage_point_id, f"price_{self.measurement_direction}", json.dumps(result))
