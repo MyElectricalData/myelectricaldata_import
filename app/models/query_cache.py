@@ -13,7 +13,6 @@ from models.query import Query
 class Cache:
 
     def __init__(self, usage_point_id, headers=None):
-        self.log = Log()
         self.url = URL
         self.headers = headers
         self.usage_point_id = usage_point_id
@@ -26,7 +25,7 @@ class Cache:
             try:
                 status = json.loads(response.text)
                 for key, value in status.items():
-                    self.log.log(f"{key}: {value}")
+                    app.LOG.log(f"{key}: {value}")
                 status["version"] = get_version()
                 return status
             except LookupError:

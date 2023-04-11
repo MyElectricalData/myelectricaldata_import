@@ -13,21 +13,22 @@ from db_schema import (
     ProductionDaily,
     ConsumptionDetail,
     ProductionDetail,
-    ConsumptionDailyMaxPower
+    ConsumptionDailyMaxPower,
+    Tempo,
+    Ecowatt,
+    Statistique
 )
 from dependencies import str2bool
 from models.config import get_version
-from models.log import Log
 from sqlalchemy import (create_engine, delete, inspect, select, func, desc, asc)
 from sqlalchemy.orm import sessionmaker
 
 from config import MAX_IMPORT_TRY
 
-LOG = Log()
-
 
 class Database:
-    def __init__(self, path="/data"):
+    def __init__(self, log, path="/data"):
+        self.log = log
         self.path = path
         self.db_name = "cache.db"
         self.db_path = f"{self.path}/{self.db_name}"
@@ -43,7 +44,7 @@ class Database:
 
         # MIGRATE v7 to v8
         if os.path.isfile(f"{self.path}/enedisgateway.db"):
-            LOG.title_warning("Migration de l'ancienne base de données vers la nouvelle structure.")
+            self.log.title_warning("Migration de l'ancienne base de données vers la nouvelle structure.")
             self.migratev7tov8()
 
     def migratev7tov8(self):
@@ -52,7 +53,7 @@ class Database:
         session = sessionmaker(engine)(autocommit=True, autoflush=True)
 
         for measurement_direction in ["consumption", "production"]:
-            LOG.warning(f'Migration des "{measurement_direction}_daily"')
+            self.log.warning(f'Migration des "{measurement_direction}_daily"')
             if measurement_direction == "consumption":
                 table = ConsumptionDaily
             else:
@@ -74,12 +75,12 @@ class Database:
                     fail_count=0
                 ))
                 if current_date != date.strftime("%Y"):
-                    LOG.warning(f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW")
+                    self.log.warning(f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW")
                     current_date = date.strftime("%Y")
                     year_value = 0
             self.session.add_all(bulk_insert)
 
-            LOG.warning(f'Migration des "{measurement_direction}_detail"')
+            self.log.warning(f'Migration des "{measurement_direction}_detail"')
             if measurement_direction == "consumption":
                 table = ConsumptionDetail
             else:
@@ -105,7 +106,7 @@ class Database:
                     fail_count=0
                 ))
                 if current_date != date.strftime("%m"):
-                    LOG.warning(f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW")
+                    self.log.warning(f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW")
                     current_date = date.strftime("%m")
                     day_value = 0
             self.session.add_all(bulk_insert)
@@ -115,47 +116,47 @@ class Database:
         # sys.exit()
 
     def init_database(self):
-        LOG.log("Configure Databases")
+        self.log.log("Configure Databases")
         query = select(Config).where(Config.key == "day")
         day = self.session.scalars(query).one_or_none()
         if day:
             day.value = datetime.now().strftime('%Y-%m-%d')
         else:
             self.session.add(Config(key="day", value=datetime.now().strftime('%Y-%m-%d')))
-        LOG.log(" => day")
+        self.log.log(" => day")
         query = select(Config).where(Config.key == "call_number")
         if not self.session.scalars(query).one_or_none():
             self.session.add(Config(key="call_number", value="0"))
-        LOG.log(" => call_number")
+        self.log.log(" => call_number")
         query = select(Config).where(Config.key == "max_call")
         if not self.session.scalars(query).one_or_none():
             self.session.add(Config(key="max_call", value="500"))
-        LOG.log(" => max_call")
+        self.log.log(" => max_call")
         query = select(Config).where(Config.key == "version")
         version = self.session.scalars(query).one_or_none()
         if version:
             version.value = get_version()
         else:
             self.session.add(Config(key="version", value=get_version()))
-        LOG.log(" => version")
+        self.log.log(" => version")
         query = select(Config).where(Config.key == "lock")
         if not self.session.scalars(query).one_or_none():
             self.session.add(Config(key="lock", value="0"))
-        LOG.log(" => lock")
+        self.log.log(" => lock")
         query = select(Config).where(Config.key == "lastUpdate")
         if not self.session.scalars(query).one_or_none():
             self.session.add(Config(key="lastUpdate", value=str(datetime.now())))
-        LOG.log(" => lastUpdate")
-        LOG.log(" Success")
+        self.log.log(" => lastUpdate")
+        self.log.log(" Success")
 
     def purge_database(self):
-        LOG.separator_warning()
-        LOG.log("Reset SQLite Database")
+        self.log.separator_warning()
+        self.log.log("Reset SQLite Database")
         if os.path.exists(f'{self.path}/cache.db'):
             os.remove(f"{self.path}/cache.db")
-            LOG.log(" => Success")
+            self.log.log(" => Success")
         else:
-            LOG.log(" => Not cache detected")
+            self.log.log(" => Not cache detected")
 
     def lock_status(self):
         # query = select(Config).where(Config.key == "lock")
@@ -182,6 +183,17 @@ class Database:
             os.remove(self.lock_file)
         return self.lock_status()
 
+    def clean_database(self, current_usage_point_id):
+        for usage_point in self.get_usage_point_all():
+            if usage_point.usage_point_id not in current_usage_point_id:
+                self.log.warning(f"- Suppression du point de livraison {usage_point.usage_point_id}")
+                self.delete_usage_point(usage_point.usage_point_id)
+                self.delete_addresse(usage_point.usage_point_id)
+                self.delete_daily(usage_point.usage_point_id)
+                self.delete_detail(usage_point.usage_point_id)
+                self.delete_daily_max_power(usage_point.usage_point_id)
+        return True
+
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONFIG
     ## ----------------------------------------------------------------------------------------------------------------
@@ -196,6 +208,7 @@ class Database:
             config.value = json.dumps(value)
         else:
             self.session.add(Config(key=key, value=json.dumps(value)))
+        self.session.flush()
         self.session.expire_all()
 
     ## ----------------------------------------------------------------------------------------------------------------
@@ -470,6 +483,7 @@ class Database:
                     consentement_expiration=consentement_expiration
                 )
             )
+        self.session.flush()
 
     def progress(self, usage_point_id, increment):
         query = (
@@ -501,6 +515,12 @@ class Database:
         usage_points.quota_reset_at = quota_reset_at
         usage_points.last_call = last_call
         usage_points.ban = ban
+        self.session.flush()
+
+    def delete_usage_point(self, usage_point_id):
+        self.session.execute(delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id))
+        self.session.flush()
+        return True
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## ADDRESSES
@@ -542,6 +562,12 @@ class Database:
                     geo_points=data["geo_points"],
                     count=count)
             )
+        self.session.flush()
+
+    def delete_addresse(self, usage_point_id):
+        self.session.execute(delete(Addresses).where(Addresses.usage_point_id == usage_point_id))
+        self.session.flush()
+        return True
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONTRACTS
@@ -605,6 +631,7 @@ class Database:
                     count=count
                 )
             )
+        self.session.flush()
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## DAILY
@@ -733,7 +760,7 @@ class Database:
             .where(table.usage_point_id == usage_point_id)
             .order_by(table.date.desc())
         )
-        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).first()
         if current_data is None:
             return False
@@ -758,7 +785,7 @@ class Database:
         query = (select(table)
                  .join(relation)
                  .where(table.id == unique_id))
-        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
             fail_count = int(daily.fail_count) + 1
@@ -785,6 +812,7 @@ class Database:
                     fail_count=0,
                 )
             )
+        self.session.flush()
         return fail_count
 
     def get_daily_range(self, usage_point_id, begin, end, measurement_direction="consumption"):
@@ -802,7 +830,7 @@ class Database:
             .where(table.date <= end)
             .order_by(table.date.desc())
         )
-        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).all()
         if current_data is None:
             return False
@@ -862,7 +890,7 @@ class Database:
                  .join(relation)
                  .where(table.id == unique_id))
         daily = self.session.scalars(query).one_or_none()
-        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
         if daily is not None:
             daily.id = unique_id
             daily.usage_point_id = usage_point_id
@@ -881,6 +909,7 @@ class Database:
                     fail_count=fail_count,
                 )
             )
+        self.session.flush()
 
     def reset_daily(self, usage_point_id, date=None, mesure_type="consumption"):
         daily = self.get_daily_date(usage_point_id, date, mesure_type)
@@ -888,6 +917,7 @@ class Database:
             daily.value = 0
             daily.blacklist = 0
             daily.fail_count = 0
+            self.session.flush()
             return True
         else:
             return False
@@ -905,6 +935,7 @@ class Database:
             )
         else:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
+        self.session.flush()
         return True
 
     def blacklist_daily(self, usage_point_id, date, action=True, measurement_direction="consumption"):
@@ -933,6 +964,7 @@ class Database:
                     fail_count=0,
                 )
             )
+        self.session.flush()
         return True
 
     def get_daily_date_range(self, usage_point_id):
@@ -1036,7 +1068,7 @@ class Database:
             .where(table.date <= end)
             .order_by(table.date.desc())
         )
-        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).all()
         if current_data is None:
             return False
@@ -1064,7 +1096,7 @@ class Database:
                 total_internal = total_internal + query.interval
             total_time = abs(total_internal - time_delta)
             if total_time > 300:
-                LOG.log(f" - {total_time}m absente du relevé.")
+                self.log.log(f" - {total_time}m absente du relevé.")
                 result["missing_data"] = True
             else:
                 for query in query_result:
@@ -1140,6 +1172,7 @@ class Database:
                     fail_count=fail_count,
                 )
             )
+        self.session.flush()
 
     def reset_detail(self, usage_point_id, date=None, mesure_type="consumption"):
         detail = self.get_detail_date(usage_point_id, date, mesure_type)
@@ -1179,9 +1212,10 @@ class Database:
             )
         else:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
+        self.session.flush()
         return True
 
-    def delete_detail_range(self, usage_point_id, begin, end, mesure_type="consumption"):
+    def delete_detail_range(self, usage_point_id, date, mesure_type="consumption"):
         if mesure_type == "consumption":
             table = ConsumptionDetail
         else:
@@ -1194,6 +1228,7 @@ class Database:
             )
         else:
             self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
+        self.session.flush()
         return True
 
     def get_ratio_hc_hp(self, usage_point_id, begin, end, mesure_type="consumption"):
@@ -1249,6 +1284,7 @@ class Database:
                     fail_count=0,
                 )
             )
+        self.session.flush()
         return fail_count
 
     def get_detail_last_date(self, usage_point_id, mesure_type="consumption"):
@@ -1282,7 +1318,7 @@ class Database:
             .where(table.usage_point_id == usage_point_id)
             .order_by(table.date.desc())
         )
-        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).first()
         if current_data is None:
             return False
@@ -1319,7 +1355,7 @@ class Database:
             .where(ConsumptionDailyMaxPower.date <= end)
             .order_by(ConsumptionDailyMaxPower.date.desc())
         )
-        LOG.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).all()
         if current_data is None:
             return False
@@ -1409,10 +1445,12 @@ class Database:
                     fail_count=fail_count,
                 )
             )
+        self.session.flush()
 
     def get_daily_max_power_count(self, usage_point_id):
         return self.session.scalars(
-            select([func.count()]).select_from(ConsumptionDailyMaxPower).join(UsagePoints.relation_consumption_daily_max_power)
+            select([func.count()]).select_from(ConsumptionDailyMaxPower).join(
+                UsagePoints.relation_consumption_daily_max_power)
             .where(UsagePoints.usage_point_id == usage_point_id)
         ).one_or_none()
 
@@ -1422,7 +1460,8 @@ class Database:
             result = self.session.scalars(select(ConsumptionDailyMaxPower)
                                           .join(UsagePoints.relation_consumption_daily_max_power)
                                           .where(UsagePoints.usage_point_id == usage_point_id)
-                                          .where((ConsumptionDailyMaxPower.date.like(f"%{search}%")) | (ConsumptionDailyMaxPower.value.like(f"%{search}%")))
+                                          .where((ConsumptionDailyMaxPower.date.like(f"%{search}%")) | (
+                ConsumptionDailyMaxPower.value.like(f"%{search}%")))
                                           .where(ConsumptionDailyMaxPower.date <= self.yesterday)
                                           .order_by(sort)
                                           )
@@ -1465,6 +1504,7 @@ class Database:
                     fail_count=0,
                 )
             )
+        self.session.flush()
         return fail_count
 
     def reset_daily_max_power(self, usage_point_id, date=None):
@@ -1474,6 +1514,7 @@ class Database:
             daily.value = 0
             daily.blacklist = 0
             daily.fail_count = 0
+            self.session.flush()
             return True
         else:
             return False
@@ -1488,6 +1529,7 @@ class Database:
         else:
             self.session.execute(
                 delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id))
+        self.session.flush()
         return True
 
     def blacklist_daily_max_power(self, usage_point_id, date, action=True):
@@ -1506,6 +1548,7 @@ class Database:
                     fail_count=0,
                 )
             )
+        self.session.flush()
         return True
 
     def get_daily_max_power_fail_count(self, usage_point_id, date):
@@ -1515,6 +1558,117 @@ class Database:
         else:
             return 0
 
+    ## -----------------------------------------------------------------------------------------------------------------
+    ## TEMPO
+    ## -----------------------------------------------------------------------------------------------------------------
+    def get_tempo(self, order="desc"):
+        if order == "desc":
+            order = Tempo.date.desc()
+        else:
+            order = Tempo.date.asc()
+        return self.session.scalars(
+            select(Tempo)
+            .order_by(order)
+        ).all()
+
+    def get_tempo_range(self, begin, end, order="desc"):
+        if order == "desc":
+            order = Tempo.date.desc()
+        else:
+            order = Tempo.date.asc()
+        return self.session.scalars(
+            select(Tempo)
+            .where(Tempo.date >= begin)
+            .where(Tempo.date <= end)
+            .order_by(order)
+        ).all()
+
+    def set_tempo(self, date, color):
+        date = datetime.combine(date, datetime.min.time())
+        tempo = self.get_tempo_range(date, date)
+        if tempo:
+            for item in tempo:
+                item.color = color
+        else:
+            self.session.add(
+                Tempo(
+                    date=date,
+                    color=color
+                )
+            )
+        self.session.flush()
+        return True
+
+    ## -----------------------------------------------------------------------------------------------------------------
+    ## ECOWATT
+    ## -----------------------------------------------------------------------------------------------------------------
+    def get_ecowatt(self, order="desc"):
+        if order == "desc":
+            order = Ecowatt.date.desc()
+        else:
+            order = Ecowatt.date.asc()
+        return self.session.scalars(
+            select(Ecowatt)
+            .order_by(order)
+        ).all()
+
+    def get_ecowatt_range(self, begin, end, order="desc"):
+        if order == "desc":
+            order = Ecowatt.date.desc()
+        else:
+            order = Ecowatt.date.asc()
+        return self.session.scalars(
+            select(Ecowatt)
+            .where(Ecowatt.date >= begin)
+            .where(Ecowatt.date <= end)
+            .order_by(order)
+        ).all()
+
+    def set_ecowatt(self, date, value, message, detail):
+        date = datetime.combine(date, datetime.min.time())
+        ecowatt = self.get_ecowatt_range(date, date)
+        if ecowatt:
+            for item in ecowatt:
+                item.value = value
+                item.message = message
+                item.detail = detail
+        else:
+            self.session.add(
+                Ecowatt(
+                    date=date,
+                    value=value,
+                    message=message,
+                    detail=detail
+                )
+            )
+        self.session.flush()
+        return True
+
+    ## ----------------------------------------------------------------------------------------------------------------
+    ## STATISTIQUES
+    ## ----------------------------------------------------------------------------------------------------------------
+    def get_stat(self, usage_point_id, key):
+        return self.session.scalars(
+            select(Statistique)
+            .join(UsagePoints.relation_stats)
+            .where(Statistique.usage_point_id == usage_point_id)
+            .where(Statistique.key == key)
+        ).all()
+
+    def set_stat(self, usage_point_id, key, value):
+        current_value = self.get_stat(usage_point_id, key)
+        if current_value:
+            for item in current_value:
+                item.value = value
+        else:
+            self.session.add(
+                Statistique(
+                    usage_point_id=usage_point_id,
+                    key=key,
+                    value=value
+                )
+            )
+        self.session.flush()
+        return True
 
 os.system("cd /app; alembic upgrade head")
-Database().init_database()

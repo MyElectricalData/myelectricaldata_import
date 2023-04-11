@@ -82,7 +82,7 @@ class ExportMqtt:
             app.LOG.log(" => Failed")
 
     def address(self):
-        app.LOG.log(f"[{self.usage_point_id}] Génération des messages d'addresse")
+        app.LOG.log(f"Génération des messages d'addresse")
         address_data = app.DB.get_addresse(self.usage_point_id)
         if hasattr(address_data, "__table__"):
             output = {}

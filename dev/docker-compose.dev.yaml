@@ -1,8 +1,8 @@
 version: "3.9"
 services:
   myelectricaldata_import:
-#    build: ./../
-    image: m4dm4rtig4n/myelectricaldata:0.8.13-beta2
+    build: ./../
+#    image: m4dm4rtig4n/myelectricaldata:0.8.13-beta2
     environment:
       TZ: Europe/Paris
     ports:

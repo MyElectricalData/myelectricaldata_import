@@ -615,3 +615,52 @@ class ConsumptionDailyMaxPower(Base):
                f"blacklist={self.blacklist!r}, " \
                f"fail_count={self.fail_count!r}" \
                f")"
+
+
+class Tempo(Base):
+    __tablename__ = 'tempo'
+
+    date = Column(DateTime,
+                  primary_key=True,
+                  index=True,
+                  unique=True,
+                  )
+    color = Column(Text,
+                   nullable=False,
+                   index=True
+                   )
+
+    def __repr__(self):
+        return f"Tempo(" \
+               f"date={self.date!r}, " \
+               f"color={self.color!r}, " \
+               f")"
+
+class Ecowatt(Base):
+    __tablename__ = 'ecowatt'
+
+    date = Column(DateTime,
+                  primary_key=True,
+                  index=True,
+                  unique=True,
+                  )
+    value = Column(Integer,
+                   nullable=False,
+                   index=True
+                   )
+    message = Column(Text,
+                   nullable=False,
+                   index=True
+                   )
+    detail = Column(Text,
+                   nullable=False,
+                   index=True
+                   )
+
+    def __repr__(self):
+        return f"Ecowatt(" \
+               f"date={self.date!r}, " \
+               f"value={self.value!r}, " \
+               f"message={self.message!r}, " \
+               f"detail={self.detail!r}, " \
+               f")"

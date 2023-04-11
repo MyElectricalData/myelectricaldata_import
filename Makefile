@@ -78,7 +78,8 @@ generate-dependencies:
 	cd app; pip-compile -o requirements.txt pyproject.toml; cd -
 
 clean: generate-dependencies
-	docker image rm -f myelectricaldata_import_myelectricaldata_import
+	docker image rm -f dev-myelectricaldata_import
+	docker image rm -f dev_myelectricaldata_import
 #	docker build ./
 
 ## Create github release (prod)

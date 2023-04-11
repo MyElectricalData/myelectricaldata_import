@@ -106,20 +106,19 @@ class Power:
             app.LOG.error(e)
 
     def get(self):
-        end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.min.time())
+        end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
         begin = datetime.combine(end - timedelta(days=self.max_daily), datetime.min.time())
         finish = True
         result = []
         while finish:
-
-            if self.activation_date and self.activation_date > begin:
-                # Activation date reached
-                begin = self.activation_date
-                finish = False
-                response = self.run(begin, end)
-            elif self.max_days_date > begin:
+            if self.max_days_date > begin:
                 # Max day reached
                 begin = self.max_days_date
+                finish = False
+                response = self.run(begin, end)
+            elif self.activation_date and self.activation_date > begin:
+                # Activation date reached
+                begin = self.activation_date
                 finish = False
                 response = self.run(begin, end)
             else:

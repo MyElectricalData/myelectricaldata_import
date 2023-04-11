@@ -1,5 +1,7 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 from flask_apscheduler import APScheduler
+from flask_swagger_ui import get_swaggerui_blueprint
+
 from waitress import serve
 
 from config import cycle_minimun
@@ -16,33 +18,45 @@ from templates.usage_point_id import UsagePointId
 
 LOG = Log()
 
-if "DEV" in os.environ or "DEBUG" in os.environ:
-    LOG.title_warning("Run in Development mode")
-else:
-    LOG.title("Run in production mode")
-
 if "APPLICATION_PATH_DATA" in os.environ:
     APPLICATION_PATH_DATA = os.getenv("APPLICATION_PATH_DATA")
 else:
     APPLICATION_PATH_DATA = "/data"
 CONFIG = Config(
+    log=LOG,
     path=APPLICATION_PATH_DATA
 )
+
 CONFIG.load()
-
-LOG.logo(get_version())
-
 CONFIG.display()
 CONFIG.check()
 
-DB = Database()
-DB.unlock()
+DB = Database(LOG)
+DB.init_database()
 
-LOG.title("Loading configuration...")
-for usage_point_id, data in CONFIG.list_usage_point().items():
-    LOG.log(f"{usage_point_id}")
-    DB.set_usage_point(usage_point_id, data)
-    LOG.log("  => Success")
+if "DEV" in os.environ or "DEBUG" in os.environ:
+    LOG.title_warning("Run in Development mode")
+else:
+    LOG.title("Run in production mode")
+
+LOG.logo(get_version())
+
+DB.unlock()
+DB.lock()
+
+LOG.title("Chargement du config.yaml...")
+usage_point_list = []
+if CONFIG.list_usage_point() is not None:
+    for usage_point_id, data in CONFIG.list_usage_point().items():
+        LOG.log(f"{usage_point_id}")
+        DB.set_usage_point(usage_point_id, data)
+        usage_point_list.append(usage_point_id)
+        LOG.log("  => Success")
+else:
+    LOG.warning("Aucun point de livraison détecté.")
+
+LOG.title("Nettoyage de la base de données...")
+DB.clean_database(usage_point_list)
 
 MQTT_CONFIG = CONFIG.mqtt_config()
 MQTT_ENABLE = False
@@ -113,7 +127,19 @@ class FetchAllDataScheduler(object):
     SCHEDULER_API_ENABLED = True
 
 
+DB.unlock()
+
 logging.basicConfig(format='%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s')
+
+SWAGGER_URL = '/docs'  # URL for exposing Swagger UI (without trailing '/')
+API_URL = 'http://127.0.0.1:5000/v2/swagger.json'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,  # Swagger UI static files will be mapped to '{SWAGGER_URL}/dist/'
+    API_URL,
+    config={  # Swagger UI config overrides
+        'app_name': "Test application"
+    },
+)
 
 if __name__ == '__main__':
     APP = Flask(__name__)
@@ -121,6 +147,8 @@ if __name__ == '__main__':
     scheduler = APScheduler()
     scheduler.init_app(APP)
     scheduler.start()
+
+    APP.register_blueprint(swaggerui_blueprint)
 
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -149,11 +177,17 @@ if __name__ == '__main__':
     def usage_point_id(usage_point_id):
         return UsagePointId(usage_point_id).display()
 
+    # ------------------------------------------------------------------------------------------------------------------
+    # BACKGROUND HTML TASK (AJAX)
+    # ------------------------------------------------------------------------------------------------------------------
+    @APP.route("/get/<usage_point_id>/<measurement_direction>", methods=['GET'])
+    @APP.route("/get/<usage_point_id>/<measurement_direction>/", methods=['GET'])
+    def get_data(usage_point_id, measurement_direction):
+        return Ajax(usage_point_id).datatable(measurement_direction, request.args)
 
     # ------------------------------------------------------------------------------------------------------------------
     # BACKGROUND HTML TASK (AJAX)
     # ------------------------------------------------------------------------------------------------------------------
-
     @APP.route("/lock_status", methods=['GET'])
     @APP.route("/lock_status/", methods=['GET'])
     def lock():
@@ -164,6 +198,25 @@ if __name__ == '__main__':
     @APP.route("/gateway_status/", methods=['GET'])
     def gateway_status():
         return Ajax().gateway_status()
+
+
+    @APP.route("/tempo", methods=['GET'])
+    @APP.route("/tempo/", methods=['GET'])
+    def tempo():
+        return Ajax().tempo()
+
+
+    @APP.route("/ecowatt", methods=['GET'])
+    @APP.route("/ecowatt/", methods=['GET'])
+    def ecowatt():
+        return Ajax().ecowatt()
+
+
+    @APP.route("/price/<usage_point_id>", methods=['GET'])
+    @APP.route("/price/<usage_point_id>/", methods=['GET'])
+    def price(usage_point_id):
+        return Ajax(usage_point_id).price()
+
 
     @APP.route("/datatable/<usage_point_id>/<measurement_direction>", methods=['GET'])
     @APP.route("/datatable/<usage_point_id>/<measurement_direction>/", methods=['GET'])
@@ -205,6 +258,7 @@ if __name__ == '__main__':
     @APP.route("/reset/<usage_point_id>/", methods=['GET'])
     def reset_all_data(usage_point_id):
         return Ajax(usage_point_id).reset_all_data()
+
 
     @APP.route("/delete/<usage_point_id>", methods=['GET'])
     @APP.route("/delete/<usage_point_id>/", methods=['GET'])

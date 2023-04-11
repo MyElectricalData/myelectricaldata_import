@@ -1,5 +1,6 @@
 import __main__ as app
 import calendar
+import json
 from datetime import datetime, timezone, timedelta, date
 
 import pytz
@@ -10,9 +11,10 @@ utc = pytz.UTC
 
 class Stat:
 
-    def __init__(self, usage_point_id, measurement_direction):
+    def __init__(self, usage_point_id, measurement_direction=None):
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
+        self.config = app.CONFIG
         self.usage_point_id_config = app.DB.get_usage_point(self.usage_point_id)
         self.usage_point_id_contract = app.DB.get_contract(self.usage_point_id)
         self.date_format = "%Y-%m-%d"
@@ -41,6 +43,7 @@ class Stat:
         self.value_current_month_evolution = 0
         self.value_peak_offpeak_percent_hp_vs_hc = 0
         self.value_monthly_evolution = 0
+        self.value_yearly_evolution = 0
         self.usage_point_id_contract = app.DB.get_contract(self.usage_point_id)
 
     def daily(self, index=0):
@@ -83,7 +86,7 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
-        
+
     def max_power_over(self, index=0):
         max_power = 0
         if hasattr(self.usage_point_id_contract,
@@ -101,7 +104,24 @@ class Stat:
             "value": boolv,
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
-        }  
+        }
+
+    def max_power_time(self, index=0):
+        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        end = datetime.combine(begin, datetime.max.time())
+        max_power_time = ''
+        #print(app.DB.get_daily_max_power_range(self.usage_point_id, begin, end))
+        for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
+            #print(data)
+            if data.event_date is None or data.event_date == "":
+                max_power_time = data.date
+            else:
+                max_power_time = data.event_date
+        return {
+            "value": max_power_time,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
 
     def current_week_array(self):
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
@@ -294,7 +314,7 @@ class Stat:
         if self.value_current_month_last_year != 0:
             self.value_current_month_evolution = (
                                                          (
-                                                                     100 * self.value_current_month) / self.value_current_month_last_year
+                                                                 100 * self.value_current_month) / self.value_current_month_last_year
                                                  ) - 100
         app.LOG.log(f" => {self.value_current_month_evolution}")
         return self.value_current_month_evolution
@@ -327,7 +347,7 @@ class Stat:
 
     def current_year(self):
         app.LOG.log("current_year")
-        begin = datetime.combine(self.now_date.replace(day=1).replace(month=1), datetime.min.time())
+        begin = datetime.combine(self.now_date.replace(month=1, day=1), datetime.min.time())
         end = self.yesterday_date
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_year = self.value_current_year + day.value
@@ -341,7 +361,7 @@ class Stat:
     def current_year_last_year(self):
         app.LOG.log("current_year_last_year")
         begin = datetime.combine(
-            datetime.combine(self.now_date.replace(day=1).replace(month=1), datetime.min.time()) - relativedelta(
+            datetime.combine(self.now_date.replace(month=1, day=1), datetime.min.time()) - relativedelta(
                 years=1),
             datetime.min.time())
         end = self.yesterday_date - relativedelta(years=1)
@@ -356,10 +376,10 @@ class Stat:
 
     def last_year(self):
         app.LOG.log("last_year")
-        begin = datetime.combine(self.now_date.replace(day=1).replace(month=1) - relativedelta(years=1),
+        begin = datetime.combine(self.now_date.replace(month=1, day=1) - relativedelta(years=1),
                                  datetime.min.time())
         last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
-        end = datetime.combine(begin.replace(day=last_day_of_month).replace(month=12), datetime.max.time())
+        end = datetime.combine(begin.replace(month=1, day=last_day_of_month), datetime.max.time())
         for day in app.DB.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_year = self.value_last_year + day.value
         app.LOG.log(f" => {self.value_last_year}")
@@ -368,6 +388,15 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
+
+    def yearly_evolution(self):
+        app.LOG.log("yearly_evolution")
+        self.current_year()
+        self.current_year_last_year()
+        if self.value_last_month_last_year != 0:
+            self.value_yearly_evolution = ((100 * self.value_current_year) / self.value_current_year_last_year) - 100
+        app.LOG.log(f" => {self.value_yearly_evolution}")
+        return self.value_yearly_evolution
 
     def yesterday_hc_hp(self):
         app.LOG.log("yesterday_hp / yesterday_hc")
@@ -410,9 +439,9 @@ class Stat:
 
     # STAT V2
     def get_year(self, year, measure_type=None):
-        begin = datetime.combine(self.now_date.replace(year=year).replace(day=1).replace(month=1), datetime.min.time())
+        begin = datetime.combine(self.now_date.replace(year=year, month=1, day=1), datetime.min.time())
         last_day_of_month = calendar.monthrange(year, 12)[1]
-        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=12),
+        end = datetime.combine(self.now_date.replace(year=year, month=12, day=last_day_of_month),
                                datetime.max.time())
         value = 0
         if measure_type is None:
@@ -448,10 +477,10 @@ class Stat:
     def get_month(self, year, month=None, measure_type=None):
         if month is None:
             month = int(datetime.now().strftime('%m'))
-        begin = datetime.combine(self.now_date.replace(year=year).replace(day=1).replace(month=month),
+        begin = datetime.combine(self.now_date.replace(year=year, month=month, day=1),
                                  datetime.min.time())
         last_day_of_month = calendar.monthrange(year, month)[1]
-        end = datetime.combine(self.now_date.replace(year=year).replace(day=last_day_of_month).replace(month=month),
+        end = datetime.combine(self.now_date.replace(year=year, month=month, day=last_day_of_month),
                                datetime.max.time())
         value = 0
         if measure_type is None:
@@ -491,10 +520,10 @@ class Stat:
         start = today - timedelta(days=today.weekday())
         end = start + timedelta(days=6)
         begin = datetime.combine(
-            self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month),
+            self.now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
             datetime.min.time())
         end = datetime.combine(
-            self.now_date.replace(year=year).replace(day=int(start.strftime("%d"))).replace(month=month),
+            self.now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
             datetime.max.time())
         value = 0
         if measure_type is None:
@@ -527,21 +556,85 @@ class Stat:
             "end": end.strftime(self.date_format)
         }
 
-    def max_power_over(self, index=0):
-        max_power = 9999
-        if hasattr(self.usage_point_id_contract,
-                   "subscribed_power") and self.usage_point_id_contract.subscribed_power is not None:
-            max_power = int(self.usage_point_id_contract.subscribed_power.split(' ')[0])
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
-        end = datetime.combine(begin, datetime.max.time())
-        value = 0
-        boolv = "false"
-        for data in app.DB.get_daily_max_power_range(self.usage_point_id, begin, end):
-            value = value + data.value
-            if (value / 1000) > max_power:
-                boolv = "true"
-        return {
-            "value": boolv,
-            "begin": begin.strftime(self.date_format),
-            "end": end.strftime(self.date_format)
-        }
+    def price(self):
+        app.LOG.warning("Cette opération peut prendre un certain temps...")
+        data = app.DB.get_detail_all(self.usage_point_id, self.measurement_direction)
+        result = {}
+        last_month = ""
+        for item in data:
+            year = item.date.strftime("%Y")
+            month = item.date.strftime("%m")
+            if month != last_month:
+                app.LOG.log(f" - {year} / {month}")
+            tempo_date = datetime.combine(item.date, datetime.min.time())
+            measure_type = item.measure_type
+            interval = item.interval
+            if year not in result:
+                result[year] = {
+                    "BASE": 0,
+                    "TEMPO": {
+                        "BLUE_HC": 0,
+                        "BLUE_HP": 0,
+                        "WHITE_HC": 0,
+                        "WHITE_HP": 0,
+                        "RED_HC": 0,
+                        "RED_HP": 0,
+                    },
+                    "HC": 0,
+                    "HP": 0,
+                    "month": {}
+                }
+            if month not in result[year]["month"]:
+                result[year]["month"][month] = {
+                    "BASE": 0,
+                    "TEMPO": {
+                        "BLUE_HC": 0,
+                        "BLUE_HP": 0,
+                        "WHITE_HC": 0,
+                        "WHITE_HP": 0,
+                        "RED_HC": 0,
+                        "RED_HP": 0,
+                    },
+                    "HC": 0,
+                    "HP": 0
+                }
+            if self.measurement_direction == "consumption":
+                price = self.usage_point_id_config.consumption_price_base
+            else:
+                price = self.usage_point_id_config.production_price
+            if measure_type == "HP":
+                price_hc_hp = self.usage_point_id_config.consumption_price_hp
+            else:
+                price_hc_hp = self.usage_point_id_config.consumption_price_hc
+            kw = (item.value / 1000) / (60 / interval)
+            # YEARS
+            result[year]["BASE"] = result[year]["BASE"] + (kw * price)
+            result[year][measure_type] = result[year][measure_type] + (kw * price_hc_hp)
+            tempo_config = self.config.tempo_config()
+
+            # MONTH
+            result[year]["month"][month]["BASE"] = result[year]["month"][month]["BASE"] + (kw * price)
+            result[year]["month"][month][measure_type] = result[year]["month"][month][measure_type] + (
+                    kw * price_hc_hp)
+
+            # TEMPO
+            if tempo_config:
+                hour = int(item.date.strftime("%H"))
+                if 6 <= hour < 22:
+                    measure_type = "HP"
+                else:
+                    measure_type = "HC"
+                tempo_data = app.DB.get_tempo_range(tempo_date, tempo_date)
+                if tempo_data:
+                    color = tempo_data[0].color
+
+                    tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
+                    result[year]["TEMPO"][f"{color}_{measure_type}"] = result[year]["TEMPO"][
+                                                                           f"{color}_{measure_type}"] + (
+                                                                               kw * tempo_price)
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] = \
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] + (
+                            kw * tempo_price)
+            last_month = month
+        app.DB.set_stat(self.usage_point_id, f"price_{self.measurement_direction}", json.dumps(result))
+        return json.dumps(result)
