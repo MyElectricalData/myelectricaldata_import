@@ -59,4 +59,4 @@
 #        contains(github.event.pull_request.labels.*.name, 'bug')
 #      with:
 #        project: 'https://github.com/orgs/MyElectricalData/projects/1/views/1'
-#        column_name: 'BACKLOG'
+#        column_name: 'BACKLOG"
