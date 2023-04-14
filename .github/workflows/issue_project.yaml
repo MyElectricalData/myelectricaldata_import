@@ -19,7 +19,7 @@ jobs:
       - uses: Machine-Maker/add-to-project-action@v0.2.0
         with:
           github-token: ${{ secrets.GH_PAT }}
-          project-url: https://github.com/orgs/MyElectricalData/projects/1
+          project-url: https://github.com/orgs/MyElectricalData/projects/1/views/1
           column-field: Status
           label-to-column-map: |
             {
