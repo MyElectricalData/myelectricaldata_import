@@ -1,16 +1,16 @@
 # name: Update Projects
-
+#
 # on:
 #   issues:
 #     types:
 #       - labeled
 #       - unlabeled
-
+#
 # concurrency:
 #   group: update-projects-${{ github.event_name }}
 #   cancel-in-progress: true
-
-
+#
+#
 # jobs:
 #   issues:
 #     runs-on: ubuntu-latest
@@ -28,7 +28,7 @@
 #               "wontfix": "BACKLOG",
 #               "duplicate": "BACKLOG"
 #             }
-
+#
 #name: Auto Assign to Project(s)
 #
 #on:
