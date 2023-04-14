@@ -20,4 +20,3 @@ jobs:
       uses: srggrs/assign-one-project-github-action@1.2.1
       with:
         project: 'https://github.com/users/m4dm4rtig4n/projects/1'
-        column_name: 'BACKLOG'
