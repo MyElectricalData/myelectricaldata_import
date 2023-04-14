@@ -183,7 +183,6 @@ class HomeAssistant:
         # Get ecowatt data
         begin = datetime.combine(datetime.now(), datetime.min.time())
         ecowatt_data = app.DB.get_ecowatt_range(begin, begin)
-        print(ecowatt_data)
         if ecowatt_data:
             stats = Stat(self.usage_point_id)
             topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"

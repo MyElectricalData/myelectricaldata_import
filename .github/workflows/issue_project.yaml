@@ -2,19 +2,31 @@ name: Add bugs to bugs project
 
 on:
   issues:
-    types:
-      - opened
+    types: [opened, labeled]
+  pull_request:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+env:
+  MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  add-to-project:
-    name: Add issue to project
+
+  assign_one_project:
     runs-on: ubuntu-latest
+    name: Assign to One Project
     steps:
-      - uses: actions/add-to-project@main
-        with:
-          # You can target a repository in a different organization
-          # to the issue
-          project-url: https://github.com/users/m4dm4rtig4n/projects/1
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          labeled: bug, needs-triage, enhancement, help wanted
-          label-operator: OR
+    - name: Assign NEW issues and NEW pull requests to project 2
+      uses: srggrs/assign-one-project-github-action@1.2.1
+      if: github.event.action == 'opened'
+      with:
+        project: 'https://github.com/users/m4dm4rtig4n/projects/1'
+
+    - name: Assign issues and pull requests with `bug` label to project 3
+      uses: srggrs/assign-one-project-github-action@1.2.1
+      if: |
+        contains(github.event.issue.labels.*.name, 'bug') ||
+        contains(github.event.pull_request.labels.*.name, 'bug')
+      with:
+        project: 'https://github.com/users/m4dm4rtig4n/projects/1'
+        column_name: 'Labeled'

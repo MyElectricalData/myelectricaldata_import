@@ -1,21 +1,27 @@
 ---
 name: Bug report
-about: Créé un rapport pour m'aider à débug
+about: MERCI DE RESPECTER LE FORMAT SINON JE CLOS L'ISSUE SANS AVERTISSEMENT. Créé un rapport pour m'aider à debug
 title: "[BUG] - "
 labels: bug
-assignees: m4dm4rtig4n
+assignees: 
+ - m4dm4rtig4n
 
 ---
-
-MERCI DE RESPECTER LES DIFFERENTS CHAMPS SINON JE CLOS L'ISSUE.
 
 **Description du bug**
 Merci de me détailler au mieux le bug et une procédure pour le reproduire si possible.
 
-**Configuration**
-Il me faut la partie enedis_gateway de votre config.yml, sans les PDL et Token.
+<details>
+<summary>Configuration (config.yaml)</summary>
+
+```yaml
+RENSEIGNE TON FICHIER DE CONFIG SANS PDL & TOKEN
+```
+</details>
 
 **Type d'installation**
-Docker, HassIO ?
+
+- [ ] Docker
+- [ ] HassIO
 
 **Version : X.X.X**
