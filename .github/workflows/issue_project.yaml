@@ -9,7 +9,7 @@ jobs:
       if: github.event_name == 'issues' && github.event.action == 'opened'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_PROJECT_URL: https://github.com/users/m4dm4rtig4n/projects/1
+        GITHUB_PROJECT_URL: https://github.com/orgs/MyElectricalData/projects/1
         GITHUB_PROJECT_COLUMN_NAME: BACKLOG
 
 
@@ -18,5 +18,5 @@ jobs:
       if: github.event_name == 'pull_request' && github.event.action == 'opened'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_PROJECT_URL: https://github.com/users/m4dm4rtig4n/projects/1
+        GITHUB_PROJECT_URL: https://github.com/orgs/MyElectricalData/projects/1
         GITHUB_PROJECT_COLUMN_NAME: BACKLOG
