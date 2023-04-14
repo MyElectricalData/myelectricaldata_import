@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: MERCI DE RESPECTER LE FORMAT SINON JE CLOS L'ISSUE SANS AVERTISSEMENT.<br>Créé un rapport pour m'aider à debug
+about: MERCI DE RESPECTER LE FORMAT SINON JE CLOS L'ISSUE SANS AVERTISSEMENT. Créé un rapport pour m'aider à debug
 title: "[BUG] - "
 labels: bug
 assignees: m4dm4rtig4n
