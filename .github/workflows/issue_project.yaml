@@ -8,7 +8,7 @@ jobs:
       uses: docker://takanabe/github-actions-automate-projects:v0.0.1
       if: github.event_name == 'issues' && github.event.action == 'opened'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_PAT }}
+        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         GITHUB_PROJECT_URL: https://github.com/orgs/MyElectricalData/projects/1
         GITHUB_PROJECT_COLUMN_NAME: BACKLOG
 
@@ -17,6 +17,6 @@ jobs:
       uses: docker://takanabe/github-actions-automate-projects:v0.0.1
       if: github.event_name == 'pull_request' && github.event.action == 'opened'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_PAT }}
+        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         GITHUB_PROJECT_URL: https://github.com/orgs/MyElectricalData/projects/1
         GITHUB_PROJECT_COLUMN_NAME: BACKLOG
