@@ -2,21 +2,17 @@ name: Add bugs to bugs project
 
 on:
   issues:
-    types: [opened, labeled]
-  pull_request:
-    types: [opened, labeled]
-  issue_comment:
-    types: [created]
-env:
-  MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    types:
+      - opened
 
 jobs:
-
-  assign_one_project:
+  add-to-project:
+    name: Add issue to project
     runs-on: ubuntu-latest
-    name: Assign to One Project
     steps:
-    - name: Assign to project MED
-      uses: srggrs/assign-one-project-github-action@1.2.1
-      with:
-        project: 'https://github.com/users/m4dm4rtig4n/projects/1'
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/users/m4dm4rtig4n/projects/1
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labeled: bug, needs-triage
+          label-operator: OR
