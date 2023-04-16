@@ -59,7 +59,7 @@ class Ecowatt:
                 app.LOG.log(" => Toutes les données sont déjà en cache")
         if "error" not in result:
             for key, value in result.items():
-                app.LOG.log(f"{key}: {value}")
+                app.LOG.log(f"{key}: {value['message']}")
         else:
             app.LOG.error(result)
             return "OK"

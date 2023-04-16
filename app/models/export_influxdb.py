@@ -1,12 +1,10 @@
 import __main__ as app
-import datetime
 
 import pytz
-
-import __main__ as app
 from dependencies import *
 
-utc=pytz.UTC
+utc = pytz.UTC
+fr = pytz.timezone("Europe/Paris")
 
 def forceRound(x, n):
     import decimal
@@ -15,14 +13,25 @@ def forceRound(x, n):
     chopped = d.quantize(targetdigit, decimal.ROUND_DOWN)
     return float(chopped)
 
+
 class ExportInfluxDB:
 
-    def __init__(self, usage_point_id, measurement_direction="consumption" ):
-        self.usage_point_id = usage_point_id
+    def __init__(self, influxdb_config,  usage_point_config, measurement_direction="consumption"):
+        self.influxdb_config = influxdb_config
+        self.usage_point_config = usage_point_config
+        self.usage_point_id = self.usage_point_config.usage_point_id
         self.measurement_direction = measurement_direction
+        if self.influxdb_config["timezone"] == "UTC" or "timezone" not in self.influxdb_config:
+            self.tz = pytz.UTC
+        else:
+            self.tz = pytz.timezone(self.influxdb_config["timezone"])
 
-    def daily(self, price, measurement_direction="consumption"):
+    def daily(self, measurement_direction="consumption"):
         current_month = ""
+        if measurement_direction == "consumption":
+            price = self.usage_point_config.consumption_price_base
+        else:
+            price = self.usage_point_config.production_price
         app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement_direction}" dans influxdb')
         for daily in app.DB.get_daily_all(self.usage_point_id):
             date = daily.date
@@ -31,10 +40,10 @@ class ExportInfluxDB:
             euro = kwatt * price
             if current_month != date.strftime('%m'):
                 app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-            # app.INFLUXDB.delete(utc.localize(date), measurement_direction)
+            # app.INFLUXDB.delete(self.tz.localize(date), measurement_direction)
             app.INFLUXDB.write(
                 measurement=measurement_direction,
-                date=utc.localize(date),
+                date=self.tz.localize(date),
                 tags={
                     "usage_point_id": self.usage_point_id,
                     "year": daily.date.strftime("%Y"),
@@ -48,9 +57,10 @@ class ExportInfluxDB:
             )
             current_month = date.strftime("%m")
 
-    def detail(self, price_hp=0, price_hc=0, price_prod=0, measurement_direction="consumption"):
+    def detail(self, measurement_direction="consumption"):
         current_month = ""
-        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement_direction}" dans influxdb')
+        measurement = f"{measurement_direction}_detail"
+        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement.upper()}" dans influxdb')
         for detail in app.DB.get_detail_all(self.usage_point_id, measurement_direction):
             date = detail.date
             watt = detail.value
@@ -59,16 +69,16 @@ class ExportInfluxDB:
             kwatth = watth / 1000
             if current_month != date.strftime('%m'):
                 app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-            if measurement_direction != "production":
+            if measurement_direction == "consumption":
                 if detail.measure_type == "HP":
-                    euro = kwatth * price_hp
+                    euro = kwatth * self.usage_point_config.consumption_price_hp
                 else:
-                    euro = kwatth * price_hc
+                    euro = kwatth * self.usage_point_config.consumption_price_hc
             else:
-                euro = kwatth * price_prod
+                euro = kwatth * self.usage_point_config.production_price
             app.INFLUXDB.write(
-                measurement=measurement_direction,
-                date=utc.localize(date),
+                measurement=measurement,
+                date=self.tz.localize(date),
                 tags={
                     "usage_point_id": self.usage_point_id,
                     "year": detail.date.strftime("%Y"),

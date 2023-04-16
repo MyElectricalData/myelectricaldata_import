@@ -225,27 +225,16 @@ class Job:
                                 app.LOG.title("Exportation InfluxDB")
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
-                                    ExportInfluxDB(self.usage_point_id).daily(
-                                        price=self.usage_point_config.consumption_price_base,
-                                    )
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily()
                                 if hasattr(self.usage_point_config,
                                            "production") and self.usage_point_config.production:
-                                    ExportInfluxDB(self.usage_point_id).daily(
-                                        price_prod=self.usage_point_config.production_price,
-                                        measurement_direction="production"
-                                    )
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily(measurement_direction="production")
                                 if hasattr(self.usage_point_config,
                                            "consumption_detail") and self.usage_point_config.consumption_detail:
-                                    ExportInfluxDB(self.usage_point_id).detail(
-                                        price_hp=self.usage_point_config.consumption_price_hp,
-                                        price_hc=self.usage_point_config.consumption_price_hc
-                                    )
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail()
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
-                                    ExportInfluxDB(self.usage_point_id).detail(
-                                        price_prod=self.usage_point_config.production_price,
-                                        measurement_direction="production"
-                                    )
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail(measurement_direction="production")
                             export_finish()
                         else:
                             app.LOG.title("Exportation InfluxDB")
