@@ -3,8 +3,6 @@ import __main__ as app
 import pytz
 from dependencies import *
 
-utc = pytz.UTC
-fr = pytz.timezone("Europe/Paris")
 
 def forceRound(x, n):
     import decimal
@@ -21,7 +19,7 @@ class ExportInfluxDB:
         self.usage_point_config = usage_point_config
         self.usage_point_id = self.usage_point_config.usage_point_id
         self.measurement_direction = measurement_direction
-        if self.influxdb_config["timezone"] == "UTC" or "timezone" not in self.influxdb_config:
+        if "timezone" not in self.influxdb_config or self.influxdb_config["timezone"] == "UTC":
             self.tz = pytz.UTC
         else:
             self.tz = pytz.timezone(self.influxdb_config["timezone"])
