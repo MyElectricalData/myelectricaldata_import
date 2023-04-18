@@ -1,17 +1,15 @@
 on:
   issues:
-    types: [opened]
+    types: [opened]  
 jobs:
   titlePrefixCheck:
     runs-on: ubuntu-latest
     steps:
       - name: Close Issue
-        uses: mheap/auto-close-org-issues-action@main
         if: |
           !contains(github.event.issue.labels.*.name, 'bug') ||
           !contains(github.event.issue.labels.*.name, 'help wanted') ||
           !contains(github.event.issue.labels.*.name, 'enhancement')
+        uses: YiiGuxing/close-issue@v2.1.0
         with:
-          token: ${{ secrets.GH_PAT }}
-          org: MyElectricalData
-          message: Merci de respecter le template initial !
+          comment: "Merci de respecter le template initial !"
