@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close Issue
-        uses: peter-evans/close-issue@v3
+        uses: YiiGuxing/close-issue@v2.1.0
         if: |
           !contains(github.event.issue.labels.*.name, 'bug') ||
           !contains(github.event.issue.labels.*.name, 'help wanted') ||
