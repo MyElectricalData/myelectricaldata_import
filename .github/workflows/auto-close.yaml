@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Close Issue
-        if: "!(contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'help') || contains(github.event.issue.labels.*.name, 'enhancement'))"
+        if: "!(contains(github.event.issue.labels.*.name, 'bug') || !contains(github.event.issue.labels.*.name, 'help') || !contains(github.event.issue.labels.*.name, 'enhancement'))"
         uses: YiiGuxing/close-issue@v2.1.0
         with:
           comment: "Merci de respecter le template initial !"
