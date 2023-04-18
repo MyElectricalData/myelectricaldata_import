@@ -26,7 +26,6 @@ class Ecowatt:
         if query_response.status_code == 200:
             try:
                 response_json = json.loads(query_response.text)
-                print(response_json)
                 for date, data in response_json.items():
                     date = datetime.strptime(date, "%Y-%m-%d")
                     self.db.set_ecowatt(date, data["value"], data["message"], str(data["detail"]))

@@ -21,24 +21,22 @@ class Status:
     def ping(self):
 
         target = f"{self.url}/ping"
-        response = Query(endpoint=target, headers=self.headers).get()
-        if response.status_code == 200:
-            try:
+        status = {
+            "version": get_version(),
+            "status": False,
+            "information": "MyElectricalData injoignable.",
+        }
+        try:
+            response = Query(endpoint=target, headers=self.headers).get()
+            if hasattr(response, "status_code") and response.status_code == 200:
                 status = json.loads(response.text)
                 for key, value in status.items():
                     app.LOG.log(f"{key}: {value}")
-                status["version"] = get_version()
                 return status
-            except LookupError:
-                return {
-                    "error": True,
-                    "description": "Erreur lors de la récupération du contrat."
-                }
-        else:
-            return {
-                "error": True,
-                "description": "Erreur lors de la récupération du contrat."
-            }
+            else:
+                return status
+        except LookupError:
+            return status
 
     def status(self, usage_point_id):
         usage_point_id_config = app.DB.get_usage_point(usage_point_id)

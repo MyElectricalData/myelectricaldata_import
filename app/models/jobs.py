@@ -186,9 +186,9 @@ class Job:
                                     ExportMqtt(self.usage_point_id, "production").detail_linear(
                                         self.usage_point_config.production_price
                                     )
-                            if hasattr(self.usage_point_config,
-                                       "consumption_max_power") and self.usage_point_config.consumption_max_power:
-                                ExportMqtt(self.usage_point_id).max_power()
+                                if hasattr(self.usage_point_config,
+                                           "consumption_max_power") and self.usage_point_config.consumption_max_power:
+                                    ExportMqtt(self.usage_point_id).max_power()
                             export_finish()
                         else:
                             app.LOG.title("Exportation MQTT")
@@ -226,7 +226,7 @@ class Job:
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
                                     ExportInfluxDB(self.usage_point_id).daily(
-                                        price_hc=self.usage_point_config.consumption_price_base,
+                                        price=self.usage_point_config.consumption_price_base,
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production") and self.usage_point_config.production:
