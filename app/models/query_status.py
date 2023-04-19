@@ -32,6 +32,7 @@ class Status:
                 status = json.loads(response.text)
                 for key, value in status.items():
                     app.LOG.log(f"{key}: {value}")
+                status["version"] = get_version()
                 return status
             else:
                 return status
