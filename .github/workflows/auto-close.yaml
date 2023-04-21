@@ -10,8 +10,8 @@ jobs:
     steps:
       - name: Close Issue
         if: |
-          !contains(github.event.issue.labels.*.name, 'bug') ||
-          !contains(github.event.issue.labels.*.name, 'help wanted') ||
+          !contains(github.event.issue.labels.*.name, 'bug') &&
+          !contains(github.event.issue.labels.*.name, 'help') &&
           !contains(github.event.issue.labels.*.name, 'enhancement')
         uses: YiiGuxing/close-issue@v2.1.0
         with:

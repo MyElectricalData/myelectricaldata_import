@@ -22,7 +22,7 @@ dependencies = [
     "alembic",
     "waitress",
     "rauth",
-    "psycopg2-binary",
+    "psycopg2",
     "PyMySQL"
 ]
 
