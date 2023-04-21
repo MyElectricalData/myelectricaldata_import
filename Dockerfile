@@ -2,14 +2,6 @@ FROM python:3.11-slim
 
 COPY ./app /app
 
-RUN apt-get install -y \
-  dos2unix \
-  libpq-dev \
-  libmariadb-dev-compat \
-  libmariadb-dev \
-  gcc \
-  && apt-get clean
-
 RUN apt-get update && \
     apt-get install -y \
     locales  \
@@ -19,7 +11,7 @@ RUN apt-get update && \
     libpq-dev  \
     && sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen  \
     && apt-get clean
-RUN dpkg-reconfigure --frontend=noninteractive locales && \
+RUN dpkg-reconfigure --frontend=noninteractive locales
 RUN rm -rf /var/lib/apt/lists/*
 
 ENV LANG fr_FR.UTF-8
