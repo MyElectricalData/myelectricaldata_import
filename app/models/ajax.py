@@ -47,7 +47,9 @@ class Ajax:
 
     def account_status(self):
         app.LOG.title(f"[{self.usage_point_id}] Check du statut du compte.")
-        return Status(headers=self.headers).status(self.usage_point_id)
+        data = Status(headers=self.headers).status(self.usage_point_id)
+        data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
+        return data
 
     def tempo(self):
         app.LOG.title(f"Récupération des jours Tempo.")

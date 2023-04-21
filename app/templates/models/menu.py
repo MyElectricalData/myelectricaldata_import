@@ -32,7 +32,13 @@ class Menu:
                 javascript += f'''
 $("#{id}").click(function () {{
     $("#bottom_menu").removeClass("active")
+'''
+                if "loading_page" in items:
+                    javascript += f'''
     $.LoadingOverlay("show", {items['loading_page']});
+'''
+
+                javascript += f'''
     $.ajax({{
         type: '{items["ajax"]["method"]}',
         url: '{items["ajax"]["url"]}'

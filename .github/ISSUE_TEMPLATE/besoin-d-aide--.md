@@ -2,7 +2,7 @@
 name: Besoin d'aide ?
 about: Besoin d'aide ?
 title: "[HELP] - "
-labels: help wanted
+labels: help
 assignees: m4dm4rtig4n
 
 ---

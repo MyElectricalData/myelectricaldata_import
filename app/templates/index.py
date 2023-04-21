@@ -24,30 +24,30 @@ class Index:
         self.configuration_div = Configuration("Ajout d'un point de livraison", display_usage_point_id=True)
 
     def display(self):
-        if app.DB.lock_status():
-            return Loading().display()
-        else:
-            with open(f'{self.application_path}/templates/md/index.md') as file_:
-                homepage_template = Template(file_.read())
-            body = homepage_template.render()
-            body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
+        # if app.DB.lock_status():
+        #     return Loading().display()
+        # else:
+        with open(f'{self.application_path}/templates/md/index.md') as file_:
+            homepage_template = Template(file_.read())
+        body = homepage_template.render()
+        body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
 
-            with open(f'{self.application_path}/templates/html/index.html') as file_:
-                index_template = Template(file_.read())
-            html = index_template.render(
-                select_usage_points=self.usage_point_select.html(),
-                head=open(f'{self.application_path}/templates/html/head.html').read(),
-                body=body,
-                side_menu=self.side_menu.html(),
-                javascript=(
-                    self.configuration_div.javascript()
-                    + self.side_menu.javascript()
-                    + self.usage_point_select.javascript()
-                    + open(f'{self.application_path}/templates/js/notif.js').read()
-                    + open(f'{self.application_path}/templates/js/loading.js').read()
-                    + open(f'{self.application_path}/templates/js/gateway_status.js').read()
-                ),
-                configuration=self.configuration_div.html().strip(),
-                menu=self.menu.html()
-            )
+        with open(f'{self.application_path}/templates/html/index.html') as file_:
+            index_template = Template(file_.read())
+        html = index_template.render(
+            select_usage_points=self.usage_point_select.html(),
+            head=open(f'{self.application_path}/templates/html/head.html').read(),
+            body=body,
+            side_menu=self.side_menu.html(),
+            javascript=(
+                self.configuration_div.javascript()
+                + self.side_menu.javascript()
+                + self.usage_point_select.javascript()
+                + open(f'{self.application_path}/templates/js/notif.js').read()
+                + open(f'{self.application_path}/templates/js/loading.js').read()
+                + open(f'{self.application_path}/templates/js/gateway_status.js').read()
+            ),
+            configuration=self.configuration_div.html().strip(),
+            menu=self.menu.html()
+        )
         return html

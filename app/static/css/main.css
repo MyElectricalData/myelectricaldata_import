@@ -629,6 +629,7 @@ table td {
     color: var(--text-title);
     text-align: center;
     font-weight: bolder;
+    width: 160px;
 }
 
 .stat_value_warning {
@@ -721,4 +722,8 @@ table td {
     border: 1px solid var(--sde-bg-color);
     text-align: center;
     border-collapse: collapse;
+}
+
+.loadingoverlay {
+    height: 40px !important;
 }

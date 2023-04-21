@@ -250,6 +250,12 @@ class Config:
         else:
             return False
 
+    def storage_config(self):
+        if "storage_uri" in self.usage_point_config:
+            return self.usage_point_config["storage_uri"]
+        else:
+            return False
+
     def mqtt_config(self):
         if "mqtt" in self.usage_point_config:
             return self.usage_point_config["mqtt"]

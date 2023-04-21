@@ -21,7 +21,9 @@ dependencies = [
     "SQLAlchemy",
     "alembic",
     "waitress",
-    "rauth"
+    "rauth",
+    "psycopg2-binary",
+    "PyMySQL"
 ]
 
 [project.optional-dependencies]

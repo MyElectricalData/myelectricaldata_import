@@ -34,7 +34,7 @@ def upgrade() -> None:
                     ['usage_point_id'], unique=False)
 
     op.add_column('usage_points',
-                  sa.Column('consumption_max_power', sa.DateTime(), nullable=False, server_default=true()))
+                  sa.Column('consumption_max_power', sa.Boolean(), nullable=False, server_default=true()))
 
 
 def downgrade() -> None:

@@ -76,6 +76,7 @@ class Job:
             for self.usage_point_config in self.usage_points:
                 self.usage_point_id = self.usage_point_config.usage_point_id
                 app.LOG.log_usage_point_id(self.usage_point_id)
+                app.DB.last_call_update(self.usage_point_id)
                 if self.usage_point_config.enable:
                     try:
                         if target == "gateway_status" or target is None:

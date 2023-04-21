@@ -38,6 +38,11 @@ if (document.URL.indexOf("/usage_point_id/") >= 0) {
             }else{
                 var quota_limit = data["quota_limit"]
             }
+            if (data["last_call"] === undefined) {
+                var last_call = "---"
+            }else{
+                var last_call = data["last_call"]
+            }
             if(information === undefined) {
                 information = "Soucis sur le compte<br>Vérifier les logs ou votre configuration"
             }
@@ -50,6 +55,9 @@ if (document.URL.indexOf("/usage_point_id/") >= 0) {
                 "</tr>" +
                 "<tr>" +
                 "<td class='stat_key'>Statut du compte</td><td class='stat_value'><img src='/static/img/" + gateway_state + "' style='width: 18px;'></td>" +
+                "</tr>" +
+                "<tr>" +
+                "<td class='stat_key'>Date du dernier import</td><td class='stat_value'>" + last_call + "</td>" +
                 "</tr>" +
                 "<tr>" +
                 "<td class='" + information_class + "' colspan='2'>" + information + "</td>" +
