@@ -1,9 +1,9 @@
 on:
   issues:
-    types: [opened]
+    types: [opened] 
 permissions:
   contents: write
-  issues: write
+  issues: write    
 jobs:
   titlePrefixCheck:
     runs-on: ubuntu-latest
