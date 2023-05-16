@@ -212,13 +212,19 @@ class Database:
                 self.delete_daily_max_power(usage_point.usage_point_id)
         return True
 
+    def refresh_object(self):
+        self.log.title("Refresh ORM Objects")
+        self.session.expire_all()
+
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONFIG
     ## ----------------------------------------------------------------------------------------------------------------
     def get_config(self, key):
         query = select(Config).where(Config.key == key)
+        # data = self.session.scalars(query).one_or_none()
+        # self.session.expire_all(data)
+        # return data
         return self.session.scalars(query).one_or_none()
-
     def set_config(self, key, value):
         query = select(Config).where(Config.key == key)
         config = self.session.scalars(query).one_or_none()

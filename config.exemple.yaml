@@ -2,6 +2,10 @@ cycle: 14400  # 4H
 debug: true
 log2file: false
 wipe_influxdb: false
+# Par défaut le backend en local dans le /data/cache.db du conteneur.
+# Mais il est possible de basculer sur une base de données externe de type SQLite ou PostgreSQL
+# Exemple pour Postgres :
+# storage_uri: postgresql://myelectricaldata:myelectricaldata@postgres:5432/myelectricaldata
 tempo:
   enable: true
   price_blue_hc: 0.097

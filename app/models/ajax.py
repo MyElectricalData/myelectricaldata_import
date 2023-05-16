@@ -48,7 +48,10 @@ class Ajax:
     def account_status(self):
         app.LOG.title(f"[{self.usage_point_id}] Check du statut du compte.")
         data = Status(headers=self.headers).status(self.usage_point_id)
-        data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
+        if isinstance(self.usage_point_config.last_call, datetime):
+            data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
+        else:
+            data["last_call"] = self.usage_point_config.last_call
         return data
 
     def tempo(self):

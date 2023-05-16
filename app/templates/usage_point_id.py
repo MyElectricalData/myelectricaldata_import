@@ -18,6 +18,7 @@ class UsagePointId:
     def __init__(self, usage_point_id):
         # if not app.DB.lock_status():
         self.db = app.DB
+        self.db.refresh_object()
         self.config = app.CONFIG
         self.application_path = app.APPLICATION_PATH
         self.usage_point_id = usage_point_id
