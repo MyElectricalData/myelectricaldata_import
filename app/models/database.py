@@ -1,10 +1,10 @@
-import __main__ as app
 import hashlib
 import json
+import logging
 import os
+import traceback
 from datetime import datetime, timedelta
 from os.path import exists
-import traceback
 
 from db_schema import (
     Config,
@@ -20,22 +20,21 @@ from db_schema import (
     Ecowatt,
     Statistique
 )
-from dependencies import str2bool
-from models.config import get_version
-from sqlalchemy import (create_engine, delete, inspect, select, func, desc, asc)
+from dependencies import str2bool, title, get_version, title_warning
+from sqlalchemy import (create_engine, delete, inspect, update, select, func, desc, asc)
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from config import MAX_IMPORT_TRY
-
 
 # available_database = ["sqlite", "postgresql", "mysql+pymysql"]
 available_database = ["sqlite", "postgresql"]
 
+
 class Database:
-    def __init__(self, log, path="/data"):
-        self.log = log
+    def __init__(self, config, path="/data"):
+        self.config = config
         self.path = path
-        self.config = app.CONFIG
 
         if not self.config.storage_config() or self.config.storage_config().startswith("sqlite"):
             self.db_name = "cache.db"
@@ -46,12 +45,12 @@ class Database:
             if self.storage_type in available_database:
                 self.uri = self.config.storage_config()
             else:
-                self.log.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
+                logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
 
         os.system(f"cd /app; DB_URL='{self.uri}' alembic upgrade head ")
 
-
-        self.engine = create_engine(self.uri, echo=False, query_cache_size=0)
+        self.engine = create_engine(self.uri, echo=False, query_cache_size=0, isolation_level="READ COMMITTED",
+                                    poolclass=NullPool)
         self.session = scoped_session(sessionmaker(self.engine, autocommit=True, autoflush=True))
         self.inspector = inspect(self.engine)
 
@@ -61,7 +60,7 @@ class Database:
 
         # MIGRATE v7 to v8
         if os.path.isfile(f"{self.path}/enedisgateway.db"):
-            self.log.title_warning("Migration de l'ancienne base de données vers la nouvelle structure.")
+            title_warning("=> Migration de l'ancienne base de données vers la nouvelle structure.")
             self.migratev7tov8()
 
     def migratev7tov8(self):
@@ -70,7 +69,7 @@ class Database:
         session = scoped_session(sessionmaker(engine, autocommit=True, autoflush=True))
 
         for measurement_direction in ["consumption", "production"]:
-            self.log.warning(f'Migration des "{measurement_direction}_daily"')
+            logging.warning(f'Migration des "{measurement_direction}_daily"')
             if measurement_direction == "consumption":
                 table = ConsumptionDaily
             else:
@@ -92,12 +91,12 @@ class Database:
                     fail_count=0
                 ))
                 if current_date != date.strftime("%Y"):
-                    self.log.warning(f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW")
+                    logging.warning(f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW")
                     current_date = date.strftime("%Y")
                     year_value = 0
             self.session.add_all(bulk_insert)
 
-            self.log.warning(f'Migration des "{measurement_direction}_detail"')
+            logging.warning(f'Migration des "{measurement_direction}_detail"')
             if measurement_direction == "consumption":
                 table = ConsumptionDetail
             else:
@@ -123,7 +122,7 @@ class Database:
                     fail_count=0
                 ))
                 if current_date != date.strftime("%m"):
-                    self.log.warning(f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW")
+                    logging.warning(f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW")
                     current_date = date.strftime("%m")
                     day_value = 0
             self.session.add_all(bulk_insert)
@@ -131,50 +130,50 @@ class Database:
 
     def init_database(self):
         try:
-            self.log.log("Configure Databases")
+            logging.info("Configure Databases")
             query = select(Config).where(Config.key == "day")
             day = self.session.scalars(query).one_or_none()
             if day:
                 day.value = datetime.now().strftime('%Y-%m-%d')
             else:
                 self.session.add(Config(key="day", value=datetime.now().strftime('%Y-%m-%d')))
-            self.log.log(" => day")
+            logging.info(" => day")
             query = select(Config).where(Config.key == "call_number")
             if not self.session.scalars(query).one_or_none():
                 self.session.add(Config(key="call_number", value="0"))
-            self.log.log(" => call_number")
+            logging.info(" => call_number")
             query = select(Config).where(Config.key == "max_call")
             if not self.session.scalars(query).one_or_none():
                 self.session.add(Config(key="max_call", value="500"))
-            self.log.log(" => max_call")
+            logging.info(" => max_call")
             query = select(Config).where(Config.key == "version")
             version = self.session.scalars(query).one_or_none()
             if version:
                 version.value = get_version()
             else:
                 self.session.add(Config(key="version", value=get_version()))
-            self.log.log(" => version")
+            logging.info(" => version")
             query = select(Config).where(Config.key == "lock")
             if not self.session.scalars(query).one_or_none():
                 self.session.add(Config(key="lock", value="0"))
-            self.log.log(" => lock")
+            logging.info(" => lock")
             query = select(Config).where(Config.key == "lastUpdate")
             if not self.session.scalars(query).one_or_none():
                 self.session.add(Config(key="lastUpdate", value=str(datetime.now())))
-            self.log.log(" => lastUpdate")
-            self.log.log(" Success")
+            logging.info(" => lastUpdate")
+            logging.info(" Success")
         except:
             traceback.print_exc()
-            self.log.critical(f"Database initialize failed!")
+            logging.critical(f"Database initialize failed!")
 
     def purge_database(self):
-        self.log.separator_warning()
-        self.log.log("Reset SQLite Database")
+        logging.separator_warning()
+        logging.info("Reset SQLite Database")
         if os.path.exists(f'{self.path}/cache.db'):
             os.remove(f"{self.path}/cache.db")
-            self.log.log(" => Success")
+            logging.info(" => Success")
         else:
-            self.log.log(" => Not cache detected")
+            logging.info(" => Not cache detected")
 
     def lock_status(self):
         # query = select(Config).where(Config.key == "lock")
@@ -204,7 +203,7 @@ class Database:
     def clean_database(self, current_usage_point_id):
         for usage_point in self.get_usage_point_all():
             if usage_point.usage_point_id not in current_usage_point_id:
-                self.log.warning(f"- Suppression du point de livraison {usage_point.usage_point_id}")
+                logging.warning(f"- Suppression du point de livraison {usage_point.usage_point_id}")
                 self.delete_usage_point(usage_point.usage_point_id)
                 self.delete_addresse(usage_point.usage_point_id)
                 self.delete_daily(usage_point.usage_point_id)
@@ -213,7 +212,7 @@ class Database:
         return True
 
     def refresh_object(self):
-        self.log.title("Refresh ORM Objects")
+        title("Refresh ORM Objects")
         self.session.expire_all()
 
     ## ----------------------------------------------------------------------------------------------------------------
@@ -221,10 +220,10 @@ class Database:
     ## ----------------------------------------------------------------------------------------------------------------
     def get_config(self, key):
         query = select(Config).where(Config.key == key)
-        # data = self.session.scalars(query).one_or_none()
-        # self.session.expire_all(data)
-        # return data
-        return self.session.scalars(query).one_or_none()
+        data = self.session.scalars(query).one_or_none()
+        self.session.close()
+        return data
+
     def set_config(self, key, value):
         query = select(Config).where(Config.key == key)
         config = self.session.scalars(query).one_or_none()
@@ -233,18 +232,23 @@ class Database:
         else:
             self.session.add(Config(key=key, value=json.dumps(value)))
         self.session.flush()
-        self.session.expire_all()
+        self.session.close()
+        self.refresh_object()
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## USAGE POINTS
     ## ----------------------------------------------------------------------------------------------------------------
     def get_usage_point_all(self):
         query = select(UsagePoints)
-        return self.session.scalars(query).all()
+        data = self.session.scalars(query).all()
+        self.session.close()
+        return data
 
     def get_usage_point(self, usage_point_id):
         query = select(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id)
-        return self.session.scalars(query).one_or_none()
+        data = self.session.scalars(query).one_or_none()
+        self.session.close()
+        return data
 
     def set_usage_point(self, usage_point_id, data):
         query = (
@@ -319,7 +323,8 @@ class Database:
                     if isinstance(consumption_detail_max_date, datetime):
                         usage_points.consumption_detail_max_date = consumption_detail_max_date
                     else:
-                        usage_points.consumption_detail_max_date = datetime.strptime(consumption_detail_max_date, "%Y-%m-%d")
+                        usage_points.consumption_detail_max_date = datetime.strptime(consumption_detail_max_date,
+                                                                                     "%Y-%m-%d")
             if "production_max_date" in data:
                 if data["production_max_date"] and data["production_max_date"] is not None:
                     production_max_date = data["production_max_date"]
@@ -333,7 +338,8 @@ class Database:
                     if isinstance(production_detail_max_date, datetime):
                         usage_points.production_detail_max_date = production_detail_max_date
                     else:
-                        usage_points.production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
+                        usage_points.production_detail_max_date = datetime.strptime(production_detail_max_date,
+                                                                                    "%Y-%m-%d")
             if "call_number" in data and data["call_number"] is not None:
                 usage_points.call_number = data["call_number"]
             if "quota_reached" in data and data["quota_reached"] is not None:
@@ -566,6 +572,7 @@ class Database:
                 )
             )
         self.session.flush()
+        self.session.close()
 
     def progress(self, usage_point_id, increment):
         query = (
@@ -574,6 +581,7 @@ class Database:
         )
         usage_points = self.session.scalars(query).one_or_none()
         usage_points.progress = usage_points.progress + increment
+        self.session.close()
 
     def last_call_update(self, usage_point_id):
         query = (
@@ -583,6 +591,7 @@ class Database:
         usage_points = self.session.scalars(query).one_or_none()
         usage_points.last_call = datetime.now()
         self.session.flush()
+        self.session.close()
 
     def usage_point_update(self,
                            usage_point_id,
@@ -614,10 +623,12 @@ class Database:
         if ban is not None:
             usage_points.ban = ban
         self.session.flush()
+        self.session.close()
 
     def delete_usage_point(self, usage_point_id):
         self.session.execute(delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id))
         self.session.flush()
+        self.session.close()
         return True
 
     ## ----------------------------------------------------------------------------------------------------------------
@@ -629,7 +640,9 @@ class Database:
             .join(UsagePoints.relation_addressess)
             .where(UsagePoints.usage_point_id == usage_point_id)
         )
-        return self.session.scalars(query).one_or_none()
+        data = self.session.scalars(query).one_or_none()
+        self.session.close()
+        return data
 
     def set_addresse(self, usage_point_id, data, count=0):
         query = (
@@ -661,10 +674,12 @@ class Database:
                     count=count)
             )
         self.session.flush()
+        self.session.close()
 
     def delete_addresse(self, usage_point_id):
         self.session.execute(delete(Addresses).where(Addresses.usage_point_id == usage_point_id))
         self.session.flush()
+        self.session.close()
         return True
 
     ## ----------------------------------------------------------------------------------------------------------------
@@ -676,7 +691,9 @@ class Database:
             .join(UsagePoints.relation_contract)
             .where(UsagePoints.usage_point_id == usage_point_id)
         )
-        return self.session.scalars(query).one_or_none()
+        data = self.session.scalars(query).one_or_none()
+        self.session.close()
+        return data
 
     def set_contract(
             self,
@@ -730,6 +747,7 @@ class Database:
                 )
             )
         self.session.flush()
+        self.session.close()
 
     ## ----------------------------------------------------------------------------------------------------------------
     ## DAILY
@@ -741,12 +759,14 @@ class Database:
         else:
             table = ProductionDaily
             relation = UsagePoints.relation_production_daily
-        return self.session.scalars(
+        data = self.session.scalars(
             select(table)
             .join(relation)
             .where(UsagePoints.usage_point_id == usage_point_id)
             .order_by(table.date.desc())
         ).all()
+        self.session.close()
+        return data
 
     def get_daily_datatable(self, usage_point_id, order_column="date", order_dir="asc", search=None,
                             measurement_direction="consumption"):
@@ -783,10 +803,12 @@ class Database:
         else:
             table = ProductionDaily
             relation = UsagePoints.relation_production_daily
-        return self.session.scalars(
+        data = self.session.scalars(
             select([func.count()]).select_from(table).join(relation)
             .where(UsagePoints.usage_point_id == usage_point_id)
         ).one_or_none()
+        self.session.close()
+        return data
 
     def get_daily_date(self, usage_point_id, date, measurement_direction="consumption"):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
@@ -796,11 +818,14 @@ class Database:
         else:
             table = ProductionDaily
             relation = UsagePoints.relation_production_daily
-        return self.session.scalars(
+        data = self.session.scalars(
             select(table)
             .join(relation)
             .where(table.id == unique_id)
         ).first()
+        self.session.flush()
+        self.session.close()
+        return data
 
     def get_daily_state(self, usage_point_id, date, measurement_direction="consumption"):
         if self.get_daily_date(usage_point_id, date, measurement_direction) is not None:
@@ -821,6 +846,8 @@ class Database:
             .where(table.usage_point_id == usage_point_id)
             .order_by(table.date)
         ).first()
+        self.session.flush()
+        self.session.close()
         if current_data is None:
             return False
         else:
@@ -840,6 +867,8 @@ class Database:
             .where(table.value != 0)
             .order_by(table.date.desc())
         ).first()
+        self.session.flush()
+        self.session.close()
         if current_data is None:
             return False
         else:
@@ -858,7 +887,7 @@ class Database:
             .where(table.usage_point_id == usage_point_id)
             .order_by(table.date.desc())
         )
-        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).first()
         if current_data is None:
             return False
@@ -883,7 +912,7 @@ class Database:
         query = (select(table)
                  .join(relation)
                  .where(table.id == unique_id))
-        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         daily = self.session.scalars(query).one_or_none()
         if daily is not None:
             fail_count = int(daily.fail_count) + 1
@@ -928,7 +957,7 @@ class Database:
             .where(table.date <= end)
             .order_by(table.date.desc())
         )
-        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).all()
         if current_data is None:
             return False
@@ -988,7 +1017,7 @@ class Database:
                  .join(relation)
                  .where(table.id == unique_id))
         daily = self.session.scalars(query).one_or_none()
-        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         if daily is not None:
             daily.id = unique_id
             daily.usage_point_id = usage_point_id
@@ -1010,11 +1039,15 @@ class Database:
         self.session.flush()
 
     def reset_daily(self, usage_point_id, date=None, mesure_type="consumption"):
-        daily = self.get_daily_date(usage_point_id, date, mesure_type)
-        if daily is not None:
-            daily.value = 0
-            daily.blacklist = 0
-            daily.fail_count = 0
+        data = self.get_daily_date(usage_point_id, date, mesure_type)
+        if data is not None:
+            values = {
+                ConsumptionDaily.value: 0,
+                ConsumptionDaily.blacklist: 0,
+                ConsumptionDaily.fail_count: 0
+            }
+            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode('utf-8')).hexdigest()
+            self.session.execute(update(ConsumptionDaily, values=values).where(ConsumptionDaily.id == unique_id))
             self.session.flush()
             return True
         else:
@@ -1166,7 +1199,7 @@ class Database:
             .where(table.date <= end)
             .order_by(table.date.desc())
         )
-        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).all()
         if current_data is None:
             return False
@@ -1194,7 +1227,7 @@ class Database:
                 total_internal = total_internal + query.interval
             total_time = abs(total_internal - time_delta)
             if total_time > 300:
-                self.log.log(f" - {total_time}m absente du relevé.")
+                logging.info(f" - {total_time}m absente du relevé.")
                 result["missing_data"] = True
             else:
                 for query in query_result:
@@ -1416,7 +1449,7 @@ class Database:
             .where(table.usage_point_id == usage_point_id)
             .order_by(table.date.desc())
         )
-        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).first()
         if current_data is None:
             return False
@@ -1453,7 +1486,7 @@ class Database:
             .where(ConsumptionDailyMaxPower.date <= end)
             .order_by(ConsumptionDailyMaxPower.date.desc())
         )
-        self.log.debug(query.compile(compile_kwargs={"literal_binds": True}))
+        logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).all()
         if current_data is None:
             return False

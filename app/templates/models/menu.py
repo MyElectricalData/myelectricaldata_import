@@ -1,10 +1,9 @@
-import __main__ as app
-
+from dependencies import APPLICATION_PATH
 
 class Menu:
 
     def __init__(self, items):
-        self.application_path = app.APPLICATION_PATH
+        self.application_path = APPLICATION_PATH
         self.items = items
 
     def html(self):

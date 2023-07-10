@@ -1,26 +1,24 @@
-import __main__ as app
+import json
 from datetime import datetime, timedelta
 
 import markdown
-import json
+from dependencies import APPLICATION_PATH, get_version
 from jinja2 import Template
 from mergedeep import Strategy, merge
-from models.config import get_version
-from templates.loading import Loading
 from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
 
 
-class UsagePointId:
+class UsagePoint:
 
-    def __init__(self, usage_point_id):
-        # if not app.DB.lock_status():
-        self.db = app.DB
+    def __init__(self, config, db, usage_point_id):
+        # if not DB.lock_status():
+        self.config = config
+        self.db = db
         self.db.refresh_object()
-        self.config = app.CONFIG
-        self.application_path = app.APPLICATION_PATH
+        self.application_path = APPLICATION_PATH
         self.usage_point_id = usage_point_id
         self.current_years = int(datetime.now().strftime("%Y"))
         self.max_history = 4
@@ -36,7 +34,7 @@ class UsagePointId:
                 }
             else:
                 self.headers = None
-        self.usage_point_select = UsagePointSelect(usage_point_id)
+        self.usage_point_select = UsagePointSelect(self.config, self.db, usage_point_id)
         self.side_menu = SideMenu()
         menu = {}
         menu = merge(
@@ -166,7 +164,7 @@ class UsagePointId:
             menu,
             strategy=Strategy.ADDITIVE)
         self.menu = Menu(menu)
-        self.configuration_div = Configuration(f"Modification du point de livraison {self.usage_point_id}",
+        self.configuration_div = Configuration(self.db, f"Modification du point de livraison {self.usage_point_id}",
                                                self.usage_point_id)
         self.contract = self.db.get_contract(self.usage_point_id)
         self.address = self.db.get_addresse(self.usage_point_id)
@@ -180,7 +178,7 @@ class UsagePointId:
 
     def display(self):
 
-        # if app.DB.lock_status():
+        # if self.db.lock_status():
         #     return Loading().display()
         # else:
         if self.headers is None:
@@ -223,7 +221,7 @@ class UsagePointId:
                 body += f"<h1>Tempo</h1>"
                 today = datetime.combine(datetime.now(), datetime.min.time())
                 tomorow = datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time())
-                tempo = app.DB.get_tempo_range(today, tomorow, "asc")
+                tempo = self.db.get_tempo_range(today, tomorow, "asc")
                 body += f"""
                 <table style="width:100%" class="table_recap">
                     <tr>
@@ -282,7 +280,7 @@ class UsagePointId:
                 self.generate_data("consumption")
                 self.consumption()
                 recap_consumption = self.recap(data=self.recap_consumption_data)
-                body += f"<h2>Consommation</h2>"
+                body += "<h2>Consommation</h2>"
                 body += str(recap_consumption)
                 body += '<div id="chart_daily_consumption"></div>'
 
@@ -301,7 +299,7 @@ class UsagePointId:
                 datatable = str(self.get_price("consumption"))
                 if datatable:
                     lien_tempo = "https://particulier.edf.fr/fr/accueil/gestion-contrat/options/tempo/details.html"
-                    body += f"Ce tableau à pour but de vous aider à choisir le forfait le plus adapté à votre mode " \
+                    body += "Ce tableau à pour but de vous aider à choisir le forfait le plus adapté à votre mode " \
                             "de consommation.<br><br>"
                     body += datatable
                     if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
@@ -792,7 +790,7 @@ class UsagePointId:
             }"""
 
     def generate_data(self, measurement_direction):
-        data = app.DB.get_daily_all(self.usage_point_id, measurement_direction)
+        data = self.db.get_daily_all(self.usage_point_id, measurement_direction)
         result = {}
         for item in data:
             year = item.date.strftime("%Y")
@@ -809,7 +807,7 @@ class UsagePointId:
             self.recap_production_data = result
 
     def get_price(self, measurement_direction):
-        data = app.DB.get_stat(self.usage_point_id, f"price_{measurement_direction}")
+        data = self.db.get_stat(self.usage_point_id, f"price_{measurement_direction}")
         html = ""
         if len(data) > 0:
             data = data[0]
@@ -829,8 +827,8 @@ class UsagePointId:
                 for years, value in data_value.items():
                     html += "<tr>"
                     html += f"<td class='table_recap_header'>{years}</td>"
-                    html += f"<td>{round(value['BASE'],2)} €</td>"
-                    html += f"<td>{round(value['HC']+value['HP'], 2)} €</td>"
+                    html += f"<td>{round(value['BASE'], 2)} €</td>"
+                    html += f"<td>{round(value['HC'] + value['HP'], 2)} €</td>"
                     tempo_config = self.config.tempo_config()
                     if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                         value_tempo = 0

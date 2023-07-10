@@ -1,21 +1,47 @@
-import __main__ as app
+import logging
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
+from dependencies import title
 from models.stat import Stat
+from models.mqtt import Mqtt
 
 
 class ExportMqtt:
 
-    def __init__(self, usage_point_id, measurement_direction="consumption"):
+    def __init__(self, config, db, usage_point_id, measurement_direction="consumption"):
+        self.config = config
+        self.db = db
+        self.mqtt_config = self.config.mqtt_config(),
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
         self.date_format = "%Y-%m-%d"
-        self.stat = Stat(self.usage_point_id, measurement_direction)
+        self.stat = Stat(self.config, self.db, self.usage_point_id, measurement_direction)
+        self.mqtt = None
+        if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+            if ["hostname"] not in self.mqtt_config:
+                self.connect()
+            else:
+                logging.warning("MQTT config is incomplete.")
+        else:
+            logging.info("MQTT disable")
+
+    def connect(self):
+        self.mqtt = Mqtt(
+            hostname=self.mqtt_config["hostname"],
+            port=self.mqtt_config["port"],
+            username=self.mqtt_config["username"],
+            password=self.mqtt_config["password"],
+            client_id=self.mqtt_config["client_id"],
+            prefix=self.mqtt_config["prefix"],
+            retain=self.mqtt_config["retain"],
+            qos=self.mqtt_config["qos"]
+        )
+        self.mqtt.connect()
 
     def status(self):
-        app.LOG.title(f"[{self.usage_point_id}] Statut du compte.")
-        usage_point_id_config = app.DB.get_usage_point(self.usage_point_id)
+        title(f"[{self.usage_point_id}] Statut du compte.")
+        usage_point_id_config = self.db.get_usage_point(self.usage_point_id)
         # consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
         if hasattr(usage_point_id_config,
                    "consentement_expiration") and usage_point_id_config.consentement_expiration is not None:
@@ -64,38 +90,38 @@ class ExportMqtt:
             f"{self.usage_point_id}/status/ban": str(ban)
         }
         # print(consentement_expiration)
-        app.MQTT.publish_multiple(consentement_expiration)
-        app.LOG.log(" => Finish")
+        self.mqtt.publish_multiple(consentement_expiration)
+        title(" Finish")
 
     def contract(self):
-        app.LOG.title(f"[{self.usage_point_id}] Exportation de données dans MQTT.")
+        title(f"[{self.usage_point_id}] Exportation de données dans MQTT.")
 
-        app.LOG.log("Génération des messages du contrat")
-        contract_data = app.DB.get_contract(self.usage_point_id)
+        logging.info("Génération des messages du contrat")
+        contract_data = self.db.get_contract(self.usage_point_id)
         if hasattr(contract_data, "__table__"):
             output = {}
             for column in contract_data.__table__.columns:
                 output[f"{self.usage_point_id}/contract/{column.name}"] = str(getattr(contract_data, column.name))
-            app.MQTT.publish_multiple(output)
-            app.LOG.log(" => Finish")
+            self.mqtt.publish_multiple(output)
+            title(" Finish")
         else:
-            app.LOG.log(" => Failed")
+            title(" Failed")
 
     def address(self):
-        app.LOG.log(f"Génération des messages d'addresse")
-        address_data = app.DB.get_addresse(self.usage_point_id)
+        logging.info(f"Génération des messages d'addresse")
+        address_data = self.db.get_addresse(self.usage_point_id)
         if hasattr(address_data, "__table__"):
             output = {}
             for column in address_data.__table__.columns:
                 output[f"{self.usage_point_id}/address/{column.name}"] = str(getattr(address_data, column.name))
-            app.MQTT.publish_multiple(output)
-            app.LOG.log(" => Finish")
+            self.mqtt.publish_multiple(output)
+            title(" Finish")
         else:
-            app.LOG.log(" => Failed")
+            title(" Failed")
 
     def daily_annual(self, price):
-        app.LOG.log("Génération des données annuelles")
-        date_range = app.DB.get_daily_date_range(self.usage_point_id)
+        logging.info("Génération des données annuelles")
+        date_range = self.db.get_daily_date_range(self.usage_point_id)
         if date_range["begin"] and date_range["end"]:
             date_begin = datetime.combine(date_range["begin"], datetime.min.time())
             date_end = datetime.combine(date_range["end"], datetime.max.time())
@@ -158,15 +184,15 @@ class ExportMqtt:
                 if date_begin_current < date_begin:
                     date_begin_current = date_begin
 
-                app.MQTT.publish_multiple(mqtt_data)
+                self.mqtt.publish_multiple(mqtt_data)
 
-            app.LOG.log(" => Finish")
+            title(" Finish")
         else:
-            app.LOG.log(" => No data")
+            title(" No data")
 
     def daily_linear(self, price):
-        app.LOG.log("Génération des données linéaires journalières.")
-        date_range = app.DB.get_daily_date_range(self.usage_point_id)
+        logging.info("Génération des données linéaires journalières.")
+        date_range = self.db.get_daily_date_range(self.usage_point_id)
         if date_range["begin"] and date_range["end"]:
             date_begin = datetime.combine(date_range["begin"], datetime.min.time())
             date_end = datetime.combine(date_range["end"], datetime.max.time())
@@ -214,15 +240,15 @@ class ExportMqtt:
                     date_begin_current = datetime.combine(date_begin, datetime.min.time())
                 idx = idx + 1
 
-                app.MQTT.publish_multiple(mqtt_data)
+                self.mqtt.publish_multiple(mqtt_data)
 
-            app.LOG.log(" => Finish")
+            title(" Finish")
         else:
-            app.LOG.log(" => No data")
+            title(" No data")
 
     def detail_annual(self, price_hp, price_hc=0):
-        app.LOG.log("Génération des données annuelles détaillé.")
-        date_range = app.DB.get_daily_date_range(self.usage_point_id)
+        logging.info("Génération des données annuelles détaillé.")
+        date_range = self.db.get_daily_date_range(self.usage_point_id)
         if date_range["begin"] and date_range["end"]:
             date_begin = datetime.combine(date_range["begin"], datetime.min.time())
             date_end = datetime.combine(date_range["end"], datetime.max.time())
@@ -311,15 +337,15 @@ class ExportMqtt:
                 if date_begin_current < date_begin:
                     date_begin_current = date_begin
 
-                app.MQTT.publish_multiple(mqtt_data)
+                self.mqtt.publish_multiple(mqtt_data)
 
-            app.LOG.log(" => Finish")
+            title(" Finish")
         else:
-            app.LOG.log(" => No data")
+            title(" No data")
 
     def detail_linear(self, price_hp, price_hc=0):
-        app.LOG.log("Génération des données linéaires détaillées")
-        date_range = app.DB.get_detail_date_range(self.usage_point_id)
+        logging.info("Génération des données linéaires détaillées")
+        date_range = self.db.get_detail_date_range(self.usage_point_id)
         if date_range["begin"] and date_range["end"]:
             date_begin = datetime.combine(date_range["begin"], datetime.min.time())
             date_end = datetime.combine(date_range["end"], datetime.max.time())
@@ -373,17 +399,17 @@ class ExportMqtt:
                     date_begin_current = datetime.combine(date_begin, datetime.min.time())
                 idx = idx + 1
 
-                app.MQTT.publish_multiple(mqtt_data)
+                self.mqtt.publish_multiple(mqtt_data)
 
-            app.LOG.log(" => Finish")
+            logging.info(" => Finish")
         else:
-            app.LOG.log(" => No data")
+            logging.info(" => No data")
 
     def max_power(self):
-        app.LOG.log("Génération des données de puissance max journalières.")
-        max_power_data = app.DB.get_daily_max_power_all(self.usage_point_id, order="asc")
+        logging.info("Génération des données de puissance max journalières.")
+        max_power_data = self.db.get_daily_max_power_all(self.usage_point_id, order="asc")
         mqtt_data = {}
-        contract = app.DB.get_contract(self.usage_point_id)
+        contract = self.db.get_contract(self.usage_point_id)
         max_value = 0
         if hasattr(contract, "subscribed_power"):
             max_value = int(contract.subscribed_power.split(' ')[0]) * 1000
@@ -402,4 +428,4 @@ class ExportMqtt:
                 threshold_usage = int(100 * value_w / max_value)
                 mqtt_data[f"{sub_prefix}/percentage_usage"] = threshold_usage
         # print(mqtt_data)
-        app.MQTT.publish_multiple(mqtt_data)
+        self.mqtt.publish_multiple(mqtt_data)

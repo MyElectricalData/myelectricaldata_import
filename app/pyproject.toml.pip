@@ -1,0 +1,33 @@
+#[build-system]
+#requires = ["hatchling"]
+#build-backend = "hatchling.build"
+#
+#[project]
+#name = "myelectricaldata_import"
+#version = "1"
+#dependencies = [
+#    "paho-mqtt",
+#    "python-dateutil",
+#    "requests",
+#    "markdown",
+#    "influxdb-client",
+#    "PyYAML",
+#    "mergedeep",
+#    "Flask",
+#    "Flask-APScheduler",
+#    "flask-swagger-ui",
+#    "jinja2",
+#    "art",
+#    "SQLAlchemy",
+#    "alembic",
+#    "waitress",
+#    "rauth",
+#    "psycopg2",
+#    "PyMySQL",
+#    "fastapi",
+#    "uvicorn",
+#    "watchfiles"
+#]
+#
+#[project.optional-dependencies]
+#dev = ["pytest"]

@@ -1,109 +1,89 @@
-from flask import Flask, request, send_file, jsonify
-from flask_apscheduler import APScheduler
-from flask_swagger_ui import get_swaggerui_blueprint
+import logging
+from os import getenv, environ
 
-from waitress import serve
+import uvicorn
+from fastapi import FastAPI, APIRouter
+from fastapi.openapi.utils import get_openapi
+from fastapi_utils.tasks import repeat_every
 
-from config import cycle_minimun
-from dependencies import *
-from models.ajax import Ajax
-from models.config import Config, get_version
-from models.database import Database
-from models.influxdb import InfluxDB
-from models.jobs import Job
-from models.log import Log
-from models.mqtt import Mqtt
-from templates.index import Index
-from templates.usage_point_id import UsagePointId
+from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
+from dependencies import title, get_version, title_warning, logo
+from init import CONFIG, DB
+from routers import account
+from routers import action
+from routers import data
+from routers import html
+from routers import info
+from tasks import Tasks
 
-LOG = Log()
-
-if "APPLICATION_PATH_DATA" in os.environ:
-    APPLICATION_PATH_DATA = os.getenv("APPLICATION_PATH_DATA")
+if "DEV" in environ or "DEBUG" in environ:
+    title_warning("Run in Development mode")
 else:
-    APPLICATION_PATH_DATA = "/data"
-CONFIG = Config(
-    log=LOG,
-    path=APPLICATION_PATH_DATA
-)
+    title(" Run in production mode")
 
-CONFIG.load()
-CONFIG.display()
-CONFIG.check()
-
-DB = Database(LOG)
-DB.init_database()
-
-if "DEV" in os.environ or "DEBUG" in os.environ:
-    LOG.title_warning("Run in Development mode")
-else:
-    LOG.title("Run in production mode")
-
-LOG.logo(get_version())
-
-DB.unlock()
-DB.lock()
-
-LOG.title("Chargement du config.yaml...")
+title(" Chargement du config.yaml...")
 usage_point_list = []
 if CONFIG.list_usage_point() is not None:
-    for usage_point_id, data in CONFIG.list_usage_point().items():
-        LOG.log(f"{usage_point_id}")
-        DB.set_usage_point(usage_point_id, data)
-        usage_point_list.append(usage_point_id)
-        LOG.log("  => Success")
+    for upi, upi_data in CONFIG.list_usage_point().items():
+        logging.info(f"{upi}")
+        DB.set_usage_point(upi, upi_data)
+        usage_point_list.append(upi)
+        logging.info("  => Success")
 else:
-    LOG.warning("Aucun point de livraison détecté.")
+    logging.warning("Aucun point de livraison détecté.")
 
-LOG.title("Nettoyage de la base de données...")
+title(" Nettoyage de la base de données...")
 DB.clean_database(usage_point_list)
 
-MQTT_CONFIG = CONFIG.mqtt_config()
-MQTT_ENABLE = False
-MQTT = None
-if MQTT_CONFIG and "enable" in MQTT_CONFIG and MQTT_CONFIG["enable"]:
-    MQTT_ENABLE = True
-    MQTT = Mqtt(
-        hostname=MQTT_CONFIG["hostname"],
-        port=MQTT_CONFIG["port"],
-        username=MQTT_CONFIG["username"],
-        password=MQTT_CONFIG["password"],
-        client_id=MQTT_CONFIG["client_id"],
-        prefix=MQTT_CONFIG["prefix"],
-        retain=MQTT_CONFIG["retain"],
-        qos=MQTT_CONFIG["qos"]
-    )
-    MQTT.connect()
+swagger_configuration = {
+    "operationsSorter": "method",
+    # "defaultModelRendering": "model",
+    "tagsSorter": "alpha",
+    # "docExpansion": "none",
+    "deepLinking": True,
+}
+APP = FastAPI(
+    title="MyElectricalData",
+    swagger_ui_parameters=swagger_configuration
+)
 
-INFLUXDB_CONFIG = CONFIG.influxdb_config()
-INFLUXB_ENABLE = False
-INFLUXDB = None
+ROUTER = APIRouter()
+APP.include_router(info.ROUTER, tags=["Infos"])
+APP.include_router(html.ROUTER, tags=["HTML"])
+APP.include_router(data.ROUTER, tags=["Données"])
+APP.include_router(action.ROUTER, tags=["Ajax"], include_in_schema=False)
+APP.include_router(account.ROUTER, tags=["Account"], include_in_schema=False)
 
-if "method" in INFLUXDB_CONFIG:
-    method = INFLUXDB_CONFIG["method"]
-else:
-    method = "SYNCHRONOUS"
+INFO = {
+    "title": "MyElectricalData",
+    "version": get_version(),
+    "description": "",
+    "contact": {
+        "name": "m4dm4rtig4n",
+        "url": "https://github.com/MyElectricalData/myelectricaldata/issues",
+    },
+    "license_info": {
+        "name": "Apache 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
+    },
+    "routes": APP.routes,
+    "servers": [],
+}
 
-write_options = []
-if "batching_options" in INFLUXDB_CONFIG:
-    write_options = INFLUXDB_CONFIG["batching_options"]
+OPENAPI_SCHEMA = get_openapi(
+    title=INFO["title"],
+    version=INFO["version"],
+    description=INFO["description"],
+    contact=INFO["contact"],
+    license_info=INFO["license_info"],
+    routes=INFO["routes"],
+    servers=INFO["servers"],
+)
+OPENAPI_SCHEMA["info"]["x-logo"] = {
+    "url": "https://pbs.twimg.com/profile_images/1415338422143754242/axomHXR0_400x400.png"
+}
 
-if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]:
-    INFLUXB_ENABLE = True
-    INFLUXDB = InfluxDB(
-        hostname=INFLUXDB_CONFIG["hostname"],
-        port=INFLUXDB_CONFIG["port"],
-        token=INFLUXDB_CONFIG["token"],
-        org=INFLUXDB_CONFIG["org"],
-        bucket=INFLUXDB_CONFIG["bucket"],
-        method=method,
-        write_options=write_options
-    )
-    if CONFIG.get("wipe_influxdb"):
-        INFLUXDB.purge_influxdb()
-        CONFIG.set("wipe_influxdb", False)
-        LOG.separator_warning()
-        time.sleep(1)
+APP.openapi_schema = OPENAPI_SCHEMA
 
 CYCLE = CONFIG.get('cycle')
 if CYCLE < cycle_minimun:
@@ -112,191 +92,27 @@ if CYCLE < cycle_minimun:
     CONFIG.set("cycle", cycle_minimun)
 
 
-class FetchAllDataScheduler(object):
-    JOBS = [{
-        "id": f"fetch_data",
-        "func": Job().job_import_data,
-        "trigger": "interval",
-        "seconds": CYCLE,
-    }]
-    if "DEV" not in os.environ and "DEBUG" not in os.environ:
-        JOBS.append({
-            "id": f"fetch_data_boot",
-            "func": Job().job_import_data
-        })
-    SCHEDULER_API_ENABLED = True
+@APP.on_event("startup")
+@repeat_every(seconds=CYCLE)
+def tasks():
+    Tasks()
 
-
-DB.unlock()
-
-logging.basicConfig(format='%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s')
-
-SWAGGER_URL = '/docs'  # URL for exposing Swagger UI (without trailing '/')
-API_URL = 'http://127.0.0.1:5000/v2/swagger.json'
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,  # Swagger UI static files will be mapped to '{SWAGGER_URL}/dist/'
-    API_URL,
-    config={  # Swagger UI config overrides
-        'app_name': "Test application"
-    },
-)
 
 if __name__ == '__main__':
-    APP = Flask(__name__)
-    APP.config.from_object(FetchAllDataScheduler())
-    scheduler = APScheduler()
-    scheduler.init_app(APP)
-    scheduler.start()
-
-    APP.register_blueprint(swaggerui_blueprint)
-
-
-    # ------------------------------------------------------------------------------------------------------------------
-    # HTML RETURN
-    # ------------------------------------------------------------------------------------------------------------------
-    @APP.route("/status")
-    @APP.route("/status/")
-    @APP.route("/ping")
-    @APP.route("/ping/")
-    def status():
-        return "ok"
-
-
-    @APP.route("/favicon.ico")
-    def favicon():
-        return send_file("static/favicon.ico", mimetype='image/gif')
-
-
-    @APP.route("/", methods=['GET'])
-    def main():
-        return Index().display()
-
-
-    @APP.route('/usage_point_id/<usage_point_id>', methods=['GET'])
-    @APP.route('/usage_point_id/<usage_point_id>/', methods=['GET'])
-    def usage_point_id(usage_point_id):
-        return UsagePointId(usage_point_id).display()
-
-    # ------------------------------------------------------------------------------------------------------------------
-    # BACKGROUND HTML TASK (AJAX)
-    # ------------------------------------------------------------------------------------------------------------------
-    @APP.route("/get/<usage_point_id>/<measurement_direction>", methods=['GET'])
-    @APP.route("/get/<usage_point_id>/<measurement_direction>/", methods=['GET'])
-    def get_data(usage_point_id, measurement_direction):
-        return Ajax(usage_point_id).datatable(measurement_direction, request.args)
-
-    # ------------------------------------------------------------------------------------------------------------------
-    # BACKGROUND HTML TASK (AJAX)
-    # ------------------------------------------------------------------------------------------------------------------
-    @APP.route("/lock_status", methods=['GET'])
-    @APP.route("/lock_status/", methods=['GET'])
-    def lock():
-        return str(DB.lock_status())
-
-
-    @APP.route("/gateway_status", methods=['GET'])
-    @APP.route("/gateway_status/", methods=['GET'])
-    def gateway_status():
-        return Ajax().gateway_status()
-
-
-    @APP.route("/tempo", methods=['GET'])
-    @APP.route("/tempo/", methods=['GET'])
-    def tempo():
-        return Ajax().tempo()
-
-
-    @APP.route("/ecowatt", methods=['GET'])
-    @APP.route("/ecowatt/", methods=['GET'])
-    def ecowatt():
-        return Ajax().ecowatt()
-
-
-    @APP.route("/price/<usage_point_id>", methods=['GET'])
-    @APP.route("/price/<usage_point_id>/", methods=['GET'])
-    def price(usage_point_id):
-        return Ajax(usage_point_id).price()
-
-
-    @APP.route("/datatable/<usage_point_id>/<measurement_direction>", methods=['GET'])
-    @APP.route("/datatable/<usage_point_id>/<measurement_direction>/", methods=['GET'])
-    def datatable(usage_point_id, measurement_direction):
-        return Ajax(usage_point_id).datatable(measurement_direction, request.args)
-
-
-    @APP.route("/configuration/<usage_point_id>", methods=['POST'])
-    @APP.route("/configuration/<usage_point_id>/", methods=['POST'])
-    def configuration(usage_point_id):
-        return Ajax(usage_point_id).configuration(request.form)
-
-
-    @APP.route("/new_account", methods=['POST'])
-    @APP.route("/new_account/", methods=['POST'])
-    def new_account():
-        return Ajax().new_account(request.form)
-
-
-    @APP.route("/account_status/<usage_point_id>", methods=['GET'])
-    @APP.route("/account_status/<usage_point_id>/", methods=['GET'])
-    def account_status(usage_point_id):
-        return Ajax(usage_point_id).account_status()
-
-
-    @APP.route("/import/<usage_point_id>", methods=['GET'])
-    @APP.route("/import/<usage_point_id>/", methods=['GET'])
-    def import_all_data(usage_point_id):
-        return Ajax(usage_point_id).import_data()
-
-
-    @APP.route("/import/<usage_point_id>/<target>", methods=['GET'])
-    @APP.route("/import/<usage_point_id>/<target>", methods=['GET'])
-    def import_data(usage_point_id, target):
-        return Ajax(usage_point_id).import_data(target)
-
-
-    @APP.route("/reset/<usage_point_id>", methods=['GET'])
-    @APP.route("/reset/<usage_point_id>/", methods=['GET'])
-    def reset_all_data(usage_point_id):
-        return Ajax(usage_point_id).reset_all_data()
-
-
-    @APP.route("/delete/<usage_point_id>", methods=['GET'])
-    @APP.route("/delete/<usage_point_id>/", methods=['GET'])
-    def delete_all_data(usage_point_id):
-        return Ajax(usage_point_id).delete_all_data()
-
-
-    @APP.route("/reset_gateway/<usage_point_id>", methods=['GET'])
-    @APP.route("/reset_gateway/<usage_point_id>/", methods=['GET'])
-    def reset_gateway(usage_point_id):
-        return Ajax(usage_point_id).reset_gateway()
-
-
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>", methods=['GET'])
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/reset/<date>/", methods=['GET'])
-    def reset_data(usage_point_id, target, date):
-        return Ajax(usage_point_id).reset_data(target, date)
-
-
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/blacklist/<date>", methods=['GET'])
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/blacklist/<date>/", methods=['GET'])
-    def blacklist_data(usage_point_id, target, date):
-        return Ajax(usage_point_id).blacklist(target, date)
-
-
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/whitelist/<date>", methods=['GET'])
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/whitelist/<date>/", methods=['GET'])
-    def whitelist_data(usage_point_id, target, date):
-        return Ajax(usage_point_id).whitelist(target, date)
-
-
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>", methods=['GET'])
-    @APP.route("/usage_point_id/<usage_point_id>/<target>/import/<date>/", methods=['GET'])
-    def fetch_data(usage_point_id, target, date):
-        return Ajax(usage_point_id).fetch(target, date)
-
-
-    if ("DEV" in os.environ and os.getenv("DEV")) or ("DEBUG" in os.environ and os.getenv("DEBUG")):
-        APP.run(host="0.0.0.0", port=5000, debug=False, use_reloader=True)
+    logo(get_version())
+    log_config = uvicorn.config.LOGGING_CONFIG
+    log_config["formatters"]["access"]["fmt"] = LOG_FORMAT
+    log_config["formatters"]["access"]["datefmt"] = LOG_FORMAT_DATE
+    log_config["formatters"]["default"]["fmt"] = LOG_FORMAT
+    log_config["formatters"]["default"]["datefmt"] = LOG_FORMAT_DATE
+    if ("DEV" in environ and getenv("DEV")) or ("DEBUG" in environ and getenv("DEBUG")):
+        uvicorn.run(
+            "main:APP",
+            host="0.0.0.0",
+            port=5000,
+            reload=True,
+            reload_dirs=["/app"],
+            log_config=log_config,
+        )
     else:
-        serve(APP, host="0.0.0.0", port=5000)
+        uvicorn.run("main:APP", host="0.0.0.0", port=5000, log_config=log_config)

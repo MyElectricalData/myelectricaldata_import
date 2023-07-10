@@ -1,9 +1,9 @@
-import __main__ as app
-from datetime import datetime, timedelta
 import json
+import logging
 import re
+from datetime import datetime, timedelta
 
-# from dependencies import *
+from dependencies import title
 from models.database import ConsumptionDetail, ProductionDetail
 from models.query import Query
 
@@ -17,8 +17,9 @@ def daterange(start_date, end_date):
 
 class Detail:
 
-    def __init__(self, headers, usage_point_id, measure_type="consumption"):
-        self.db = app.DB
+    def __init__(self, config, db, headers, usage_point_id, measure_type="consumption"):
+        self.config = config
+        self.db = db
         self.url = URL
         self.max_detail = 7
         self.date_format = '%Y-%m-%d'
@@ -76,7 +77,7 @@ class Detail:
             end = end + timedelta(days=1)
         begin_str = begin.strftime(self.date_format)
         end_str = end.strftime(self.date_format)
-        app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
+        logging.info(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"{self.measure_type}_load_curve/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
         # if begin <= (datetime.now() - timedelta(days=8)):
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
@@ -89,13 +90,13 @@ class Detail:
             #     last_week = True
             # if not current_data["missing_data"] and not last_week:
             if not current_data["missing_data"]:
-                app.LOG.log(" => Toutes les données sont déjà en cache.")
+                title(" Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
                     output.append({'date': date, "value": data["value"]})
                 return output
             else:
-                app.LOG.log(f" => Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
+                title(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
@@ -104,15 +105,15 @@ class Detail:
                             value = interval_reading["value"]
                             interval = re.findall(r'\d+', interval_reading['interval_length'])[0]
                             date = interval_reading["date"]
-                            dateObject = datetime.strptime(date, self.date_detail_format)
+                            date_object = datetime.strptime(date, self.date_detail_format)
                             # CHANGE DATE TO BEGIN RANGE
-                            date = dateObject - timedelta(minutes=int(interval))
+                            date = date_object - timedelta(minutes=int(interval))
                             # date = date.strftime(self.date_detail_format)
                             # GET WEEKDAY
-                            dateDays = dateObject.weekday()
-                            dateHourMinute = dateObject.strftime('%H:%M')
+                            date_days = date_object.weekday()
+                            date_hour_minute = date_object.strftime('%H:%M')
                             measure_type = "HP"
-                            day_offpeak_hours = self.offpeak_hours[dateDays]
+                            day_offpeak_hours = self.offpeak_hours[date_days]
                             if day_offpeak_hours is not None:
                                 for offpeak_hour in day_offpeak_hours.split(";"):
                                     if offpeak_hour != "None" and offpeak_hour != "" and offpeak_hour is not None:
@@ -124,7 +125,7 @@ class Detail:
                                         # FORMAT HOUR WITH 2 DIGIT
                                         offpeak_stop = datetime.strptime(offpeak_stop, '%H:%M')
                                         offpeak_stop = datetime.strftime(offpeak_stop, '%H:%M')
-                                        result = is_between(dateHourMinute, (offpeak_begin, offpeak_stop))
+                                        result = is_between(date_hour_minute, (offpeak_begin, offpeak_stop))
                                         if result:
                                             measure_type = "HC"
                             self.db.insert_detail(
@@ -149,8 +150,8 @@ class Detail:
                         "status_code": data.status_code
                     }
         except Exception as e:
-            app.LOG.exception(e)
-            app.LOG.error(e)
+            logging.exception(e)
+            logging.error(e)
 
     def get(self):
         end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
@@ -185,13 +186,13 @@ class Detail:
                     f' => {response["description"]}',
                     f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
                 ]
-                app.LOG.error(error)
+                logging.error(error)
 
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
                 error = ["Arrêt de la récupération des données suite à une erreur.",
-                         f"Prochain lancement à {datetime.now() + timedelta(seconds=app.CONFIG.get('cycle'))}"]
-                app.LOG.warning(error)
+                         f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}"]
+                logging.warning(error)
         return result
 
     def reset_daily(self, date):
@@ -234,7 +235,7 @@ class Detail:
 
         for item in result:
             if type(item['date']) == str:
-              item['date'] = datetime.strptime(item['date'], self.date_detail_format)
+                item['date'] = datetime.strptime(item['date'], self.date_detail_format)
             result_date = item['date'].strftime(self.date_format)
             if date.strftime(self.date_format) in result_date:
                 item["date"] = result_date

@@ -1,5 +1,3 @@
-import __main__ as app
-
 import markdown
 from jinja2 import Template
 from templates.models.configuration import Configuration
@@ -7,13 +5,16 @@ from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
 from templates.loading import Loading
+from dependencies import APPLICATION_PATH
 
 
 class Index:
 
-    def __init__(self):
-        self.application_path = app.APPLICATION_PATH
-        self.usage_point_select = UsagePointSelect(choice=True)
+    def __init__(self, config, db):
+        self.config = config
+        self.db = db
+        self.application_path = APPLICATION_PATH
+        self.usage_point_select = UsagePointSelect(self.config, self.db, choice=True)
         self.side_menu = SideMenu()
         self.menu = Menu({
             "add_account": {
@@ -21,10 +22,10 @@ class Index:
                 "icon": "add_circle_outline"
             }
         })
-        self.configuration_div = Configuration("Ajout d'un point de livraison", display_usage_point_id=True)
+        self.configuration_div = Configuration(self.db, "Ajout d'un point de livraison", display_usage_point_id=True)
 
     def display(self):
-        # if app.DB.lock_status():
+        # if DB.lock_status():
         #     return Loading().display()
         # else:
         with open(f'{self.application_path}/templates/md/index.md') as file_:

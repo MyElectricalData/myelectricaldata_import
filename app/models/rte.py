@@ -1,4 +1,6 @@
+from json import loads
 from rauth import OAuth2Service
+
 
 class ExampleOAuth2Client:
     def __init__(self, client_id, client_secret):
@@ -17,9 +19,9 @@ class ExampleOAuth2Client:
 
     def get_access_token(self):
         data = {'code': 'bar',  # specific to my app
-                'grant_type': 'client_credentials', # generally required!
-               }
+                'grant_type': 'client_credentials',  # generally required!
+                }
 
-        session = self.service.get_auth_session(data=data, decoder=json.loads)
+        session = self.service.get_auth_session(data=data, decoder=loads)
 
         self.access_token = session.access_token

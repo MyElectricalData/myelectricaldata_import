@@ -1,7 +1,8 @@
 import __main__ as app
 
 import pytz
-from dependencies import *
+import logging
+from dependencies import title
 
 
 def forceRound(x, n):
@@ -14,8 +15,9 @@ def forceRound(x, n):
 
 class ExportInfluxDB:
 
-    def __init__(self, influxdb_config,  usage_point_config, measurement_direction="consumption"):
+    def __init__(self, influxdb_config, db, usage_point_config, measurement_direction="consumption"):
         self.influxdb_config = influxdb_config
+        self.db = db
         self.usage_point_config = usage_point_config
         self.usage_point_id = self.usage_point_config.usage_point_id
         self.measurement_direction = measurement_direction
@@ -30,16 +32,16 @@ class ExportInfluxDB:
             price = self.usage_point_config.consumption_price_base
         else:
             price = self.usage_point_config.production_price
-        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement_direction}" dans influxdb')
-        for daily in app.DB.get_daily_all(self.usage_point_id):
+        title(f'[{self.usage_point_id}] Exportation des données "{measurement_direction}" dans influxdb')
+        for daily in self.db.get_daily_all(self.usage_point_id):
             date = daily.date
             watt = daily.value
             kwatt = watt / 1000
             euro = kwatt * price
             if current_month != date.strftime('%m'):
-                app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-            # app.INFLUXDB.delete(self.tz.localize(date), measurement_direction)
-            app.INFLUXDB.write(
+                logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
+            # INFLUXDB.delete(self.tz.localize(date), measurement_direction)
+            INFLUXDB.write(
                 measurement=measurement_direction,
                 date=self.tz.localize(date),
                 tags={
@@ -58,15 +60,15 @@ class ExportInfluxDB:
     def detail(self, measurement_direction="consumption"):
         current_month = ""
         measurement = f"{measurement_direction}_detail"
-        app.LOG.title(f'[{self.usage_point_id}] Exportation des données "{measurement.upper()}" dans influxdb')
-        for detail in app.DB.get_detail_all(self.usage_point_id, measurement_direction):
+        title(f'[{self.usage_point_id}] Exportation des données "{measurement.upper()}" dans influxdb')
+        for detail in self.db.get_detail_all(self.usage_point_id, measurement_direction):
             date = detail.date
             watt = detail.value
             kwatt = watt / 1000
             watth = watt / (60 / detail.interval)
             kwatth = watth / 1000
             if current_month != date.strftime('%m'):
-                app.LOG.log(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
+                logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
             if measurement_direction == "consumption":
                 if detail.measure_type == "HP":
                     euro = kwatth * self.usage_point_config.consumption_price_hp
@@ -74,7 +76,7 @@ class ExportInfluxDB:
                     euro = kwatth * self.usage_point_config.consumption_price_hc
             else:
                 euro = kwatth * self.usage_point_config.production_price
-            app.INFLUXDB.write(
+            INFLUXDB.write(
                 measurement=measurement,
                 date=self.tz.localize(date),
                 tags={

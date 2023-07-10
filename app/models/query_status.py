@@ -1,20 +1,19 @@
+import logging
 import datetime
 import json
 import traceback
 from os import environ, getenv
 
-import __main__ as app
+from dependencies import get_version
+from models.query import Query
 
 from config import URL
-from dependencies import *
-from models.config import get_version
-from models.log import Log
-from models.query import Query
 
 
 class Status:
 
-    def __init__(self, headers=None):
+    def __init__(self, db, headers=None):
+        self.db = db
         self.url = URL
         self.headers = headers
 
@@ -31,7 +30,7 @@ class Status:
             if hasattr(response, "status_code") and response.status_code == 200:
                 status = json.loads(response.text)
                 for key, value in status.items():
-                    app.LOG.log(f"{key}: {value}")
+                    logging.info(f"{key}: {value}")
                 status["version"] = get_version()
                 return status
             else:
@@ -40,7 +39,7 @@ class Status:
             return status
 
     def status(self, usage_point_id):
-        usage_point_id_config = app.DB.get_usage_point(usage_point_id)
+        usage_point_id_config = self.db.get_usage_point(usage_point_id)
         target = f"{self.url}/valid_access/{usage_point_id}"
         if hasattr(usage_point_id_config, "cache") and usage_point_id_config.cache:
             target += "/cache"
@@ -50,10 +49,11 @@ class Status:
             if response.status_code == 200:
                 try:
                     for key, value in status.items():
-                        app.LOG.log(f"{key}: {value}")
-                    app.DB.usage_point_update(
+                        logging.info(f"{key}: {value}")
+                    self.db.usage_point_update(
                         usage_point_id,
-                        consentement_expiration=datetime.datetime.strptime(status["consent_expiration_date"], "%Y-%m-%dT%H:%M:%S"),
+                        consentement_expiration=datetime.datetime.strptime(status["consent_expiration_date"],
+                                                                           "%Y-%m-%dT%H:%M:%S"),
                         # last_call=datetime.datetime.strptime(status["last_call"], "%Y-%m-%dT%H:%M:%S.%f"),
                         call_number=status["call_number"],
                         quota_limit=status["quota_limit"],
@@ -65,7 +65,7 @@ class Status:
                 except Exception as e:
                     if "DEBUG" in environ and getenv("DEBUG"):
                         traceback.print_exc()
-                    app.LOG.error(e)
+                    logging.error(e)
                     return {
                         "error": True,
                         "description": "Erreur lors de la récupération du statut du compte."
@@ -73,7 +73,7 @@ class Status:
             else:
                 if "DEBUG" in environ and getenv("DEBUG"):
                     traceback.print_exc()
-                app.LOG.error(status["detail"])
+                logging.error(status["detail"])
                 return {
                     "error": True,
                     "description": status["detail"]

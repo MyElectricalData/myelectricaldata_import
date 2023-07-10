@@ -17,14 +17,14 @@
             function ajaxCall() {
 
                 $.ajax({
-                    url: "/lock_status",
+                    url: "/import_status",
                     type: 'GET',
                     {#tryCount: 5,#}
                     {#retryLimit: 5,#}
                     success: function (data, textStatus, jqXHR) {
                         console.log("MyElectricalData lock_status ok")
                         const html = jqXHR.responseText
-                        if (html === "True") {
+                        if (html === "true") {
                             $.LoadingOverlay("show", loading_import);
                             retry()
                         } else {

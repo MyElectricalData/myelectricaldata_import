@@ -17,7 +17,7 @@
             }
             function ajaxCall() {
                 $.ajax({
-                    url: "/lock_status",
+                    url: "/import_status",
                     type: 'GET',
                 }).done(function (data, textStatus, jqXHR) {
                     const html = jqXHR.responseText

@@ -1,11 +1,13 @@
-import __main__ as app
 import json
 from datetime import datetime, timedelta
 from math import floor
 
 import pytz
+import logging
 from dateutil.relativedelta import relativedelta
 from models.stat import Stat
+from models.mqtt import Mqtt
+from dependencies import title
 
 utc = pytz.UTC
 
@@ -24,11 +26,13 @@ def truncate(f, n):
 
 class HomeAssistant:
 
-    def __init__(self, usage_point_id):
+    def __init__(self, db, mqtt_config, usage_point_id):
+        self.db = db
+        self.mqtt_config = mqtt_config
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
-        self.config = app.DB.get_usage_point(usage_point_id)
+        self.config = self.db.get_usage_point(self.usage_point_id)
         if hasattr(self.config, "consumption_price_base"):
             self.consumption_price_base = self.config.consumption_price_base
         else:
@@ -45,7 +49,7 @@ class HomeAssistant:
             self.production_price = self.config.production_price
         else:
             self.production_price = 0
-        self.config_ha_config = app.CONFIG.home_assistant_config()
+        self.config_ha_config = self.config.home_assistant_config()
         if "card_myenedis" not in self.config_ha_config:
             self.card_myenedis = False
         else:
@@ -66,7 +70,7 @@ class HomeAssistant:
             self.hourly = False
         else:
             self.hourly = self.config_ha_config["hourly"]
-        self.contract = app.DB.get_contract(self.usage_point_id)
+        self.contract = self.db.get_contract(self.usage_point_id)
         if hasattr(self.contract, "last_activation_date"):
             self.activation_date = self.contract.last_activation_date.strftime(self.date_format_detail)
         else:
@@ -75,11 +79,33 @@ class HomeAssistant:
             self.subscribed_power = self.contract.subscribed_power
         else:
             self.subscribed_power = None
-        self.usage_point = app.DB.get_usage_point(self.usage_point_id)
+        self.usage_point = self.db.get_usage_point(self.usage_point_id)
+
+        self.mqtt = None
+        if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+            if ["hostname"] not in self.mqtt_config:
+                self.connect()
+            else:
+                logging.warning("MQTT config is incomplete.")
+        else:
+            logging.info("MQTT disable")
+
+    def connect(self):
+        self.mqtt = Mqtt(
+            hostname=self.mqtt_config["hostname"],
+            port=self.mqtt_config["port"],
+            username=self.mqtt_config["username"],
+            password=self.mqtt_config["password"],
+            client_id=self.mqtt_config["client_id"],
+            prefix=self.mqtt_config["prefix"],
+            retain=self.mqtt_config["retain"],
+            qos=self.mqtt_config["qos"]
+        )
+        self.mqtt.connect()
 
     def export(self):
 
-        app.LOG.title(f"[{self.usage_point_id}] Exportation des données dans Home Assistant (via MQTT)")
+        title(f"[{self.usage_point_id}] Exportation des données dans Home Assistant (via MQTT)")
 
         if (hasattr(self.config, "consumption") and self.config.consumption
                 or (hasattr(self.config, "consumption_detail") and self.config.consumption_detail)):
@@ -124,7 +150,7 @@ class HomeAssistant:
         }
         end = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
-        range = app.DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
+        range = self.db.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
         for data in range:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
             attributes[measurement_direction].append(data.value)
@@ -135,10 +161,10 @@ class HomeAssistant:
             "state": state,
             "attributes": attributes
         }
-        app.MQTT.publish_multiple(data, topic)
+        self.mqtt.publish_multiple(data, topic)
 
     def history_usage_point_id(self, measurement_direction):
-        stats = Stat(self.usage_point_id, measurement_direction)
+        stats = Stat(self.config, self.db, self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_history/{self.usage_point_id}"
         config = {
             "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.history",
@@ -157,7 +183,7 @@ class HomeAssistant:
         }
         config = json.dumps(config)
 
-        state = app.DB.get_daily_last(self.usage_point_id, measurement_direction)
+        state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
             state = state.value
         else:
@@ -177,14 +203,14 @@ class HomeAssistant:
             "state": state,
             "attributes": attributes
         }
-        app.MQTT.publish_multiple(data, topic)
+        self.mqtt.publish_multiple(data, topic)
 
     def ecowatt(self):
         # Get ecowatt data
         begin = datetime.combine(datetime.now(), datetime.min.time())
-        ecowatt_data = app.DB.get_ecowatt_range(begin, begin)
+        ecowatt_data = self.db.get_ecowatt_range(begin, begin)
         if ecowatt_data:
-            stats = Stat(self.usage_point_id)
+            stats = Stat(self.config, self.usage_point_id)
             topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
             config = {
                 "name": f"myelectricaldata_{self.usage_point_id}_ecowatt",
@@ -228,10 +254,10 @@ class HomeAssistant:
                 "state": 123456.00,
                 "attributes": attributes
             }
-            app.MQTT.publish_multiple(data, topic)
+            self.mqtt.publish_multiple(data, topic)
 
     def myelectricaldata_usage_point_id(self, measurement_direction):
-        stats = Stat(self.usage_point_id, measurement_direction)
+        stats = Stat(self.config, self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}/{self.usage_point_id}"
         config = {
             f"config": json.dumps(
@@ -251,15 +277,15 @@ class HomeAssistant:
                     }
                 })
         }
-        app.MQTT.publish_multiple(config, topic)
+        self.mqtt.publish_multiple(config, topic)
 
-        state = app.DB.get_daily_last(self.usage_point_id, measurement_direction)
+        state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
             state = state.value
         else:
             state = 0
 
-        app.MQTT.publish_multiple({
+        self.mqtt.publish_multiple({
             f"state": convert_kw(state)
         }, topic)
 
@@ -289,7 +315,7 @@ class HomeAssistant:
                 _offpeak_hours = []
                 offpeak_hour = getattr(self.usage_point, f"offpeak_hours_{idx}")
                 if type(offpeak_hour) != str:
-                    app.LOG.error([
+                    logging.error([
                         f"offpeak_hours_{idx} n'est pas une chaine de caractères",
                         "  Format si une seule période : 00H00-06H00",
                         "  Format si plusieurs périodes : 00H00-06H00;12H00-14H00"
@@ -397,16 +423,16 @@ class HomeAssistant:
         current_month_evolution = stats.current_month_evolution()
         yesterday_evolution = stats.yesterday_evolution()
         monthly_evolution = stats.monthly_evolution()
-        yearly_evolution =  stats.yearly_evolution()
+        yearly_evolution = stats.yearly_evolution()
 
-        # app.LOG.show(yesterday_last_year)
+        # LOG.show(yesterday_last_year)
 
-        yesterday_last_year = app.DB.get_daily_date(
+        yesterday_last_year = self.db.get_daily_date(
             self.usage_point_id,
             datetime.combine(yesterday_last_year, datetime.min.time())
         )
 
-        # app.LOG.show(yesterday_last_year)
+        # LOG.show(yesterday_last_year)
 
         dailyweek_cost = []
 
@@ -552,13 +578,13 @@ class HomeAssistant:
                         convert_kw(stats.max_power(6)["value"]),
                     ],
                     "dailyweek_MP_time": [
-                        (stats.max_power_time(0)["value"]).strftime(self.date_format_detail),
-                        (stats.max_power_time(1)["value"]).strftime(self.date_format_detail),
-                        (stats.max_power_time(2)["value"]).strftime(self.date_format_detail),
-                        (stats.max_power_time(3)["value"]).strftime(self.date_format_detail),
-                        (stats.max_power_time(4)["value"]).strftime(self.date_format_detail),
-                        (stats.max_power_time(5)["value"]).strftime(self.date_format_detail),
-                        (stats.max_power_time(6)["value"]).strftime(self.date_format_detail),
+                        (stats.max_power_time(0)["value"]),
+                        (stats.max_power_time(1)["value"]),
+                        (stats.max_power_time(2)["value"]),
+                        (stats.max_power_time(3)["value"]),
+                        (stats.max_power_time(4)["value"]),
+                        (stats.max_power_time(5)["value"]),
+                        (stats.max_power_time(6)["value"]),
                     ],
                     "dailyweek_MP_over": [
                         stats.max_power_over(0)["value"],
@@ -585,4 +611,4 @@ class HomeAssistant:
         }
         for key, value in info.items():
             config[f"info/{key}"] = json.dumps(value)
-        app.MQTT.publish_multiple(config, topic)
+        self.mqtt.publish_multiple(config, topic)

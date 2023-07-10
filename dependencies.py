@@ -1,11 +1,10 @@
 import __main__ as app
 import os
 import subprocess
-import sys
 
+import pkg_resources
 from InquirerPy import inquirer, prompt
 from InquirerPy.base import Choice
-from packaging.version import parse as parse_version
 
 docker_compose = "docker-compose -f dev/docker-compose.dev.yaml"
 docker_compose_test = "docker-compose -f dev/docker-compose.test.yaml"
@@ -19,9 +18,11 @@ def cmd(cmd, path="./"):
         stdout=subprocess.PIPE,
     )
 
+
 def system(cmd):
     app.LOG.title_warning(cmd)
     os.system(cmd)
+
 
 def switch_version(version):
     open("app/VERSION", "w").write(version)
@@ -106,7 +107,7 @@ def create_release(prerelease=False):
     last_version_check = "0.0.0"
     last_version = "0.0.0"
     for version in tags:
-        if parse_version(version) > parse_version(last_version_check):
+        if pkg_resources.parse_version(version) > pkg_resources.parse_version(last_version_check):
             last_version = version
         last_version_check = version
 
@@ -148,7 +149,7 @@ def create_release(prerelease=False):
                 if vers.startswith(beta_version):
                     found_version.append(vers)
             found_version.sort()
-            version = f"{beta_version}{len(found_version)+1}"
+            version = f"{beta_version}{len(found_version) + 1}"
         else:
             version = f"{version}-release"
 
@@ -193,6 +194,5 @@ def create_release(prerelease=False):
         prerelease_txt = "--prerelease"
     system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
     app.LOG.log("  => Success")
-
 
     app.LOG.log(f"Release {version} is online!!!!")

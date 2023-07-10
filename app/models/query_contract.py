@@ -1,10 +1,10 @@
-import __main__ as app
+import datetime
 import json
 import re
 import traceback
-import datetime
+import logging
 
-from dependencies import *
+from dependencies import title
 from models.query import Query
 
 from config import URL
@@ -12,8 +12,8 @@ from config import URL
 
 class Contract:
 
-    def __init__(self, headers, usage_point_id, config):
-        self.db = app.DB
+    def __init__(self, db,  headers, usage_point_id, config):
+        self.db = db
         self.url = URL
 
         self.headers = headers
@@ -73,7 +73,7 @@ class Contract:
                     "last_distribution_tariff_change_date": last_distribution_tariff_change_date
                 })
             except Exception as e:
-                app.LOG.error(e)
+                logging.error(e)
                 traceback.print_exc()
                 response = {
                     "error": True,
@@ -90,25 +90,25 @@ class Contract:
         current_cache = self.db.get_contract(usage_point_id=self.usage_point_id)
         if not current_cache:
             # No cache
-            app.LOG.log(f" => No cache")
+            title(f" No cache")
             result = self.run()
         else:
             # Refresh cache
             if hasattr(self.usage_point_config, "refresh_contract") and self.usage_point_config.refresh_contract:
-                app.LOG.log(f" => Refresh Cache")
+                title(f" Refresh Cache")
                 result = self.run()
                 self.usage_point_config.refresh_contract = False
-                app.DB.set_usage_point(self.usage_point_id, self.usage_point_config.__dict__)
+                DB.set_usage_point(self.usage_point_id, self.usage_point_config.__dict__)
             else:
                 # Get data in cache
-                app.LOG.log(f" => Query Cache")
+                title(f" Query Cache")
                 result = {}
                 for column in current_cache.__table__.columns:
                     result[column.name] = str(getattr(current_cache, column.name))
-                app.LOG.debug(f" => {result}")
+                logging.debug(f" => {result}")
         if "error" not in result:
             for key, value in result.items():
-                app.LOG.log(f"{key}: {value}")
+                logging.info(f"{key}: {value}")
         else:
-            app.LOG.error(result)
+            logging.error(result)
         return result

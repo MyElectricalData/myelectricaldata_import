@@ -1,15 +1,15 @@
-import __main__ as app
 import datetime
 
 from jinja2 import Template
 from mergedeep import Strategy, merge
 
-from dependencies import str2bool
+from dependencies import APPLICATION_PATH, str2bool
 
 class Configuration:
 
-    def __init__(self, title="", usage_point_id=0, display_usage_point_id=False):
-        self.application_path = app.APPLICATION_PATH
+    def __init__(self, db, title="", usage_point_id=0, display_usage_point_id=False):
+        self.db = db
+        self.application_path = APPLICATION_PATH
         self.title = title
         self.usage_point_id = usage_point_id
         self.display_usage_point_id = display_usage_point_id
@@ -241,8 +241,8 @@ class Configuration:
                 <form id="formConfiguration" action="/configuration/{self.usage_point_id}" method="POST"> 
                     <table class="table_configuration">     
             """
-            config = app.DB.get_usage_point(self.usage_point_id)
-            contract = app.DB.get_contract(self.usage_point_id)
+            config = self.db.get_usage_point(self.usage_point_id)
+            contract = self.db.get_contract(self.usage_point_id)
             current_cat = ""
             for cat, cat_data in self.config.items():
                 for key, data in cat_data.items():

@@ -8,7 +8,7 @@ RUN apt-get update && \
     git  \
     g++  \
     gcc  \
-    libpq-dev  \
+    libpq-dev \
     && sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen  \
     && apt-get clean
 RUN dpkg-reconfigure --frontend=noninteractive locales
@@ -18,7 +18,8 @@ ENV LANG fr_FR.UTF-8
 ENV LC_ALL fr_FR.UTF-8
 ENV TZ=Europe/Paris
 
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip pip-tools
+RUN pip-compile -o /app/requirements.txt /app/pyproject.toml
 RUN pip install -r /app/requirements.txt
 RUN pip install git+https://github.com/influxdata/influxdb-client-python.git@master
 

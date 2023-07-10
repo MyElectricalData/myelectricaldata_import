@@ -1,14 +1,18 @@
 import datetime
-import json
 import logging
-import os
-import sys
-import time
+from os import environ, getenv
+from art import decor, text2art
 
-if os.environ.get("APPLICATION_PATH") is None:
+if environ.get("APPLICATION_PATH") is None:
     APPLICATION_PATH = "/app"
 else:
-    APPLICATION_PATH = os.environ.get('APPLICATION_PATH')
+    APPLICATION_PATH = environ.get('APPLICATION_PATH')
+
+if "APPLICATION_PATH_DATA" in environ:
+    APPLICATION_PATH_DATA = getenv("APPLICATION_PATH_DATA")
+else:
+    APPLICATION_PATH_DATA = "/data"
+
 
 paypal_footer = """
 <div style="text-align: center" id="paypal" class="paypal_link">
@@ -61,3 +65,69 @@ def reformat_json(yaml):
         else:
             result[key] = value
     return result
+
+
+def title(message):
+    separator()
+    if type(message) is list:
+        for msg in message:
+            logging.info(f" {msg.upper()}")
+    else:
+        logging.info(f" {message.upper()}")
+    separator()
+
+
+def title_warning(message):
+    separator_warning()
+    logging.warning(f" {message.upper()}")
+    separator_warning()
+
+
+def separator():
+    logging.info(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+
+def separator_warning():
+    logging.warning(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+
+def logo(version):
+    Art = text2art("MyElectricalData")
+    separator()
+    for line in Art.splitlines():
+        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
+    separator()
+    version = f"VERSION : {version}"
+    logging.info(f'{decor("barcode1")}{version: ^93}{decor("barcode1", reverse=True)}')
+    separator()
+
+
+def log_usage_point_id(self, usage_point_id):
+    text = f"Point de livraison : {usage_point_id}"
+    separator()
+    logging.info(f'{decor("barcode1")}{text: ^93}{decor("barcode1", reverse=True)}')
+    separator()
+
+
+def finish():
+    finish = text2art("Import Finish!!!")
+    separator()
+    for line in finish.splitlines():
+        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
+    separator()
+
+
+def get_version():
+    f = open("/app/VERSION", "r")
+    version = f.read()
+    f.close()
+    return version.strip()
+
+
+def log_usage_point_id(usage_point_id):
+    text = f"Point de livraison : {usage_point_id}"
+    separator()
+    logging.info(f'{decor("barcode1")}{text: ^93}{decor("barcode1", reverse=True)}')
+    separator()
