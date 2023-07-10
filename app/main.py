@@ -48,11 +48,11 @@ APP = FastAPI(
 )
 
 ROUTER = APIRouter()
-APP.include_router(info.ROUTER, tags=["Infos"])
-APP.include_router(html.ROUTER, tags=["HTML"])
-APP.include_router(data.ROUTER, tags=["Données"])
-APP.include_router(action.ROUTER, tags=["Ajax"], include_in_schema=False)
-APP.include_router(account.ROUTER, tags=["Account"], include_in_schema=False)
+APP.include_router(info.ROUTER)
+APP.include_router(html.ROUTER)
+APP.include_router(data.ROUTER)
+APP.include_router(action.ROUTER)
+APP.include_router(account.ROUTER)
 
 INFO = {
     "title": "MyElectricalData",
@@ -93,7 +93,7 @@ if CYCLE < cycle_minimun:
 
 
 @APP.on_event("startup")
-@repeat_every(seconds=CYCLE)
+@repeat_every(seconds=CYCLE, wait_first=False)
 def tasks():
     Tasks()
 
@@ -105,6 +105,7 @@ if __name__ == '__main__':
     log_config["formatters"]["access"]["datefmt"] = LOG_FORMAT_DATE
     log_config["formatters"]["default"]["fmt"] = LOG_FORMAT
     log_config["formatters"]["default"]["datefmt"] = LOG_FORMAT_DATE
+    tasks()
     if ("DEV" in environ and getenv("DEV")) or ("DEBUG" in environ and getenv("DEBUG")):
         uvicorn.run(
             "main:APP",
@@ -115,4 +116,9 @@ if __name__ == '__main__':
             log_config=log_config,
         )
     else:
-        uvicorn.run("main:APP", host="0.0.0.0", port=5000, log_config=log_config)
+        uvicorn.run(
+            "main:APP",
+            host="0.0.0.0",
+            port=5000,
+            log_config=log_config
+        )

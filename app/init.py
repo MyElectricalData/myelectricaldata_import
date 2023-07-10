@@ -67,6 +67,8 @@ DB = Database(CONFIG)
 DB.init_database()
 DB.unlock()
 
+CONFIG.set_db(DB)
+
 INFLUXDB_CONFIG = CONFIG.influxdb_config()
 INFLUXB_ENABLE = False
 INFLUXDB = None

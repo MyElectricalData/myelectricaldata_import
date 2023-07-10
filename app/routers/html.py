@@ -7,7 +7,10 @@ from models.ajax import Ajax
 from templates.index import Index
 from templates.usage_point import UsagePoint
 
-ROUTER = APIRouter(include_in_schema=False)
+ROUTER = APIRouter(
+    tags=["HTML"],
+    include_in_schema=False
+)
 
 ROUTER.mount("/static", StaticFiles(directory="/app/static"), name="static")
 

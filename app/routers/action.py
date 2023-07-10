@@ -3,7 +3,10 @@ from fastapi import APIRouter
 from init import CONFIG, DB
 from models.ajax import Ajax
 
-ROUTER = APIRouter()
+ROUTER = APIRouter(
+    tags=["Ajax"],
+    include_in_schema=False
+)
 
 
 @ROUTER.get("/import/{usage_point_id}")

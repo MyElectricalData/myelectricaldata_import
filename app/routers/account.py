@@ -3,7 +3,10 @@ from fastapi import APIRouter, Request
 from init import CONFIG, DB
 from models.ajax import Ajax
 
-ROUTER = APIRouter()
+ROUTER = APIRouter(
+    tags=["Account"],
+    include_in_schema=False
+)
 
 
 @ROUTER.post("/configuration/{usage_point_id}")

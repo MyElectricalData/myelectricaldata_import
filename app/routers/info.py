@@ -7,7 +7,9 @@ from pydantic import BaseModel
 from init import CONFIG, DB
 from models.ajax import Ajax
 
-ROUTER = APIRouter()
+ROUTER = APIRouter(
+    tags=["Infos"]
+)
 
 
 @ROUTER.get("/status",

@@ -4,7 +4,9 @@ from fastapi.responses import HTMLResponse
 from init import CONFIG, DB
 from models.ajax import Ajax
 
-ROUTER = APIRouter()
+ROUTER = APIRouter(
+    tags=["Données"]
+)
 
 
 @ROUTER.put("/tempo", include_in_schema=False)

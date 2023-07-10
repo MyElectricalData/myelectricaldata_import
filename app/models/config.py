@@ -10,6 +10,7 @@ class Config:
 
     def __init__(self, path="/data"):
         self.path = path
+        self.db = None
         self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
         self.usage_point_config = {}
@@ -113,6 +114,9 @@ class Config:
                 "method": "synchronous"
             }
         }
+
+    def set_db(self, db):
+        self.db = db
 
     def load(self):
         config_file = f'{self.path_file}'
