@@ -6,7 +6,7 @@ import pytz
 import logging
 from dateutil.relativedelta import relativedelta
 from models.stat import Stat
-from models.mqtt import Mqtt
+from init import MQTT, DB, CONFIG
 from dependencies import title
 
 utc = pytz.UTC
@@ -26,9 +26,9 @@ def truncate(f, n):
 
 class HomeAssistant:
 
-    def __init__(self, db, mqtt_config, usage_point_id):
-        self.db = db
-        self.mqtt_config = mqtt_config
+    def __init__(self, usage_point_id):
+        self.db = DB
+        # self.mqtt_config = mqtt_config
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
@@ -49,7 +49,7 @@ class HomeAssistant:
             self.production_price = self.config.production_price
         else:
             self.production_price = 0
-        self.config_ha_config = self.config.home_assistant_config()
+        self.config_ha_config = CONFIG.home_assistant_config()
         if "card_myenedis" not in self.config_ha_config:
             self.card_myenedis = False
         else:
@@ -81,14 +81,14 @@ class HomeAssistant:
             self.subscribed_power = None
         self.usage_point = self.db.get_usage_point(self.usage_point_id)
 
-        self.mqtt = None
-        if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
-            if ["hostname"] not in self.mqtt_config:
-                self.connect()
-            else:
-                logging.warning("MQTT config is incomplete.")
-        else:
-            logging.info("MQTT disable")
+        self.mqtt = MQTT
+        # if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+        #     if ["hostname"] not in self.mqtt_config:
+        #         self.connect()
+        #     else:
+        #         logging.warning("MQTT config is incomplete.")
+        # else:
+        #     logging.info("MQTT disable")
 
     def connect(self):
         self.mqtt = Mqtt(
@@ -164,7 +164,7 @@ class HomeAssistant:
         self.mqtt.publish_multiple(data, topic)
 
     def history_usage_point_id(self, measurement_direction):
-        stats = Stat(self.config, self.db, self.usage_point_id, measurement_direction)
+        stats = Stat(self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_history/{self.usage_point_id}"
         config = {
             "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.history",
@@ -210,7 +210,7 @@ class HomeAssistant:
         begin = datetime.combine(datetime.now(), datetime.min.time())
         ecowatt_data = self.db.get_ecowatt_range(begin, begin)
         if ecowatt_data:
-            stats = Stat(self.config, self.usage_point_id)
+            stats = Stat(self.usage_point_id)
             topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
             config = {
                 "name": f"myelectricaldata_{self.usage_point_id}_ecowatt",
@@ -257,7 +257,7 @@ class HomeAssistant:
             self.mqtt.publish_multiple(data, topic)
 
     def myelectricaldata_usage_point_id(self, measurement_direction):
-        stats = Stat(self.config, self.usage_point_id, measurement_direction)
+        stats = Stat(self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}/{self.usage_point_id}"
         config = {
             f"config": json.dumps(

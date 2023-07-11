@@ -1,8 +1,8 @@
-import __main__ as app
-
 import pytz
 import logging
 from dependencies import title
+
+from init import INFLUXDB, DB
 
 
 def forceRound(x, n):
@@ -15,9 +15,9 @@ def forceRound(x, n):
 
 class ExportInfluxDB:
 
-    def __init__(self, influxdb_config, db, usage_point_config, measurement_direction="consumption"):
+    def __init__(self, influxdb_config, usage_point_config, measurement_direction="consumption"):
         self.influxdb_config = influxdb_config
-        self.db = db
+        self.db = DB
         self.usage_point_config = usage_point_config
         self.usage_point_id = self.usage_point_config.usage_point_id
         self.measurement_direction = measurement_direction

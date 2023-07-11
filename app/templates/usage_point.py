@@ -9,14 +9,15 @@ from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
+from init import CONFIG, DB
 
 
 class UsagePoint:
 
-    def __init__(self, config, db, usage_point_id):
+    def __init__(self, usage_point_id):
         # if not DB.lock_status():
-        self.config = config
-        self.db = db
+        self.config = CONFIG
+        self.db = DB
         self.db.refresh_object()
         self.application_path = APPLICATION_PATH
         self.usage_point_id = usage_point_id
@@ -287,7 +288,7 @@ class UsagePoint:
             # RATIO HP/HC
             if hasattr(self.usage_point_config,
                        "consumption_detail") and self.usage_point_config.consumption_detail:
-                self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id))
+                self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id, order_dir="asc"))
                 body += "<h2>Ratio HC/HP</h2>"
                 body += "<table class='table_hchp'><tr>"
                 body += str(self.recap_hc_hp)

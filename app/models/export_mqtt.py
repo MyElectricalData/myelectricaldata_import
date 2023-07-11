@@ -2,42 +2,49 @@ import logging
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
+
 from dependencies import title
+from init import MQTT, CONFIG, DB
 from models.stat import Stat
-from models.mqtt import Mqtt
 
 
 class ExportMqtt:
 
-    def __init__(self, config, db, usage_point_id, measurement_direction="consumption"):
-        self.config = config
-        self.db = db
-        self.mqtt_config = self.config.mqtt_config(),
+    def __init__(self, usage_point_id, measurement_direction="consumption"):
+        self.config = CONFIG
+        self.db = DB
+        # self.mqtt_config = self.config.mqtt_config(),
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
         self.date_format = "%Y-%m-%d"
-        self.stat = Stat(self.config, self.db, self.usage_point_id, measurement_direction)
-        self.mqtt = None
-        if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
-            if ["hostname"] not in self.mqtt_config:
-                self.connect()
-            else:
-                logging.warning("MQTT config is incomplete.")
-        else:
-            logging.info("MQTT disable")
+        self.stat = Stat(self.usage_point_id, measurement_direction)
+        self.mqtt = MQTT
+        # print(self.mqtt_config)
+        # if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
+        #     if ["hostname"] not in self.mqtt_config:
+        #         self.connect()
+        #     else:
+        #         logging.warning("MQTT config is incomplete.")
+        # else:
+        #     logging.info("MQTT disable")
 
-    def connect(self):
-        self.mqtt = Mqtt(
-            hostname=self.mqtt_config["hostname"],
-            port=self.mqtt_config["port"],
-            username=self.mqtt_config["username"],
-            password=self.mqtt_config["password"],
-            client_id=self.mqtt_config["client_id"],
-            prefix=self.mqtt_config["prefix"],
-            retain=self.mqtt_config["retain"],
-            qos=self.mqtt_config["qos"]
-        )
-        self.mqtt.connect()
+    # def connect(self):
+    #     try:
+    #         self.mqtt = Mqtt(
+    #             hostname=self.mqtt_config["hostname"],
+    #             port=self.mqtt_config["port"],
+    #             username=self.mqtt_config["username"],
+    #             password=self.mqtt_config["password"],
+    #             client_id=self.mqtt_config["client_id"],
+    #             prefix=self.mqtt_config["prefix"],
+    #             retain=self.mqtt_config["retain"],
+    #             qos=self.mqtt_config["qos"]
+    #         )
+    #         self.mqtt.connect()
+    #         title("MQTT connection success")
+    #     except Exception as _e:
+    #         logging.critical("MQTT Connection failed!")
+    #         return False
 
     def status(self):
         title(f"[{self.usage_point_id}] Statut du compte.")

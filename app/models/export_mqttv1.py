@@ -4,13 +4,14 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from dependencies import title
 from models.mqtt import Mqtt
+from init import CONFIG, DB
 
 
 class ExportMqtt:
 
-    def __init__(self, config, db, usage_point_id, measurement_direction="consumption"):
-        self.config = config
-        self.db = db
+    def __init__(self, usage_point_id, measurement_direction="consumption"):
+        self.config = CONFIG
+        self.db = DB
         self.mqtt_config = self.config.mqtt_config(),
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction

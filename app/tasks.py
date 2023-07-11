@@ -15,4 +15,4 @@ class Tasks:
             self.import_data()
 
     def import_data(self):
-        Job(CONFIG, DB).job_import_data()
+        Job().job_import_data()

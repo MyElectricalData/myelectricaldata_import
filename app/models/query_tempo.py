@@ -8,13 +8,14 @@ from dependencies import title
 
 from config import URL
 from models.query import Query
+from init import DB, CONFIG
 
 
 class Tempo:
 
-    def __init__(self, config, db):
-        self.config = config
-        self.db = db
+    def __init__(self):
+        self.config = CONFIG
+        self.db = DB
         self.url = URL
         self.valid_date = datetime.combine(datetime.now() + relativedelta(days=1), datetime.min.time())
 

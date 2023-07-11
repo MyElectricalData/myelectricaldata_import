@@ -11,6 +11,7 @@ from dependencies import APPLICATION_PATH_DATA, str2bool
 from models.config import Config
 from models.database import Database
 from models.influxdb import InfluxDB
+from models.mqtt import Mqtt
 
 # LOGGING CONFIGURATION
 handlers = []
@@ -97,3 +98,16 @@ if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]
         INFLUXDB.purge_influxdb()
         CONFIG.set("wipe_influxdb", False)
         time.sleep(1)
+
+MQTT_CONFIG = CONFIG.mqtt_config()
+if MQTT_CONFIG and "enable" in MQTT_CONFIG and MQTT_CONFIG["enable"]:
+    MQTT = Mqtt(
+        hostname=MQTT_CONFIG["hostname"],
+        port=MQTT_CONFIG["port"],
+        username=MQTT_CONFIG["username"],
+        password=MQTT_CONFIG["password"],
+        client_id=MQTT_CONFIG["client_id"],
+        prefix=MQTT_CONFIG["prefix"],
+        retain=MQTT_CONFIG["retain"],
+        qos=MQTT_CONFIG["qos"]
+    )

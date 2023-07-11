@@ -15,6 +15,7 @@ from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
 from models.stat import Stat
+from init import DB, CONFIG
 
 
 def export_finish():
@@ -22,9 +23,9 @@ def export_finish():
 
 
 class Job:
-    def __init__(self, config, db, usage_point_id=None):
-        self.config = config
-        self.db = db
+    def __init__(self, usage_point_id=None):
+        self.config = CONFIG
+        self.db = DB
         self.usage_point_id = usage_point_id
         self.usage_point_config = {}
         self.mqtt_config = self.config.mqtt_config()
@@ -150,54 +151,54 @@ class Job:
                         title(" Exportation MQTT")
                         if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
                             if target == "mqtt" or target is None:
-                                ExportMqtt(self.config, self.db, self.usage_point_id).status()
-                                ExportMqtt(self.config, self.db, self.usage_point_id).contract()
-                                ExportMqtt(self.config, self.db, self.usage_point_id).address()
+                                ExportMqtt(self.usage_point_id).status()
+                                ExportMqtt(self.usage_point_id).contract()
+                                ExportMqtt(self.usage_point_id).address()
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "consumption").daily_annual(
                                         self.usage_point_config.consumption_price_base
                                     )
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "consumption").daily_linear(
                                         self.usage_point_config.consumption_price_base
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production") and self.usage_point_config.production:
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "production").daily_annual(
                                         self.usage_point_config.production_price
                                     )
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "production").daily_linear(
                                         self.usage_point_config.production_price
                                     )
                                 if hasattr(self.usage_point_config,
                                            "consumption_detail") and self.usage_point_config.consumption_detail:
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "consumption").detail_annual(
                                         self.usage_point_config.consumption_price_hp,
                                         self.usage_point_config.consumption_price_hc
                                     )
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "consumption").detail_linear(
                                         self.usage_point_config.consumption_price_hp,
                                         self.usage_point_config.consumption_price_hc
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "production").detail_annual(
                                         self.usage_point_config.production_price
                                     )
-                                    ExportMqtt(self.config, self.db, self.usage_point_id,
+                                    ExportMqtt(self.usage_point_id,
                                                "production").detail_linear(
                                         self.usage_point_config.production_price
                                     )
                                 if hasattr(self.usage_point_config,
                                            "consumption_max_power") and self.usage_point_config.consumption_max_power:
-                                    ExportMqtt(self.config, self.db, self.usage_point_id).max_power()
+                                    ExportMqtt(self.usage_point_id).max_power()
                             export_finish()
                         else:
                             title(" Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
@@ -212,7 +213,7 @@ class Job:
                             if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
                                 if target == "home_assistant" or target is None:
                                     title(" Exportation Home Assistant")
-                                    HomeAssistant(self.mqtt_config, self.usage_point_id).export()
+                                    HomeAssistant(self.usage_point_id).export()
                                     export_finish()
                             else:
                                 logging.critical("L'export Home Assistant est dépendant de MQTT, "
@@ -233,17 +234,17 @@ class Job:
                                 title(" Exportation InfluxDB")
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
-                                    ExportInfluxDB(self.influxdb_config, self.db, self.usage_point_config).daily()
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily()
                                 if hasattr(self.usage_point_config,
                                            "production") and self.usage_point_config.production:
-                                    ExportInfluxDB(self.influxdb_config, self.db, self.usage_point_config).daily(
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily(
                                         measurement_direction="production")
                                 if hasattr(self.usage_point_config,
                                            "consumption_detail") and self.usage_point_config.consumption_detail:
-                                    ExportInfluxDB(self.influxdb_config, self.db, self.usage_point_config).detail()
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail()
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
-                                    ExportInfluxDB(self.influxdb_config, self.db, self.usage_point_config).detail(
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail(
                                         measurement_direction="production")
                             export_finish()
                         else:
@@ -274,7 +275,6 @@ class Job:
     def get_gateway_status(self):
         title(f"[{self.usage_point_config.usage_point_id}] Statut de la passerelle :")
         result = Status(
-            self.db,
             headers=self.header_generate(),
         ).ping()
         return result
@@ -282,7 +282,6 @@ class Job:
     def get_account_status(self):
         title(f"[{self.usage_point_config.usage_point_id}] Check account status :")
         result = Status(
-            self.db,
             headers=self.header_generate(),
         ).status(usage_point_id=self.usage_point_config.usage_point_id)
         return result
@@ -290,7 +289,6 @@ class Job:
     def get_contract(self):
         title(f"[{self.usage_point_config.usage_point_id}] Récupération du contrat :")
         result = Contract(
-            db=self.db,
             headers=self.header_generate(),
             usage_point_id=self.usage_point_config.usage_point_id,
             config=self.usage_point_config
@@ -302,8 +300,6 @@ class Job:
     def get_addresses(self):
         title(f"[{self.usage_point_config.usage_point_id}] Récupération des coordonnées :")
         result = Address(
-            config=self.config,
-            db=self.db,
             headers=self.header_generate(),
             usage_point_id=self.usage_point_config.usage_point_id,
         ).get()
@@ -377,24 +373,18 @@ class Job:
     def get_tempo(self):
         title(
             f"Récupération des données Tempo :")
-        return Tempo(
-            config=self.config,
-            db=self.db
-        ).get()
+        return Tempo().fetch()
 
     def get_ecowatt(self):
         title(
             f"Récupération des données EcoWatt :")
-        return Ecowatt(
-            config=self.config,
-            db=self.db
-        ).get()
+        return Ecowatt().fetch()
 
     def stat_price(self, usage_point_id, measurement_direction="consumption"):
         title(
             f"Génération des statistiques Tarifaire de {measurement_direction}:")
-        return Stat(self.config, self.db, usage_point_id=usage_point_id,
-                    measurement_direction=measurement_direction).price()
+        return Stat(usage_point_id=usage_point_id,
+                    measurement_direction=measurement_direction).generate_price()
 
     def home_assistant(self):
         result = {}

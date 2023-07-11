@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta, date
 import pytz
 from dateutil.relativedelta import relativedelta
 from dependencies import title
+from init import CONFIG, DB
 
 
 utc = pytz.UTC
@@ -14,9 +15,9 @@ utc = pytz.UTC
 
 class Stat:
 
-    def __init__(self, config, db,  usage_point_id, measurement_direction=None):
-        self.config = config
-        self.db = db
+    def __init__(self, usage_point_id, measurement_direction=None):
+        self.config = CONFIG
+        self.db = DB
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
         self.usage_point_id_config = self.db.get_usage_point(self.usage_point_id)
@@ -575,13 +576,16 @@ class Stat:
         data = self.db.get_detail_all(self.usage_point_id, self.measurement_direction)
         result = {}
         last_month = ""
+        tempo_config = self.config.tempo_config()
+        tempo_data = self.db.get_tempo_range(data[0].date, data[-1].date)
+
         for item in data:
             year = item.date.strftime("%Y")
             month = item.date.strftime("%m")
             if month != last_month:
                 logging.info(f" - {year} / {month}")
-            tempo_date = datetime.combine(item.date, datetime.min.time())
             measure_type = item.measure_type
+            tempo_date = datetime.combine(item.date, datetime.min.time())
             interval = item.interval
             if year not in result:
                 result[year] = {
@@ -622,14 +626,12 @@ class Stat:
                 price_hc_hp = self.usage_point_id_config.consumption_price_hc
             kw = (item.value / 1000) / (60 / interval)
             # YEARS
-            result[year]["BASE"] = result[year]["BASE"] + (kw * price)
-            result[year][measure_type] = result[year][measure_type] + (kw * price_hc_hp)
-            tempo_config = self.config.tempo_config()
+            result[year]["BASE"] += (kw * price)
+            result[year][measure_type] += (kw * price_hc_hp)
 
             # MONTH
-            result[year]["month"][month]["BASE"] = result[year]["month"][month]["BASE"] + (kw * price)
-            result[year]["month"][month][measure_type] = result[year]["month"][month][measure_type] + (
-                    kw * price_hc_hp)
+            result[year]["month"][month]["BASE"] += (kw * price)
+            result[year]["month"][month][measure_type] += (kw * price_hc_hp)
 
             # TEMPO
             if tempo_config:
@@ -638,17 +640,16 @@ class Stat:
                     measure_type = "HP"
                 else:
                     measure_type = "HC"
-                tempo_data = self.db.get_tempo_range(tempo_date, tempo_date)
-                if tempo_data:
-                    color = tempo_data[0].color
+                tempo_output = [x for x in tempo_data if x.date == tempo_date]
+                if tempo_output:
+                    color = tempo_output[0].color
 
                     tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
-                    result[year]["TEMPO"][f"{color}_{measure_type}"] = result[year]["TEMPO"][
-                                                                           f"{color}_{measure_type}"] + (
-                                                                               kw * tempo_price)
-                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] = \
-                        result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] + (
-                                kw * tempo_price)
+                    result[year]["TEMPO"][f"{color}_{measure_type}"] += kw * tempo_price
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] += kw * tempo_price
             last_month = month
+
+            # exit()
+
         self.db.set_stat(self.usage_point_id, f"price_{self.measurement_direction}", json.dumps(result))
         return json.dumps(result)

@@ -1,19 +1,19 @@
-import logging
 import datetime
 import json
+import logging
 import traceback
 from os import environ, getenv
 
-from dependencies import get_version
-from models.query import Query
-
 from config import URL
+from dependencies import get_version
+from init import DB
+from models.query import Query
 
 
 class Status:
 
-    def __init__(self, db, headers=None):
-        self.db = db
+    def __init__(self, headers=None):
+        self.db = DB
         self.url = URL
         self.headers = headers
 

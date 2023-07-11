@@ -4,15 +4,16 @@ import logging
 
 from dependencies import title
 from models.query import Query
+from init import CONFIG, DB
 
 from config import URL
 
 
 class Address:
 
-    def __init__(self, config, db, headers, usage_point_id):
-        self.config = config
-        self.db = db
+    def __init__(self, headers, usage_point_id):
+        self.config = CONFIG
+        self.db = DB
         self.url = URL
 
         self.headers = headers

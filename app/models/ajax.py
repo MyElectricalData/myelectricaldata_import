@@ -13,15 +13,16 @@ from models.query_ecowatt import Ecowatt
 from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
+from init import DB, CONFIG
 
 utc = pytz.UTC
 
 
 class Ajax:
 
-    def __init__(self, config, db, usage_point_id=None):
-        self.config = config
-        self.db = db
+    def __init__(self, usage_point_id=None):
+        self.config = CONFIG
+        self.db = DB
         self.application_path = APPLICATION_PATH
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
@@ -45,11 +46,11 @@ class Ajax:
 
     def gateway_status(self):
         title(f"[{self.usage_point_id}] Check de l'état de la passerelle.")
-        return Status(self.db).ping()
+        return Status().ping()
 
     def account_status(self):
         title(f"[{self.usage_point_id}] Check du statut du compte.")
-        data = Status(self.db, headers=self.headers).status(self.usage_point_id)
+        data = Status(headers=self.headers).status(self.usage_point_id)
         if isinstance(self.usage_point_config.last_call, datetime):
             data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
         else:
@@ -74,11 +75,11 @@ class Ajax:
 
     def generate_price(self):
         title(f"[{self.usage_point_id}] Calcul des coûts par type d'abonnements.")
-        return Stat(self.config, self.db, self.usage_point_id, "consumption").generate_price()
+        return Stat(self.usage_point_id, "consumption").generate_price()
 
     def get_price(self):
         title(f"[{self.usage_point_id}] Retourne le résultat du comparateur d'abonnements.")
-        return Stat(self.config, self.db, self.usage_point_id, "consumption").get_price()
+        return Stat(self.usage_point_id, "consumption").get_price()
 
     def reset_all_data(self):
         title(f"[{self.usage_point_id}] Reset de la consommation journalière.")
@@ -473,7 +474,7 @@ class Ajax:
             }
 
     def import_data(self, target=None):
-        result = Job(self.config, self.db, self.usage_point_id).job_import_data(wait=False, target=target)
+        result = Job(self.usage_point_id).job_import_data(wait=False, target=target)
         if not result:
             return {
                 "error": "true",
@@ -488,6 +489,7 @@ class Ajax:
             }
 
     def new_account(self, configs):
+        print(vars(configs))
         self.usage_point_id = configs['usage_point_id']
         title(f"[{self.usage_point_id}] Ajout d'un nouveau point de livraison:")
         output = {}

@@ -62,6 +62,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "fastapi-utils",
+    "python-multipart",
 ]
 
 [project.optional-dependencies]

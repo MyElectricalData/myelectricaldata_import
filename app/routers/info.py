@@ -64,4 +64,4 @@ class GatewayStatus(BaseModel):
             )
 def gateway_status():
     """Remonte l'état de la passerelle MyElectricalData."""
-    return Ajax(CONFIG, DB).gateway_status()
+    return Ajax().gateway_status()

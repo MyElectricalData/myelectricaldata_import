@@ -6,6 +6,11 @@ import traceback
 from datetime import datetime, timedelta
 from os.path import exists
 
+from sqlalchemy import (create_engine, delete, inspect, update, select, func, desc, asc)
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.pool import NullPool
+
+from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
     Contracts,
@@ -21,11 +26,6 @@ from db_schema import (
     Statistique
 )
 from dependencies import str2bool, title, get_version, title_warning
-from sqlalchemy import (create_engine, delete, inspect, update, select, func, desc, asc)
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.pool import NullPool
-
-from config import MAX_IMPORT_TRY
 
 # available_database = ["sqlite", "postgresql", "mysql+pymysql"]
 available_database = ["sqlite", "postgresql"]
@@ -1107,19 +1107,21 @@ class Database:
     ## -----------------------------------------------------------------------------------------------------------------
     ## DETAIL CONSUMPTION
     ## -----------------------------------------------------------------------------------------------------------------
-    def get_detail_all(self, usage_point_id, begin=None, end=None, measurement_direction="consumption"):
+    def get_detail_all(self, usage_point_id, begin=None, end=None, measurement_direction="consumption",
+                       order_dir="desc"):
         if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
         else:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
+        sort = asc("date") if order_dir == "desc" else desc("date")
         if begin is None or end is None:
             return self.session.scalars(
                 select(table)
                 .join(relation)
                 .where(table.usage_point_id == usage_point_id)
-                .order_by(table.date)
+                .order_by(sort)
             ).all()
         else:
             return self.session.scalars(
@@ -1128,7 +1130,7 @@ class Database:
                 .where(table.usage_point_id == usage_point_id)
                 .filter(table.date <= end)
                 .filter(table.date >= begin)
-                .order_by(table.date)
+                .order_by(sort)
             ).all()
 
     def get_detail_datatable(self, usage_point_id, order_column="date", order_dir="asc", search=None,

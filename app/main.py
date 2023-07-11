@@ -4,6 +4,7 @@ from os import getenv, environ
 import uvicorn
 from fastapi import FastAPI, APIRouter
 from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 
 from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
@@ -46,6 +47,7 @@ APP = FastAPI(
     title="MyElectricalData",
     swagger_ui_parameters=swagger_configuration
 )
+APP.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 ROUTER = APIRouter()
 APP.include_router(info.ROUTER)
@@ -105,7 +107,6 @@ if __name__ == '__main__':
     log_config["formatters"]["access"]["datefmt"] = LOG_FORMAT_DATE
     log_config["formatters"]["default"]["fmt"] = LOG_FORMAT
     log_config["formatters"]["default"]["datefmt"] = LOG_FORMAT_DATE
-    tasks()
     if ("DEV" in environ and getenv("DEV")) or ("DEBUG" in environ and getenv("DEBUG")):
         uvicorn.run(
             "main:APP",

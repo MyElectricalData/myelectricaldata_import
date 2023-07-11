@@ -6,14 +6,15 @@ import logging
 
 from dependencies import title
 from models.query import Query
+from init import DB
 
 from config import URL
 
 
 class Contract:
 
-    def __init__(self, db,  headers, usage_point_id, config):
-        self.db = db
+    def __init__(self, headers, usage_point_id, config):
+        self.db = DB
         self.url = URL
 
         self.headers = headers
