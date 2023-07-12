@@ -349,7 +349,7 @@ class Database:
             if "quota_reached" in data and data["quota_reached"] is not None:
                 usage_points.quota_reached = str2bool(data["quota_reached"])
             if "quota_limit" in data and data["quota_limit"] is not None:
-                usage_points.quota_limit = str2bool(data["quota_limit"])
+                usage_points.quota_limit = data["quota_limit"]
             if "quota_reset_at" in data and data["quota_reset_at"] is not None:
                 usage_points.quota_reset_at = data["quota_reset_at"]
             if "last_call" in data and data["last_call"] is not None:
