@@ -49,8 +49,12 @@ class Database:
 
         os.system(f"cd /app; DB_URL='{self.uri}' alembic upgrade head ")
 
-        self.engine = create_engine(self.uri, echo=False, query_cache_size=0, isolation_level="READ COMMITTED",
-                                    poolclass=NullPool)
+        self.engine = create_engine(
+            self.uri, echo=False,
+            query_cache_size=0,
+            isolation_level="READ UNCOMMITTED",
+            poolclass=NullPool
+        )
         self.session = scoped_session(sessionmaker(self.engine, autocommit=True, autoflush=True))
         self.inspector = inspect(self.engine)
 

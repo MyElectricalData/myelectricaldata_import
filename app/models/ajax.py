@@ -84,37 +84,27 @@ class Ajax:
     def reset_all_data(self):
         title(f"[{self.usage_point_id}] Reset de la consommation journalière.")
         Daily(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
         title(f"[{self.usage_point_id}] Reset de la puissance maximum journalière.")
         Power(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
         title(f"[{self.usage_point_id}] Reset de la consommation détaillée.")
         Detail(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
         title(f"[{self.usage_point_id}] Reset de la production journalière.")
         Daily(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
             measure_type="production"
         ).reset()
         title(f"[{self.usage_point_id}] Reset de la production détaillée.")
         Detail(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
             measure_type="production"
@@ -127,37 +117,27 @@ class Ajax:
     def delete_all_data(self):
         title(f"[{self.usage_point_id}] Suppression de la consommation journalière.")
         Daily(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).delete()
         title(f"[{self.usage_point_id}] Suppression de la puissance maximum journalière.")
         Power(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).delete()
         title(f"[{self.usage_point_id}] Suppression de la consommation détaillée.")
         Detail(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).delete()
         title(f"[{self.usage_point_id}] Suppression de la production journalière.")
         Daily(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
             measure_type="production"
         ).delete()
         title(f"[{self.usage_point_id}] Suppression de la production détaillée.")
         Detail(
-            config=self.config,
-            db=self.db,
             headers=self.headers,
             usage_point_id=self.usage_point_id,
             measure_type="production"
@@ -176,8 +156,6 @@ class Ajax:
         if target == "consumption":
             title(f"[{self.usage_point_id}] Reset de la consommation journalière du {date}:")
             result["consumption"] = Daily(
-                config=self.config,
-                db=self.db,
                 headers=self.headers,
                 usage_point_id=self.usage_point_id
             ).reset(date)
@@ -186,24 +164,18 @@ class Ajax:
             # date = date.replace("--", ":")
             title(f"[{self.usage_point_id}] Reset de la consommation détaillée du {date}:")
             result["consumption_detail"] = Detail(
-                config=self.config,
-                db=self.db,
                 headers=self.headers,
                 usage_point_id=self.usage_point_id
             ).reset_daily(date)
         elif target == "consumption_max_power":
             title(f"[{self.usage_point_id}] Reset de la puissance maximum du {date}:")
             result["consumption_max_power"] = Power(
-                config=self.config,
-                db=self.db,
                 headers=self.headers,
                 usage_point_id=self.usage_point_id
             ).reset(date)
         elif target == "production":
             title(f"[{self.usage_point_id}] Reset de la production journalière du {date}:")
             result["production"] = Daily(
-                config=self.config,
-                db=self.db,
                 headers=self.headers,
                 usage_point_id=self.usage_point_id,
                 measure_type="production"
@@ -213,8 +185,6 @@ class Ajax:
             # date = date.replace("--", ":")
             title(f"[{self.usage_point_id}] Reset de la production détaillée du {date}:")
             result["production_detail"] = Detail(
-                config=self.config,
-                db=self.db,
                 headers=self.headers,
                 usage_point_id=self.usage_point_id,
                 measure_type="production"
@@ -244,8 +214,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 title(f"[{self.usage_point_id}] Importation de la consommation journalière du {date}:")
                 result["consumption"] = Daily(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).fetch(date)
@@ -253,8 +221,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption:
                 title(f"[{self.usage_point_id}] Importation de la puissance maximum journalière du {date}:")
                 result["consumption_max_power"] = Power(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).fetch(date)
@@ -264,8 +230,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
                 title(f"[{self.usage_point_id}] Importation de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).fetch(date)
@@ -273,8 +237,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
                 title(f"[{self.usage_point_id}] Importation de la production journalière du {date}:")
                 result["production"] = Daily(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
@@ -285,8 +247,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
                 title(f"[{self.usage_point_id}] Importation de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
@@ -341,8 +301,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 title(f"[{self.usage_point_id}] Blacklist de la consommation journalière du {date}:")
                 result["consumption"] = Daily(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, 1)
@@ -351,8 +309,6 @@ class Ajax:
                        "consumption_max_power") and self.usage_point_config.consumption_max_power:
                 title(f"[{self.usage_point_id}] Blacklist de la puissance maximum du {date}:")
                 result["consumption_max_power"] = Power(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, 1)
@@ -360,8 +316,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
                 title(f"[{self.usage_point_id}] Blacklist de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, 1)
@@ -369,8 +323,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
                 title(f"[{self.usage_point_id}] Blacklist de la production journalière du {date}:")
                 result["production"] = Daily(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
@@ -379,8 +331,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
                 title(f"[{self.usage_point_id}] Blacklist de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
@@ -410,8 +360,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 title(f"[{self.usage_point_id}] Whitelist de la consommation journalière du {date}:")
                 result["consumption"] = Daily(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, 0)
@@ -420,8 +368,6 @@ class Ajax:
                        "consumption_max_power") and self.usage_point_config.consumption_max_power:
                 title(f"[{self.usage_point_id}] Whitelist de la puissance maximale journalière du {date}:")
                 result["consumption_max_power"] = Power(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, 0)
@@ -429,8 +375,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
                 title(f"[{self.usage_point_id}] Whitelist de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).blacklist(date, 0)
@@ -438,8 +382,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
                 title(f"[{self.usage_point_id}] Whitelist de la production journalière du {date}:")
                 result["production"] = Daily(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
@@ -448,8 +390,6 @@ class Ajax:
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
                 title(f"[{self.usage_point_id}] Whitelist de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
-                    config=self.config,
-                    db=self.db,
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"

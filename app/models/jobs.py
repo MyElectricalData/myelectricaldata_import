@@ -312,8 +312,6 @@ class Job:
         if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
             title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation journalière :")
             result = Daily(
-                config=self.config,
-                db=self.db,
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id
             ).get()
@@ -324,8 +322,6 @@ class Job:
         if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
             title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation détaillée :")
             result = Detail(
-                config=self.config,
-                db=self.db,
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
             ).get()
@@ -336,8 +332,6 @@ class Job:
         if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
             title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production journalière :")
             result = Daily(
-                config=self.config,
-                db=self.db,
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
                 measure_type="production"
@@ -349,8 +343,6 @@ class Job:
         if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
             title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production détaillée :")
             result = Detail(
-                config=self.config,
-                db=self.db,
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
                 measure_type="production"
@@ -363,8 +355,6 @@ class Job:
             title(
                 f"[{self.usage_point_config.usage_point_id}] Récupération de la puissance maximun journalière :")
             result = Power(
-                config=self.config,
-                db=self.db,
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id
             ).get()

@@ -8,9 +8,8 @@ RUN apt-get update && \
     git  \
     g++  \
     gcc  \
-    libpq-dev \
-    && sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen  \
-    && apt-get clean
+    libpq-dev
+RUN sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen
 RUN dpkg-reconfigure --frontend=noninteractive locales
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -25,5 +24,12 @@ RUN pip install git+https://github.com/influxdata/influxdb-client-python.git@mas
 
 RUN mkdir /data
 RUN mkdir /log
+
+#RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+#RUN apt-get install wget
+#RUN /bin/wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+#RUN apt-get update
+#RUN apt-get -y install postgresql
+RUN apt-get clean
 
 CMD ["python", "-u", "/app/main.py"]

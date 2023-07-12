@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from dependencies import title
 from models.database import ConsumptionDetail, ProductionDetail
 from models.query import Query
+from init import DB, CONFIG
 
 from config import DETAIL_MAX_DAYS, URL
 
@@ -17,9 +18,9 @@ def daterange(start_date, end_date):
 
 class Detail:
 
-    def __init__(self, config, db, headers, usage_point_id, measure_type="consumption"):
-        self.config = config
-        self.db = db
+    def __init__(self, headers, usage_point_id, measure_type="consumption"):
+        self.config = CONFIG
+        self.db = DB
         self.url = URL
         self.max_detail = 7
         self.date_format = '%Y-%m-%d'

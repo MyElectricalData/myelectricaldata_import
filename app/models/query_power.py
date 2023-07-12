@@ -5,7 +5,7 @@ from dependencies import title
 
 from config import DAILY_MAX_DAYS, URL
 from models.query import Query
-
+from init import DB, CONFIG
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
@@ -14,9 +14,9 @@ def daterange(start_date, end_date):
 
 class Power:
 
-    def __init__(self, config, db, headers, usage_point_id):
-        self.config = config
-        self.db = db
+    def __init__(self, headers, usage_point_id):
+        self.config = CONFIG
+        self.db = DB
         self.url = URL
         self.max_daily = 1095
         self.date_format = '%Y-%m-%d'
