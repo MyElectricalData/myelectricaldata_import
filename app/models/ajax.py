@@ -142,6 +142,8 @@ class Ajax:
             usage_point_id=self.usage_point_id,
             measure_type="production"
         ).delete()
+        title(f"[{self.usage_point_id}] Suppression des statistiques.")
+        Stat(usage_point_id=self.usage_point_id).delete()
         return {
             "error": "false",
             "notif": "Toutes les données ont été supprimées.",

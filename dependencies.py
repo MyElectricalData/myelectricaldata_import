@@ -114,6 +114,7 @@ def create_release(prerelease=False):
     # GENERATE NEW RELEASE VERSION
     new_release = last_version.split("-")[0]
     new_version = []
+    new_version.append(Choice("new_beta", f"NEW BETA {new_release}"))
     for idx, digit in enumerate(new_release.split(".")):
         if idx > 0:
             idx = int(idx) * 2
@@ -138,10 +139,15 @@ def create_release(prerelease=False):
 
     branch = version
 
+
     if version not in tags:
-        prerelease = inquirer.confirm(
-            message="It's prerelease (beta version) ?",
-        ).execute()
+        if version == "new_beta":
+            prerelease = True
+            version = new_release
+        else:
+            prerelease = inquirer.confirm(
+                message="It's prerelease (beta version) ?",
+            ).execute()
         if prerelease:
             beta_version = f"{version}-beta"
             found_version = []
@@ -163,6 +169,8 @@ def create_release(prerelease=False):
             return False
 
     switch_version(version)
+
+    print(version)
 
     commit = cmd("git status --porcelain").stdout.decode()
     if commit != "":

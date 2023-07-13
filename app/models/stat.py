@@ -653,3 +653,6 @@ class Stat:
 
         self.db.set_stat(self.usage_point_id, f"price_{self.measurement_direction}", json.dumps(result))
         return json.dumps(result)
+
+    def delete(self):
+        self.db.del_stat(self.usage_point_id)

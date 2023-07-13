@@ -8,14 +8,22 @@
     </style>
     <script>
         $(document).ready(function () {
+            var finish = true
+
             function retry() {
                 setTimeout(function () {
                     ajaxCall()
                 }, 5000);
             }
 
-            function ajaxCall() {
+            function reload() {
+                if(finish == false) {
+                    location.reload();
+                    finish = true
+                }
+            }
 
+            function ajaxCall() {
                 $.ajax({
                     url: "/import_status",
                     type: 'GET',
@@ -26,10 +34,11 @@
                         const html = jqXHR.responseText
                         if (html === "true") {
                             $.LoadingOverlay("show", loading_import);
+                            finish = false
                             retry()
                         } else {
                             $.LoadingOverlay("hide", loading_import);
-                            retry()
+                            reload()
                         }
                     },
                     error: function (xhr, textStatus) {

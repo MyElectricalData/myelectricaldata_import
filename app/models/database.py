@@ -1807,3 +1807,9 @@ class Database:
             )
         self.session.flush()
         return True
+
+    def del_stat(self, usage_point_id):
+        self.session.execute(
+            delete(Statistique)
+            .where(Statistique.usage_point_id == usage_point_id)
+        )
