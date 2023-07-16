@@ -3,6 +3,7 @@ import time
 import traceback
 
 from dependencies import str2bool, title, finish, get_version, log_usage_point_id
+from init import DB, CONFIG
 from models.export_home_assistant import HomeAssistant
 from models.export_influxdb import ExportInfluxDB
 from models.export_mqtt import ExportMqtt
@@ -15,7 +16,6 @@ from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
 from models.stat import Stat
-from init import DB, CONFIG
 
 
 def export_finish():

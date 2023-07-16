@@ -60,8 +60,6 @@ class Database:
 
         self.lock_file = f"{self.path}/.lock"
 
-        self.yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
-
         # MIGRATE v7 to v8
         if os.path.isfile(f"{self.path}/enedisgateway.db"):
             title_warning("=> Migration de l'ancienne base de données vers la nouvelle structure.")
@@ -783,19 +781,20 @@ class Database:
 
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
 
+        yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         if search is not None and search != "":
             result = self.session.scalars(select(table)
                                           .join(relation)
                                           .where(UsagePoints.usage_point_id == usage_point_id)
                                           .where((table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%")))
-                                          .where(table.date <= self.yesterday)
+                                          .where(table.date <= yesterday)
                                           .order_by(sort)
                                           )
         else:
             result = self.session.scalars(select(table)
                                           .join(relation)
                                           .where(UsagePoints.usage_point_id == usage_point_id)
-                                          .where(table.date <= self.yesterday)
+                                          .where(table.date <= yesterday)
                                           .order_by(sort)
                                           )
         return result.all()
@@ -1145,21 +1144,21 @@ class Database:
         else:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
-
+        yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
         if search is not None and search != "":
             result = self.session.scalars(select(table)
                                           .join(relation)
                                           .where(UsagePoints.usage_point_id == usage_point_id)
                                           .where((table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%")))
-                                          .where(table.date <= self.yesterday)
+                                          .where(table.date <= yesterday)
                                           .order_by(sort)
                                           )
         else:
             result = self.session.scalars(select(table)
                                           .join(relation)
                                           .where(UsagePoints.usage_point_id == usage_point_id)
-                                          .where(table.date <= self.yesterday)
+                                          .where(table.date <= yesterday)
                                           .order_by(sort)
                                           )
         return result.all()
@@ -1592,6 +1591,7 @@ class Database:
         ).one_or_none()
 
     def get_daily_max_power_datatable(self, usage_point_id, order_column="date", order_dir="asc", search=None):
+        yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
         if search is not None and search != "":
             result = self.session.scalars(select(ConsumptionDailyMaxPower)
@@ -1599,14 +1599,14 @@ class Database:
                                           .where(UsagePoints.usage_point_id == usage_point_id)
                                           .where((ConsumptionDailyMaxPower.date.like(f"%{search}%")) | (
                 ConsumptionDailyMaxPower.value.like(f"%{search}%")))
-                                          .where(ConsumptionDailyMaxPower.date <= self.yesterday)
+                                          .where(ConsumptionDailyMaxPower.date <= yesterday)
                                           .order_by(sort)
                                           )
         else:
             result = self.session.scalars(select(ConsumptionDailyMaxPower)
                                           .join(UsagePoints.relation_consumption_daily_max_power)
                                           .where(UsagePoints.usage_point_id == usage_point_id)
-                                          .where(ConsumptionDailyMaxPower.date <= self.yesterday)
+                                          .where(ConsumptionDailyMaxPower.date <= yesterday)
                                           .order_by(sort)
                                           )
         return result.all()
