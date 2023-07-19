@@ -28,8 +28,7 @@ dependencies = [
     "uvicorn",
     "fastapi-utils",
     "python-multipart",
-#    "influxdb-client",
-    "loguru"
+    "influxdb-client",
 ]
 
 [project.optional-dependencies]
