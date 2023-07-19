@@ -1,13 +1,14 @@
 import json
+import logging
 from datetime import datetime, timedelta
 from math import floor
 
 import pytz
-import logging
 from dateutil.relativedelta import relativedelta
-from models.stat import Stat
-from init import MQTT, DB, CONFIG
+
 from dependencies import title, get_version
+from init import MQTT, DB, CONFIG
+from models.stat import Stat
 
 utc = pytz.UTC
 
@@ -104,7 +105,7 @@ class HomeAssistant:
     def last_x_day(self, days, measurement_direction):
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}"
         config = {
-            "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.last{days}day_",
+            "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.last{days}day",
             "uniq_id": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_last{days}day",
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
@@ -196,7 +197,7 @@ class HomeAssistant:
             stats = Stat(self.usage_point_id)
             topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
             config = {
-                "name": f"myelectricaldata_{self.usage_point_id}.EcoWatt",
+                "name": f"myelectricaldata.{self.usage_point_id}.EcoWatt",
                 "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_ecowatt",
                 "stat_t": f"{topic}/state",
                 "json_attr_t": f"{topic}/attributes",
@@ -262,6 +263,30 @@ class HomeAssistant:
                 })
         }
         self.mqtt.publish_multiple(config, topic)
+
+        if measurement_direction == "consumption":
+            config = {
+                f"config": json.dumps(
+                    {
+                        "name": f"myelectricaldata.{self.usage_point_id}",
+                        "uniq_id": f"myelectricaldata_{self.usage_point_id}",
+                        "stat_t": f"{topic}/state",
+                        "json_attr_t": f"{topic}/attributes",
+                        "unit_of_measurement": "kWh",
+                        "device": {
+                            "identifiers": [
+                                f"linky_{self.usage_point_id}"
+                            ],
+                            "name": f"Linky {self.usage_point_id}",
+                            "model": "Linky",
+                            "manufacturer": "MyElectricalData"
+                        }
+                    })
+            }
+            self.mqtt.publish_multiple(
+                config,
+                f"{self.discovery_prefix}/sensor/myelectricaldata/{self.usage_point_id}"
+            )
 
         state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
