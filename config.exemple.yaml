@@ -1,7 +1,7 @@
 cycle: 14400  # 4H
 debug: true
 log2file: false
-wipe_influxdb: false
+wipe_influxdb: false # Work only with influxdb > 2.X
 # Par défaut le backend en local dans le /data/cache.db du conteneur.
 # Mais il est possible de basculer sur une base de données externe de type SQLite ou PostgreSQL
 # Exemple pour Postgres :

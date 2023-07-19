@@ -3,6 +3,7 @@ import ast
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse
 
+from datetime import datetime
 from init import CONFIG, DB
 from models.ajax import Ajax
 
@@ -58,6 +59,46 @@ def get_price(usage_point_id):
         return Ajax(usage_point_id).get_price()
     else:
         raise HTTPException(status_code=404, detail=f"Le point de livraison '{usage_point_id}' est inconnu!")
+
+
+@ROUTER.get("/daily/{usage_point_id}/{measurement_direction}/{begin}/{end}", summary="Retourne la consommation/production journalière.")
+@ROUTER.get("/daily/{usage_point_id}/{measurement_direction}/{begin}/{end}/", include_in_schema=False)
+def get_data_daily(usage_point_id, measurement_direction, begin, end):
+    """Retourne les données du cache local de consommation journalière."""
+    usage_point_id = usage_point_id.strip()
+    begin = datetime.strptime(begin, "%Y-%m-%d")
+    end = datetime.strptime(end, "%Y-%m-%d")
+    if measurement_direction not in ["consumption", "production"]:
+        raise HTTPException(status_code=404, detail=f"'measurement_direction' inconnu, valeur possible consumption/production")
+    data = DB.get_daily_range(usage_point_id, begin, end, measurement_direction)
+    output = {
+        "unit": "w",
+        "data": {}
+    }
+    if data is not None:
+        for d in data:
+            output["data"][d.date] = d.value
+    return output
+
+
+@ROUTER.get("/detail/{usage_point_id}/{measurement_direction}/{begin}/{end}", summary="Retourne la consommation/production détaillée.")
+@ROUTER.get("/detail/{usage_point_id}/{measurement_direction}/{begin}/{end}/", include_in_schema=False)
+def get_data_detail(usage_point_id, measurement_direction, begin, end):
+    """Retourne les données du cache local de consommation détaillée."""
+    usage_point_id = usage_point_id.strip()
+    begin = datetime.strptime(begin, "%Y-%m-%d")
+    end = datetime.strptime(end, "%Y-%m-%d")
+    if measurement_direction not in ["consumption", "production"]:
+        raise HTTPException(status_code=404, detail=f"'measurement_direction' inconnu, valeur possible consumption/production")
+    data = DB.get_detail_range(usage_point_id, begin, end, measurement_direction)
+    output = {
+        "unit": "w",
+        "data": {}
+    }
+    if data is not None:
+        for d in data:
+            output["data"][d.date] = d.value
+    return output
 
 
 @ROUTER.get("/get/{usage_point_id}/{measurement_direction}", response_class=HTMLResponse, include_in_schema=False)

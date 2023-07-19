@@ -7,7 +7,7 @@ import logging
 from dateutil.relativedelta import relativedelta
 from models.stat import Stat
 from init import MQTT, DB, CONFIG
-from dependencies import title
+from dependencies import title, get_version
 
 utc = pytz.UTC
 
@@ -82,26 +82,6 @@ class HomeAssistant:
         self.usage_point = self.db.get_usage_point(self.usage_point_id)
 
         self.mqtt = MQTT
-        # if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
-        #     if ["hostname"] not in self.mqtt_config:
-        #         self.connect()
-        #     else:
-        #         logging.warning("MQTT config is incomplete.")
-        # else:
-        #     logging.info("MQTT disable")
-
-    def connect(self):
-        self.mqtt = Mqtt(
-            hostname=self.mqtt_config["hostname"],
-            port=self.mqtt_config["port"],
-            username=self.mqtt_config["username"],
-            password=self.mqtt_config["password"],
-            client_id=self.mqtt_config["client_id"],
-            prefix=self.mqtt_config["prefix"],
-            retain=self.mqtt_config["retain"],
-            qos=self.mqtt_config["qos"]
-        )
-        self.mqtt.connect()
 
     def export(self):
 
@@ -141,6 +121,7 @@ class HomeAssistant:
         config = json.dumps(config)
         state = days
         attributes = {
+            "Version": get_version(),
             "numPDL": self.usage_point_id,
             "activationDate": self.activation_date,
             "lastUpdate": datetime.now().strftime(self.date_format_detail),
@@ -191,6 +172,7 @@ class HomeAssistant:
         state = convert_kw(state)
 
         attributes = {
+            "Version": get_version(),
             "numPDL": self.usage_point_id,
             "activationDate": self.activation_date,
             "lastUpdate": datetime.now().strftime(self.date_format_detail),
@@ -207,14 +189,15 @@ class HomeAssistant:
 
     def ecowatt(self):
         # Get ecowatt data
-        begin = datetime.combine(datetime.now(), datetime.min.time())
-        ecowatt_data = self.db.get_ecowatt_range(begin, begin)
+        end = datetime.combine(datetime.now(), datetime.min.time())
+        begin = end - timedelta(days=1)
+        ecowatt_data = self.db.get_ecowatt_range(begin, end, "asc")
         if ecowatt_data:
             stats = Stat(self.usage_point_id)
             topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
             config = {
-                "name": f"myelectricaldata_{self.usage_point_id}_ecowatt",
-                "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}.EcoWatt",
+                "name": f"myelectricaldata_{self.usage_point_id}.EcoWatt",
+                "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_ecowatt",
                 "stat_t": f"{topic}/state",
                 "json_attr_t": f"{topic}/attributes",
                 # "unit_of_measurement": "kWh",
@@ -228,20 +211,21 @@ class HomeAssistant:
                 }
             }
             config = json.dumps(config)
-            max_history = 13
-            now = datetime.now().replace(minute=0, second=0)
+            max_history = 11
+            now = datetime.now().replace(minute=0, second=0, microsecond=0)
+            forecast = {}
+            i = 0
             for data in ecowatt_data:
-                i = 0
                 for date, value in json.loads(data.detail.replace("'", '"')).items():
                     date = datetime.strptime(date, self.date_format_detail)
                     if date >= now and i <= max_history:
-                        print(date, value)
-                    i = i + 1
+                        forecast[f'{date.strftime("%H")} h'] = value
+                        i = i + 1
 
             attributes = {
-                "Version": "2.3.0",
-                "LastSensorCall": "21 février 2023 à 13:51:13",
-                "Forecast": [],
+                "Version": get_version(),
+                "LastSensorCall": datetime.now().strftime(self.date_format_detail),
+                "Forecast": forecast,
                 "numPDL": self.usage_point_id,
                 "activationDate": self.activation_date,
                 "lastUpdate": datetime.now().strftime(self.date_format_detail),
@@ -464,6 +448,7 @@ class HomeAssistant:
         config = {
             f"attributes": json.dumps(
                 {
+                    "Version": get_version(),
                     "numPDL": self.usage_point_id,
                     "activationDate": self.activation_date,
                     "lastUpdate": datetime.now().strftime(self.date_format_detail),

@@ -53,7 +53,7 @@ class Job:
             else:
                 self.usage_points = [self.db.get_usage_point(self.usage_point_id)]
 
-            #######################################################################################################
+            # ######################################################################################################
             # FETCH TEMPO DATA
             try:
                 tempo_config = self.config.tempo_config()
@@ -66,7 +66,7 @@ class Job:
                 traceback.print_exc()
                 logging.error([f"Erreur lors de la récupération des données tempo", e])
 
-            #######################################################################################################
+            # ######################################################################################################
             # FETCH ECOWATT DATA
             try:
                 self.get_ecowatt()
@@ -231,7 +231,7 @@ class Job:
                         if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
                             # INFLUXDB.purge_influxdb()
                             if target == "influxdb" or target is None:
-                                title(" Exportation InfluxDB")
+                                title(" Export InfluxDB")
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
                                     ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily()
@@ -246,6 +246,13 @@ class Job:
                                            "production_detail") and self.usage_point_config.production_detail:
                                     ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail(
                                         measurement_direction="production")
+
+                            tempo_config = self.config.tempo_config()
+                            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                                ExportInfluxDB(self.influxdb_config, self.usage_point_config).tempo()
+
+                            ExportInfluxDB(self.influxdb_config, self.usage_point_config).ecowatt()
+
                             export_finish()
                         else:
                             title(" Exportation InfluxDB")

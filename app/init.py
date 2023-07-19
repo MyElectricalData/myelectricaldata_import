@@ -1,12 +1,12 @@
 import locale
 import logging
-import sys
 import time
 import typing as t
-from os import getenv, environ, makedirs, path
+from os import getenv, environ, path
 
 import yaml
 
+from config import LOG_FORMAT, LOG_FORMAT_DATE
 from dependencies import APPLICATION_PATH_DATA, str2bool
 from models.config import Config
 from models.database import Database
@@ -14,28 +14,33 @@ from models.influxdb import InfluxDB
 from models.mqtt import Mqtt
 
 # LOGGING CONFIGURATION
-handlers = []
 if path.exists("/data/config.yaml"):
     with open(f'/data/config.yaml') as file:
-        usage_point_config = yaml.load(file, Loader=yaml.FullLoader)
-        if "log2file" in usage_point_config and usage_point_config["log2file"]:
-            log_path = "/log"
-            if not path.exists(log_path):
-                makedirs(log_path)
-            handlers.append(logging.FileHandler(f"{log_path}/myelectricaldata.log", mode="w"))
-handlers.append(logging.StreamHandler(sys.stdout))
+        config = yaml.load(file, Loader=yaml.FullLoader)
 
 if "DEBUG" in environ and str2bool(getenv("DEBUG")):
     logging_level = logging.DEBUG
 else:
     logging_level = logging.INFO
 
-logging.basicConfig(
-    handlers=handlers,
-    format="%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging_level
-)
+if "log2file" in config and config["log2file"]:
+    logging.basicConfig(
+        filename=f"/log/myelectricaldata.log",
+        format=LOG_FORMAT,
+        datefmt=LOG_FORMAT_DATE,
+        level=logging_level
+    )
+    console = logging.StreamHandler()
+    console.setLevel(logging_level)
+    formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_FORMAT_DATE)
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
+else:
+    logging.basicConfig(
+        format=LOG_FORMAT,
+        datefmt=LOG_FORMAT_DATE,
+        level=logging_level
+    )
 
 
 class EndpointFilter(logging.Filter):

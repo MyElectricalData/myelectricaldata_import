@@ -142,8 +142,36 @@ class InfluxDB:
                     self.retention = bucket.retention_rules[0].every_seconds
                     self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
 
-    # def get(self, date, measurement):
-    #     self.query_api.get(date)
+    def get(self, start, end, measurement):
+        if self.org != f"-":
+            query = f"""
+from(bucket: "{self.bucket}")
+  |> range(start: {start}, stop: {end})
+  |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+"""
+            logging.debug(query)
+            output = self.query_api.query(query)
+        else:
+            # Skip for InfluxDB 1.8
+            output = []
+        return output
+
+    def count(self, start, end, measurement):
+        if self.org != f"-":
+            query = f"""
+from(bucket: "{self.bucket}")
+    |> range(start: {start}, stop: {end})
+    |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+    |> filter(fn: (r) => r["_field"] == "Wh")
+    |> count()
+    |> yield(name: "count")
+"""
+            logging.debug(query)
+            output = self.query_api.query(query)
+        else:
+            # Skip for InfluxDB 1.8
+            output = []
+        return output
 
     def delete(self, date, measurement):
         self.delete_api.delete(date, date, f'_measurement="{measurement}"', self.bucket,

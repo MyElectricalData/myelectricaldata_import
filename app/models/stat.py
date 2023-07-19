@@ -166,7 +166,7 @@ class Stat:
         end = datetime.combine(self.yesterday_date, datetime.max.time())
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_week = self.value_current_week + data.value
-        title(f" {self.value_current_week}")
+        logging.info(f" {self.value_current_week}")
         return {
             "value": self.value_current_week,
             "begin": begin.strftime(self.date_format),
@@ -179,7 +179,7 @@ class Stat:
     #     end = datetime.combine(self.yesterday_date, datetime.max.time())
     #     for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
     #         self.value_current_week = self.value_current_week + data.value
-    #     title(f" {self.value_current_week}")
+    #     logging.info(f" {self.value_current_week}")
     #     return {
     #         "value": self.value_current_week,
     #         "begin": begin.strftime(self.date_format),
@@ -200,7 +200,7 @@ class Stat:
         #     day_idx = day_idx + 1
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_week = self.value_last_week + data.value
-        title(f" {self.value_last_week}")
+        logging.info(f" {self.value_last_week}")
         return {
             "value": self.value_last_week,
             "begin": begin.strftime(self.date_format),
@@ -211,7 +211,7 @@ class Stat:
         logging.info("current_week_evolution")
         if self.value_last_week != 0:
             self.value_current_week_evolution = ((self.value_current_week * 100) / self.value_last_week) - 100
-        title(f" {self.value_current_week_evolution}")
+        logging.info(f" {self.value_current_week_evolution}")
         return self.value_current_week_evolution
 
     def yesterday(self):
@@ -223,7 +223,7 @@ class Stat:
             self.value_yesterday = data[0].value
         else:
             self.value_yesterday = 0
-        title(f" {self.value_yesterday}")
+        logging.info(f" {self.value_yesterday}")
         return {
             "value": self.value_yesterday,
             "begin": begin.strftime(self.date_format),
@@ -239,7 +239,7 @@ class Stat:
             self.value_yesterday_1 = data[0].value
         else:
             self.value_yesterday_1 = 0
-        title(f" {self.value_yesterday_1}")
+        logging.info(f" {self.value_yesterday_1}")
         return {
             "value": self.value_yesterday_1,
             "begin": begin.strftime(self.date_format),
@@ -252,7 +252,7 @@ class Stat:
         self.yesterday_1()
         if self.value_yesterday_1 != 0:
             self.value_yesterday_evolution = ((100 * self.value_yesterday) / self.value_yesterday_1) - 100
-        title(f" {self.value_yesterday_evolution}")
+        logging.info(f" {self.value_yesterday_evolution}")
         return self.value_yesterday_evolution
 
     def current_week_last_year(self):
@@ -272,7 +272,7 @@ class Stat:
         end = datetime.combine(self.yesterday_date - relativedelta(years=1), datetime.max.time())
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_week_last_year = self.value_current_week_last_year + data.value
-        title(f" {self.value_current_week_last_year}")
+        logging.info(f" {self.value_current_week_last_year}")
         return {
             "value": self.value_current_week_last_year,
             "begin": begin.strftime(self.date_format),
