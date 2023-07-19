@@ -11,7 +11,7 @@ services:
       - ./data:/data
       - ./app:/app
     command: tail -f /dev/null
-      
+     
   influxdb:
     image: influxdb:2.0.7
     ports:
