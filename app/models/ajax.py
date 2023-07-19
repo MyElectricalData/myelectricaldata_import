@@ -59,19 +59,19 @@ class Ajax:
 
     def fetch_tempo(self):
         title(f"Récupération des jours Tempo.")
-        return Tempo(self.config, self.db).fetch()
+        return Tempo().fetch()
 
     def get_tempo(self):
         title(f"Affichage des jours Tempo.")
-        return Tempo(self.config, self.db).get()
+        return Tempo().get()
 
     def fetch_ecowatt(self):
         title(f"Récupération des jours Ecowatt.")
-        return Ecowatt(self.config, self.db).fetch()
+        return Ecowatt().fetch()
 
     def get_ecowatt(self):
         title(f"Affichage des jours Ecowatt.")
-        return Ecowatt(self.config, self.db).get()
+        return Ecowatt().get()
 
     def generate_price(self):
         title(f"[{self.usage_point_id}] Calcul des coûts par type d'abonnements.")
