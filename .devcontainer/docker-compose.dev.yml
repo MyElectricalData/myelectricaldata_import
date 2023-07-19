@@ -1,0 +1,62 @@
+version: '3.7'
+services:
+  workspace:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        # 3, 3.10, 3.9, 3.8, 3.7, 3.6, 3-bullseye, 3.10-bullseye, 3.9-bullseye, 3.8-bullseye,
+        # 3.7-bullseye, 3.6-bullseye, 3-buster, 3.10-buster, 3.9-buster, 3.8-buster, 3.7-buster, 3.6-buster
+        VARIANT: 3.10-bullseye
+        LOCAL: fr_FR.UTF-8
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ..:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: sleep infinity
+
+  influxdb:
+    image: influxdb:2.0.7
+    ports:
+      - '8086:8086'
+    volumes:
+      - ../data/influxdb:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://influxdb:8086"]
+      interval: 25s
+      timeout: 3s
+      start_period: 30s
+    environment:
+      TZ: Europe/Paris
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_PASSWORD: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_ORG: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_BUCKET: enedisgateway2mqtt
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: enedisgateway2mqtt
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.12
+    environment:
+      TZ: Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ../data/mosquitto:/data
+      - ../mosquitto:/mosquitto/config/
+    ports:
+      - 1883:1883
+      - 9002:9001
+
+  mqtt_explorer:
+    image: smeagolworms4/mqtt-explorer
+    environment:
+      TZ: Europe/Paris
+      HTTP_PORT: 4000
+    links:
+      - mosquitto
+    volumes:
+      - ../data/:/mqtt-explorer/config
+    ports:
+      - 4000:4000
