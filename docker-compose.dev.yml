@@ -43,7 +43,7 @@ services:
       - ./mosquitto:/mosquitto/config/
     ports:
       - 1883:1883
-      - 9002:9001
+      - 9001:9001
       
 
   mqtt_explorer:
