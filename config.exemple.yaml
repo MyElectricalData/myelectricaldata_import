@@ -1,3 +1,4 @@
+port: 5000
 cycle: 14400  # 4H
 debug: true
 log2file: false
@@ -49,6 +50,10 @@ mqtt:
   client_id: myelectricaldata     # DOIT ETRE UNIQUE SUR LA TOTALITE DES CLIENTS CONNECTE AU SERVEUR MQTT
   retain: true
   qos: 0
+# Configuration SSL optionnel.
+#ssl:
+#  keyfile: "/data/key.pem"
+#  certfile: "/data/cert.pem"
 myelectricaldata:
   "MON_PDL_1":
     enable: 'true'
