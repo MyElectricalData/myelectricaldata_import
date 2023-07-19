@@ -20,7 +20,7 @@ ENV TZ=Europe/Paris
 RUN pip install --upgrade pip pip-tools
 RUN pip-compile -o /app/requirements.txt /app/pyproject.toml
 RUN pip install -r /app/requirements.txt
-RUN #pip install git+https://github.com/influxdata/influxdb-client-python.git@master
+RUN pip install git+https://github.com/influxdata/influxdb-client-python.git@master
 
 RUN mkdir /data
 RUN mkdir /log
