@@ -1,17 +1,19 @@
-import __main__ as app
+import logging
 from datetime import datetime
 
 import pytz
-from models.config import get_version
+
+from dependencies import APPLICATION_PATH, get_version, title
+from models.stat import Stat
 from models.jobs import Job
 from models.query_cache import Cache
 from models.query_daily import Daily
 from models.query_detail import Detail
+from models.query_ecowatt import Ecowatt
 from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
-from models.query_ecowatt import Ecowatt
-from models.stat import Stat
+from init import DB, CONFIG
 
 utc = pytz.UTC
 
@@ -19,8 +21,9 @@ utc = pytz.UTC
 class Ajax:
 
     def __init__(self, usage_point_id=None):
-        self.db = app.DB
-        self.application_path = app.APPLICATION_PATH
+        self.config = CONFIG
+        self.db = DB
+        self.application_path = APPLICATION_PATH
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
@@ -42,48 +45,65 @@ class Ajax:
         self.usage_points_id_list = ""
 
     def gateway_status(self):
-        app.LOG.title(f"[{self.usage_point_id}] Check de l'état de la passerelle.")
+        title(f"[{self.usage_point_id}] Check de l'état de la passerelle.")
         return Status().ping()
 
     def account_status(self):
-        app.LOG.title(f"[{self.usage_point_id}] Check du statut du compte.")
-        return Status(headers=self.headers).status(self.usage_point_id)
+        title(f"[{self.usage_point_id}] Check du statut du compte.")
+        data = Status(headers=self.headers).status(self.usage_point_id)
+        if isinstance(self.usage_point_config.last_call, datetime):
+            data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
+        else:
+            data["last_call"] = self.usage_point_config.last_call
+        return data
 
-    def tempo(self):
-        app.LOG.title(f"Récupération des jours Tempo.")
+    def fetch_tempo(self):
+        title(f"Récupération des jours Tempo.")
+        return Tempo().fetch()
+
+    def get_tempo(self):
+        title(f"Affichage des jours Tempo.")
         return Tempo().get()
 
-    def ecowatt(self):
-        app.LOG.title(f"Récupération des jours Ecowatt.")
+    def fetch_ecowatt(self):
+        title(f"Récupération des jours Ecowatt.")
+        return Ecowatt().fetch()
+
+    def get_ecowatt(self):
+        title(f"Affichage des jours Ecowatt.")
         return Ecowatt().get()
 
-    def price(self):
-        app.LOG.title(f"[{self.usage_point_id}] Calcul des coûts par type d'abonnements.")
-        return Stat(self.usage_point_id, "consumption").price()
+    def generate_price(self):
+        title(f"[{self.usage_point_id}] Calcul des coûts par type d'abonnements.")
+        return Stat(self.usage_point_id, "consumption").generate_price()
+
+    def get_price(self):
+        title(f"[{self.usage_point_id}] Retourne le résultat du comparateur d'abonnements.")
+        return Stat(self.usage_point_id, "consumption").get_price()
 
     def reset_all_data(self):
-        app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation journalière.")
+        title(f"[{self.usage_point_id}] Reset de la consommation journalière.")
         Daily(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
-        app.LOG.title(f"[{self.usage_point_id}] Reset de la puissance maximum journalière.")
+        title(f"[{self.usage_point_id}] Reset de la puissance maximum journalière.")
         Power(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
-        app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée.")
+        title(f"[{self.usage_point_id}] Reset de la consommation détaillée.")
         Detail(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).reset()
-        app.LOG.title(f"[{self.usage_point_id}] Reset de la production journalière.")
+        title(f"[{self.usage_point_id}] Reset de la production journalière.")
         Daily(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
             measure_type="production"
         ).reset()
-        app.LOG.title(f"[{self.usage_point_id}] Reset de la production détaillée.")
+        title(f"[{self.usage_point_id}] Reset de la production détaillée.")
         Detail(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
@@ -95,46 +115,48 @@ class Ajax:
         }
 
     def delete_all_data(self):
-        app.LOG.title(f"[{self.usage_point_id}] Suppression de la consommation journalière.")
+        title(f"[{self.usage_point_id}] Suppression de la consommation journalière.")
         Daily(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).delete()
-        app.LOG.title(f"[{self.usage_point_id}] Suppression de la puissance maximum journalière.")
+        title(f"[{self.usage_point_id}] Suppression de la puissance maximum journalière.")
         Power(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).delete()
-        app.LOG.title(f"[{self.usage_point_id}] Suppression de la consommation détaillée.")
+        title(f"[{self.usage_point_id}] Suppression de la consommation détaillée.")
         Detail(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
         ).delete()
-        app.LOG.title(f"[{self.usage_point_id}] Suppression de la production journalière.")
+        title(f"[{self.usage_point_id}] Suppression de la production journalière.")
         Daily(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
             measure_type="production"
         ).delete()
-        app.LOG.title(f"[{self.usage_point_id}] Suppression de la production détaillée.")
+        title(f"[{self.usage_point_id}] Suppression de la production détaillée.")
         Detail(
             headers=self.headers,
             usage_point_id=self.usage_point_id,
             measure_type="production"
         ).delete()
+        title(f"[{self.usage_point_id}] Suppression des statistiques.")
+        Stat(usage_point_id=self.usage_point_id).delete()
         return {
             "error": "false",
             "notif": "Toutes les données ont été supprimées.",
         }
 
     def reset_gateway(self):
-        app.LOG.title(f"[{self.usage_point_id}] Reset du cache de la passerelle.")
+        title(f"[{self.usage_point_id}] Reset du cache de la passerelle.")
         return Cache(headers=self.headers, usage_point_id=self.usage_point_id).reset()
 
     def reset_data(self, target, date):
         result = {}
         if target == "consumption":
-            app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation journalière du {date}:")
+            title(f"[{self.usage_point_id}] Reset de la consommation journalière du {date}:")
             result["consumption"] = Daily(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id
@@ -142,19 +164,19 @@ class Ajax:
         elif target == "consumption_detail":
             # date = date.replace("---", " ")
             # date = date.replace("--", ":")
-            app.LOG.title(f"[{self.usage_point_id}] Reset de la consommation détaillée du {date}:")
+            title(f"[{self.usage_point_id}] Reset de la consommation détaillée du {date}:")
             result["consumption_detail"] = Detail(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id
             ).reset_daily(date)
         elif target == "consumption_max_power":
-            app.LOG.title(f"[{self.usage_point_id}] Reset de la puissance maximum du {date}:")
+            title(f"[{self.usage_point_id}] Reset de la puissance maximum du {date}:")
             result["consumption_max_power"] = Power(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id
             ).reset(date)
         elif target == "production":
-            app.LOG.title(f"[{self.usage_point_id}] Reset de la production journalière du {date}:")
+            title(f"[{self.usage_point_id}] Reset de la production journalière du {date}:")
             result["production"] = Daily(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id,
@@ -163,7 +185,7 @@ class Ajax:
         elif target == "production_detail":
             # date = date.replace("---", " ")
             # date = date.replace("--", ":")
-            app.LOG.title(f"[{self.usage_point_id}] Reset de la production détaillée du {date}:")
+            title(f"[{self.usage_point_id}] Reset de la production détaillée du {date}:")
             result["production_detail"] = Detail(
                 headers=self.headers,
                 usage_point_id=self.usage_point_id,
@@ -192,14 +214,14 @@ class Ajax:
         result = {}
         if target == "consumption":
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-                app.LOG.title(f"[{self.usage_point_id}] Importation de la consommation journalière du {date}:")
+                title(f"[{self.usage_point_id}] Importation de la consommation journalière du {date}:")
                 result["consumption"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).fetch(date)
         elif target == "consumption_max_power":
             if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption:
-                app.LOG.title(f"[{self.usage_point_id}] Importation de la puissance maximum journalière du {date}:")
+                title(f"[{self.usage_point_id}] Importation de la puissance maximum journalière du {date}:")
                 result["consumption_max_power"] = Power(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -208,14 +230,14 @@ class Ajax:
             # date = date.replace("---", " ")
             # date = date.replace("--", ":")
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Importation de la consommation détaillée du {date}:")
+                title(f"[{self.usage_point_id}] Importation de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                 ).fetch(date)
         elif target == "production":
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-                app.LOG.title(f"[{self.usage_point_id}] Importation de la production journalière du {date}:")
+                title(f"[{self.usage_point_id}] Importation de la production journalière du {date}:")
                 result["production"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -225,7 +247,7 @@ class Ajax:
             # date = date.replace("---", " ")
             # date = date.replace("--", ":")
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Importation de la production détaillée du {date}:")
+                title(f"[{self.usage_point_id}] Importation de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
@@ -279,42 +301,42 @@ class Ajax:
         result = {}
         if target == "consumption":
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la consommation journalière du {date}:")
+                title(f"[{self.usage_point_id}] Blacklist de la consommation journalière du {date}:")
                 result["consumption"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                ).blacklist(date, True)
+                ).blacklist(date, 1)
         elif target == "consumption_max_power":
             if hasattr(self.usage_point_config,
                        "consumption_max_power") and self.usage_point_config.consumption_max_power:
-                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la puissance maximum du {date}:")
+                title(f"[{self.usage_point_id}] Blacklist de la puissance maximum du {date}:")
                 result["consumption_max_power"] = Power(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                ).blacklist(date, True)
+                ).blacklist(date, 1)
         elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la consommation détaillée du {date}:")
+                title(f"[{self.usage_point_id}] Blacklist de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                ).blacklist(date, True)
+                ).blacklist(date, 1)
         elif target == "production":
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la production journalière du {date}:")
+                title(f"[{self.usage_point_id}] Blacklist de la production journalière du {date}:")
                 result["production"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
-                ).blacklist(date, True)
+                ).blacklist(date, 1)
         elif target == "production_detail":
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Blacklist de la production détaillée du {date}:")
+                title(f"[{self.usage_point_id}] Blacklist de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
-                ).blacklist(date, True)
+                ).blacklist(date, 1)
         else:
             return {
                 "error": "true",
@@ -338,42 +360,42 @@ class Ajax:
         result = {}
         if target == "consumption":
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la consommation journalière du {date}:")
+                title(f"[{self.usage_point_id}] Whitelist de la consommation journalière du {date}:")
                 result["consumption"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                ).blacklist(date, False)
+                ).blacklist(date, 0)
         elif target == "consumption_max_power":
             if hasattr(self.usage_point_config,
                        "consumption_max_power") and self.usage_point_config.consumption_max_power:
-                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la puissance maximale journalière du {date}:")
+                title(f"[{self.usage_point_id}] Whitelist de la puissance maximale journalière du {date}:")
                 result["consumption_max_power"] = Power(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                ).blacklist(date, False)
+                ).blacklist(date, 0)
         elif target == "consumption_detail":
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la consommation détaillée du {date}:")
+                title(f"[{self.usage_point_id}] Whitelist de la consommation détaillée du {date}:")
                 result["consumption_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
-                ).blacklist(date, False)
+                ).blacklist(date, 0)
         elif target == "production":
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la production journalière du {date}:")
+                title(f"[{self.usage_point_id}] Whitelist de la production journalière du {date}:")
                 result["production"] = Daily(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
-                ).blacklist(date, False)
+                ).blacklist(date, 0)
         elif target == "production_detail":
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                app.LOG.title(f"[{self.usage_point_id}] Whitelist de la production détaillée du {date}:")
+                title(f"[{self.usage_point_id}] Whitelist de la production détaillée du {date}:")
                 result["production_detail"] = Detail(
                     headers=self.headers,
                     usage_point_id=self.usage_point_id,
                     measure_type="production"
-                ).blacklist(date, False)
+                ).blacklist(date, 0)
         else:
             return {
                 "error": "true",
@@ -409,33 +431,35 @@ class Ajax:
             }
 
     def new_account(self, configs):
+        print(vars(configs))
         self.usage_point_id = configs['usage_point_id']
-        app.LOG.title(f"[{self.usage_point_id}] Ajout d'un nouveau point de livraison:")
+        title(f"[{self.usage_point_id}] Ajout d'un nouveau point de livraison:")
         output = {}
         for key, value in configs.items():
             if key != "usage_point_id":
                 if value is None or value == "None":
                     value = ""
-                app.LOG.log(f"{str(key)} => {str(value)}")
+                logging.info(f"{str(key)} => {str(value)}")
                 output[key] = value
-                app.CONFIG.set_usage_point_config(self.usage_point_id, key, value)
-        app.DB.set_usage_point(self.usage_point_id, output)
+                self.config.set_usage_point_config(self.usage_point_id, key, value)
+        self.db.set_usage_point(self.usage_point_id, output)
         return output
 
     def configuration(self, configs):
-        app.LOG.title(f"[{self.usage_point_id}] Changement de configuration:")
+        title(f"[{self.usage_point_id}] Changement de configuration:")
         output = {}
         for key, value in configs.items():
             if value is None or value == "None":
                 value = ""
-            app.LOG.log(f"{str(key)} => {str(value)}")
+            logging.info(f"{str(key)} => {str(value)}")
             output[key] = value
-            app.CONFIG.set_usage_point_config(self.usage_point_id, key, value)
-        app.DB.set_usage_point(self.usage_point_id, output)
+            self.config.set_usage_point_config(self.usage_point_id, key, value)
+        self.db.set_usage_point(self.usage_point_id, output)
         return output
 
     def datatable(self, measurement_direction, args):
         recordsTotal = 0
+        args = args._query_params
         draw = int(args.get("draw"))
         length = int(args.get("length"))
         search = args.get("search[value]")
@@ -446,8 +470,8 @@ class Ajax:
         all_data = []
         data = []
         if measurement_direction == "consumption":
-            recordsTotal = app.DB.get_daily_count(usage_point_id=self.usage_point_id,
-                                                  measurement_direction="consumption")
+            recordsTotal = self.db.get_daily_count(usage_point_id=self.usage_point_id,
+                                              measurement_direction="consumption")
             col_spec = {
                 0: "date",
                 1: "value",
@@ -457,7 +481,7 @@ class Ajax:
                 5: "import_clean",
                 6: "blacklist",
             }
-            all_data = app.DB.get_daily_datatable(
+            all_data = self.db.get_daily_datatable(
                 usage_point_id=self.usage_point_id,
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
@@ -466,8 +490,8 @@ class Ajax:
             data = self.datatable_daily(all_data, start_index, end_index, measurement_direction)
 
         elif measurement_direction == "consumption_detail":
-            recordsTotal = app.DB.get_detail_count(usage_point_id=self.usage_point_id,
-                                                   measurement_direction="consumption")
+            recordsTotal = self.db.get_detail_count(usage_point_id=self.usage_point_id,
+                                               measurement_direction="consumption")
             col_spec = {
                 0: "date",
                 1: "date",
@@ -478,7 +502,7 @@ class Ajax:
                 6: "import_clean",
                 7: "blacklist",
             }
-            all_data = app.DB.get_detail_datatable(
+            all_data = self.db.get_detail_datatable(
                 usage_point_id=self.usage_point_id,
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
@@ -487,8 +511,8 @@ class Ajax:
             data = self.datatable_detail(all_data, start_index, end_index, measurement_direction)
 
         elif measurement_direction == "production":
-            recordsTotal = app.DB.get_daily_count(usage_point_id=self.usage_point_id,
-                                                  measurement_direction="production")
+            recordsTotal = self.db.get_daily_count(usage_point_id=self.usage_point_id,
+                                              measurement_direction="production")
             col_spec = {
                 0: "date",
                 1: "value",
@@ -498,7 +522,7 @@ class Ajax:
                 5: "import_clean",
                 6: "blacklist",
             }
-            all_data = app.DB.get_daily_datatable(
+            all_data = self.db.get_daily_datatable(
                 usage_point_id=self.usage_point_id,
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
@@ -506,8 +530,8 @@ class Ajax:
                 measurement_direction="production")
             data = self.datatable_daily(all_data, start_index, end_index, measurement_direction)
         elif measurement_direction == "production_detail":
-            recordsTotal = app.DB.get_detail_count(usage_point_id=self.usage_point_id,
-                                                   measurement_direction="production")
+            recordsTotal = self.db.get_detail_count(usage_point_id=self.usage_point_id,
+                                               measurement_direction="production")
             col_spec = {
                 0: "date",
                 1: "date",
@@ -518,7 +542,7 @@ class Ajax:
                 6: "import_clean",
                 7: "blacklist",
             }
-            all_data = app.DB.get_detail_datatable(
+            all_data = self.db.get_detail_datatable(
                 usage_point_id=self.usage_point_id,
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
@@ -526,7 +550,7 @@ class Ajax:
                 measurement_direction="production")
             data = self.datatable_detail(all_data, start_index, end_index, measurement_direction)
         elif measurement_direction == "consumption_max_power":
-            recordsTotal = app.DB.get_daily_max_power_count(usage_point_id=self.usage_point_id)
+            recordsTotal = self.db.get_daily_max_power_count(usage_point_id=self.usage_point_id)
             col_spec = {
                 0: "date",
                 1: "date",
@@ -538,7 +562,7 @@ class Ajax:
                 7: "import_clean",
                 8: "blacklist",
             }
-            all_data = app.DB.get_daily_max_power_datatable(
+            all_data = self.db.get_daily_max_power_datatable(
                 usage_point_id=self.usage_point_id,
                 order_column=col_spec[order_column],
                 order_dir=order_dir,

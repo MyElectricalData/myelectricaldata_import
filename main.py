@@ -2,8 +2,6 @@ import sys
 
 from dependencies import *
 
-from app.models.log import Log
-
 del sys.argv[0]
 PARAMS = {}
 for arg in sys.argv:
@@ -11,8 +9,6 @@ for arg in sys.argv:
 
 ACTION = PARAMS["action"]
 APPLICATION_PATH = "app"
-
-LOG = Log()
 
 production = False
 test = False

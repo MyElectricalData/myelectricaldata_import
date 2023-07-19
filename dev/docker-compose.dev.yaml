@@ -10,8 +10,10 @@ services:
     links:
       - influxdb
       - mosquitto
+      - postgres
     volumes:
       - ./../data/cache:/data
+      - ./../data/log:/log
       - ./../app:/app
       
   influxdb:
@@ -57,6 +59,35 @@ services:
       - ./../data/:/mqtt-explorer/config
     ports:
       - 4000:4000
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DATABASE
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: myelectricaldata
+      POSTGRES_PASSWORD: myelectricaldata
+      POSTGRES_DB: myelectricaldata
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./../data/postgresql/data:/var/lib/postgresql/data
+      - ./../init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  mysql:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_USER: myelectricaldata
+      MARIADB_PASSWORD: myelectricaldata
+      MARIADB_ROOT_PASSWORD: myelectricaldata
+      MARIADB_DATABASE : myelectricaldata
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./../data/mysql/data:/var/lib/mysql
 
 volumes:
   mydata:

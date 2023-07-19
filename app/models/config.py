@@ -1,23 +1,16 @@
+import logging
 import os
 import re
 
 import yaml
-
-import __main__ as app
-
-
-def get_version():
-    f = open("/app/VERSION", "r")
-    version = f.read()
-    f.close()
-    return version.strip()
+from dependencies import title, separator
 
 
 class Config:
 
-    def __init__(self, log, path="/data"):
-        self.log = log
+    def __init__(self, path="/data"):
         self.path = path
+        self.db = None
         self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
         self.usage_point_config = {}
@@ -122,6 +115,9 @@ class Config:
             }
         }
 
+    def set_db(self, db):
+        self.db = db
+
     def load(self):
         config_file = f'{self.path_file}'
         if os.path.exists(config_file):
@@ -146,8 +142,8 @@ class Config:
             }
 
     def check(self):
-        self.log.separator()
-        self.log.log(f"Check {self.file} :")
+        separator()
+        logging.info(f"Check {self.file} :")
         lost_params = []
         # CHECK HOME ASSISTANT CONFIGURATION
         config_name = "home_assistant"
@@ -193,36 +189,36 @@ class Config:
             msg.append("")
             msg.append("You can get list of parameters here :")
             msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
-            self.log.critical(msg)
+            logging.critical(msg)
         else:
-            self.log.log(" => Config valid")
+            title(" Config valid")
 
         return lost_params
 
     def display(self):
-        self.log.log("Display configuration :")
+        logging.info("Display configuration :")
         for key, value in self.usage_point_config.items():
             if type(value) is dict:
-                self.log.log(f"  {key}:")
+                logging.info(f"  {key}:")
                 for dic_key, dic_value in value.items():
                     if type(dic_value) is dict:
-                        self.log.log(f"    {dic_key}:")
+                        logging.info(f"    {dic_key}:")
                         for dic1_key, dic1_value in dic_value.items():
                             if dic1_key == "password" or dic1_key == "token":
                                 dic1_value = "** hidden **"
                             if dic1_value is None or dic1_value == "None":
                                 dic1_value = "''"
-                            self.log.log(f"      {dic1_key}: {dic1_value}")
+                            logging.info(f"      {dic1_key}: {dic1_value}")
                     else:
                         if dic_key == "password" or dic_key == "token":
                             dic_value = "** hidden **"
                         if dic_value is None or dic_value == "None":
                             dic_value = "''"
-                        self.log.log(f"    {dic_key}: {dic_value}")
+                        logging.info(f"    {dic_key}: {dic_value}")
             else:
                 if key == "password" or key == "token":
                     value = "** hidden **"
-                self.log.log(f"  {key}: {value}")
+                logging.info(f"  {key}: {value}")
 
     def get(self, path=None):
         if path:
@@ -234,7 +230,7 @@ class Config:
             return self.usage_point_config
 
     def set(self, path, value):
-        self.log.log(f" => Switch {path} to {value}")
+        title(f" Switch {path} to {value}")
         with open(f'{self.path_file}', 'r+') as f:
             text = f.read()
             text = re.sub(fr'(?<={path}: ).*', str(value).lower(), text)
@@ -242,11 +238,17 @@ class Config:
             f.write(text)
             f.truncate()
         self.usage_point_config = yaml.load(text, Loader=yaml.FullLoader)
-        app.DB.set_config(path, value)
+        self.db.set_config(path, value)
 
     def tempo_config(self):
         if "tempo" in self.usage_point_config:
             return self.usage_point_config["tempo"]
+        else:
+            return False
+
+    def storage_config(self):
+        if "storage_uri" in self.usage_point_config:
+            return self.usage_point_config["storage_uri"]
         else:
             return False
 
@@ -269,7 +271,8 @@ class Config:
             return False
 
     def usage_point_id_config(self, usage_point_id):
-        if "myelectricaldata" in self.usage_point_config and usage_point_id in self.usage_point_config["myelectricaldata"]:
+        if "myelectricaldata" in self.usage_point_config and usage_point_id in self.usage_point_config[
+            "myelectricaldata"]:
             return self.usage_point_config["myelectricaldata"][usage_point_id]
         else:
             return False

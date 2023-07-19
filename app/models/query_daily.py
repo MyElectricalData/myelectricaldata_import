@@ -1,14 +1,11 @@
-import __main__ as app
 import json
-
+import logging
 from datetime import datetime, timedelta
-
+from dependencies import title
 from dateutil.relativedelta import relativedelta
-
 from config import DAILY_MAX_DAYS, URL
-# from dependencies import *
 from models.query import Query
-
+from init import CONFIG, DB
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
@@ -18,7 +15,8 @@ def daterange(start_date, end_date):
 class Daily:
 
     def __init__(self, headers, usage_point_id, measure_type="consumption"):
-        self.db = app.DB
+        self.config = CONFIG
+        self.db = DB
         self.url = URL
         self.max_daily = 1095
         self.date_format = '%Y-%m-%d'
@@ -60,11 +58,10 @@ class Daily:
             if hasattr(self.usage_point_config, "production_price"):
                 self.base_price = self.usage_point_config.production_price
 
-
     def run(self, begin, end):
         begin_str = begin.strftime(self.date_format)
         end_str = end.strftime(self.date_format)
-        app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
+        logging.info(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"daily_{self.measure_type}/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
         # if begin < now() - timedelta(days=7):
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
@@ -72,13 +69,13 @@ class Daily:
         try:
             current_data = self.db.get_daily(self.usage_point_id, begin, end, self.measure_type)
             if not current_data["missing_data"]:
-                app.LOG.log(" => Toutes les données sont déjà en cache.")
+                title(" Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
                     output.append({'date': date, "value": data["value"]})
                 return output
             else:
-                app.LOG.log(f" => Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
+                title(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 blacklist = 0
                 if hasattr(data, "status_code"):
@@ -119,8 +116,8 @@ class Daily:
                         "status_code": data.status_code
                     }
         except Exception as e:
-            app.LOG.exception(e)
-            app.LOG.error(e)
+            logging.exception(e)
+            logging.error(e)
 
     def get(self):
         end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
@@ -155,13 +152,13 @@ class Daily:
                     f' => {response["description"]}',
                     f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
                 ]
-                app.LOG.error(error)
+                logging.error(error)
 
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
                 error = ["Arrêt de la récupération des données suite à une erreur.",
-                         f"Prochain lancement à {datetime.now() + timedelta(seconds=app.CONFIG.get('cycle'))}"]
-                app.LOG.warning(error)
+                         f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}"]
+                logging.warning(error)
         return result
 
     def reset(self, date=None):

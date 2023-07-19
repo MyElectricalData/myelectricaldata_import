@@ -1,13 +1,11 @@
-import __main__ as app
-
 from config import URL
 from jinja2 import Template
-
+from dependencies import APPLICATION_PATH
 
 class SideMenu:
 
     def __init__(self):
-        self.application_path = app.APPLICATION_PATH
+        self.application_path = APPLICATION_PATH
 
     def html(self):
         with open(f'{self.application_path}/templates/html/sidemenu.html') as file_:

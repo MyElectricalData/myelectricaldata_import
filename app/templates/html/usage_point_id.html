@@ -8,28 +8,37 @@
     </style>
     <script>
         $(document).ready(function () {
+            var finish = true
+
             function retry() {
                 setTimeout(function () {
                     ajaxCall()
                 }, 5000);
             }
 
-            function ajaxCall() {
+            function reload() {
+                if(finish == false) {
+                    location.reload();
+                    finish = true
+                }
+            }
 
+            function ajaxCall() {
                 $.ajax({
-                    url: "/lock_status",
+                    url: "/import_status",
                     type: 'GET',
                     {#tryCount: 5,#}
                     {#retryLimit: 5,#}
                     success: function (data, textStatus, jqXHR) {
                         console.log("MyElectricalData lock_status ok")
                         const html = jqXHR.responseText
-                        if (html === "True") {
+                        if (html === "true") {
                             $.LoadingOverlay("show", loading_import);
+                            finish = false
                             retry()
                         } else {
                             $.LoadingOverlay("hide", loading_import);
-                            retry()
+                            reload()
                         }
                     },
                     error: function (xhr, textStatus) {
@@ -39,7 +48,9 @@
                 });
 
             }
-
+            setTimeout(function () {
+                    ajaxCall()
+                }, 1000);
             retry()
             {{ javascript }}
         });

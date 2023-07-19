@@ -21,7 +21,14 @@ dependencies = [
     "SQLAlchemy",
     "alembic",
     "waitress",
-    "rauth"
+    "rauth",
+    "psycopg2-binary",
+    "PyMySQL",
+    "fastapi",
+    "uvicorn",
+    "fastapi-utils",
+    "python-multipart",
+    "influxdb-client",
 ]
 
 [project.optional-dependencies]

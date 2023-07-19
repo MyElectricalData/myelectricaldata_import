@@ -1,10 +1,9 @@
-import __main__ as app
-
+from dependencies import APPLICATION_PATH
 
 class Menu:
 
     def __init__(self, items):
-        self.application_path = app.APPLICATION_PATH
+        self.application_path = APPLICATION_PATH
         self.items = items
 
     def html(self):
@@ -32,7 +31,13 @@ class Menu:
                 javascript += f'''
 $("#{id}").click(function () {{
     $("#bottom_menu").removeClass("active")
+'''
+                if "loading_page" in items:
+                    javascript += f'''
     $.LoadingOverlay("show", {items['loading_page']});
+'''
+
+                javascript += f'''
     $.ajax({{
         type: '{items["ajax"]["method"]}',
         url: '{items["ajax"]["url"]}'

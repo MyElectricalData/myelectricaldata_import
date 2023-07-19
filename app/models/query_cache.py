@@ -1,13 +1,10 @@
-import datetime
 import json
+import logging
 
-import __main__ as app
+from dependencies import get_version
+from models.query import Query
 
 from config import URL
-from dependencies import *
-from models.config import get_version
-from models.log import Log
-from models.query import Query
 
 
 class Cache:
@@ -25,7 +22,7 @@ class Cache:
             try:
                 status = json.loads(response.text)
                 for key, value in status.items():
-                    app.LOG.log(f"{key}: {value}")
+                    logging.info(f"{key}: {value}")
                 status["version"] = get_version()
                 return status
             except LookupError:

@@ -13,3 +13,4 @@
 /app/templates/__pycache__/
 /app/templates/models/__pycache__/
 /app/models/__pycache__/
+/app/routers/__pycache__/

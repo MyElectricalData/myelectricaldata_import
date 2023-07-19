@@ -1,19 +1,18 @@
 import datetime
-
-import __main__ as app
+import logging
 
 import influxdb_client
 from dateutil.tz import tzlocal
+from dependencies import title, separator, separator_warning
 from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
 from influxdb_client.client.write_api import ASYNCHRONOUS, SYNCHRONOUS
 
-from dependencies import *
-
 
 class InfluxDB:
 
-    def __init__(self, hostname, port, token, org="myelectricaldata.fr", bucket="myelectricaldata", method="SYNCHRONOUS",
+    def __init__(self, hostname, port, token, org="myelectricaldata.fr", bucket="myelectricaldata",
+                 method="SYNCHRONOUS",
                  write_options=None):
         if write_options is None:
             write_options = {}
@@ -67,19 +66,14 @@ class InfluxDB:
         self.get_list_retention_policies()
         if self.retention != 0:
             day = int(self.retention / 60 / 60 / 24)
-            app.LOG.warning([
-                f"<!> ATTENTION, InfluxDB est configuré avec une durée de rétention de {day} jours.",
-                f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci."
-            ])
+            logging.warning(f"<!> ATTENTION, InfluxDB est configuré avec une durée de rétention de {day} jours.")
+            logging.warning(f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci.")
         else:
-            app.LOG.log([
-                f" => Aucune durée de rétention de données détectée."
-            ])
-
+            logging.warning(" => Aucune durée de rétention de données détectée.")
 
     def connect(self):
-        app.LOG.separator()
-        app.LOG.log(f"Connect to InfluxDB {self.hostname}:{self.port}")
+        separator()
+        logging.info(f"Connect to InfluxDB {self.hostname}:{self.port}")
         date_utils.date_helper = DateHelper(timezone=tzlocal())
         self.influxdb = influxdb_client.InfluxDBClient(
             url=f"http://{self.hostname}:{self.port}",
@@ -89,18 +83,19 @@ class InfluxDB:
         )
         health = self.influxdb.health()
         if health.status == "pass":
-            app.LOG.log(" => Connection success")
+            title(" Connection success")
         else:
-            app.LOG.critical([
+            logging.critical([
                 "Impossible de se connecter à la base influxdb.",
                 "",
                 "Vous pouvez récupérer un exemple ici :",
                 "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
             ])
 
-        app.LOG.log(f" => Méthode d'importation : {self.method.upper()}")
+        title(f" Méthode d'importation : {self.method.upper()}")
         if self.method.upper() == "ASYNCHRONOUS":
-            app.LOG.warning(" <!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")
+            logging.warning(
+                " <!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")
             self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
         elif self.method.upper() == "SYNCHRONOUS":
             self.write_api = self.influxdb.write_api(write_options=SYNCHRONOUS)
@@ -119,8 +114,8 @@ class InfluxDB:
         self.get_list_retention_policies()
 
     def purge_influxdb(self):
-        app.LOG.separator_warning()
-        app.LOG.warning(f"Wipe influxdb database {self.hostname}:{self.port}")
+        separator_warning()
+        logging.warning(f"Wipe influxdb database {self.hostname}:{self.port}")
         start = "1970-01-01T00:00:00Z"
         stop = datetime.datetime.utcnow()
         measurement = [
@@ -132,11 +127,11 @@ class InfluxDB:
         for mesure in measurement:
             self.delete_api.delete(start, stop, f'_measurement="{mesure}"', self.bucket,
                                    org=self.org)
-        # app.CONFIG.set("wipe_influxdb", False)
-        app.LOG.warning(f" => Data reset")
+        # CONFIG.set("wipe_influxdb", False)
+        logging.warning(f" => Data reset")
 
     def get_list_retention_policies(self):
-        if self.org == f"-": # InfluxDB 1.8
+        if self.org == f"-":  # InfluxDB 1.8
             self.retention = 0
             self.max_retention = 0
             return
@@ -147,8 +142,36 @@ class InfluxDB:
                     self.retention = bucket.retention_rules[0].every_seconds
                     self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
 
-    # def get(self, date, measurement):
-    #     self.query_api.get(date)
+    def get(self, start, end, measurement):
+        if self.org != f"-":
+            query = f"""
+from(bucket: "{self.bucket}")
+  |> range(start: {start}, stop: {end})
+  |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+"""
+            logging.debug(query)
+            output = self.query_api.query(query)
+        else:
+            # Skip for InfluxDB 1.8
+            output = []
+        return output
+
+    def count(self, start, end, measurement):
+        if self.org != f"-":
+            query = f"""
+from(bucket: "{self.bucket}")
+    |> range(start: {start}, stop: {end})
+    |> filter(fn: (r) => r["_measurement"] == "{measurement}")
+    |> filter(fn: (r) => r["_field"] == "Wh")
+    |> count()
+    |> yield(name: "count")
+"""
+            logging.debug(query)
+            output = self.query_api.query(query)
+        else:
+            # Skip for InfluxDB 1.8
+            output = []
+        return output
 
     def delete(self, date, measurement):
         self.delete_api.delete(date, date, f'_measurement="{measurement}"', self.bucket,

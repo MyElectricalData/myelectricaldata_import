@@ -629,6 +629,7 @@ table td {
     color: var(--text-title);
     text-align: center;
     font-weight: bolder;
+    width: 160px;
 }
 
 .stat_value_warning {
@@ -721,4 +722,22 @@ table td {
     border: 1px solid var(--sde-bg-color);
     text-align: center;
     border-collapse: collapse;
+}
+
+.loadingoverlay {
+    height: 40px !important;
+    border-radius: 0px 0px 10px 10px !important;
+    /*top: unset !important;*/
+    left: 38% !important;
+    /*bottom: 0px !important;*/
+    font-size: 0.5em !important;
+    width: 30% !important;
+    border-bottom: 3px solid var(--logo);
+    border-right: 3px solid var(--logo);
+    border-left: 3px solid var(--logo);
+    /*padding-top: 6px !important;*/
+}
+
+.loadingoverlay_text {
+    animation: blinker 1s linear infinite !important;
 }

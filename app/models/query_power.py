@@ -1,10 +1,11 @@
-import __main__ as app
 import json
+import logging
 from datetime import datetime, timedelta
+from dependencies import title
 
 from config import DAILY_MAX_DAYS, URL
 from models.query import Query
-
+from init import DB, CONFIG
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
@@ -14,7 +15,8 @@ def daterange(start_date, end_date):
 class Power:
 
     def __init__(self, headers, usage_point_id):
-        self.db = app.DB
+        self.config = CONFIG
+        self.db = DB
         self.url = URL
         self.max_daily = 1095
         self.date_format = '%Y-%m-%d'
@@ -43,20 +45,20 @@ class Power:
     def run(self, begin, end):
         begin_str = begin.strftime(self.date_format)
         end_str = end.strftime(self.date_format)
-        app.LOG.log(f"Récupération des données : {begin_str} => {end_str}")
+        logging.info(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"daily_consumption_max_power/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
             endpoint += "/cache"
         try:
             current_data = self.db.get_daily_power(self.usage_point_id, begin, end)
             if not current_data["missing_data"]:
-                app.LOG.log(" => Toutes les données sont déjà en cache.")
+                title(" Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
                     output.append({'date': date, "value": data["value"]})
                 return output
             else:
-                app.LOG.log(f" => Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
+                title(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 blacklist = 0
                 if hasattr(data, "status_code"):
@@ -102,8 +104,8 @@ class Power:
                         "status_code": data.status_code
                     }
         except Exception as e:
-            app.LOG.exception(e)
-            app.LOG.error(e)
+            logging.exception(e)
+            logging.error(e)
 
     def get(self):
         end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
@@ -138,13 +140,13 @@ class Power:
                     f' => {response["description"]}',
                     f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
                 ]
-                app.LOG.error(error)
+                logging.error(error)
 
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
                 error = ["Arrêt de la récupération des données suite à une erreur.",
-                         f"Prochain lancement à {datetime.now() + timedelta(seconds=app.CONFIG.get('cycle'))}"]
-                app.LOG.warning(error)
+                         f"Prochain lancement à {datetime.now() + timedelta(seconds=CONFIG.get('cycle'))}"]
+                logging.warning(error)
         return result
 
     def reset(self, date=None):

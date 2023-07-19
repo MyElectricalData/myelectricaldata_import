@@ -1,9 +1,9 @@
-import __main__ as app
+import logging
 import time
 import traceback
 
-from dependencies import str2bool
-from models.config import get_version
+from dependencies import str2bool, title, finish, get_version, log_usage_point_id
+from init import DB, CONFIG
 from models.export_home_assistant import HomeAssistant
 from models.export_influxdb import ExportInfluxDB
 from models.export_mqtt import ExportMqtt
@@ -11,20 +11,21 @@ from models.query_address import Address
 from models.query_contract import Contract
 from models.query_daily import Daily
 from models.query_detail import Detail
+from models.query_ecowatt import Ecowatt
 from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
-from models.query_ecowatt import Ecowatt
 from models.stat import Stat
 
 
 def export_finish():
-    app.LOG.title("Export terminé")
+    title(" Export terminé")
 
 
 class Job:
     def __init__(self, usage_point_id=None):
-        self.config = app.CONFIG
+        self.config = CONFIG
+        self.db = DB
         self.usage_point_id = usage_point_id
         self.usage_point_config = {}
         self.mqtt_config = self.config.mqtt_config()
@@ -33,157 +34,166 @@ class Job:
         self.wait_job_start = 10
 
     def job_import_data(self, wait=True, target=None):
-        if app.DB.lock_status():
+        if self.db.lock_status():
             return {
                 "status": False,
                 "notif": "Importation déjà en cours..."
             }
         else:
-            app.DB.lock()
+            self.db.lock()
             if wait:
-                app.LOG.title("Démarrage du job d'importation dans 10s")
+                title(" Démarrage du job d'importation dans 10s")
                 i = self.wait_job_start
                 while i > 0:
-                    app.LOG.log(f" => {i}s")
+                    title(f" {i}s")
                     time.sleep(1)
                     i = i - 1
             if self.usage_point_id is None:
-                self.usage_points = app.DB.get_usage_point_all()
+                self.usage_points = self.db.get_usage_point_all()
             else:
-                self.usage_points = [app.DB.get_usage_point(self.usage_point_id)]
+                self.usage_points = [self.db.get_usage_point(self.usage_point_id)]
 
-            #######################################################################################################
+            # ######################################################################################################
             # FETCH TEMPO DATA
             try:
                 tempo_config = self.config.tempo_config()
                 if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                     self.get_tempo()
                 else:
-                    app.LOG.title(
+                    title(
                         [f"Import Tempo désactivé"])
             except Exception as e:
                 traceback.print_exc()
-                app.LOG.error([f"Erreur lors de la récupération des données tempo", e])
+                logging.error([f"Erreur lors de la récupération des données tempo", e])
 
-            #######################################################################################################
+            # ######################################################################################################
             # FETCH ECOWATT DATA
             try:
                 self.get_ecowatt()
             except Exception as e:
                 traceback.print_exc()
-                app.LOG.error([f"Erreur lors de la récupération des données EcoWatt", e])
+                logging.error([f"Erreur lors de la récupération des données EcoWatt", e])
 
             for self.usage_point_config in self.usage_points:
                 self.usage_point_id = self.usage_point_config.usage_point_id
-                app.LOG.log_usage_point_id(self.usage_point_id)
+                log_usage_point_id(self.usage_point_id)
+                self.db.last_call_update(self.usage_point_id)
                 if self.usage_point_config.enable:
                     try:
                         if target == "gateway_status" or target is None:
                             self.get_gateway_status()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération des informations de la passerelle", e])
+                        logging.error([f"Erreur lors de la récupération des informations de la passerelle", e])
                     try:
                         if target == "account_status" or target is None:
                             self.get_account_status()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération du status de votre compte", e])
+                        logging.error([f"Erreur lors de la récupération du status de votre compte", e])
                     try:
                         if target == "contract" or target is None:
                             self.get_contract()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération des informations du contract", e])
+                        logging.error([f"Erreur lors de la récupération des informations du contract", e])
                     try:
                         if target == "addresses" or target is None:
                             self.get_addresses()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération de vos coordonnées", e])
+                        logging.error([f"Erreur lors de la récupération de vos coordonnées", e])
                     try:
                         if target == "consumption" or target is None:
                             self.get_consumption()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération de votre consommation journalière", e])
+                        logging.error([f"Erreur lors de la récupération de votre consommation journalière", e])
                     try:
                         if target == "consumption_detail" or target is None:
                             self.get_consumption_detail()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération de votre consommation détaillée", e])
+                        logging.error([f"Erreur lors de la récupération de votre consommation détaillée", e])
                     try:
                         if target == "production" or target is None:
                             self.get_production()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération de votre production journalière", e])
+                        logging.error([f"Erreur lors de la récupération de votre production journalière", e])
                     try:
                         if target == "production_detail" or target is None:
                             self.get_production_detail()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération de votre production détaillée", e])
+                        logging.error([f"Erreur lors de la récupération de votre production détaillée", e])
                     try:
                         if target == "consumption_max_power" or target is None:
                             self.get_consumption_max_power()
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la récupération de votre puissance maximum journalière", e])
+                        logging.error([f"Erreur lors de la récupération de votre puissance maximum journalière", e])
                     try:
                         if target == "price" or target is None:
                             self.stat_price(self.usage_point_id)
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la génération des statistique tarifaire de consommation", e])
+                        logging.error([f"Erreur lors de la génération des statistique tarifaire de consommation", e])
                     try:
                         if target == "price" and target is None:
                             self.stat_price(self.usage_point_id, "production")
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de la génération des statistique tarifaire de production", e])
+                        logging.error([f"Erreur lors de la génération des statistique tarifaire de production", e])
                     try:
                         # #######################################################################################################
                         # # MQTT
+                        title(" Exportation MQTT")
                         if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
                             if target == "mqtt" or target is None:
-                                app.LOG.title("Exportation MQTT")
                                 ExportMqtt(self.usage_point_id).status()
                                 ExportMqtt(self.usage_point_id).contract()
                                 ExportMqtt(self.usage_point_id).address()
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
-                                    ExportMqtt(self.usage_point_id, "consumption").daily_annual(
+                                    ExportMqtt(self.usage_point_id,
+                                               "consumption").daily_annual(
                                         self.usage_point_config.consumption_price_base
                                     )
-                                    ExportMqtt(self.usage_point_id, "consumption").daily_linear(
+                                    ExportMqtt(self.usage_point_id,
+                                               "consumption").daily_linear(
                                         self.usage_point_config.consumption_price_base
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production") and self.usage_point_config.production:
-                                    ExportMqtt(self.usage_point_id, "production").daily_annual(
+                                    ExportMqtt(self.usage_point_id,
+                                               "production").daily_annual(
                                         self.usage_point_config.production_price
                                     )
-                                    ExportMqtt(self.usage_point_id, "production").daily_linear(
+                                    ExportMqtt(self.usage_point_id,
+                                               "production").daily_linear(
                                         self.usage_point_config.production_price
                                     )
                                 if hasattr(self.usage_point_config,
                                            "consumption_detail") and self.usage_point_config.consumption_detail:
-                                    ExportMqtt(self.usage_point_id, "consumption").detail_annual(
+                                    ExportMqtt(self.usage_point_id,
+                                               "consumption").detail_annual(
                                         self.usage_point_config.consumption_price_hp,
                                         self.usage_point_config.consumption_price_hc
                                     )
-                                    ExportMqtt(self.usage_point_id, "consumption").detail_linear(
+                                    ExportMqtt(self.usage_point_id,
+                                               "consumption").detail_linear(
                                         self.usage_point_config.consumption_price_hp,
                                         self.usage_point_config.consumption_price_hc
                                     )
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
-                                    ExportMqtt(self.usage_point_id, "production").detail_annual(
+                                    ExportMqtt(self.usage_point_id,
+                                               "production").detail_annual(
                                         self.usage_point_config.production_price
                                     )
-                                    ExportMqtt(self.usage_point_id, "production").detail_linear(
+                                    ExportMqtt(self.usage_point_id,
+                                               "production").detail_linear(
                                         self.usage_point_config.production_price
                                     )
                                 if hasattr(self.usage_point_config,
@@ -191,11 +201,10 @@ class Job:
                                     ExportMqtt(self.usage_point_id).max_power()
                             export_finish()
                         else:
-                            app.LOG.title("Exportation MQTT")
-                            app.LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+                            title(" Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de l'exportation des données dans MQTT", e])
+                        logging.error([f"Erreur lors de l'exportation des données dans MQTT", e])
 
                     #######################################################################################################
                     # HOME ASSISTANT
@@ -203,51 +212,60 @@ class Job:
                         if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
                             if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
                                 if target == "home_assistant" or target is None:
-                                    app.LOG.title("Exportation Home Assistant")
+                                    title(" Exportation Home Assistant")
                                     HomeAssistant(self.usage_point_id).export()
                                     export_finish()
                             else:
-                                app.LOG.critical("L'export Home Assistant est dépendant de MQTT, "
+                                logging.critical("L'export Home Assistant est dépendant de MQTT, "
                                                  "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
                         else:
-                            app.LOG.title("Exportation Home Assistant")
-                            app.LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+                            title(" Exportation Home Assistant")
+                            title(" Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de l'exportation des données dans Home Assistant", e])
+                        logging.error([f"Erreur lors de l'exportation des données dans Home Assistant", e])
 
                     #######################################################################################################
                     # INFLUXDB
                     try:
                         if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
-                            # app.INFLUXDB.purge_influxdb()
+                            # INFLUXDB.purge_influxdb()
                             if target == "influxdb" or target is None:
-                                app.LOG.title("Exportation InfluxDB")
+                                title(" Export InfluxDB")
                                 if hasattr(self.usage_point_config,
                                            "consumption") and self.usage_point_config.consumption:
                                     ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily()
                                 if hasattr(self.usage_point_config,
                                            "production") and self.usage_point_config.production:
-                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily(measurement_direction="production")
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily(
+                                        measurement_direction="production")
                                 if hasattr(self.usage_point_config,
                                            "consumption_detail") and self.usage_point_config.consumption_detail:
                                     ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail()
                                 if hasattr(self.usage_point_config,
                                            "production_detail") and self.usage_point_config.production_detail:
-                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail(measurement_direction="production")
+                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail(
+                                        measurement_direction="production")
+
+                            tempo_config = self.config.tempo_config()
+                            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                                ExportInfluxDB(self.influxdb_config, self.usage_point_config).tempo()
+
+                            ExportInfluxDB(self.influxdb_config, self.usage_point_config).ecowatt()
+
                             export_finish()
                         else:
-                            app.LOG.title("Exportation InfluxDB")
-                            app.LOG.log(" => Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+                            title(" Exportation InfluxDB")
+                            title(" Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
                     except Exception as e:
                         traceback.print_exc()
-                        app.LOG.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
+                        logging.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
                 else:
-                    app.LOG.log(
+                    logging.info(
                         f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
-            app.LOG.finish()
+            finish()
             self.usage_point_id = None
-            app.DB.unlock()
+            self.db.unlock()
             return {
                 "status": True,
                 "notif": "Importation terminée"
@@ -262,45 +280,44 @@ class Job:
         }
 
     def get_gateway_status(self):
-        app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Statut de la passerelle :")
+        title(f"[{self.usage_point_config.usage_point_id}] Statut de la passerelle :")
         result = Status(
             headers=self.header_generate(),
         ).ping()
         return result
 
     def get_account_status(self):
-        app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Check account status :")
+        title(f"[{self.usage_point_config.usage_point_id}] Check account status :")
         result = Status(
             headers=self.header_generate(),
         ).status(usage_point_id=self.usage_point_config.usage_point_id)
         return result
 
     def get_contract(self):
-        app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération du contrat :")
+        title(f"[{self.usage_point_config.usage_point_id}] Récupération du contrat :")
         result = Contract(
             headers=self.header_generate(),
             usage_point_id=self.usage_point_config.usage_point_id,
             config=self.usage_point_config
         ).get()
         if "error" in result and result["error"]:
-            app.LOG.error(result["description"])
+            logging.error(result["description"])
         return result
 
     def get_addresses(self):
-        app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération des coordonnées :")
+        title(f"[{self.usage_point_config.usage_point_id}] Récupération des coordonnées :")
         result = Address(
             headers=self.header_generate(),
             usage_point_id=self.usage_point_config.usage_point_id,
-            config=self.usage_point_config
         ).get()
         if "error" in result and result["error"]:
-            app.LOG.error(result["description"])
+            logging.error(result["description"])
         return result
 
     def get_consumption(self):
         result = {}
         if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-            app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation journalière :")
+            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation journalière :")
             result = Daily(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id
@@ -310,7 +327,7 @@ class Job:
     def get_consumption_detail(self):
         result = {}
         if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-            app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation détaillée :")
+            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation détaillée :")
             result = Detail(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
@@ -320,7 +337,7 @@ class Job:
     def get_production(self):
         result = {}
         if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-            app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production journalière :")
+            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production journalière :")
             result = Daily(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
@@ -331,7 +348,7 @@ class Job:
     def get_production_detail(self):
         result = {}
         if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-            app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production détaillée :")
+            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production détaillée :")
             result = Detail(
                 headers=self.header_generate(),
                 usage_point_id=self.usage_point_config.usage_point_id,
@@ -342,7 +359,7 @@ class Job:
     def get_consumption_max_power(self):
         result = {}
         if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption_max_power:
-            app.LOG.title(
+            title(
                 f"[{self.usage_point_config.usage_point_id}] Récupération de la puissance maximun journalière :")
             result = Power(
                 headers=self.header_generate(),
@@ -351,29 +368,31 @@ class Job:
         return result
 
     def get_tempo(self):
-        app.LOG.title(
+        title(
             f"Récupération des données Tempo :")
-        return Tempo().get()
+        return Tempo().fetch()
 
     def get_ecowatt(self):
-        app.LOG.title(
+        title(
             f"Récupération des données EcoWatt :")
-        return Ecowatt().get()
+        return Ecowatt().fetch()
 
     def stat_price(self, usage_point_id, measurement_direction="consumption"):
-        app.LOG.title(
+        title(
             f"Génération des statistiques Tarifaire de {measurement_direction}:")
-        return Stat(usage_point_id=usage_point_id, measurement_direction=measurement_direction).price()
+        return Stat(usage_point_id=usage_point_id,
+                    measurement_direction=measurement_direction).generate_price()
 
     def home_assistant(self):
+        result = {}
         if "enable" in self.home_assistant_config and self.home_assistant_config["enable"]:
-            app.LOG.title(
+            title(
                 f"[{self.usage_point_config.usage_point_id}] Exportation de données dans Home Assistant (via l'auto-discovery MQTT).")
-            daily = app.DB.get_daily_all(self.usage_point_id, "consumption")
-        return daily
+            result = self.db.get_daily_all(self.usage_point_id, "consumption")
+        return result
 
     def influxdb(self):
         result = {}
         if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
-            app.LOG.title(f"[{self.usage_point_config.usage_point_id}] Exportation de données dans InfluxDB.")
+            title(f"[{self.usage_point_config.usage_point_id}] Exportation de données dans InfluxDB.")
         return result

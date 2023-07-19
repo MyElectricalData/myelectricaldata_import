@@ -1,12 +1,8 @@
-import __main__ as app
-import datetime
-from pprint import pprint
-from mergedeep import Strategy, merge
-
+import logging
 import paho.mqtt.publish as publish
-from dependencies import *
-from paho.mqtt import client as mqtt
+from dependencies import title, separator
 
+from paho.mqtt import client as mqtt
 
 
 class Mqtt:
@@ -32,20 +28,20 @@ class Mqtt:
         self.qos = qos
 
         self.client = {}
-        # self.connect()
+        self.connect()
 
     def connect(self):
-        app.LOG.separator()
-        app.LOG.log(f"Connect to MQTT broker {self.hostname}:{self.port}")
+        separator()
+        logging.info(f"Connect to MQTT broker {self.hostname}:{self.port}")
         try:
             self.client = mqtt.Client(self.client_id)
             if self.username != "" and self.password != "":
                 self.client.username_pw_set(self.username, self.password)
             self.client.connect(self.hostname, self.port)
             self.client.loop_start()
-            app.LOG.log(" => Connection success")
+            title(" Connection success")
         except Exception as e:
-            app.LOG.critical(["MQTT Connexion failed", e])
+            logging.critical(["MQTT Connexion failed", e])
 
     def publish(self, topic, msg, prefix=None):
         if prefix is None:
@@ -58,9 +54,9 @@ class Mqtt:
         )
         status = result[0]
         if status == 0:
-            app.LOG.debug(f" MQTT Send : {prefix}/{topic} => {msg}")
+            logging.debug(f" MQTT Send : {prefix}/{topic} => {msg}")
         else:
-            app.LOG.log(f" - Failed to send message to topic {prefix}/{topic}")
+            logging.info(f" - Failed to send message to topic {prefix}/{topic}")
 
     def publish_multiple(self, data, prefix=None):
         if data:
@@ -80,4 +76,3 @@ class Mqtt:
             if self.username is not None and self.password is not None:
                 auth = {'username': self.username, 'password': self.password}
             publish.multiple(payload, hostname=self.hostname, port=self.port, client_id=self.client_id, auth=auth)
-

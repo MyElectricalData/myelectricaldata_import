@@ -1,6 +1,5 @@
-import locale
-
-locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+LOG_FORMAT = "%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s"
+LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
 
 URL = "https://myelectricaldata.fr"
 
