@@ -216,10 +216,16 @@ class HomeAssistant:
             now = datetime.now().replace(minute=0, second=0, microsecond=0)
             forecast = {}
             i = 0
+            begin = ""
+            end = ""
             for data in ecowatt_data:
                 for date, value in json.loads(data.detail.replace("'", '"')).items():
                     date = datetime.strptime(date, self.date_format_detail)
                     if date >= now and i <= max_history:
+                        end = date + timedelta(hours=1)
+                        end = end.strftime(self.date_format_detail)
+                        if not begin:
+                            begin = date.strftime(self.date_format_detail)
                         forecast[f'{date.strftime("%H")} h'] = value
                         i = i + 1
 
@@ -231,7 +237,9 @@ class HomeAssistant:
                 "activationDate": self.activation_date,
                 "lastUpdate": datetime.now().strftime(self.date_format_detail),
                 "timeLastCall": datetime.now().strftime(self.date_format_detail),
-                "yesterdayDate": stats.daily(0)["begin"]
+                "yesterdayDate": stats.daily(0)["begin"],
+                "Begin": begin,
+                "End": end
             }
             attributes = json.dumps(attributes)
             data = {
