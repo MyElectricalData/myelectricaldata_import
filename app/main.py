@@ -10,12 +10,12 @@ from fastapi_utils.tasks import repeat_every
 from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
 from dependencies import title, get_version, title_warning, logo
 from init import CONFIG, DB
+from models.jobs import Job
 from routers import account
 from routers import action
 from routers import data
 from routers import html
 from routers import info
-from tasks import Tasks
 
 if "DEV" in environ or "DEBUG" in environ:
     title_warning("Run in Development mode")
@@ -88,16 +88,25 @@ OPENAPI_SCHEMA["info"]["x-logo"] = {
 APP.openapi_schema = OPENAPI_SCHEMA
 
 CYCLE = CONFIG.get('cycle')
-if CYCLE < cycle_minimun:
-    logging.warning("Le cycle minimun est de 3600s")
-    CYCLE = cycle_minimun
-    CONFIG.set("cycle", cycle_minimun)
+if not CYCLE:
+    CYCLE = 14400
+else:
+    if CYCLE < cycle_minimun:
+        logging.warning("Le cycle minimun est de 3600s")
+        CYCLE = cycle_minimun
+        CONFIG.set("cycle", cycle_minimun)
 
 
 @APP.on_event("startup")
 @repeat_every(seconds=CYCLE, wait_first=False)
-def tasks():
-    Tasks()
+def import_job():
+    Job().boot()
+
+
+@APP.on_event("startup")
+@repeat_every(seconds=60, wait_first=True)
+def home_assistant_export():
+    Job().export_home_assistant()
 
 
 if __name__ == '__main__':
@@ -119,7 +128,5 @@ if __name__ == '__main__':
     ssl_config = CONFIG.ssl_config()
     if ssl_config:
         uvicorn_params = {**uvicorn_params, **ssl_config}
-
-    logging.error(uvicorn_params)
 
     uvicorn.run("main:APP", **uvicorn_params)

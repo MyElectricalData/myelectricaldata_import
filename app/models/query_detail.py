@@ -145,10 +145,18 @@ class Detail:
                             "status_code": data.status_code
                         }
                 else:
+                    if hasattr(data, "text"):
+                        description = json.loads(data.text)["detail"]
+                    else:
+                        description = data
+                    if hasattr(data, "status_code"):
+                        status_code = data.status_code
+                    else:
+                        status_code = 500
                     return {
                         "error": True,
-                        "description": json.loads(data.text)["detail"],
-                        "status_code": data.status_code
+                        "description": description,
+                        "status_code": status_code
                     }
         except Exception as e:
             logging.exception(e)
@@ -182,18 +190,13 @@ class Detail:
                     "description": "MyElectricalData est indisponible."
                 }
             if "error" in response and response["error"]:
-                error = [
-                    "Echec de la récupération des données.",
-                    f' => {response["description"]}',
-                    f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
-                ]
-                logging.error(error)
-
+                logging.error("Echec de la récupération des données.")
+                logging.error(f' => {response["description"]}')
+                logging.error(f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
-                error = ["Arrêt de la récupération des données suite à une erreur.",
-                         f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}"]
-                logging.warning(error)
+                logging.error("Arrêt de la récupération des données suite à une erreur.")
+                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}")
         return result
 
     def reset_daily(self, date):

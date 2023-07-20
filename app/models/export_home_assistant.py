@@ -85,21 +85,21 @@ class HomeAssistant:
         self.mqtt = MQTT
 
     def export(self):
-
-        title(f"[{self.usage_point_id}] Exportation des données dans Home Assistant (via MQTT)")
-
         if (hasattr(self.config, "consumption") and self.config.consumption
                 or (hasattr(self.config, "consumption_detail") and self.config.consumption_detail)):
+            title(f"[{self.usage_point_id}] Exportation des données de consommation dans Home Assistant (via MQTT)")
             self.myelectricaldata_usage_point_id("consumption")
             self.last_x_day(5, "consumption")
             self.history_usage_point_id("consumption")
 
-        if (hasattr(self.config, "production") and self.config.consumption
+        if (hasattr(self.config, "production") and self.config.production
                 or (hasattr(self.config, "production_detail") and self.config.production_detail)):
+            title(f"[{self.usage_point_id}] Exportation des données de production dans Home Assistant (via MQTT)")
             self.myelectricaldata_usage_point_id("production")
             self.last_x_day(5, "production")
             self.history_usage_point_id("production")
 
+        self.tempo()
         self.ecowatt()
 
     def last_x_day(self, days, measurement_direction):
@@ -188,6 +188,92 @@ class HomeAssistant:
         }
         self.mqtt.publish_multiple(data, topic)
 
+    def tempo(self):
+        begin = datetime.combine(datetime.now(), datetime.min.time())
+        end = datetime.combine(datetime.now(), datetime.max.time())
+        tempo_data = self.db.get_tempo_range(begin, end, "asc")
+        if tempo_data:
+            date = tempo_data[0].date.strftime(self.date_format_detail)
+            state = tempo_data[0].color
+        else:
+            date = ""
+            state = ""
+
+        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_tempo/today"
+        config = {
+            "name": f"myelectricaldata.{self.usage_point_id}.TempoToday",
+            "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_today",
+            "stat_t": f"{topic}/state",
+            "json_attr_t": f"{topic}/attributes",
+            "unit_of_measurement": "",
+            "device": {
+                "identifiers": [
+                    f"linky_{self.usage_point_id}_tempo_today"
+                ],
+                "name": f"Linky {self.usage_point_id} Tempo Today",
+                "model": "Linky",
+                "manufacturer": "MyElectricalData"
+            }
+        }
+
+        attributes = {
+            "Version": get_version(),
+            "LastSensorCall": datetime.now().strftime(self.date_format_detail),
+            "numPDL": self.usage_point_id,
+            "activationDate": self.activation_date,
+            "lastUpdate": datetime.now().strftime(self.date_format_detail),
+            "timeLastCall": datetime.now().strftime(self.date_format_detail),
+            "date": date
+        }
+        data = {
+            "config": json.dumps(config),
+            "state": state,
+            "attributes": json.dumps(attributes)
+        }
+        self.mqtt.publish_multiple(data, topic)
+
+        begin = begin + timedelta(days=1)
+        end = end + timedelta(days=1)
+        tempo_data = self.db.get_tempo_range(begin, end, "asc")
+        if tempo_data:
+            date = tempo_data[0].date.strftime(self.date_format_detail)
+            state = tempo_data[0].color
+        else:
+            date = ""
+            state = ""
+        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_tempo/tomorrow"
+        config = {
+            "name": f"myelectricaldata.{self.usage_point_id}.TempoTomorrow",
+            "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_tomorrow",
+            "stat_t": f"{topic}/state",
+            "json_attr_t": f"{topic}/attributes",
+            "unit_of_measurement": "",
+            "device": {
+                "identifiers": [
+                    f"linky_{self.usage_point_id}_tempo_tomorrow"
+                ],
+                "name": f"Linky {self.usage_point_id} Tempo Tomorrow",
+                "model": "Linky",
+                "manufacturer": "MyElectricalData"
+            }
+        }
+        attributes = {
+            "Version": get_version(),
+            "LastSensorCall": datetime.now().strftime(self.date_format_detail),
+            "numPDL": self.usage_point_id,
+            "activationDate": self.activation_date,
+            "lastUpdate": datetime.now().strftime(self.date_format_detail),
+            "timeLastCall": datetime.now().strftime(self.date_format_detail),
+            "date": date
+        }
+        data = {
+            "config": json.dumps(config),
+            "state": state,
+            "attributes": json.dumps(attributes)
+        }
+
+        self.mqtt.publish_multiple(data, topic)
+
     def ecowatt(self):
         # Get ecowatt data
         end = datetime.combine(datetime.now(), datetime.min.time())
@@ -201,7 +287,7 @@ class HomeAssistant:
                 "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_ecowatt",
                 "stat_t": f"{topic}/state",
                 "json_attr_t": f"{topic}/attributes",
-                # "unit_of_measurement": "kWh",
+                "unit_of_measurement": "",
                 "device": {
                     "identifiers": [
                         f"linky_{self.usage_point_id}_ecowatt"
