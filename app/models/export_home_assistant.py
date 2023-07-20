@@ -205,7 +205,7 @@ class HomeAssistant:
             "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_today",
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
-            "unit_of_measurement": "",
+            # "unit_of_measurement": "",
             "device": {
                 "identifiers": [
                     f"linky_{self.usage_point_id}_tempo_today"
@@ -247,7 +247,7 @@ class HomeAssistant:
             "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_tomorrow",
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
-            "unit_of_measurement": "",
+            # "unit_of_measurement": "",
             "device": {
                 "identifiers": [
                     f"linky_{self.usage_point_id}_tempo_tomorrow"

@@ -71,37 +71,37 @@ class Job:
                 self.db.last_call_update(self.usage_point_id)
                 if self.usage_point_config.enable:
 
-                    # if target == "account_status" or target is None:
-                    #     self.get_account_status()
-                    #
-                    # if target == "contract" or target is None:
-                    #     self.get_contract()
-                    #
-                    # if target == "addresses" or target is None:
-                    #     self.get_addresses()
-                    #
-                    # if target == "consumption" or target is None:
-                    #     self.get_consumption()
-                    #
-                    # if target == "consumption_detail" or target is None:
-                    #     self.get_consumption_detail()
-                    #
-                    # if target == "production" or target is None:
-                    #     self.get_production()
-                    #
-                    # if target == "production_detail" or target is None:
-                    #     self.get_production_detail()
-                    #
-                    # if target == "consumption_max_power" or target is None:
-                    #     self.get_consumption_max_power()
-                    #
-                    # if target == "price" or target is None:
-                    #     self.stat_price()
-                    #
-                    # #######################################################################################################
-                    # # MQTT
-                    # if target == "mqtt" or target is None:
-                    #     self.export_mqtt()
+                    if target == "account_status" or target is None:
+                        self.get_account_status()
+
+                    if target == "contract" or target is None:
+                        self.get_contract()
+
+                    if target == "addresses" or target is None:
+                        self.get_addresses()
+
+                    if target == "consumption" or target is None:
+                        self.get_consumption()
+
+                    if target == "consumption_detail" or target is None:
+                        self.get_consumption_detail()
+
+                    if target == "production" or target is None:
+                        self.get_production()
+
+                    if target == "production_detail" or target is None:
+                        self.get_production_detail()
+
+                    if target == "consumption_max_power" or target is None:
+                        self.get_consumption_max_power()
+
+                    if target == "price" or target is None:
+                        self.stat_price()
+
+                    #######################################################################################################
+                    # MQTT
+                    if target == "mqtt" or target is None:
+                        self.export_mqtt()
 
                     #######################################################################################################
                     # HOME ASSISTANT
@@ -357,16 +357,20 @@ class Job:
                     title(f"[{usage_point_id}] {detail} :")
                     if self.usage_point_config.enable:
                         if hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail:
+                            logging.info("Consommation :")
                             Stat(usage_point_id=usage_point_id).generate_price()
-                        if hasattr(usage_point_config, "production_detail") and usage_point_config.consumption_detail:
+                        if hasattr(usage_point_config, "production_detail") and usage_point_config.production_detail:
+                            logging.info("Production :")
                             Stat(usage_point_id=usage_point_id, measurement_direction="production").generate_price()
             else:
                 title(f"[{self.usage_point_id}] {detail} :")
                 if hasattr(self.usage_point_config,
                            "consumption_detail") and self.usage_point_config.consumption_detail:
+                    logging.info("Consommation :")
                     Stat(usage_point_id=self.usage_point_id).generate_price()
                 if hasattr(self.usage_point_config,
-                           "production_detail") and self.usage_point_config.consumption_detail:
+                           "production_detail") and self.usage_point_config.production_detail:
+                    logging.info("Production :")
                     Stat(usage_point_id=self.usage_point_id, measurement_direction="production").generate_price()
         except Exception as e:
             traceback.print_exc()

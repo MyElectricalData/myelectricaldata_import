@@ -572,7 +572,6 @@ class Stat:
         # return ast.literal_eval()
 
     def generate_price(self):
-        logging.warning("Cette opération peut prendre un certain temps...")
         data = self.db.get_detail_all(self.usage_point_id, self.measurement_direction)
         result = {}
         last_month = ""
