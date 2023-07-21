@@ -246,6 +246,7 @@ class ExportMqtt:
                 get_detail_month_hc = stat.get_month(year=year, month=month, measure_type="HC")
                 get_detail_week_hp = stat.get_week(year=year, month=month, measure_type="HP", )
                 get_detail_week_hc = stat.get_week(year=year, month=month, measure_type="HC", )
+
                 sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
                 mqtt_data = {
                     # thisYear - HP
@@ -440,3 +441,19 @@ class ExportMqtt:
             logging.info(" => OK")
         else:
             logging.info(" => Pas de donnée")
+
+    def tempo(self):
+        logging.info("Envoie des données Tempo")
+        tempo_data = self.db.get_stat(self.usage_point_id, "price_consumption")
+        mqtt_data = {}
+        for year, data in ast.literal_eval(tempo_data[0].value).items():
+            for color, tempo in data["TEMPO"].items():
+                mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/Wh"] = round(tempo['Wh'], 2)
+                mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/kWh"] = round(tempo['kWh'], 2)
+                mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/euro"] = round(tempo['euro'], 2)
+            for month, month_data in data["month"].items():
+                for month_color, month_tempo in month_data["TEMPO"].items():
+                    mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/month/{int(month)}/tempo/{month_color}/Wh"] = round(month_tempo['Wh'], 2)
+                    mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/month/{int(month)}/tempo/{month_color}/kWh"] = round(month_tempo['kWh'], 2)
+                    mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/month/{int(month)}/tempo/{month_color}/euro"] = round(month_tempo['euro'], 2)
+        self.mqtt.publish_multiple(mqtt_data)

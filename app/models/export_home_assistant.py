@@ -6,7 +6,7 @@ from math import floor
 import pytz
 from dateutil.relativedelta import relativedelta
 
-from dependencies import title, get_version
+from dependencies import get_version
 from init import MQTT, DB, CONFIG
 from models.stat import Stat
 
@@ -102,98 +102,88 @@ class HomeAssistant:
         self.tempo()
         self.ecowatt()
 
-    def last_x_day(self, days, measurement_direction):
-        uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_last{days}day"
-        logging.info(f"- {uniq_id}")
-        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}"
+    def sensor(self, **kwargs):
+        topic = f"{self.discovery_prefix}/sensor/{kwargs['topic']}"
+        if "unit_of_measurement" not in kwargs:
+            unit_of_measurement = ""
+        else:
+            unit_of_measurement = kwargs["unit_of_measurement"]
         config = {
-            "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.last{days}day",
-            "uniq_id": uniq_id,
+            "name": f"myelectricaldata.{kwargs['name']}",
+            "uniq_id": kwargs['uniq_id'],
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
-            "unit_of_measurement": "W",
+            "unit_of_measurement": unit_of_measurement,
             "device": {
                 "identifiers": [
-                    f"linky_{measurement_direction}_history_{self.usage_point_id}"
+                    f"linky_{self.usage_point_id}"
                 ],
                 "name": f"Linky {self.usage_point_id}",
                 "model": "Linky",
                 "manufacturer": "MyElectricalData"
             }
         }
-        config = json.dumps(config)
-        state = days
         attributes = {
-            "version": get_version(),
-            "numPDL": self.usage_point_id,
-            "activationDate": self.activation_date,
-            "lastUpdate": datetime.now().strftime(self.date_format_detail),
-            "timeLastCall": datetime.now().strftime(self.date_format_detail),
-            "time": [],
-            f"{measurement_direction}": []
+            **kwargs["attributes"],
+            **{
+                "version": get_version(),
+                "numPDL": self.usage_point_id,
+                "activationDate": self.activation_date,
+                "lastUpdate": datetime.now().strftime(self.date_format_detail),
+                "timeLastCall": datetime.now().strftime(self.date_format_detail),
+            }
         }
+
+        data = {
+            "config": json.dumps(config),
+            "state": kwargs["state"],
+            "attributes": json.dumps(attributes)
+        }
+        return self.mqtt.publish_multiple(data, topic)
+
+    def last_x_day(self, days, measurement_direction):
+        uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_last{days}day"
+        logging.info(f"- {uniq_id}")
         end = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
         range = self.db.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
+        attributes = {"time": [], measurement_direction: []}
         for data in range:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
             attributes[measurement_direction].append(data.value)
-        attributes = json.dumps(attributes)
-
-        data = {
-            "config": config,
-            "state": state,
-            "attributes": attributes
-        }
-        self.mqtt.publish_multiple(data, topic)
+        self.sensor(
+            topic=f"myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}",
+            name=f"{measurement_direction}_{self.usage_point_id}.last{days}day",
+            uniq_id=uniq_id,
+            unit_of_measurement="kWh",
+            attributes=attributes,
+            state=days
+        )
 
     def history_usage_point_id(self, measurement_direction):
         uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_history"
         logging.info(f"- {uniq_id}")
         stats = Stat(self.usage_point_id, measurement_direction)
-        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_history/{self.usage_point_id}"
-        config = {
-            "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.history",
-            "uniq_id": uniq_id,
-            "stat_t": f"{topic}/state",
-            "json_attr_t": f"{topic}/attributes",
-            "unit_of_measurement": "kWh",
-            "device": {
-                "identifiers": [
-                    f"linky_{measurement_direction}_history_{self.usage_point_id}"
-                ],
-                "name": f"Linky {self.usage_point_id}",
-                "model": "Linky",
-                "manufacturer": "MyElectricalData"
-            }
-        }
-        config = json.dumps(config)
-
         state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
             state = state.value
         else:
             state = 0
         state = convert_kw(state)
-
         attributes = {
-            "version": get_version(),
-            "numPDL": self.usage_point_id,
-            "activationDate": self.activation_date,
-            "lastUpdate": datetime.now().strftime(self.date_format_detail),
-            "timeLastCall": datetime.now().strftime(self.date_format_detail),
             "yesterdayDate": stats.daily(0)["begin"]
         }
-        attributes = json.dumps(attributes)
-        data = {
-            "config": config,
-            "state": state,
-            "attributes": attributes
-        }
-        self.mqtt.publish_multiple(data, topic)
+        self.sensor(
+            topic=f"myelectricaldata_{measurement_direction}_history/{self.usage_point_id}",
+            name=f"{measurement_direction}_{self.usage_point_id}.history",
+            uniq_id=uniq_id,
+            unit_of_measurement="kWh",
+            attributes=attributes,
+            state=state
+        )
 
     def tempo(self):
-        uniq_id = f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_today"
+        uniq_id = f"myelectricaldata_{self.usage_point_id}_tempo_today"
         logging.info(f"- {uniq_id}")
         begin = datetime.combine(datetime.now(), datetime.min.time())
         end = datetime.combine(datetime.now(), datetime.max.time())
@@ -204,41 +194,18 @@ class HomeAssistant:
         else:
             date = begin.strftime(self.date_format_detail)
             state = "Inconnu"
-
-        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_tempo/today"
-        config = {
-            "name": f"myelectricaldata.{self.usage_point_id}.TempoToday",
-            "uniq_id": uniq_id,
-            "stat_t": f"{topic}/state",
-            "json_attr_t": f"{topic}/attributes",
-            # "unit_of_measurement": "",
-            "device": {
-                "identifiers": [
-                    f"linky_{self.usage_point_id}_tempo_today"
-                ],
-                "name": f"Linky {self.usage_point_id} Tempo Today",
-                "model": "Linky",
-                "manufacturer": "MyElectricalData"
-            }
-        }
-
         attributes = {
-            "version": get_version(),
-            "lastSensorCall": datetime.now().strftime(self.date_format_detail),
-            "numPDL": self.usage_point_id,
-            "activationDate": self.activation_date,
-            "lastUpdate": datetime.now().strftime(self.date_format_detail),
-            "timeLastCall": datetime.now().strftime(self.date_format_detail),
             "date": date
         }
-        data = {
-            "config": json.dumps(config),
-            "state": state,
-            "attributes": json.dumps(attributes)
-        }
-        self.mqtt.publish_multiple(data, topic)
+        self.sensor(
+            topic=f"myelectricaldata_tempo/today",
+            name=f"{self.usage_point_id}.TempoToday",
+            uniq_id=uniq_id,
+            attributes=attributes,
+            state=state
+        )
 
-        uniq_id = f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_tomorrow"
+        uniq_id = f"myelectricaldata_{self.usage_point_id}_tempo_tomorrow"
         logging.info(f"- {uniq_id}")
         begin = begin + timedelta(days=1)
         end = end + timedelta(days=1)
@@ -249,64 +216,25 @@ class HomeAssistant:
         else:
             date = begin.strftime(self.date_format_detail)
             state = "Inconnu"
-        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_tempo/tomorrow"
-        config = {
-            "name": f"myelectricaldata.{self.usage_point_id}.TempoTomorrow",
-            "uniq_id": uniq_id,
-            "stat_t": f"{topic}/state",
-            "json_attr_t": f"{topic}/attributes",
-            # "unit_of_measurement": "",
-            "device": {
-                "identifiers": [
-                    f"linky_{self.usage_point_id}_tempo_tomorrow"
-                ],
-                "name": f"Linky {self.usage_point_id} Tempo Tomorrow",
-                "model": "Linky",
-                "manufacturer": "MyElectricalData"
-            }
-        }
         attributes = {
-            "version": get_version(),
-            "lastSensorCall": datetime.now().strftime(self.date_format_detail),
-            "numPDL": self.usage_point_id,
-            "activationDate": self.activation_date,
-            "lastUpdate": datetime.now().strftime(self.date_format_detail),
-            "timeLastCall": datetime.now().strftime(self.date_format_detail),
             "date": date
         }
-        data = {
-            "config": json.dumps(config),
-            "state": state,
-            "attributes": json.dumps(attributes)
-        }
-
-        self.mqtt.publish_multiple(data, topic)
+        self.sensor(
+            topic=f"myelectricaldata_tempo/tomorrow",
+            name=f"{self.usage_point_id}.TempoTomorrow",
+            uniq_id=uniq_id,
+            attributes=attributes,
+            state=state
+        )
 
     def ecowatt(self):
-        uniq_id = f"myelectricaldata_ecowatt.{self.usage_point_id}_ecowatt"
+        uniq_id = f"myelectricaldata_{self.usage_point_id}_ecowatt"
         logging.info(f"- {uniq_id}")
         end = datetime.combine(datetime.now(), datetime.min.time())
         begin = end - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(begin, end, "asc")
         if ecowatt_data:
             stats = Stat(self.usage_point_id)
-            topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
-            config = {
-                "name": f"myelectricaldata.{self.usage_point_id}.EcoWatt",
-                "uniq_id": uniq_id,
-                "stat_t": f"{topic}/state",
-                "json_attr_t": f"{topic}/attributes",
-                "unit_of_measurement": "",
-                "device": {
-                    "identifiers": [
-                        f"linky_{self.usage_point_id}_ecowatt"
-                    ],
-                    "name": f"Linky {self.usage_point_id} EcoWatt",
-                    "model": "Linky",
-                    "manufacturer": "MyElectricalData"
-                }
-            }
-            config = json.dumps(config)
             max_history = 11
             now = datetime.now().replace(minute=0, second=0, microsecond=0)
             forecast = {}
@@ -323,86 +251,28 @@ class HomeAssistant:
                             begin = date.strftime(self.date_format_detail)
                         forecast[f'{date.strftime("%H")} h'] = value
                         i = i + 1
-
             attributes = {
-                "version": get_version(),
                 "lastSensorCall": datetime.now().strftime(self.date_format_detail),
                 "forecast": forecast,
-                "numPDL": self.usage_point_id,
-                "activationDate": self.activation_date,
-                "lastUpdate": datetime.now().strftime(self.date_format_detail),
-                "timeLastCall": datetime.now().strftime(self.date_format_detail),
                 "yesterdayDate": stats.daily(0)["begin"],
                 "begin": begin,
                 "end": end
             }
-            attributes = json.dumps(attributes)
-            data = {
-                "config": config,
-                "state": 123456.00,
-                "attributes": attributes
-            }
-            self.mqtt.publish_multiple(data, topic)
-
-    def myelectricaldata_usage_point_id(self, measurement_direction):
-        uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}"
-        logging.info(f"- {uniq_id}")
-        stats = Stat(self.usage_point_id, measurement_direction)
-        topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}/{self.usage_point_id}"
-        config = {
-            f"config": json.dumps(
-                {
-                    "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}",
-                    "uniq_id": uniq_id,
-                    "stat_t": f"{topic}/state",
-                    "json_attr_t": f"{topic}/attributes",
-                    "unit_of_measurement": "kWh",
-                    "device": {
-                        "identifiers": [
-                            f"linky_{measurement_direction}_{self.usage_point_id}"
-                        ],
-                        "name": f"Linky {self.usage_point_id}",
-                        "model": "Linky",
-                        "manufacturer": "MyElectricalData"
-                    }
-                })
-        }
-        self.mqtt.publish_multiple(config, topic)
-
-        if measurement_direction == "consumption":
-            config = {
-                f"config": json.dumps(
-                    {
-                        "name": f"myelectricaldata.{self.usage_point_id}",
-                        "uniq_id": f"myelectricaldata_{self.usage_point_id}",
-                        "stat_t": f"{topic}/state",
-                        "json_attr_t": f"{topic}/attributes",
-                        "unit_of_measurement": "kWh",
-                        "device": {
-                            "identifiers": [
-                                f"linky_{self.usage_point_id}"
-                            ],
-                            "name": f"Linky {self.usage_point_id}",
-                            "model": "Linky",
-                            "manufacturer": "MyElectricalData"
-                        }
-                    })
-            }
-            self.mqtt.publish_multiple(
-                config,
-                f"{self.discovery_prefix}/sensor/myelectricaldata/{self.usage_point_id}"
+            self.sensor(
+                topic=f"myelectricaldata_ecowatt/{self.usage_point_id}",
+                name=f"{self.usage_point_id}.EcoWatt",
+                uniq_id=uniq_id,
+                attributes=attributes,
+                state=123456.00
             )
 
+    def myelectricaldata_usage_point_id(self, measurement_direction):
+        stats = Stat(self.usage_point_id, measurement_direction)
         state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
             state = state.value
         else:
             state = 0
-
-        self.mqtt.publish_multiple({
-            f"state": convert_kw(state)
-        }, topic)
-
         offpeak_hours_enedis = ""
         offpeak_hours = []
         if (
@@ -575,155 +445,172 @@ class HomeAssistant:
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
             yesterday_consumption_max_power = stats.max_power(0)["value"]
 
-        config = {
-            f"attributes": json.dumps(
-                {
-                    "Version": get_version(),
-                    "numPDL": self.usage_point_id,
-                    "activationDate": self.activation_date,
-                    "lastUpdate": datetime.now().strftime(self.date_format_detail),
-                    "timeLastCall": datetime.now().strftime(self.date_format_detail),
-                    "yesterdayDate": stats.daily(0)["begin"],
-                    "yesterday": convert_kw(stats.daily(0)["value"]),
-                    "serviceEnedis": "myElectricalData",
-                    "yesterdayLastYearDate": (datetime.now() - relativedelta(years=1)).strftime(self.date_format),
-                    "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year,
-                                                                                          "value") else 0,
-                    "daily": [
-                        convert_kw(stats.daily(0)["value"]),
-                        convert_kw(stats.daily(1)["value"]),
-                        convert_kw(stats.daily(2)["value"]),
-                        convert_kw(stats.daily(3)["value"]),
-                        convert_kw(stats.daily(4)["value"]),
-                        convert_kw(stats.daily(5)["value"]),
-                        convert_kw(stats.daily(6)["value"])
-                    ],
-                    "current_week": convert_kw(current_week_value),
-                    "last_week": convert_kw(last_week_value),
-                    "day_1": convert_kw(stats.daily(0)["value"]),
-                    "day_2": convert_kw(stats.daily(1)["value"]),
-                    "day_3": convert_kw(stats.daily(2)["value"]),
-                    "day_4": convert_kw(stats.daily(3)["value"]),
-                    "day_5": convert_kw(stats.daily(4)["value"]),
-                    "day_6": convert_kw(stats.daily(5)["value"]),
-                    "day_7": convert_kw(stats.daily(6)["value"]),
-                    "current_week_last_year": convert_kw(current_week_last_year_value),
-                    "last_month": convert_kw(last_month_value),
-                    "current_month": convert_kw(current_month_value),
-                    "current_month_last_year": convert_kw(current_month_last_year_value),
-                    "last_month_last_year": convert_kw(last_month_last_year_value),
-                    "last_year": convert_kw(last_year_value),
-                    "current_year": convert_kw(current_year_value),
-                    "current_year_last_year": convert_kw(current_year_last_year_value),
-                    "dailyweek": [
-                        stats.daily(0)["begin"],
-                        stats.daily(1)["begin"],
-                        stats.daily(2)["begin"],
-                        stats.daily(3)["begin"],
-                        stats.daily(4)["begin"],
-                        stats.daily(5)["begin"],
-                        stats.daily(6)["begin"],
-                    ],
-                    "dailyweek_cost": dailyweek_cost,
-                    # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
-                    "dailyweek_costHP": [
-                        convert_kw_to_euro(stats.detail(0, "HP")["value"], self.consumption_price_hp),
-                        convert_kw_to_euro(stats.detail(1, "HP")["value"], self.consumption_price_hp),
-                        convert_kw_to_euro(stats.detail(2, "HP")["value"], self.consumption_price_hp),
-                        convert_kw_to_euro(stats.detail(3, "HP")["value"], self.consumption_price_hp),
-                        convert_kw_to_euro(stats.detail(4, "HP")["value"], self.consumption_price_hp),
-                        convert_kw_to_euro(stats.detail(5, "HP")["value"], self.consumption_price_hp),
-                        convert_kw_to_euro(stats.detail(6, "HP")["value"], self.consumption_price_hp),
-                    ],
-                    "dailyweek_HP": [
-                        convert_kw(stats.detail(0, "HP")["value"]),
-                        convert_kw(stats.detail(1, "HP")["value"]),
-                        convert_kw(stats.detail(2, "HP")["value"]),
-                        convert_kw(stats.detail(3, "HP")["value"]),
-                        convert_kw(stats.detail(4, "HP")["value"]),
-                        convert_kw(stats.detail(5, "HP")["value"]),
-                        convert_kw(stats.detail(6, "HP")["value"]),
-                    ],
-                    "daily_cost": daily_cost,
-                    "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.consumption_price_hp),
-                    "yesterday_HP": convert_kw(yesterday_hp_value),
-                    "day_1_HP": stats.detail(0, "HP")["value"],
-                    "day_2_HP": stats.detail(1, "HP")["value"],
-                    "day_3_HP": stats.detail(2, "HP")["value"],
-                    "day_4_HP": stats.detail(3, "HP")["value"],
-                    "day_5_HP": stats.detail(4, "HP")["value"],
-                    "day_6_HP": stats.detail(5, "HP")["value"],
-                    "day_7_HP": stats.detail(6, "HP")["value"],
-                    "dailyweek_costHC": [
-                        convert_kw_to_euro(stats.detail(0, "HC")["value"], self.consumption_price_hc),
-                        convert_kw_to_euro(stats.detail(1, "HC")["value"], self.consumption_price_hc),
-                        convert_kw_to_euro(stats.detail(2, "HC")["value"], self.consumption_price_hc),
-                        convert_kw_to_euro(stats.detail(3, "HC")["value"], self.consumption_price_hc),
-                        convert_kw_to_euro(stats.detail(4, "HC")["value"], self.consumption_price_hc),
-                        convert_kw_to_euro(stats.detail(5, "HC")["value"], self.consumption_price_hc),
-                        convert_kw_to_euro(stats.detail(6, "HC")["value"], self.consumption_price_hc),
-                    ],
-                    "dailyweek_HC": [
-                        convert_kw(stats.detail(0, "HC")["value"]),
-                        convert_kw(stats.detail(1, "HC")["value"]),
-                        convert_kw(stats.detail(2, "HC")["value"]),
-                        convert_kw(stats.detail(3, "HC")["value"]),
-                        convert_kw(stats.detail(4, "HC")["value"]),
-                        convert_kw(stats.detail(5, "HC")["value"]),
-                        convert_kw(stats.detail(6, "HC")["value"]),
-                    ],
-                    "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.consumption_price_hc),
-                    "yesterday_HC": convert_kw(yesterday_hc_value),
-                    "day_1_HC": stats.detail(0, "HC")["value"],
-                    "day_2_HC": stats.detail(1, "HC")["value"],
-                    "day_3_HC": stats.detail(2, "HC")["value"],
-                    "day_4_HC": stats.detail(3, "HC")["value"],
-                    "day_5_HC": stats.detail(4, "HC")["value"],
-                    "day_6_HC": stats.detail(5, "HC")["value"],
-                    "day_7_HC": stats.detail(6, "HC")["value"],
-                    "peak_offpeak_percent": round(peak_offpeak_percent, 2),
-                    "YesterdayConsumptionMaxPower": yesterday_consumption_max_power,
-                    "dailyweek_MP": [
-                        convert_kw(stats.max_power(0)["value"]),
-                        convert_kw(stats.max_power(1)["value"]),
-                        convert_kw(stats.max_power(2)["value"]),
-                        convert_kw(stats.max_power(3)["value"]),
-                        convert_kw(stats.max_power(4)["value"]),
-                        convert_kw(stats.max_power(5)["value"]),
-                        convert_kw(stats.max_power(6)["value"]),
-                    ],
-                    "dailyweek_MP_time": [
-                        (stats.max_power_time(0)["value"]),
-                        (stats.max_power_time(1)["value"]),
-                        (stats.max_power_time(2)["value"]),
-                        (stats.max_power_time(3)["value"]),
-                        (stats.max_power_time(4)["value"]),
-                        (stats.max_power_time(5)["value"]),
-                        (stats.max_power_time(6)["value"]),
-                    ],
-                    "dailyweek_MP_over": [
-                        stats.max_power_over(0)["value"],
-                        stats.max_power_over(1)["value"],
-                        stats.max_power_over(2)["value"],
-                        stats.max_power_over(3)["value"],
-                        stats.max_power_over(4)["value"],
-                        stats.max_power_over(5)["value"],
-                        stats.max_power_over(6)["value"],
-                    ],
-                    "monthly_evolution": round(monthly_evolution, 2),
-                    "current_week_evolution": round(current_week_evolution, 2),
-                    "current_month_evolution": round(current_month_evolution, 2),
-                    "yesterday_evolution": round(yesterday_evolution, 2),
-                    "yearly_evolution": round(yearly_evolution, 2),
-                    "friendly_name": f"myelectricaldata.{self.usage_point_id}",
-                    "errorLastCall": "",
-                    "errorLastCallInterne": "",
-                    "current_week_number": yesterday.strftime("%V"),
-                    "offpeak_hours_enedis": offpeak_hours_enedis,
-                    "offpeak_hours": offpeak_hours,
-                    "subscribed_power": self.subscribed_power
-                })
+        attributes = {
+            "Version": get_version(),
+            "numPDL": self.usage_point_id,
+            "activationDate": self.activation_date,
+            "lastUpdate": datetime.now().strftime(self.date_format_detail),
+            "timeLastCall": datetime.now().strftime(self.date_format_detail),
+            "yesterdayDate": stats.daily(0)["begin"],
+            "yesterday": convert_kw(stats.daily(0)["value"]),
+            "serviceEnedis": "myElectricalData",
+            "yesterdayLastYearDate": (datetime.now() - relativedelta(years=1)).strftime(self.date_format),
+            "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year,
+                                                                                  "value") else 0,
+            "daily": [
+                convert_kw(stats.daily(0)["value"]),
+                convert_kw(stats.daily(1)["value"]),
+                convert_kw(stats.daily(2)["value"]),
+                convert_kw(stats.daily(3)["value"]),
+                convert_kw(stats.daily(4)["value"]),
+                convert_kw(stats.daily(5)["value"]),
+                convert_kw(stats.daily(6)["value"])
+            ],
+            "current_week": convert_kw(current_week_value),
+            "last_week": convert_kw(last_week_value),
+            "day_1": convert_kw(stats.daily(0)["value"]),
+            "day_2": convert_kw(stats.daily(1)["value"]),
+            "day_3": convert_kw(stats.daily(2)["value"]),
+            "day_4": convert_kw(stats.daily(3)["value"]),
+            "day_5": convert_kw(stats.daily(4)["value"]),
+            "day_6": convert_kw(stats.daily(5)["value"]),
+            "day_7": convert_kw(stats.daily(6)["value"]),
+            "current_week_last_year": convert_kw(current_week_last_year_value),
+            "last_month": convert_kw(last_month_value),
+            "current_month": convert_kw(current_month_value),
+            "current_month_last_year": convert_kw(current_month_last_year_value),
+            "last_month_last_year": convert_kw(last_month_last_year_value),
+            "last_year": convert_kw(last_year_value),
+            "current_year": convert_kw(current_year_value),
+            "current_year_last_year": convert_kw(current_year_last_year_value),
+            "dailyweek": [
+                stats.daily(0)["begin"],
+                stats.daily(1)["begin"],
+                stats.daily(2)["begin"],
+                stats.daily(3)["begin"],
+                stats.daily(4)["begin"],
+                stats.daily(5)["begin"],
+                stats.daily(6)["begin"],
+            ],
+            "dailyweek_cost": dailyweek_cost,
+            # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
+            "dailyweek_costHP": [
+                convert_kw_to_euro(stats.detail(0, "HP")["value"], self.consumption_price_hp),
+                convert_kw_to_euro(stats.detail(1, "HP")["value"], self.consumption_price_hp),
+                convert_kw_to_euro(stats.detail(2, "HP")["value"], self.consumption_price_hp),
+                convert_kw_to_euro(stats.detail(3, "HP")["value"], self.consumption_price_hp),
+                convert_kw_to_euro(stats.detail(4, "HP")["value"], self.consumption_price_hp),
+                convert_kw_to_euro(stats.detail(5, "HP")["value"], self.consumption_price_hp),
+                convert_kw_to_euro(stats.detail(6, "HP")["value"], self.consumption_price_hp),
+            ],
+            "dailyweek_HP": [
+                convert_kw(stats.detail(0, "HP")["value"]),
+                convert_kw(stats.detail(1, "HP")["value"]),
+                convert_kw(stats.detail(2, "HP")["value"]),
+                convert_kw(stats.detail(3, "HP")["value"]),
+                convert_kw(stats.detail(4, "HP")["value"]),
+                convert_kw(stats.detail(5, "HP")["value"]),
+                convert_kw(stats.detail(6, "HP")["value"]),
+            ],
+            "daily_cost": daily_cost,
+            "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.consumption_price_hp),
+            "yesterday_HP": convert_kw(yesterday_hp_value),
+            "day_1_HP": stats.detail(0, "HP")["value"],
+            "day_2_HP": stats.detail(1, "HP")["value"],
+            "day_3_HP": stats.detail(2, "HP")["value"],
+            "day_4_HP": stats.detail(3, "HP")["value"],
+            "day_5_HP": stats.detail(4, "HP")["value"],
+            "day_6_HP": stats.detail(5, "HP")["value"],
+            "day_7_HP": stats.detail(6, "HP")["value"],
+            "dailyweek_costHC": [
+                convert_kw_to_euro(stats.detail(0, "HC")["value"], self.consumption_price_hc),
+                convert_kw_to_euro(stats.detail(1, "HC")["value"], self.consumption_price_hc),
+                convert_kw_to_euro(stats.detail(2, "HC")["value"], self.consumption_price_hc),
+                convert_kw_to_euro(stats.detail(3, "HC")["value"], self.consumption_price_hc),
+                convert_kw_to_euro(stats.detail(4, "HC")["value"], self.consumption_price_hc),
+                convert_kw_to_euro(stats.detail(5, "HC")["value"], self.consumption_price_hc),
+                convert_kw_to_euro(stats.detail(6, "HC")["value"], self.consumption_price_hc),
+            ],
+            "dailyweek_HC": [
+                convert_kw(stats.detail(0, "HC")["value"]),
+                convert_kw(stats.detail(1, "HC")["value"]),
+                convert_kw(stats.detail(2, "HC")["value"]),
+                convert_kw(stats.detail(3, "HC")["value"]),
+                convert_kw(stats.detail(4, "HC")["value"]),
+                convert_kw(stats.detail(5, "HC")["value"]),
+                convert_kw(stats.detail(6, "HC")["value"]),
+            ],
+            "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.consumption_price_hc),
+            "yesterday_HC": convert_kw(yesterday_hc_value),
+            "day_1_HC": stats.detail(0, "HC")["value"],
+            "day_2_HC": stats.detail(1, "HC")["value"],
+            "day_3_HC": stats.detail(2, "HC")["value"],
+            "day_4_HC": stats.detail(3, "HC")["value"],
+            "day_5_HC": stats.detail(4, "HC")["value"],
+            "day_6_HC": stats.detail(5, "HC")["value"],
+            "day_7_HC": stats.detail(6, "HC")["value"],
+            "peak_offpeak_percent": round(peak_offpeak_percent, 2),
+            "YesterdayConsumptionMaxPower": yesterday_consumption_max_power,
+            "dailyweek_MP": [
+                convert_kw(stats.max_power(0)["value"]),
+                convert_kw(stats.max_power(1)["value"]),
+                convert_kw(stats.max_power(2)["value"]),
+                convert_kw(stats.max_power(3)["value"]),
+                convert_kw(stats.max_power(4)["value"]),
+                convert_kw(stats.max_power(5)["value"]),
+                convert_kw(stats.max_power(6)["value"]),
+            ],
+            "dailyweek_MP_time": [
+                (stats.max_power_time(0)["value"]),
+                (stats.max_power_time(1)["value"]),
+                (stats.max_power_time(2)["value"]),
+                (stats.max_power_time(3)["value"]),
+                (stats.max_power_time(4)["value"]),
+                (stats.max_power_time(5)["value"]),
+                (stats.max_power_time(6)["value"]),
+            ],
+            "dailyweek_MP_over": [
+                stats.max_power_over(0)["value"],
+                stats.max_power_over(1)["value"],
+                stats.max_power_over(2)["value"],
+                stats.max_power_over(3)["value"],
+                stats.max_power_over(4)["value"],
+                stats.max_power_over(5)["value"],
+                stats.max_power_over(6)["value"],
+            ],
+            "monthly_evolution": round(monthly_evolution, 2),
+            "current_week_evolution": round(current_week_evolution, 2),
+            "current_month_evolution": round(current_month_evolution, 2),
+            "yesterday_evolution": round(yesterday_evolution, 2),
+            "yearly_evolution": round(yearly_evolution, 2),
+            "friendly_name": f"myelectricaldata.{self.usage_point_id}",
+            "errorLastCall": "",
+            "errorLastCallInterne": "",
+            "current_week_number": yesterday.strftime("%V"),
+            "offpeak_hours_enedis": offpeak_hours_enedis,
+            "offpeak_hours": offpeak_hours,
+            "subscribed_power": self.subscribed_power
         }
         for key, value in info.items():
-            config[f"info/{key}"] = json.dumps(value)
-        self.mqtt.publish_multiple(config, topic)
+            attributes[f"info/{key}"] = json.dumps(value)
+        uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}"
+        logging.info(f"- {uniq_id}")
+        self.sensor(
+            topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}",
+            name=f"{measurement_direction}_{self.usage_point_id}",
+            uniq_id=uniq_id,
+            unit_of_measurement="kWh",
+            attributes=attributes,
+            state=convert_kw(state)
+        )
+
+        uniq_id = f"myelectricaldata_{self.usage_point_id}"
+        logging.info(f"- {uniq_id}")
+        self.sensor(
+            topic=f"myelectricaldata/{self.usage_point_id}",
+            name=self.usage_point_id,
+            uniq_id=uniq_id,
+            unit_of_measurement="kWh",
+            attributes=attributes,
+            state=convert_kw(state)
+        )

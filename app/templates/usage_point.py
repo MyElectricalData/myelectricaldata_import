@@ -828,13 +828,13 @@ class UsagePoint:
                 for years, value in data_value.items():
                     html += "<tr>"
                     html += f"<td class='table_recap_header'>{years}</td>"
-                    html += f"<td>{round(value['BASE'], 2)} €</td>"
-                    html += f"<td>{round(value['HC'] + value['HP'], 2)} €</td>"
+                    html += f"<td>{round(value['BASE']['euro'], 2)} €</td>"
+                    html += f"<td>{round(value['HC']['euro'] + value['HP']['euro'], 2)} €</td>"
                     tempo_config = self.config.tempo_config()
                     if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                         value_tempo = 0
                         for color, tempo in value["TEMPO"].items():
-                            value_tempo = value_tempo + tempo
+                            value_tempo = value_tempo + tempo['euro']
                         html += f"<td>{round(value_tempo, 2)} €</td>"
                     # html += str(value)
             html += "</table>"

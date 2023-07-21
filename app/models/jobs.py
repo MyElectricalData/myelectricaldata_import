@@ -63,6 +63,16 @@ class Job:
             if target == "gateway_status" or target is None:
                 self.get_gateway_status()
 
+            # ######################################################################################################
+            # FETCH TEMPO DATA
+            if target == "tempo" or target is None:
+                self.get_tempo()
+
+            # ######################################################################################################
+            # FETCH ECOWATT DATA
+            if target == "ecowatt" or target is None:
+                self.get_ecowatt()
+
             for self.usage_point_config in self.usage_points:
                 self.usage_point_id = self.usage_point_config.usage_point_id
                 log_usage_point_id(self.usage_point_id)
@@ -103,7 +113,7 @@ class Job:
 
                     #######################################################################################################
                     # STATISTIQUES
-                    if target == "price" or target is None:
+                    if target == "stat" or target is None:
                         self.stat_price()
 
                     #######################################################################################################
@@ -123,16 +133,6 @@ class Job:
                 else:
                     logging.info(
                         f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
-
-            # ######################################################################################################
-            # FETCH TEMPO DATA
-            if target == "tempo" or target is None:
-                self.get_tempo()
-
-            # ######################################################################################################
-            # FETCH ECOWATT DATA
-            if target == "ecowatt" or target is None:
-                self.get_ecowatt()
 
             finish()
 
@@ -377,7 +377,7 @@ class Job:
             title(f"[{usage_point_id}] {detail} :")
             if hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail:
                 logging.info("Consommation :")
-                Stat(usage_point_id=usage_point_id).generate_price()
+                Stat(usage_point_id=usage_point_id, measurement_direction="consumption").generate_price()
             if hasattr(usage_point_config, "production_detail") and usage_point_config.production_detail:
                 logging.info("Production :")
                 Stat(usage_point_id=usage_point_id, measurement_direction="production").generate_price()
@@ -475,6 +475,7 @@ class Job:
             export_mqtt.contract()
             export_mqtt.address()
             export_mqtt.ecowatt()
+            export_mqtt.tempo()
             if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
                 export_mqtt.daily_annual(usage_point_config.consumption_price_base,
                                          measurement_direction="consumption")

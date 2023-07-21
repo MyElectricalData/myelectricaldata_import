@@ -1,14 +1,12 @@
 import calendar
-import logging
-import ast
 import json
+import logging
 from datetime import datetime, timezone, timedelta, date
 
 import pytz
 from dateutil.relativedelta import relativedelta
-from dependencies import title
-from init import CONFIG, DB
 
+from init import CONFIG, DB
 
 utc = pytz.UTC
 
@@ -161,12 +159,11 @@ class Stat:
         }
 
     def current_week(self):
-        logging.info("current_week")
         begin = datetime.combine(self.now_date - relativedelta(weeks=1), datetime.min.time())
         end = datetime.combine(self.yesterday_date, datetime.max.time())
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_week = self.value_current_week + data.value
-        logging.info(f" {self.value_current_week}")
+        logging.info(f" current_week => {self.value_current_week}")
         return {
             "value": self.value_current_week,
             "begin": begin.strftime(self.date_format),
@@ -187,7 +184,6 @@ class Stat:
     #     }
 
     def last_week(self):
-        logging.info("last_week")
         begin = datetime.combine(self.now_date - relativedelta(weeks=2), datetime.min.time())
         end = datetime.combine(self.yesterday_date - relativedelta(weeks=1), datetime.max.time())
         # while day_idx < 7:
@@ -200,7 +196,7 @@ class Stat:
         #     day_idx = day_idx + 1
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_week = self.value_last_week + data.value
-        logging.info(f" {self.value_last_week}")
+        logging.info(f" last_week => {self.value_last_week}")
         return {
             "value": self.value_last_week,
             "begin": begin.strftime(self.date_format),
@@ -208,14 +204,12 @@ class Stat:
         }
 
     def current_week_evolution(self):
-        logging.info("current_week_evolution")
         if self.value_last_week != 0:
             self.value_current_week_evolution = ((self.value_current_week * 100) / self.value_last_week) - 100
-        logging.info(f" {self.value_current_week_evolution}")
+        logging.info(f" current_week_evolution => {self.value_current_week_evolution}")
         return self.value_current_week_evolution
 
     def yesterday(self):
-        logging.info("yesterday")
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
         end = datetime.combine(self.yesterday_date, datetime.max.time())
         data = self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction)
@@ -223,7 +217,7 @@ class Stat:
             self.value_yesterday = data[0].value
         else:
             self.value_yesterday = 0
-        logging.info(f" {self.value_yesterday}")
+        logging.info(f" yesterday => {self.value_yesterday}")
         return {
             "value": self.value_yesterday,
             "begin": begin.strftime(self.date_format),
@@ -231,7 +225,6 @@ class Stat:
         }
 
     def yesterday_1(self):
-        logging.info("yesterday_1")
         begin = datetime.combine(self.yesterday_date - timedelta(days=1), datetime.min.time())
         end = datetime.combine(self.yesterday_date - timedelta(days=1), datetime.max.time())
         data = self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction)
@@ -239,7 +232,7 @@ class Stat:
             self.value_yesterday_1 = data[0].value
         else:
             self.value_yesterday_1 = 0
-        logging.info(f" {self.value_yesterday_1}")
+        logging.info(f" yesterday_1 => {self.value_yesterday_1}")
         return {
             "value": self.value_yesterday_1,
             "begin": begin.strftime(self.date_format),
@@ -247,16 +240,14 @@ class Stat:
         }
 
     def yesterday_evolution(self):
-        logging.info("yesterday_evolution")
         self.yesterday()
         self.yesterday_1()
         if self.value_yesterday_1 != 0:
             self.value_yesterday_evolution = ((100 * self.value_yesterday) / self.value_yesterday_1) - 100
-        logging.info(f" {self.value_yesterday_evolution}")
+        logging.info(f" yesterday_evolution => {self.value_yesterday_evolution}")
         return self.value_yesterday_evolution
 
     def current_week_last_year(self):
-        logging.info("current_week_last_year")
         # begin = datetime.combine(yesterday - relativedelta(years=1), datetime.min.time())
         # end = datetime.combine(yesterday - relativedelta(years=1), datetime.max.time())
         # day_idx = 0
@@ -272,7 +263,7 @@ class Stat:
         end = datetime.combine(self.yesterday_date - relativedelta(years=1), datetime.max.time())
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_week_last_year = self.value_current_week_last_year + data.value
-        logging.info(f" {self.value_current_week_last_year}")
+        logging.info(f" current_week_last_year => {self.value_current_week_last_year}")
         return {
             "value": self.value_current_week_last_year,
             "begin": begin.strftime(self.date_format),
@@ -280,13 +271,12 @@ class Stat:
         }
 
     def last_month(self):
-        logging.info("last_month")
         begin = datetime.combine((self.now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
                                  datetime.min.time())
         end = datetime.combine(self.yesterday_date.replace(day=1) - timedelta(days=1), datetime.max.time())
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_month = self.value_last_month + day.value
-        logging.info(f" => {self.value_last_month}")
+        logging.info(f" last_month => {self.value_last_month}")
         return {
             "value": self.value_last_month,
             "begin": begin.strftime(self.date_format),
@@ -294,12 +284,11 @@ class Stat:
         }
 
     def current_month(self):
-        logging.info("current_month")
         begin = datetime.combine(self.now_date.replace(day=1), datetime.min.time())
         end = self.yesterday_date
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_month = self.value_current_month + day.value
-        logging.info(f" => {self.value_current_month}")
+        logging.info(f" current_month => {self.value_current_month}")
         return {
             "value": self.value_current_month,
             "begin": begin.strftime(self.date_format),
@@ -307,12 +296,11 @@ class Stat:
         }
 
     def current_month_last_year(self):
-        logging.info("current_month_last_year")
         begin = datetime.combine(self.now_date.replace(day=1), datetime.min.time()) - relativedelta(years=1)
         end = self.yesterday_date - relativedelta(years=1)
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_month_last_year = self.value_current_month_last_year + day.value
-        logging.info(f" => {self.value_current_month_last_year}")
+        logging.info(f" current_month_last_year => {self.value_current_month_last_year}")
         return {
             "value": self.value_current_month_last_year,
             "begin": begin.strftime(self.date_format),
@@ -320,17 +308,15 @@ class Stat:
         }
 
     def current_month_evolution(self):
-        logging.info("current_month_evolution")
         if self.value_current_month_last_year != 0:
             self.value_current_month_evolution = (
                                                          (
                                                                  100 * self.value_current_month) / self.value_current_month_last_year
                                                  ) - 100
-        logging.info(f" => {self.value_current_month_evolution}")
+        logging.info(f" current_month_evolution => {self.value_current_month_evolution}")
         return self.value_current_month_evolution
 
     def last_month_last_year(self):
-        logging.info("last_month_last_year")
         begin = datetime.combine(
             (self.now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
             datetime.min.time()) - relativedelta(years=1)
@@ -339,7 +325,7 @@ class Stat:
             datetime.max.time()) - relativedelta(years=1)
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_month_last_year = self.value_last_month_last_year + day.value
-        logging.info(f" => {self.value_last_month_last_year}")
+        logging.info(f" last_month_last_year => {self.value_last_month_last_year}")
         return {
             "value": self.value_last_month_last_year,
             "begin": begin.strftime(self.date_format),
@@ -347,21 +333,19 @@ class Stat:
         }
 
     def monthly_evolution(self):
-        logging.info("monthly_evolution")
         self.last_month()
         self.last_month_last_year()
         if self.value_last_month_last_year != 0:
             self.value_monthly_evolution = ((100 * self.value_last_month) / self.value_last_month_last_year) - 100
-        logging.info(f" => {self.value_monthly_evolution}")
+        logging.info(f" monthly_evolution => {self.value_monthly_evolution}")
         return self.value_monthly_evolution
 
     def current_year(self):
-        logging.info("current_year")
         begin = datetime.combine(self.now_date.replace(month=1, day=1), datetime.min.time())
         end = self.yesterday_date
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_year = self.value_current_year + day.value
-        logging.info(f" => {self.value_current_year}")
+        logging.info(f" current_year => {self.value_current_year}")
         return {
             "value": self.value_current_year,
             "begin": begin.strftime(self.date_format),
@@ -369,7 +353,6 @@ class Stat:
         }
 
     def current_year_last_year(self):
-        logging.info("current_year_last_year")
         begin = datetime.combine(
             datetime.combine(self.now_date.replace(month=1, day=1), datetime.min.time()) - relativedelta(
                 years=1),
@@ -377,7 +360,7 @@ class Stat:
         end = self.yesterday_date - relativedelta(years=1)
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_year_last_year = self.value_current_year_last_year + day.value
-        logging.info(f" => {self.value_current_year_last_year}")
+        logging.info(f" current_year_last_year => {self.value_current_year_last_year}")
         return {
             "value": self.value_current_year_last_year,
             "begin": begin.strftime(self.date_format),
@@ -385,14 +368,13 @@ class Stat:
         }
 
     def last_year(self):
-        logging.info("last_year")
         begin = datetime.combine(self.now_date.replace(month=1, day=1) - relativedelta(years=1),
                                  datetime.min.time())
         last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
         end = datetime.combine(begin.replace(month=1, day=last_day_of_month), datetime.max.time())
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_year = self.value_last_year + day.value
-        logging.info(f" => {self.value_last_year}")
+        logging.info(f" last_year => {self.value_last_year}")
         return {
             "value": self.value_last_year,
             "begin": begin.strftime(self.date_format),
@@ -400,16 +382,14 @@ class Stat:
         }
 
     def yearly_evolution(self):
-        logging.info("yearly_evolution")
         self.current_year()
         self.current_year_last_year()
         if self.value_last_month_last_year != 0:
             self.value_yearly_evolution = ((100 * self.value_current_year) / self.value_current_year_last_year) - 100
-        logging.info(f" => {self.value_yearly_evolution}")
+        logging.info(f" yearly_evolution => {self.value_yearly_evolution}")
         return self.value_yearly_evolution
 
     def yesterday_hc_hp(self):
-        logging.info("yesterday_hp / yesterday_hc")
         begin = datetime.combine(self.yesterday_date, datetime.min.time())
         end = datetime.combine(self.now_date, datetime.max.time())
         for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -417,8 +397,8 @@ class Stat:
                 self.value_yesterday_hp = self.value_yesterday_hp + (day.value / (60 / day.interval))
             if day.measure_type == "HC":
                 self.value_yesterday_hc = self.value_yesterday_hc + (day.value / (60 / day.interval))
-        logging.info(f" => HC : {self.value_yesterday_hc}")
-        logging.info(f" => HP : {self.value_yesterday_hp}")
+        logging.info(f" yesterday_hc => HC : {self.value_yesterday_hc}")
+        logging.info(f" yesterday_hp => HP : {self.value_yesterday_hp}")
         return {
             "value": {
                 "hc": self.value_yesterday_hc,
@@ -429,7 +409,6 @@ class Stat:
         }
 
     def peak_offpeak_percent(self):
-        logging.info("peak_offpeak_percent_hp VS peak_offpeak_percent_hc")
         begin = self.yesterday_date - relativedelta(years=1)
         end = self.yesterday_date
         for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -444,7 +423,7 @@ class Stat:
                 (
                         (100 * self.value_peak_offpeak_percent_hp) / self.value_peak_offpeak_percent_hc
                 ) - 100
-        logging.info(f" => {self.value_peak_offpeak_percent_hp_vs_hc}")
+        logging.info(f" peak_offpeak_percent_hp VS peak_offpeak_percent_hc => {self.value_peak_offpeak_percent_hp_vs_hc}")
         return self.value_peak_offpeak_percent_hp_vs_hc
 
     # STAT V2
@@ -577,7 +556,11 @@ class Stat:
         last_month = ""
         tempo_config = self.config.tempo_config()
         tempo_data = self.db.get_tempo_range(data[0].date, data[-1].date)
-
+        # init_value = {
+        #     "euro": 0,
+        #     "kw": 0,
+        #     "w": 0
+        # }
         for item in data:
             year = item.date.strftime("%Y")
             month = item.date.strftime("%m")
@@ -587,33 +570,34 @@ class Stat:
             tempo_date = datetime.combine(item.date, datetime.min.time())
             interval = item.interval
             if year not in result:
+
                 result[year] = {
-                    "BASE": 0,
+                    "BASE": {"euro": 0, "kWh": 0, "Wh": 0},
                     "TEMPO": {
-                        "BLUE_HC": 0,
-                        "BLUE_HP": 0,
-                        "WHITE_HC": 0,
-                        "WHITE_HP": 0,
-                        "RED_HC": 0,
-                        "RED_HP": 0,
+                        "BLUE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "BLUE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "WHITE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "WHITE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "RED_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "RED_HP": {"euro": 0, "kWh": 0, "Wh": 0},
                     },
-                    "HC": 0,
-                    "HP": 0,
+                    "HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                    "HP": {"euro": 0, "kWh": 0, "Wh": 0},
                     "month": {}
                 }
             if month not in result[year]["month"]:
                 result[year]["month"][month] = {
-                    "BASE": 0,
+                    "BASE": {"euro": 0, "kWh": 0, "Wh": 0},
                     "TEMPO": {
-                        "BLUE_HC": 0,
-                        "BLUE_HP": 0,
-                        "WHITE_HC": 0,
-                        "WHITE_HP": 0,
-                        "RED_HC": 0,
-                        "RED_HP": 0,
+                        "BLUE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "BLUE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "WHITE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "WHITE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "RED_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "RED_HP": {"euro": 0, "kWh": 0, "Wh": 0},
                     },
-                    "HC": 0,
-                    "HP": 0
+                    "HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                    "HP": {"euro": 0, "kWh": 0, "Wh": 0}
                 }
             if self.measurement_direction == "consumption":
                 price = self.usage_point_id_config.consumption_price_base
@@ -623,14 +607,23 @@ class Stat:
                 price_hc_hp = self.usage_point_id_config.consumption_price_hp
             else:
                 price_hc_hp = self.usage_point_id_config.consumption_price_hc
-            kw = (item.value / 1000) / (60 / interval)
+            wh = (item.value) / (60 / interval)
+            kwh = (wh / 1000)
             # YEARS
-            result[year]["BASE"] += (kw * price)
-            result[year][measure_type] += (kw * price_hc_hp)
+            result[year]["BASE"]["Wh"] += wh
+            result[year]["BASE"]["kWh"] += kwh
+            result[year]["BASE"]["euro"] += (kwh * price)
+            result[year][measure_type]["Wh"] += wh
+            result[year][measure_type]["kWh"] += kwh
+            result[year][measure_type]["euro"] += (kwh * price_hc_hp)
 
             # MONTH
-            result[year]["month"][month]["BASE"] += (kw * price)
-            result[year]["month"][month][measure_type] += (kw * price_hc_hp)
+            result[year]["month"][month]["BASE"]["Wh"] += wh
+            result[year]["month"][month]["BASE"]["kWh"] += kwh
+            result[year]["month"][month]["BASE"]["euro"] += (kwh * price)
+            result[year]["month"][month][measure_type]["Wh"] += wh
+            result[year]["month"][month][measure_type]["kWh"] += kwh
+            result[year]["month"][month][measure_type]["euro"] += (kwh * price_hc_hp)
 
             # TEMPO
             if tempo_config:
@@ -644,14 +637,54 @@ class Stat:
                     color = tempo_output[0].color
 
                     tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
-                    result[year]["TEMPO"][f"{color}_{measure_type}"] += kw * tempo_price
-                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"] += kw * tempo_price
+                    result[year]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
+                    result[year]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
+                    result[year]["TEMPO"][f"{color}_{measure_type}"]["euro"] += kwh * tempo_price
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
+                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["euro"] += kwh * tempo_price
             last_month = month
-
-            # exit()
-
         self.db.set_stat(self.usage_point_id, f"price_{self.measurement_direction}", json.dumps(result))
         return json.dumps(result)
 
     def delete(self):
         self.db.del_stat(self.usage_point_id)
+
+# w = item.value
+# kw = (item.value / 1000) / (60 / interval)
+#
+# # YEARS
+# result[year]["BASE"]["w"] += w
+# result[year]["BASE"]["kw"] += kw
+# result[year]["BASE"]["euro"] += kw * price
+# result[year][measure_type]["w"] += w
+# result[year][measure_type]["kw"] += kw
+# result[year][measure_type]["euro"] += (kw * price_hc_hp)
+#
+# # MONTH
+# result[year]["month"][month]["BASE"]["w"] += w
+# result[year]["month"][month]["BASE"]["kw"] += kw
+# result[year]["month"][month]["BASE"]["euro"] += (kw * price)
+# result[year]["month"][month][measure_type]["w"] += w
+# result[year]["month"][month][measure_type]["kw"] += kw
+# result[year]["month"][month][measure_type]["euro"] += (kw * price_hc_hp)
+#
+# # TEMPO
+# if tempo_config:
+#     hour = int(item.date.strftime("%H"))
+#     if 6 <= hour < 22:
+#         measure_type = "HP"
+#     else:
+#         measure_type = "HC"
+#     tempo_output = [x for x in tempo_data if x.date == tempo_date]
+#     if tempo_output:
+#         color = tempo_output[0].color
+#
+#         tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
+#         result[year]["TEMPO"][f"{color}_{measure_type}"]["w"] += w
+#         result[year]["TEMPO"][f"{color}_{measure_type}"]["kw"] += kw
+#         result[year]["TEMPO"][f"{color}_{measure_type}"]["euro"] += (kw * tempo_price)
+#         result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["w"] += w
+#         result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["kw"] += kw
+#         result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["euro"] += (kw * tempo_price)
+# last_month = month
