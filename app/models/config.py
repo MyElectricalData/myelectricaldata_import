@@ -192,7 +192,7 @@ class Config:
             msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
             logging.critical(msg)
         else:
-            title(" Config valid")
+            title("Config valid")
 
         return lost_params
 
@@ -231,7 +231,7 @@ class Config:
             return self.config
 
     def set(self, path, value):
-        title(f" Switch {path} to {value}")
+        title(f"Switch {path} to {value}")
         with open(f'{self.path_file}', 'r+') as f:
             text = f.read()
             text = re.sub(fr'(?<={path}: ).*', str(value).lower(), text)
@@ -309,5 +309,11 @@ class Config:
             else:
                 logging.error("La configuration SSL est erronée.")
                 return {}
+        else:
+            return {}
+
+    def home_assistant_ws(self):
+        if "home_assistant_ws" in self.config:
+            return self.config["home_assistant_ws"]
         else:
             return {}

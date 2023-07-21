@@ -87,14 +87,14 @@ class HomeAssistant:
     def export(self):
         if (hasattr(self.config, "consumption") and self.config.consumption
                 or (hasattr(self.config, "consumption_detail") and self.config.consumption_detail)):
-            title(f"[{self.usage_point_id}] Exportation des données de consommation dans Home Assistant (via MQTT)")
+            logging.info("Consommation :")
             self.myelectricaldata_usage_point_id("consumption")
             self.last_x_day(5, "consumption")
             self.history_usage_point_id("consumption")
 
         if (hasattr(self.config, "production") and self.config.production
                 or (hasattr(self.config, "production_detail") and self.config.production_detail)):
-            title(f"[{self.usage_point_id}] Exportation des données de production dans Home Assistant (via MQTT)")
+            logging.info("Production :")
             self.myelectricaldata_usage_point_id("production")
             self.last_x_day(5, "production")
             self.history_usage_point_id("production")
@@ -103,10 +103,12 @@ class HomeAssistant:
         self.ecowatt()
 
     def last_x_day(self, days, measurement_direction):
+        uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_last{days}day"
+        logging.info(f"- {uniq_id}")
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}"
         config = {
             "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.last{days}day",
-            "uniq_id": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_last{days}day",
+            "uniq_id": uniq_id,
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
             "unit_of_measurement": "W",
@@ -122,7 +124,7 @@ class HomeAssistant:
         config = json.dumps(config)
         state = days
         attributes = {
-            "Version": get_version(),
+            "version": get_version(),
             "numPDL": self.usage_point_id,
             "activationDate": self.activation_date,
             "lastUpdate": datetime.now().strftime(self.date_format_detail),
@@ -146,11 +148,13 @@ class HomeAssistant:
         self.mqtt.publish_multiple(data, topic)
 
     def history_usage_point_id(self, measurement_direction):
+        uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_history"
+        logging.info(f"- {uniq_id}")
         stats = Stat(self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}_history/{self.usage_point_id}"
         config = {
             "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}.history",
-            "uniq_id": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_history",
+            "uniq_id": uniq_id,
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
             "unit_of_measurement": "kWh",
@@ -173,7 +177,7 @@ class HomeAssistant:
         state = convert_kw(state)
 
         attributes = {
-            "Version": get_version(),
+            "version": get_version(),
             "numPDL": self.usage_point_id,
             "activationDate": self.activation_date,
             "lastUpdate": datetime.now().strftime(self.date_format_detail),
@@ -189,6 +193,8 @@ class HomeAssistant:
         self.mqtt.publish_multiple(data, topic)
 
     def tempo(self):
+        uniq_id = f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_today"
+        logging.info(f"- {uniq_id}")
         begin = datetime.combine(datetime.now(), datetime.min.time())
         end = datetime.combine(datetime.now(), datetime.max.time())
         tempo_data = self.db.get_tempo_range(begin, end, "asc")
@@ -196,13 +202,13 @@ class HomeAssistant:
             date = tempo_data[0].date.strftime(self.date_format_detail)
             state = tempo_data[0].color
         else:
-            date = ""
-            state = ""
+            date = begin.strftime(self.date_format_detail)
+            state = "Inconnu"
 
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_tempo/today"
         config = {
             "name": f"myelectricaldata.{self.usage_point_id}.TempoToday",
-            "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_today",
+            "uniq_id": uniq_id,
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
             # "unit_of_measurement": "",
@@ -217,8 +223,8 @@ class HomeAssistant:
         }
 
         attributes = {
-            "Version": get_version(),
-            "LastSensorCall": datetime.now().strftime(self.date_format_detail),
+            "version": get_version(),
+            "lastSensorCall": datetime.now().strftime(self.date_format_detail),
             "numPDL": self.usage_point_id,
             "activationDate": self.activation_date,
             "lastUpdate": datetime.now().strftime(self.date_format_detail),
@@ -232,6 +238,8 @@ class HomeAssistant:
         }
         self.mqtt.publish_multiple(data, topic)
 
+        uniq_id = f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_tomorrow"
+        logging.info(f"- {uniq_id}")
         begin = begin + timedelta(days=1)
         end = end + timedelta(days=1)
         tempo_data = self.db.get_tempo_range(begin, end, "asc")
@@ -239,12 +247,12 @@ class HomeAssistant:
             date = tempo_data[0].date.strftime(self.date_format_detail)
             state = tempo_data[0].color
         else:
-            date = ""
-            state = ""
+            date = begin.strftime(self.date_format_detail)
+            state = "Inconnu"
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_tempo/tomorrow"
         config = {
             "name": f"myelectricaldata.{self.usage_point_id}.TempoTomorrow",
-            "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_tempo_tomorrow",
+            "uniq_id": uniq_id,
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
             # "unit_of_measurement": "",
@@ -258,8 +266,8 @@ class HomeAssistant:
             }
         }
         attributes = {
-            "Version": get_version(),
-            "LastSensorCall": datetime.now().strftime(self.date_format_detail),
+            "version": get_version(),
+            "lastSensorCall": datetime.now().strftime(self.date_format_detail),
             "numPDL": self.usage_point_id,
             "activationDate": self.activation_date,
             "lastUpdate": datetime.now().strftime(self.date_format_detail),
@@ -275,7 +283,8 @@ class HomeAssistant:
         self.mqtt.publish_multiple(data, topic)
 
     def ecowatt(self):
-        # Get ecowatt data
+        uniq_id = f"myelectricaldata_ecowatt.{self.usage_point_id}_ecowatt"
+        logging.info(f"- {uniq_id}")
         end = datetime.combine(datetime.now(), datetime.min.time())
         begin = end - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(begin, end, "asc")
@@ -284,7 +293,7 @@ class HomeAssistant:
             topic = f"{self.discovery_prefix}/sensor/myelectricaldata_ecowatt/{self.usage_point_id}"
             config = {
                 "name": f"myelectricaldata.{self.usage_point_id}.EcoWatt",
-                "uniq_id": f"myelectricaldata_ecowatt.{self.usage_point_id}_ecowatt",
+                "uniq_id": uniq_id,
                 "stat_t": f"{topic}/state",
                 "json_attr_t": f"{topic}/attributes",
                 "unit_of_measurement": "",
@@ -316,16 +325,16 @@ class HomeAssistant:
                         i = i + 1
 
             attributes = {
-                "Version": get_version(),
-                "LastSensorCall": datetime.now().strftime(self.date_format_detail),
-                "Forecast": forecast,
+                "version": get_version(),
+                "lastSensorCall": datetime.now().strftime(self.date_format_detail),
+                "forecast": forecast,
                 "numPDL": self.usage_point_id,
                 "activationDate": self.activation_date,
                 "lastUpdate": datetime.now().strftime(self.date_format_detail),
                 "timeLastCall": datetime.now().strftime(self.date_format_detail),
                 "yesterdayDate": stats.daily(0)["begin"],
-                "Begin": begin,
-                "End": end
+                "begin": begin,
+                "end": end
             }
             attributes = json.dumps(attributes)
             data = {
@@ -336,13 +345,15 @@ class HomeAssistant:
             self.mqtt.publish_multiple(data, topic)
 
     def myelectricaldata_usage_point_id(self, measurement_direction):
+        uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}"
+        logging.info(f"- {uniq_id}")
         stats = Stat(self.usage_point_id, measurement_direction)
         topic = f"{self.discovery_prefix}/sensor/myelectricaldata_{measurement_direction}/{self.usage_point_id}"
         config = {
             f"config": json.dumps(
                 {
                     "name": f"myelectricaldata.{measurement_direction}_{self.usage_point_id}",
-                    "uniq_id": f"myelectricaldata_{measurement_direction}_{self.usage_point_id}",
+                    "uniq_id": uniq_id,
                     "stat_t": f"{topic}/state",
                     "json_attr_t": f"{topic}/attributes",
                     "unit_of_measurement": "kWh",

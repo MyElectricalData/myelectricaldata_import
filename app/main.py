@@ -17,12 +17,13 @@ from routers import data
 from routers import html
 from routers import info
 
+
 if "DEV" in environ or "DEBUG" in environ:
     title_warning("Run in Development mode")
 else:
-    title(" Run in production mode")
+    title("Run in production mode")
 
-title(" Chargement du config.yaml...")
+title("Chargement du config.yaml...")
 usage_point_list = []
 if CONFIG.list_usage_point() is not None:
     for upi, upi_data in CONFIG.list_usage_point().items():
@@ -33,7 +34,7 @@ if CONFIG.list_usage_point() is not None:
 else:
     logging.warning("Aucun point de livraison détecté.")
 
-title(" Nettoyage de la base de données...")
+title("Nettoyage de la base de données...")
 DB.clean_database(usage_point_list)
 
 swagger_configuration = {
@@ -104,9 +105,9 @@ def import_job():
 
 
 @APP.on_event("startup")
-@repeat_every(seconds=60, wait_first=True)
+@repeat_every(seconds=3600, wait_first=True)
 def home_assistant_export():
-    Job().export_home_assistant()
+    Job().export_home_assistant(target="ecowatt")
 
 
 if __name__ == '__main__':

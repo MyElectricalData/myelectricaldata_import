@@ -1,6 +1,7 @@
 import datetime
 import logging
 from os import environ, getenv
+
 from art import decor, text2art
 
 if environ.get("APPLICATION_PATH") is None:
@@ -71,9 +72,9 @@ def title(message):
     separator()
     if type(message) is list:
         for msg in message:
-            logging.info(f" {msg.upper()}")
+            logging.info(f"{msg.upper()}")
     else:
-        logging.info(f" {message.upper()}")
+        logging.info(f"{message.upper()}")
     separator()
 
 
@@ -84,13 +85,15 @@ def title_warning(message):
 
 
 def separator():
-    logging.info(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
 def separator_warning():
-    logging.warning(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    logging.warning("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+
+def export_finish():
+    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ TERMINE ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
 def logo(version):

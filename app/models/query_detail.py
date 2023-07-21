@@ -91,13 +91,13 @@ class Detail:
             #     last_week = True
             # if not current_data["missing_data"] and not last_week:
             if not current_data["missing_data"]:
-                title(" Toutes les données sont déjà en cache.")
+                logging.info(" => Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
                     output.append({'date': date, "value": data["value"]})
                 return output
             else:
-                title(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
+                logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:

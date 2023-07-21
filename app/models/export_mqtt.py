@@ -21,7 +21,7 @@ class ExportMqtt:
 
 
     def status(self):
-        title(f"[{self.usage_point_id}] Statut du compte.")
+        logging.info("Statut du compte.")
         usage_point_id_config = self.db.get_usage_point(self.usage_point_id)
         # consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
         if hasattr(usage_point_id_config,
@@ -72,11 +72,9 @@ class ExportMqtt:
         }
         # print(consentement_expiration)
         self.mqtt.publish_multiple(consentement_expiration)
-        title(" Finish")
+        logging.info(" => OK")
 
     def contract(self):
-        title(f"[{self.usage_point_id}] Exportation de données dans MQTT.")
-
         logging.info("Génération des messages du contrat")
         contract_data = self.db.get_contract(self.usage_point_id)
         if hasattr(contract_data, "__table__"):
@@ -84,9 +82,9 @@ class ExportMqtt:
             for column in contract_data.__table__.columns:
                 output[f"{self.usage_point_id}/contract/{column.name}"] = str(getattr(contract_data, column.name))
             self.mqtt.publish_multiple(output)
-            title(" Finish")
+            logging.info(" => OK")
         else:
-            title(" Failed")
+            logging.info(" => ERREUR")
 
     def address(self):
         logging.info(f"Génération des messages d'addresse")
@@ -96,9 +94,9 @@ class ExportMqtt:
             for column in address_data.__table__.columns:
                 output[f"{self.usage_point_id}/address/{column.name}"] = str(getattr(address_data, column.name))
             self.mqtt.publish_multiple(output)
-            title(" Finish")
+            logging.info(" => OK")
         else:
-            title(" Failed")
+            logging.info(" => ERREUR")
 
     def daily_annual(self, price, measurement_direction="consumption"):
         logging.info("Génération des données annuelles")
@@ -168,9 +166,9 @@ class ExportMqtt:
 
                 self.mqtt.publish_multiple(mqtt_data)
 
-            title(" Finish")
+            logging.info(" => OK")
         else:
-            title(" No data")
+            logging.info(" => Pas de donnée")
 
     def daily_linear(self, price, measurement_direction="consumption"):
         logging.info("Génération des données linéaires journalières.")
@@ -225,9 +223,9 @@ class ExportMqtt:
 
                 self.mqtt.publish_multiple(mqtt_data)
 
-            title(" Finish")
+            logging.info(" => OK")
         else:
-            title(" No data")
+            logging.info(" => Pas de donnée")
 
     def detail_annual(self, price_hp, price_hc=0, measurement_direction="consumption"):
         logging.info("Génération des données annuelles détaillé.")
@@ -323,9 +321,9 @@ class ExportMqtt:
 
                 self.mqtt.publish_multiple(mqtt_data)
 
-            title(" Finish")
+            logging.info(" => OK")
         else:
-            title(" No data")
+            logging.info(" => Pas de donnée")
 
     def detail_linear(self, price_hp, price_hc=0, measurement_direction="consumption"):
         logging.info("Génération des données linéaires détaillées")
@@ -385,10 +383,9 @@ class ExportMqtt:
                 idx = idx + 1
 
                 self.mqtt.publish_multiple(mqtt_data)
-
-            logging.info(" => Finish")
+            logging.info(" => OK")
         else:
-            logging.info(" => No data")
+            logging.info(" => Pas de donnée")
 
     def max_power(self):
         logging.info("Génération des données de puissance max journalières.")
@@ -396,24 +393,27 @@ class ExportMqtt:
         mqtt_data = {}
         contract = self.db.get_contract(self.usage_point_id)
         max_value = 0
-        if hasattr(contract, "subscribed_power"):
-            max_value = int(contract.subscribed_power.split(' ')[0]) * 1000
-        for data in max_power_data:
-            if data.event_date is not None:
-                date = data.event_date.strftime("%A")
-                sub_prefix = f"{self.usage_point_id}/power_max/{date}"
-                mqtt_data[f"{sub_prefix}/date"] = data.event_date.strftime("%Y-%m-%d")
-                mqtt_data[f"{sub_prefix}/event_hour"] = data.event_date.strftime("%H:%M:%S")
-                mqtt_data[f"{sub_prefix}/value"] = data.value
-                value_w = data.value
-                if max_value != 0 and max_value >= value_w:
-                    mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 0
-                else:
-                    mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 1
-                threshold_usage = int(100 * value_w / max_value)
-                mqtt_data[f"{sub_prefix}/percentage_usage"] = threshold_usage
-        # print(mqtt_data)
-        self.mqtt.publish_multiple(mqtt_data)
+        if max_power_data:
+            if hasattr(contract, "subscribed_power"):
+                max_value = int(contract.subscribed_power.split(' ')[0]) * 1000
+            for data in max_power_data:
+                if data.event_date is not None:
+                    date = data.event_date.strftime("%A")
+                    sub_prefix = f"{self.usage_point_id}/power_max/{date}"
+                    mqtt_data[f"{sub_prefix}/date"] = data.event_date.strftime("%Y-%m-%d")
+                    mqtt_data[f"{sub_prefix}/event_hour"] = data.event_date.strftime("%H:%M:%S")
+                    mqtt_data[f"{sub_prefix}/value"] = data.value
+                    value_w = data.value
+                    if max_value != 0 and max_value >= value_w:
+                        mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 0
+                    else:
+                        mqtt_data[f"{sub_prefix}/threshold_exceeded"] = 1
+                    threshold_usage = int(100 * value_w / max_value)
+                    mqtt_data[f"{sub_prefix}/percentage_usage"] = threshold_usage
+            self.mqtt.publish_multiple(mqtt_data)
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")
 
     def ecowatt(self):
         logging.info("Génération des données Ecowatt")
@@ -422,17 +422,21 @@ class ExportMqtt:
         ecowatt = self.db.get_ecowatt_range(begin, end)
         today = datetime.combine(datetime.now(), datetime.min.time())
         mqtt_data = {}
-        for data in ecowatt:
-            if data.date == today:
-                queue = "j0"
-            elif data.date == today + timedelta(days=1):
-                queue = "j1"
-            else:
-                queue = "j2"
-            mqtt_data[f"ecowatt/{queue}/date"] = data.date.strftime(self.date_format_detail)
-            mqtt_data[f"ecowatt/{queue}/value"] = data.value
-            mqtt_data[f"ecowatt/{queue}/message"] = data.message
-            for date, value in ast.literal_eval(data.detail).items():
-                date = datetime.strptime(date, self.date_format_detail).strftime("%H")
-                mqtt_data[f"ecowatt/{queue}/detail/{date}"] = value
-        self.mqtt.publish_multiple(mqtt_data)
+        if ecowatt:
+            for data in ecowatt:
+                if data.date == today:
+                    queue = "j0"
+                elif data.date == today + timedelta(days=1):
+                    queue = "j1"
+                else:
+                    queue = "j2"
+                mqtt_data[f"ecowatt/{queue}/date"] = data.date.strftime(self.date_format_detail)
+                mqtt_data[f"ecowatt/{queue}/value"] = data.value
+                mqtt_data[f"ecowatt/{queue}/message"] = data.message
+                for date, value in ast.literal_eval(data.detail).items():
+                    date = datetime.strptime(date, self.date_format_detail).strftime("%H")
+                    mqtt_data[f"ecowatt/{queue}/detail/{date}"] = value
+            self.mqtt.publish_multiple(mqtt_data)
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")
