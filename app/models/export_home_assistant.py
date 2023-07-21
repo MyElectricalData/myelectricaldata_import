@@ -585,7 +585,7 @@ class HomeAssistant:
                     "timeLastCall": datetime.now().strftime(self.date_format_detail),
                     "yesterdayDate": stats.daily(0)["begin"],
                     "yesterday": convert_kw(stats.daily(0)["value"]),
-                    "ServiceEnedis": "myElectricalData",
+                    "serviceEnedis": "myElectricalData",
                     "yesterdayLastYearDate": (datetime.now() - relativedelta(years=1)).strftime(self.date_format),
                     "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year,
                                                                                           "value") else 0,
