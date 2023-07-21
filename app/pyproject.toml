@@ -29,7 +29,7 @@ dependencies = [
     "fastapi-utils",
     "python-multipart",
     "influxdb-client",
-    "aiohttp",
+#    "aiohttp",
 ]
 
 [project.optional-dependencies]
