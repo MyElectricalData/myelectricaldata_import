@@ -446,11 +446,6 @@ class HomeAssistant:
             yesterday_consumption_max_power = stats.max_power(0)["value"]
 
         attributes = {
-            "Version": get_version(),
-            "numPDL": self.usage_point_id,
-            "activationDate": self.activation_date,
-            "lastUpdate": datetime.now().strftime(self.date_format_detail),
-            "timeLastCall": datetime.now().strftime(self.date_format_detail),
             "yesterdayDate": stats.daily(0)["begin"],
             "yesterday": convert_kw(stats.daily(0)["value"]),
             "serviceEnedis": "myElectricalData",
@@ -550,7 +545,7 @@ class HomeAssistant:
             "day_6_HC": stats.detail(5, "HC")["value"],
             "day_7_HC": stats.detail(6, "HC")["value"],
             "peak_offpeak_percent": round(peak_offpeak_percent, 2),
-            "YesterdayConsumptionMaxPower": yesterday_consumption_max_power,
+            "yesterdayConsumptionMaxPower": yesterday_consumption_max_power,
             "dailyweek_MP": [
                 convert_kw(stats.max_power(0)["value"]),
                 convert_kw(stats.max_power(1)["value"]),
@@ -589,10 +584,11 @@ class HomeAssistant:
             "current_week_number": yesterday.strftime("%V"),
             "offpeak_hours_enedis": offpeak_hours_enedis,
             "offpeak_hours": offpeak_hours,
-            "subscribed_power": self.subscribed_power
+            "subscribed_power": self.subscribed_power,
+            "info": info
         }
-        for key, value in info.items():
-            attributes[f"info/{key}"] = json.dumps(value)
+
+
         uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}"
         logging.info(f"- {uniq_id}")
         self.sensor(

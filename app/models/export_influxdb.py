@@ -51,28 +51,28 @@ class ExportInfluxDB:
             if len(get_daily_all) != count:
                 for daily in get_daily_all:
                     date = daily.date
-                    start = datetime.strftime(date, "%Y-%m-%dT00:00:00Z")
-                    end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
+                    # start = datetime.strftime(date, "%Y-%m-%dT00:00:00Z")
+                    # end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
                     if current_month != date.strftime('%m'):
                         logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-                    if len(INFLUXDB.get(start, end, measurement_direction)) == 0:
-                        watt = daily.value
-                        kwatt = watt / 1000
-                        euro = kwatt * price
-                        INFLUXDB.write(
-                            measurement=measurement_direction,
-                            date=self.tz.localize(date),
-                            tags={
-                                "usage_point_id": self.usage_point_id,
-                                "year": daily.date.strftime("%Y"),
-                                "month": daily.date.strftime("%m"),
-                            },
-                            fields={
-                                "Wh": float(watt),
-                                "kWh": float(forceRound(kwatt, 5)),
-                                "price": float(forceRound(euro, 5))
-                            },
-                        )
+                    # if len(INFLUXDB.get(start, end, measurement_direction)) == 0:
+                    watt = daily.value
+                    kwatt = watt / 1000
+                    euro = kwatt * price
+                    INFLUXDB.write(
+                        measurement=measurement_direction,
+                        date=self.tz.localize(date),
+                        tags={
+                            "usage_point_id": self.usage_point_id,
+                            "year": daily.date.strftime("%Y"),
+                            "month": daily.date.strftime("%m"),
+                        },
+                        fields={
+                            "Wh": float(watt),
+                            "kWh": float(forceRound(kwatt, 5)),
+                            "price": float(forceRound(euro, 5))
+                        },
+                    )
                     current_month = date.strftime("%m")
                 logging.info(f" => OK")
             else:
@@ -95,47 +95,50 @@ class ExportInfluxDB:
             for data in influxdb_data:
                 for record in data.records:
                     count += record.get_value()
+
+            # print(len(get_detail_all))
+            # print(count)
             if len(get_detail_all) != count:
                 for index, detail in enumerate(get_detail_all):
                     date = detail.date
-                    start = datetime.strftime(date, self.time_format)
+                    # start = datetime.strftime(date, self.time_format)
                     if current_month != date.strftime('%m'):
                         logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-                    if index < (len(get_detail_all) - 1):
-                        next_item = get_detail_all[index + 1]
-                        end = datetime.strftime(next_item.date, self.time_format)
-                    else:
-                        end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
-                    if len(INFLUXDB.get(start, end, measurement)) == 0:
-                        watt = detail.value
-                        kwatt = watt / 1000
-                        watth = watt / (60 / detail.interval)
-                        kwatth = watth / 1000
-                        if measurement_direction == "consumption":
-                            if detail.measure_type == "HP":
-                                euro = kwatth * self.usage_point_config.consumption_price_hp
-                            else:
-                                euro = kwatth * self.usage_point_config.consumption_price_hc
+                    # if index < (len(get_detail_all) - 1):
+                    #     next_item = get_detail_all[index + 1]
+                    #     end = datetime.strftime(next_item.date, self.time_format)
+                    # else:
+                    #     end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
+                    # if len(INFLUXDB.get(start, end, measurement)) == 0:
+                    watt = detail.value
+                    kwatt = watt / 1000
+                    watth = watt / (60 / detail.interval)
+                    kwatth = watth / 1000
+                    if measurement_direction == "consumption":
+                        if detail.measure_type == "HP":
+                            euro = kwatth * self.usage_point_config.consumption_price_hp
                         else:
-                            euro = kwatth * self.usage_point_config.production_price
-                        INFLUXDB.write(
-                            measurement=measurement,
-                            date=self.tz.localize(date),
-                            tags={
-                                "usage_point_id": self.usage_point_id,
-                                "year": detail.date.strftime("%Y"),
-                                "month": detail.date.strftime("%m"),
-                                "internal": detail.interval,
-                                "measure_type": detail.measure_type,
-                            },
-                            fields={
-                                "W": float(watt),
-                                "kW": float(forceRound(kwatt, 5)),
-                                "Wh": float(watth),
-                                "kWh": float(forceRound(kwatth, 5)),
-                                "price": float(forceRound(euro, 5))
-                            },
-                        )
+                            euro = kwatth * self.usage_point_config.consumption_price_hc
+                    else:
+                        euro = kwatth * self.usage_point_config.production_price
+                    INFLUXDB.write(
+                        measurement=measurement,
+                        date=self.tz.localize(date),
+                        tags={
+                            "usage_point_id": self.usage_point_id,
+                            "year": detail.date.strftime("%Y"),
+                            "month": detail.date.strftime("%m"),
+                            "internal": detail.interval,
+                            "measure_type": detail.measure_type,
+                        },
+                        fields={
+                            "W": float(watt),
+                            "kW": float(forceRound(kwatt, 5)),
+                            "Wh": float(watth),
+                            "kWh": float(forceRound(kwatth, 5)),
+                            "price": float(forceRound(euro, 5))
+                        },
+                    )
                     current_month = date.strftime("%m")
                 logging.info(f" => OK")
             else:

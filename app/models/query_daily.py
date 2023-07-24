@@ -78,6 +78,8 @@ class Daily:
                 logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 blacklist = 0
+                from pprint import pprint
+                max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
@@ -86,22 +88,23 @@ class Daily:
                         for interval_reading_data in interval_reading:
                             interval_reading_tmp[interval_reading_data["date"]] = interval_reading_data["value"]
                         for single_date in daterange(begin, end):
-                            if single_date.strftime(self.date_format) in interval_reading_tmp:
-                                # FOUND
-                                self.db.insert_daily(
-                                    usage_point_id=self.usage_point_id,
-                                    date=datetime.combine(single_date, datetime.min.time()),
-                                    value=interval_reading_tmp[single_date.strftime(self.date_format)],
-                                    blacklist=blacklist,
-                                    measurement_direction=self.measure_type
-                                )
-                            else:
-                                # NOT FOUND
-                                self.db.daily_fail_increment(
-                                    usage_point_id=self.usage_point_id,
-                                    date=datetime.combine(single_date, datetime.min.time()),
-                                    measurement_direction=self.measure_type
-                                )
+                            if single_date < max_histo:
+                                if single_date.strftime(self.date_format) in interval_reading_tmp:
+                                    # FOUND
+                                    self.db.insert_daily(
+                                        usage_point_id=self.usage_point_id,
+                                        date=datetime.combine(single_date, datetime.min.time()),
+                                        value=interval_reading_tmp[single_date.strftime(self.date_format)],
+                                        blacklist=blacklist,
+                                        measurement_direction=self.measure_type
+                                    )
+                                else:
+                                    # NOT FOUND
+                                    self.db.daily_fail_increment(
+                                        usage_point_id=self.usage_point_id,
+                                        date=datetime.combine(single_date, datetime.min.time()),
+                                        measurement_direction=self.measure_type
+                                    )
                         return interval_reading
                     else:
                         return {

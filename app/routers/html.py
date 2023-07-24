@@ -17,21 +17,21 @@ async def favicon():
     return FileResponse("/app/static/favicon.ico")
 
 
-@ROUTER.get("/", response_class=HTMLResponse)
+@ROUTER.get("/")
 def main():
-    return Index(CONFIG, DB).display()
+    return HTMLResponse(Index(CONFIG, DB).display())
 
 
-@ROUTER.get('/usage_point_id/{usage_point_id}', response_class=HTMLResponse)
-@ROUTER.get('/usage_point_id/{usage_point_id}/', response_class=HTMLResponse)
+@ROUTER.get('/usage_point_id/{usage_point_id}')
+@ROUTER.get('/usage_point_id/{usage_point_id}/')
 def usage_point_id(usage_point_id):
-    return UsagePoint(usage_point_id).display()
+    return HTMLResponse(UsagePoint(usage_point_id).display())
 
 
 @ROUTER.get("/datatable/{usage_point_id}/{measurement_direction}")
 @ROUTER.get("/datatable/{usage_point_id}/{measurement_direction}/")
 def datatable(request: Request, usage_point_id, measurement_direction):
-    return Ajax(usage_point_id).datatable(measurement_direction, request)
+    return HTMLResponse(Ajax(usage_point_id).datatable(measurement_direction, request))
 
 
 # ########################################################################################################################
