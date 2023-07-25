@@ -173,6 +173,8 @@ def create_release(prerelease=False):
 
     print(version)
 
+    exit()
+
     commit = cmd("git status --porcelain").stdout.decode()
     if commit != "":
         logging.warning("Your code it's not commit!!")

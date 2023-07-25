@@ -826,6 +826,7 @@ class UsagePoint:
             if data:
                 data_value = json.loads(data.value)
                 for years, value in data_value.items():
+                    print(value)
                     html += "<tr>"
                     html += f"<td class='table_recap_header'>{years}</td>"
                     html += f"<td>{round(value['BASE']['euro'], 2)} €</td>"
