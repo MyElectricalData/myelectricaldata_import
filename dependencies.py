@@ -140,12 +140,13 @@ def create_release(prerelease=False):
 
     branch = version
 
+    if version in tags:
+        prerelease = True
+        version = new_release
 
     if version not in tags:
-        if version == "new_beta":
-            prerelease = True
-            version = new_release
-        else:
+        if version != "new_beta":
+
             prerelease = inquirer.confirm(
                 message="It's prerelease (beta version) ?",
             ).execute()
@@ -170,10 +171,6 @@ def create_release(prerelease=False):
             return False
 
     switch_version(version)
-
-    print(version)
-
-    exit()
 
     commit = cmd("git status --porcelain").stdout.decode()
     if commit != "":
