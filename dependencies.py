@@ -160,46 +160,51 @@ def create_release(prerelease=False):
         else:
             version = f"{version}-release"
 
-    if version in tags:
-        logging.warning("Tag already exist on Github")
-        rebuild_confirm = inquirer.confirm(
-            message="Would you rebuild this ?",
-        ).execute()
-        if not rebuild_confirm:
-            logging.info_error("No problem!")
-            return False
-
     switch_version(version)
 
-    commit = cmd("git status --porcelain").stdout.decode()
-    if commit != "":
-        logging.warning("Your code it's not commit!!")
-        commit_msg = inquirer.text(message="Commit message").execute()
-        system("git add --all")
-        system(f"git commit -m \"{commit_msg}\"")
-        system(f"git push origin {branch}")
+    execute = inquirer.confirm(
+        message=f"Would you build {version} ?",
+    ).execute()
 
-    if rebuild_confirm:
-        logging.info(f"Delete release {version} on remote")
-        system(f"gh release delete {version} -y")
-        logging.info(f"Delete tag {version} in local")
-        system(f"git tag -d {version}")
+    if execute:
+        if version in tags:
+            logging.warning("Tag already exist on Github")
+            rebuild_confirm = inquirer.confirm(
+                message="Would you rebuild this ?",
+            ).execute()
+            if not rebuild_confirm:
+                logging.info_error("No problem!")
+                return False
+
+        commit = cmd("git status --porcelain").stdout.decode()
+        if commit != "":
+            logging.warning("Your code it's not commit!!")
+            commit_msg = inquirer.text(message="Commit message").execute()
+            system("git add --all")
+            system(f"git commit -m \"{commit_msg}\"")
+            system(f"git push origin {branch}")
+
+        if rebuild_confirm:
+            logging.info(f"Delete release {version} on remote")
+            system(f"gh release delete {version} -y")
+            logging.info(f"Delete tag {version} in local")
+            system(f"git tag -d {version}")
+            logging.info("  => Success")
+            logging.info(f"Delete tag {version} on remote")
+            system(f"git push --delete origin {version}")
+            logging.info("  => Success")
+
+        logging.info(f"Create {version} in local")
+        system(f"git tag {version}")
         logging.info("  => Success")
-        logging.info(f"Delete tag {version} on remote")
-        system(f"git push --delete origin {version}")
+        logging.info(f"Push tag {version}")
+        system(f"git push origin {version}")
+        logging.info("  => Success")
+        logging.info(f"Create release {version}")
+        prerelease_txt = ""
+        if "-beta" in version:
+            prerelease_txt = "--prerelease"
+        system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
         logging.info("  => Success")
 
-    logging.info(f"Create {version} in local")
-    system(f"git tag {version}")
-    logging.info("  => Success")
-    logging.info(f"Push tag {version}")
-    system(f"git push origin {version}")
-    logging.info("  => Success")
-    logging.info(f"Create release {version}")
-    prerelease_txt = ""
-    if "-beta" in version:
-        prerelease_txt = "--prerelease"
-    system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
-    logging.info("  => Success")
-
-    logging.info(f"Release {version} is online!!!!")
+        logging.info(f"Release {version} is online!!!!")
