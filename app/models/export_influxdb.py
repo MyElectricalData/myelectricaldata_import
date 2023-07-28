@@ -37,7 +37,7 @@ class ExportInfluxDB:
             price = self.usage_point_config.production_price
         logging.info(f'Envoi des données "{measurement_direction.upper()}" dans influxdb')
         get_daily_all = self.db.get_daily_all(self.usage_point_id)
-
+        get_daily_all_count = len(get_daily_all)
         last_data = self.db.get_daily_last_date(self.usage_point_id, measurement_direction)
         first_data = self.db.get_daily_first_date(self.usage_point_id, measurement_direction)
         if last_data and first_data:
@@ -48,7 +48,8 @@ class ExportInfluxDB:
             for data in influxdb_data:
                 for record in data.records:
                     count += record.get_value()
-            if len(get_daily_all) != count:
+            if get_daily_all_count != count:
+                logging.info(f" Cache : {get_daily_all_count} / InfluxDb : {count}")
                 for daily in get_daily_all:
                     date = daily.date
                     # start = datetime.strftime(date, "%Y-%m-%dT00:00:00Z")
@@ -85,6 +86,7 @@ class ExportInfluxDB:
         measurement = f"{measurement_direction}_detail"
         logging.info(f'Envoi des données "{measurement.upper()}" dans influxdb')
         get_detail_all = self.db.get_detail_all(self.usage_point_id, measurement_direction)
+        get_detail_all_count = len(get_detail_all)
         last_data = self.db.get_detail_last_date(self.usage_point_id, measurement_direction)
         first_data = self.db.get_detail_first_date(self.usage_point_id, measurement_direction)
         if last_data and first_data:
@@ -98,7 +100,8 @@ class ExportInfluxDB:
 
             # print(len(get_detail_all))
             # print(count)
-            if len(get_detail_all) != count:
+            if get_detail_all_count != count:
+                logging.info(f" Cache : {get_detail_all_count} / InfluxDb : {count}")
                 for index, detail in enumerate(get_detail_all):
                     date = detail.date
                     # start = datetime.strftime(date, self.time_format)

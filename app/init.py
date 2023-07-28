@@ -83,7 +83,7 @@ CONFIG.set_db(DB)
 INFLUXB_ENABLE = False
 INFLUXDB = None
 INFLUXDB_CONFIG = CONFIG.influxdb_config()
-if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]:
+if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and str2bool(INFLUXDB_CONFIG["enable"]):
     INFLUXB_ENABLE = True
     if "method" in INFLUXDB_CONFIG:
         method = INFLUXDB_CONFIG["method"]
@@ -110,7 +110,7 @@ if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]
 MQTT_ENABLE = False
 MQTT = None
 MQTT_CONFIG = CONFIG.mqtt_config()
-if MQTT_CONFIG and "enable" in MQTT_CONFIG and MQTT_CONFIG["enable"]:
+if MQTT_CONFIG and "enable" in MQTT_CONFIG and str2bool(MQTT_CONFIG["enable"]):
     MQTT_ENABLE = True
     MQTT = Mqtt(
         hostname=MQTT_CONFIG["hostname"],

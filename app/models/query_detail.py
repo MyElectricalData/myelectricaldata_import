@@ -100,6 +100,21 @@ class Detail:
                 logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 if hasattr(data, "status_code"):
+                    if data.status_code == 403:
+                        if hasattr(data, "text"):
+                            description = json.loads(data.text)["detail"]
+                        else:
+                            description = data
+                        if hasattr(data, "status_code"):
+                            status_code = data.status_code
+                        else:
+                            status_code = 500
+                        return {
+                            "error": True,
+                            "description": description,
+                            "status_code": status_code,
+                            "exit": True
+                        }
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
                         for interval_reading in meter_reading["interval_reading"]:
@@ -182,6 +197,13 @@ class Detail:
                 response = self.run(begin, end)
                 begin = begin - timedelta(days=self.max_detail)
                 end = end - timedelta(days=self.max_detail)
+            if "exit" in response:
+                finish = False
+                response = {
+                    "error": True,
+                    "description": response["description"],
+                    "status_code": response["status_code"]
+                }
             if response is not None:
                 result = [*result, *response]
             else:

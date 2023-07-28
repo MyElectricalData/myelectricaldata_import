@@ -77,42 +77,7 @@ class Daily:
             else:
                 logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
-                blacklist = 0
-                from pprint import pprint
-                max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
-                if hasattr(data, "status_code"):
-                    if data.status_code == 200:
-                        meter_reading = json.loads(data.text)['meter_reading']
-                        interval_reading = meter_reading["interval_reading"]
-                        interval_reading_tmp = {}
-                        for interval_reading_data in interval_reading:
-                            interval_reading_tmp[interval_reading_data["date"]] = interval_reading_data["value"]
-                        for single_date in daterange(begin, end):
-                            if single_date < max_histo:
-                                if single_date.strftime(self.date_format) in interval_reading_tmp:
-                                    # FOUND
-                                    self.db.insert_daily(
-                                        usage_point_id=self.usage_point_id,
-                                        date=datetime.combine(single_date, datetime.min.time()),
-                                        value=interval_reading_tmp[single_date.strftime(self.date_format)],
-                                        blacklist=blacklist,
-                                        measurement_direction=self.measure_type
-                                    )
-                                else:
-                                    # NOT FOUND
-                                    self.db.daily_fail_increment(
-                                        usage_point_id=self.usage_point_id,
-                                        date=datetime.combine(single_date, datetime.min.time()),
-                                        measurement_direction=self.measure_type
-                                    )
-                        return interval_reading
-                    else:
-                        return {
-                            "error": True,
-                            "description": json.loads(data.text)["detail"],
-                            "status_code": data.status_code
-                        }
-                else:
+                if data.status_code == 403:
                     if hasattr(data, "text"):
                         description = json.loads(data.text)["detail"]
                     else:
@@ -124,8 +89,58 @@ class Daily:
                     return {
                         "error": True,
                         "description": description,
-                        "status_code": status_code
+                        "status_code": status_code,
+                        "exit": True
                     }
+                else:
+                    blacklist = 0
+                    max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
+                    if hasattr(data, "status_code"):
+                        if data.status_code == 200:
+                            meter_reading = json.loads(data.text)['meter_reading']
+                            interval_reading = meter_reading["interval_reading"]
+                            interval_reading_tmp = {}
+                            for interval_reading_data in interval_reading:
+                                interval_reading_tmp[interval_reading_data["date"]] = interval_reading_data["value"]
+                            for single_date in daterange(begin, end):
+                                if single_date < max_histo:
+                                    if single_date.strftime(self.date_format) in interval_reading_tmp:
+                                        # FOUND
+                                        self.db.insert_daily(
+                                            usage_point_id=self.usage_point_id,
+                                            date=datetime.combine(single_date, datetime.min.time()),
+                                            value=interval_reading_tmp[single_date.strftime(self.date_format)],
+                                            blacklist=blacklist,
+                                            measurement_direction=self.measure_type
+                                        )
+                                    else:
+                                        # NOT FOUND
+                                        self.db.daily_fail_increment(
+                                            usage_point_id=self.usage_point_id,
+                                            date=datetime.combine(single_date, datetime.min.time()),
+                                            measurement_direction=self.measure_type
+                                        )
+                            return interval_reading
+                        else:
+                            return {
+                                "error": True,
+                                "description": json.loads(data.text)["detail"],
+                                "status_code": data.status_code
+                            }
+                    else:
+                        if hasattr(data, "text"):
+                            description = json.loads(data.text)["detail"]
+                        else:
+                            description = data
+                        if hasattr(data, "status_code"):
+                            status_code = data.status_code
+                        else:
+                            status_code = 500
+                        return {
+                            "error": True,
+                            "description": description,
+                            "status_code": status_code
+                        }
         except Exception as e:
             logging.exception(e)
             logging.error(e)
@@ -150,6 +165,13 @@ class Daily:
                 response = self.run(begin, end)
                 begin = begin - relativedelta(months=self.max_daily)
                 end = end - relativedelta(months=self.max_daily)
+            if "exit" in response:
+                finish = False
+                response = {
+                    "error": True,
+                    "description": response["description"],
+                    "status_code": response["status_code"]
+                }
             if response is not None:
                 result = [*result, *response]
             else:
@@ -163,9 +185,8 @@ class Daily:
                 logging.error(f'=> {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}')
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
-                error = f"Arrêt de la récupération des données suite à une erreur.\n" \
-                        f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}"
-                logging.warning(error)
+                logging.error("Arrêt de la récupération des données suite à une erreur.")
+                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}")
         return result
 
     def reset(self, date=None):

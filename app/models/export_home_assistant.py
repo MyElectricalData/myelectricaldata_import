@@ -104,16 +104,11 @@ class HomeAssistant:
 
     def sensor(self, **kwargs):
         topic = f"{self.discovery_prefix}/sensor/{kwargs['topic']}"
-        if "unit_of_measurement" not in kwargs:
-            unit_of_measurement = ""
-        else:
-            unit_of_measurement = kwargs["unit_of_measurement"]
         config = {
             "name": f"myelectricaldata.{kwargs['name']}",
             "uniq_id": kwargs['uniq_id'],
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
-            "unit_of_measurement": unit_of_measurement,
             "device": {
                 "identifiers": [
                     f"linky_{self.usage_point_id}"
@@ -123,6 +118,8 @@ class HomeAssistant:
                 "manufacturer": "MyElectricalData"
             }
         }
+        if "unit_of_measurement" in kwargs:
+            config["unit_of_measurement"] = kwargs["unit_of_measurement"]
         attributes = {
             **kwargs["attributes"],
             **{
@@ -143,7 +140,7 @@ class HomeAssistant:
 
     def last_x_day(self, days, measurement_direction):
         uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_last{days}day"
-        logging.info(f"- {uniq_id}")
+        logging.info(f"- sensor.{uniq_id}")
         end = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
         range = self.db.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
@@ -162,7 +159,7 @@ class HomeAssistant:
 
     def history_usage_point_id(self, measurement_direction):
         uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}_history"
-        logging.info(f"- {uniq_id}")
+        logging.info(f"- sensor.{uniq_id}")
         stats = Stat(self.usage_point_id, measurement_direction)
         state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
@@ -184,7 +181,7 @@ class HomeAssistant:
 
     def tempo(self):
         uniq_id = f"myelectricaldata_{self.usage_point_id}_tempo_today"
-        logging.info(f"- {uniq_id}")
+        logging.info(f"- sensor.{uniq_id}")
         begin = datetime.combine(datetime.now(), datetime.min.time())
         end = datetime.combine(datetime.now(), datetime.max.time())
         tempo_data = self.db.get_tempo_range(begin, end, "asc")
@@ -206,7 +203,7 @@ class HomeAssistant:
         )
 
         uniq_id = f"myelectricaldata_{self.usage_point_id}_tempo_tomorrow"
-        logging.info(f"- {uniq_id}")
+        logging.info(f"- sensor.{uniq_id}")
         begin = begin + timedelta(days=1)
         end = end + timedelta(days=1)
         tempo_data = self.db.get_tempo_range(begin, end, "asc")
@@ -229,12 +226,11 @@ class HomeAssistant:
 
     def ecowatt(self):
         uniq_id = f"myelectricaldata_{self.usage_point_id}_ecowatt"
-        logging.info(f"- {uniq_id}")
+        logging.info(f"- sensor.{uniq_id}")
         end = datetime.combine(datetime.now(), datetime.min.time())
         begin = end - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(begin, end, "asc")
         if ecowatt_data:
-            stats = Stat(self.usage_point_id)
             max_history = 11
             now = datetime.now().replace(minute=0, second=0, microsecond=0)
             forecast = {}
@@ -252,9 +248,7 @@ class HomeAssistant:
                         forecast[f'{date.strftime("%H")} h'] = value
                         i = i + 1
             attributes = {
-                "lastSensorCall": datetime.now().strftime(self.date_format_detail),
                 "forecast": forecast,
-                "yesterdayDate": stats.daily(0)["begin"],
                 "begin": begin,
                 "end": end
             }
@@ -419,27 +413,80 @@ class HomeAssistant:
         # LOG.show(yesterday_last_year)
 
         dailyweek_cost = []
-
+        dailyweek_HP = []
+        dailyweek_costHP = []
+        dailyweek_HC = []
+        dailyweek_costHC = []
+        yesterday_hp_value = 0
+        yesterday_hp_value_cost = 0
         if measurement_direction == "consumption":
+            daily_cost = 0
             if hasattr(self.config, "plan") and self.config.plan.upper() == "HC/HP":
-                daily_cost = (
-                        convert_kw_to_euro(stats.detail(0, "HC")["value"], self.consumption_price_hc)
-                        + convert_kw_to_euro(stats.detail(0, "HP")["value"], self.consumption_price_hp)
-                )
                 for i in range(7):
-                    value = (
-                            convert_kw_to_euro(stats.detail(i, "HP")["value"], self.consumption_price_hp)
-                            + convert_kw_to_euro(stats.detail(i, "HC")["value"], self.consumption_price_hc)
+                    hp = stats.detail(i, "HP")["value"]
+                    hc = stats.detail(i, "HC")["value"]
+                    dailyweek_HP.append(convert_kw(hp))
+                    dailyweek_HC.append(convert_kw(hc))
+                    dailyweek_costHP.append(convert_kw_to_euro(hp, self.consumption_price_hp))
+                    dailyweek_costHC.append(convert_kw_to_euro(hc, self.consumption_price_hp))
+                    value = hp + hc
+                    if i == 0:
+                        daily_cost = value
+                    elif i == 1:
+                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.consumption_price_hp)
+                    dailyweek_cost.append(round(value, 1))
+            elif hasattr(self.config, "plan") and self.config.plan.upper() == "TEMPO":
+                tempo_config = CONFIG.tempo_config()
+                for i in range(7):
+                    tempo_data = stats.tempo(i)["value"]
+                    hp = tempo_data["blue_hp"] + tempo_data["white_hp"] + tempo_data["red_hp"]
+                    hc = tempo_data["blue_hc"] + tempo_data["white_hc"] + tempo_data["red_hc"]
+                    dailyweek_HP.append(convert_kw(hp))
+                    dailyweek_HC.append(convert_kw(hc))
+                    cost_hp = (
+                            convert_kw_to_euro(tempo_data["blue_hp"], tempo_config["price_blue_hp"])
+                            + convert_kw_to_euro(tempo_data["white_hp"], tempo_config["price_white_hp"])
+                            + convert_kw_to_euro(tempo_data["red_hp"], tempo_config["price_red_hp"])
                     )
+                    cost_hc = (
+                            convert_kw_to_euro(tempo_data["blue_hc"], tempo_config["price_blue_hc"])
+                            + convert_kw_to_euro(tempo_data["white_hc"], tempo_config["price_white_hc"])
+                            + convert_kw_to_euro(tempo_data["red_hc"], tempo_config["price_red_hc"])
+                    )
+                    dailyweek_costHP.append(cost_hp)
+                    dailyweek_costHC.append(cost_hc)
+                    value = cost_hp + cost_hc
+                    if i == 0:
+                        daily_cost = value
+                    elif i == 1:
+                        yesterday_hp_value_cost = cost_hp
                     dailyweek_cost.append(round(value, 1))
             else:
-                daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.consumption_price_base)
                 for i in range(7):
+                    hp = stats.detail(i, "HP")["value"]
+                    hc = stats.detail(i, "HC")["value"]
+                    dailyweek_HP.append(convert_kw(hp))
+                    dailyweek_HC.append(convert_kw(hc))
+                    dailyweek_costHP.append(convert_kw_to_euro(hp, self.consumption_price_base))
+                    dailyweek_costHC.append(convert_kw_to_euro(hc, self.consumption_price_base))
                     dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.consumption_price_base))
+                    if i == 0:
+                        daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.consumption_price_base)
+                    elif i == 1:
+                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.consumption_price_base)
         else:
             daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.production_price)
             for i in range(7):
                 dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.production_price))
+
+        if not dailyweek_HP:
+            dailyweek_HP = [0, 0, 0, 0, 0, 0, 0, 0]
+        if not dailyweek_costHP:
+            dailyweek_costHP = [0, 0, 0, 0, 0, 0, 0, 0]
+        if not dailyweek_HC:
+            dailyweek_HC = [0, 0, 0, 0, 0, 0, 0, 0]
+        if not dailyweek_costHC:
+            dailyweek_costHC = [0, 0, 0, 0, 0, 0, 0, 0]
 
         yesterday_consumption_max_power = 0
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
@@ -489,26 +536,12 @@ class HomeAssistant:
             ],
             "dailyweek_cost": dailyweek_cost,
             # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
-            "dailyweek_costHP": [
-                convert_kw_to_euro(stats.detail(0, "HP")["value"], self.consumption_price_hp),
-                convert_kw_to_euro(stats.detail(1, "HP")["value"], self.consumption_price_hp),
-                convert_kw_to_euro(stats.detail(2, "HP")["value"], self.consumption_price_hp),
-                convert_kw_to_euro(stats.detail(3, "HP")["value"], self.consumption_price_hp),
-                convert_kw_to_euro(stats.detail(4, "HP")["value"], self.consumption_price_hp),
-                convert_kw_to_euro(stats.detail(5, "HP")["value"], self.consumption_price_hp),
-                convert_kw_to_euro(stats.detail(6, "HP")["value"], self.consumption_price_hp),
-            ],
-            "dailyweek_HP": [
-                convert_kw(stats.detail(0, "HP")["value"]),
-                convert_kw(stats.detail(1, "HP")["value"]),
-                convert_kw(stats.detail(2, "HP")["value"]),
-                convert_kw(stats.detail(3, "HP")["value"]),
-                convert_kw(stats.detail(4, "HP")["value"]),
-                convert_kw(stats.detail(5, "HP")["value"]),
-                convert_kw(stats.detail(6, "HP")["value"]),
-            ],
+            "dailyweek_costHP": dailyweek_costHP,
+            "dailyweek_HP": dailyweek_HP,
+            "dailyweek_costHC": dailyweek_costHC,
+            "dailyweek_HC": dailyweek_HC,
             "daily_cost": daily_cost,
-            "yesterday_HP_cost": convert_kw_to_euro(yesterday_hp_value, self.consumption_price_hp),
+            "yesterday_HP_cost": yesterday_hp_value_cost,
             "yesterday_HP": convert_kw(yesterday_hp_value),
             "day_1_HP": stats.detail(0, "HP")["value"],
             "day_2_HP": stats.detail(1, "HP")["value"],
@@ -517,24 +550,7 @@ class HomeAssistant:
             "day_5_HP": stats.detail(4, "HP")["value"],
             "day_6_HP": stats.detail(5, "HP")["value"],
             "day_7_HP": stats.detail(6, "HP")["value"],
-            "dailyweek_costHC": [
-                convert_kw_to_euro(stats.detail(0, "HC")["value"], self.consumption_price_hc),
-                convert_kw_to_euro(stats.detail(1, "HC")["value"], self.consumption_price_hc),
-                convert_kw_to_euro(stats.detail(2, "HC")["value"], self.consumption_price_hc),
-                convert_kw_to_euro(stats.detail(3, "HC")["value"], self.consumption_price_hc),
-                convert_kw_to_euro(stats.detail(4, "HC")["value"], self.consumption_price_hc),
-                convert_kw_to_euro(stats.detail(5, "HC")["value"], self.consumption_price_hc),
-                convert_kw_to_euro(stats.detail(6, "HC")["value"], self.consumption_price_hc),
-            ],
-            "dailyweek_HC": [
-                convert_kw(stats.detail(0, "HC")["value"]),
-                convert_kw(stats.detail(1, "HC")["value"]),
-                convert_kw(stats.detail(2, "HC")["value"]),
-                convert_kw(stats.detail(3, "HC")["value"]),
-                convert_kw(stats.detail(4, "HC")["value"]),
-                convert_kw(stats.detail(5, "HC")["value"]),
-                convert_kw(stats.detail(6, "HC")["value"]),
-            ],
+
             "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.consumption_price_hc),
             "yesterday_HC": convert_kw(yesterday_hc_value),
             "day_1_HC": stats.detail(0, "HC")["value"],
@@ -585,12 +601,11 @@ class HomeAssistant:
             "offpeak_hours_enedis": offpeak_hours_enedis,
             "offpeak_hours": offpeak_hours,
             "subscribed_power": self.subscribed_power,
-            "info": info
+            # "info": info
         }
 
-
         uniq_id = f"myelectricaldata_{measurement_direction}_{self.usage_point_id}"
-        logging.info(f"- {uniq_id}")
+        logging.info(f"- sensor.{uniq_id}")
         self.sensor(
             topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}",
             name=f"{measurement_direction}_{self.usage_point_id}",
@@ -601,7 +616,7 @@ class HomeAssistant:
         )
 
         uniq_id = f"myelectricaldata_{self.usage_point_id}"
-        logging.info(f"- {uniq_id}")
+        logging.info(f"- sensor.{uniq_id}")
         self.sensor(
             topic=f"myelectricaldata/{self.usage_point_id}",
             name=self.usage_point_id,

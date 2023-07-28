@@ -57,8 +57,7 @@ class Job:
                 while i > 0:
                     logging.info(f"{i}s")
                     time.sleep(1)
-                    # i = i - 1
-                    i = i - 10
+                    i = i - 1
 
             if target == "gateway_status" or target is None:
                 self.get_gateway_status()

@@ -61,6 +61,7 @@ class Power:
                 logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 blacklist = 0
+                max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
@@ -74,22 +75,23 @@ class Power:
                                 "value": interval_reading_data["value"]
                             }
                         for single_date in daterange(begin, end):
-                            if single_date.strftime(self.date_format) in interval_reading_tmp:
-                                # FOUND
-                                single_date_value = interval_reading_tmp[single_date.strftime(self.date_format)]
-                                self.db.insert_daily_max_power(
-                                    usage_point_id=self.usage_point_id,
-                                    date=datetime.combine(single_date, datetime.min.time()),
-                                    event_date=single_date_value["date"],
-                                    value=single_date_value["value"],
-                                    blacklist=blacklist,
-                                )
-                            else:
-                                # NOT FOUND
-                                self.db.daily_max_power_fail_increment(
-                                    usage_point_id=self.usage_point_id,
-                                    date=datetime.combine(single_date, datetime.min.time()),
-                                )
+                            if single_date < max_histo:
+                                if single_date.strftime(self.date_format) in interval_reading_tmp:
+                                    # FOUND
+                                    single_date_value = interval_reading_tmp[single_date.strftime(self.date_format)]
+                                    self.db.insert_daily_max_power(
+                                        usage_point_id=self.usage_point_id,
+                                        date=datetime.combine(single_date, datetime.min.time()),
+                                        event_date=single_date_value["date"],
+                                        value=single_date_value["value"],
+                                        blacklist=blacklist,
+                                    )
+                                else:
+                                    # NOT FOUND
+                                    self.db.daily_max_power_fail_increment(
+                                        usage_point_id=self.usage_point_id,
+                                        date=datetime.combine(single_date, datetime.min.time()),
+                                    )
                         return interval_reading
                     else:
                         if hasattr(data, "text"):
