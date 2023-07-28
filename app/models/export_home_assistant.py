@@ -104,11 +104,16 @@ class HomeAssistant:
 
     def sensor(self, **kwargs):
         topic = f"{self.discovery_prefix}/sensor/{kwargs['topic']}"
+        if "device_class" not in kwargs:
+            device_class = None
+        else:
+            device_class = kwargs["device_class"]
         config = {
             "name": f"myelectricaldata.{kwargs['name']}",
             "uniq_id": kwargs['uniq_id'],
             "stat_t": f"{topic}/state",
             "json_attr_t": f"{topic}/attributes",
+            "device_class": device_class,
             "device": {
                 "identifiers": [
                     f"linky_{self.usage_point_id}"
@@ -154,7 +159,8 @@ class HomeAssistant:
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,
-            state=days
+            state=days,
+            device_class="energy"
         )
 
     def history_usage_point_id(self, measurement_direction):
@@ -176,7 +182,8 @@ class HomeAssistant:
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,
-            state=state
+            state=state,
+            device_class="energy"
         )
 
     def tempo(self):
@@ -417,7 +424,6 @@ class HomeAssistant:
         dailyweek_costHP = []
         dailyweek_HC = []
         dailyweek_costHC = []
-        yesterday_hp_value = 0
         yesterday_hp_value_cost = 0
         if measurement_direction == "consumption":
             daily_cost = 0
@@ -612,7 +618,8 @@ class HomeAssistant:
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,
-            state=convert_kw(state)
+            state=convert_kw(state),
+            device_class="energy"
         )
 
         uniq_id = f"myelectricaldata_{self.usage_point_id}"
@@ -623,5 +630,6 @@ class HomeAssistant:
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,
-            state=convert_kw(state)
+            state=convert_kw(state),
+            device_class="energy"
         )
