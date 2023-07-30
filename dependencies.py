@@ -150,7 +150,7 @@ def create_release(prerelease=False):
                 message="It's prerelease (beta version) ?",
             ).execute()
         if prerelease:
-            beta_version = f"{version}-beta"
+            beta_version = f"{version}.b"
             found_version = []
             for vers in tags:
                 if vers.startswith(beta_version):
