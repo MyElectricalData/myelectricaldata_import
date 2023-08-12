@@ -6,7 +6,7 @@ import pytz
 import logging
 from dateutil.relativedelta import relativedelta
 from models.stat import Stat
-from init import MQTT, DB, CONFIG
+from init import MQTT_CONFIG, DB, CONFIG
 from dependencies import title, get_version
 
 utc = pytz.UTC
@@ -81,7 +81,7 @@ class HomeAssistant:
             self.subscribed_power = None
         self.usage_point = self.db.get_usage_point(self.usage_point_id)
 
-        self.mqtt = MQTT
+        self.mqtt = MQTT_CONFIG
 
     def export(self):
 

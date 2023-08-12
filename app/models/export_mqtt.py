@@ -4,7 +4,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from dependencies import title
-from init import MQTT, CONFIG, DB
+from init import MQTT_CONFIG, CONFIG, DB
 from models.stat import Stat
 
 
