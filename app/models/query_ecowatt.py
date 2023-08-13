@@ -18,11 +18,15 @@ class Ecowatt:
         self.config = CONFIG
         self.db = DB
         self.url = URL
-        self.valid_date = datetime.combine(datetime.now() + relativedelta(days=1), datetime.min.time())
+        self.valid_date = datetime.combine(datetime.now() + relativedelta(days=0), datetime.min.time())
 
-    def run(self):
-        start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
+    def run(self,delta=True):
+        if delta: 
+            start = (datetime.now() - relativedelta(days=1)).strftime("%Y-%m-%d")
+        else:
+            start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
         end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
+        logging.info(f" => Reçupération Ecowatt de {start} à {end}")
         target = f"{self.url}/rte/ecowatt/{start}/{end}"
         query_response = Query(endpoint=target).get()
         if query_response.status_code == 200:
@@ -63,14 +67,16 @@ class Ecowatt:
         result = {}
         if not current_cache:
             # No cache
-            title(f" No cache")
-            result = self.run()
+            title(f"No cache")
+            result = self.run(False)
         else:
             last_item = current_cache[0]
             if last_item.date < self.valid_date:
-                result = self.run()
+                result = self.run(False)
+                logging.info(" => Recupérer ecowatt")
             else:
-                title(" Toutes les données sont déjà en cache")
+                logging.info(" => Historique ecowatt déjà en cache: recupérer que les données courants")
+                result = self.run()
         if "error" not in result:
             for key, value in result.items():
                 logging.info(f"{key}: {value['message']}")
