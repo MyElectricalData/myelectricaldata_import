@@ -164,7 +164,6 @@ def create_release(prerelease=False):
             found_version.sort()
             next_version = found_version[-1]
             next_version = int(next_version.split(".b")[1]) + 1
-            print(next_version)
             version = f"{beta_version}{next_version}"
         else:
             version = f"{version}-release"
@@ -211,7 +210,7 @@ def create_release(prerelease=False):
         logging.info("  => Success")
         logging.info(f"Create release {version}")
         prerelease_txt = ""
-        if "-beta" in version:
+        if ".b" in version:
             prerelease_txt = "--prerelease"
         system(f"gh release create -t {version} --generate-notes {prerelease_txt} {version}")
         logging.info("  => Success")
