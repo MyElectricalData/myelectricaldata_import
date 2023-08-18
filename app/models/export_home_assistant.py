@@ -433,9 +433,11 @@ class HomeAssistant:
                     hc = stats.detail(i, "HC")["value"]
                     dailyweek_HP.append(convert_kw(hp))
                     dailyweek_HC.append(convert_kw(hc))
-                    dailyweek_costHP.append(convert_kw_to_euro(hp, self.consumption_price_hp))
-                    dailyweek_costHC.append(convert_kw_to_euro(hc, self.consumption_price_hp))
-                    value = hp + hc
+                    cost_hp = convert_kw_to_euro(hp, self.consumption_price_hp)
+                    cost_hc = convert_kw_to_euro(hc, self.consumption_price_hc)
+                    dailyweek_costHP.append(cost_hp)
+                    dailyweek_costHC.append(cost_hc)
+                    value = cost_hp + cost_hc
                     if i == 0:
                         daily_cost = value
                     elif i == 1:

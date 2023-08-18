@@ -113,12 +113,18 @@ def create_release(prerelease=False):
         last_version_check = version
 
     # GENERATE NEW RELEASE VERSION
-    new_release = last_version.split("-")[0]
+    if ".b" in last_version:
+        new_release = last_version.split(".b")[0]
+    else:
+        new_release = last_version
+
     new_version = []
     new_version.append(Choice("new_beta", f"NEW BETA {new_release}"))
     for idx, digit in enumerate(new_release.split(".")):
         if idx > 0:
             idx = int(idx) * 2
+        print(new_release, idx, digit)
+
         version = new_release[:idx] + str(int(digit) + 1) + new_release[idx + 1:]
         for idxx, digitt in enumerate(version.split(".")):
             if idxx > 0:
@@ -156,7 +162,10 @@ def create_release(prerelease=False):
                 if vers.startswith(beta_version):
                     found_version.append(vers)
             found_version.sort()
-            version = f"{beta_version}{len(found_version) + 1}"
+            next_version = found_version[-1]
+            next_version = int(next_version.split(".b")[1]) + 1
+            print(next_version)
+            version = f"{beta_version}{next_version}"
         else:
             version = f"{version}-release"
 
