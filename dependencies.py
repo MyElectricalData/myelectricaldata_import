@@ -144,11 +144,11 @@ def create_release(prerelease=False):
             message="Which release would you create ?",
         ).execute()
 
-    branch = version
-
     if version == "new_beta":
         prerelease = True
         version = new_release
+
+    branch = version
 
     if version not in tags:
         if version != "new_beta":
