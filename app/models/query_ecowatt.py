@@ -18,11 +18,11 @@ class Ecowatt:
         self.config = CONFIG
         self.db = DB
         self.url = URL
-        self.valid_date = datetime.combine(datetime.now() + relativedelta(days=1), datetime.min.time())
+        self.valid_date = datetime.combine(datetime.now() + relativedelta(days=2), datetime.min.time())
 
     def run(self):
         start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
-        end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
+        end = (datetime.now() + relativedelta(days=3)).strftime("%Y-%m-%d")
         target = f"{self.url}/rte/ecowatt/{start}/{end}"
         query_response = Query(endpoint=target).get()
         if query_response.status_code == 200:

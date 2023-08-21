@@ -232,36 +232,34 @@ class HomeAssistant:
         )
 
     def ecowatt(self):
-        uniq_id = f"myelectricaldata_{self.usage_point_id}_ecowatt"
+        self.ecowatt_delta("", 0)
+        self.ecowatt_delta("_J0", 0)
+        self.ecowatt_delta("_J1", 1)
+        self.ecowatt_delta("_J2", 2)
+
+    def ecowatt_delta(self, name, delta):
+        delta = delta - 1
+        uniq_id = f"myelectricaldata_{self.usage_point_id}_ecowatt{name}"
         logging.info(f"- sensor.{uniq_id}")
-        end = datetime.combine(datetime.now(), datetime.min.time())
-        begin = end - timedelta(days=1)
-        ecowatt_data = self.db.get_ecowatt_range(begin, end, "asc")
+        fetch_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
+        ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")
         if ecowatt_data:
-            max_history = 11
-            now = datetime.now().replace(minute=0, second=0, microsecond=0)
             forecast = {}
-            i = 0
             begin = ""
             end = ""
             for data in ecowatt_data:
                 for date, value in json.loads(data.detail.replace("'", '"')).items():
                     date = datetime.strptime(date, self.date_format_detail)
-                    if date >= now and i <= max_history:
-                        end = date + timedelta(hours=1)
-                        end = end.strftime(self.date_format_detail)
-                        if not begin:
-                            begin = date.strftime(self.date_format_detail)
-                        forecast[f'{date.strftime("%H")} h'] = value
-                        i = i + 1
+                    forecast[f'{date.strftime("%H")} h'] = value
             attributes = {
+                "date": fetch_date.strftime(self.date_format),
                 "forecast": forecast,
                 "begin": begin,
                 "end": end
             }
             self.sensor(
-                topic=f"myelectricaldata_ecowatt/{self.usage_point_id}",
-                name=f"{self.usage_point_id}.EcoWatt",
+                topic=f"myelectricaldata_ecowatt{name}/{self.usage_point_id}",
+                name=f"{self.usage_point_id}.EcoWatt{name}",
                 uniq_id=uniq_id,
                 attributes=attributes,
                 state=123456.00
