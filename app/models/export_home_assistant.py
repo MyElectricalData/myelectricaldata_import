@@ -254,8 +254,6 @@ class HomeAssistant:
             attributes = {
                 "date": fetch_date.strftime(self.date_format),
                 "forecast": forecast,
-                "begin": begin,
-                "end": end
             }
             self.sensor(
                 topic=f"myelectricaldata_ecowatt{name}/{self.usage_point_id}",
