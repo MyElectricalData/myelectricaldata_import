@@ -486,13 +486,10 @@ class Stat:
         value_peak_offpeak_percent_hc = 0
         value_peak_offpeak_percent_hp_vs_hc = 0
         for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-            print(day.measure_type, day.date, day.value)
             if day.measure_type == "HP":
                 value_peak_offpeak_percent_hp = value_peak_offpeak_percent_hp + day.value
             if day.measure_type == "HC":
                 value_peak_offpeak_percent_hc = value_peak_offpeak_percent_hc + day.value
-        print(begin, end)
-        print(value_peak_offpeak_percent_hp, value_peak_offpeak_percent_hc)
         if value_peak_offpeak_percent_hc != 0:
             value_peak_offpeak_percent_hp_vs_hc = abs(((100 * value_peak_offpeak_percent_hc) / value_peak_offpeak_percent_hp) - 100)
         logging.debug(f" peak_offpeak_percent_hp VS peak_offpeak_percent_hc => {value_peak_offpeak_percent_hp_vs_hc}")
