@@ -10,6 +10,8 @@ from init import CONFIG, DB
 
 utc = pytz.UTC
 
+now_date = datetime.now(timezone.utc)
+yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
 
 class Stat:
 
@@ -22,8 +24,6 @@ class Stat:
         self.usage_point_id_contract = self.db.get_contract(self.usage_point_id)
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
-        self.now_date = datetime.now(timezone.utc)
-        self.yesterday_date = datetime.combine(self.now_date - relativedelta(days=1), datetime.max.time())
         # STAT
         self.value_current_week = 0
         self.value_current_week_last_year = 0
@@ -50,7 +50,9 @@ class Stat:
         self.usage_point_id_contract = self.db.get_contract(self.usage_point_id)
 
     def daily(self, index=0):
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         value = 0
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -62,7 +64,9 @@ class Stat:
         }
 
     def detail(self, index, measure_type=None):
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         value = 0
         for data in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -77,7 +81,9 @@ class Stat:
         }
 
     def tempo(self, index):
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         value = {
             "blue_hc": 0,
@@ -107,7 +113,9 @@ class Stat:
         }
 
     def max_power(self, index=0):
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         value = 0
         # print(self.db.get_daily_max_power_range(self.usage_point_id, begin, end))
@@ -122,10 +130,12 @@ class Stat:
 
     def max_power_over(self, index=0):
         max_power = 0
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
         if hasattr(self.usage_point_id_contract,
                    "subscribed_power") and self.usage_point_id_contract.subscribed_power is not None:
             max_power = int(self.usage_point_id_contract.subscribed_power.split(' ')[0])
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         value = 0
         boolv = "true"
@@ -140,7 +150,9 @@ class Stat:
         }
 
     def max_power_time(self, index=0):
-        begin = datetime.combine(self.yesterday_date - timedelta(days=index), datetime.min.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
         end = datetime.combine(begin, datetime.max.time())
         max_power_time = ''
         # print(self.db.get_daily_max_power_range(self.usage_point_id, begin, end))
@@ -162,9 +174,11 @@ class Stat:
         return data
 
     def current_week_array(self):
-        begin = datetime.combine(self.yesterday_date, datetime.min.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date, datetime.min.time())
         begin_return = begin
-        end = datetime.combine(self.yesterday_date, datetime.max.time())
+        end = datetime.combine(yesterday_date, datetime.max.time())
         day_idx = 0
         daily_obj = []
         while day_idx < 7:
@@ -189,8 +203,10 @@ class Stat:
         }
 
     def current_week(self):
-        begin = datetime.combine(self.now_date - relativedelta(weeks=1), datetime.min.time())
-        end = datetime.combine(self.yesterday_date, datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date - relativedelta(weeks=1), datetime.min.time())
+        end = datetime.combine(yesterday_date, datetime.max.time())
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_week = self.value_current_week + data.value
         logging.debug(f" current_week => {self.value_current_week}")
@@ -202,8 +218,8 @@ class Stat:
 
     # def get_week(self, year):
     #     logging.debug(f"[{year}] current_week")
-    #     begin = datetime.combine(self.now_date - relativedelta(weeks=1), datetime.min.time())
-    #     end = datetime.combine(self.yesterday_date, datetime.max.time())
+    #     begin = datetime.combine(now_date - relativedelta(weeks=1), datetime.min.time())
+    #     end = datetime.combine(yesterday_date, datetime.max.time())
     #     for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
     #         self.value_current_week = self.value_current_week + data.value
     #     logging.debug(f" {self.value_current_week}")
@@ -214,8 +230,10 @@ class Stat:
     #     }
 
     def last_week(self):
-        begin = datetime.combine(self.now_date - relativedelta(weeks=2), datetime.min.time())
-        end = datetime.combine(self.yesterday_date - relativedelta(weeks=1), datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date - relativedelta(weeks=2), datetime.min.time())
+        end = datetime.combine(yesterday_date - relativedelta(weeks=1), datetime.max.time())
         # while day_idx < 7:
         #     day = self.db.get_daily_range(self.usage_point_id, begin, end, self.self.measurement_direction)
         #     if day:
@@ -240,8 +258,10 @@ class Stat:
         return self.value_current_week_evolution
 
     def yesterday(self):
-        begin = datetime.combine(self.yesterday_date, datetime.min.time())
-        end = datetime.combine(self.yesterday_date, datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date, datetime.min.time())
+        end = datetime.combine(yesterday_date, datetime.max.time())
         data = self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction)
         if data:
             self.value_yesterday = data[0].value
@@ -255,8 +275,10 @@ class Stat:
         }
 
     def yesterday_1(self):
-        begin = datetime.combine(self.yesterday_date - timedelta(days=1), datetime.min.time())
-        end = datetime.combine(self.yesterday_date - timedelta(days=1), datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=1), datetime.min.time())
+        end = datetime.combine(yesterday_date - timedelta(days=1), datetime.max.time())
         data = self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction)
         if data:
             self.value_yesterday_1 = data[0].value
@@ -289,8 +311,10 @@ class Stat:
         #     begin = begin - timedelta(days=1)
         #     end = end - timedelta(days=1)
         #     day_idx = day_idx + 1
-        begin = datetime.combine((self.now_date - timedelta(weeks=1)) - relativedelta(years=1), datetime.min.time())
-        end = datetime.combine(self.yesterday_date - relativedelta(years=1), datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine((now_date - timedelta(weeks=1)) - relativedelta(years=1), datetime.min.time())
+        end = datetime.combine(yesterday_date - relativedelta(years=1), datetime.max.time())
         for data in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_week_last_year = self.value_current_week_last_year + data.value
         logging.debug(f" current_week_last_year => {self.value_current_week_last_year}")
@@ -301,9 +325,11 @@ class Stat:
         }
 
     def last_month(self):
-        begin = datetime.combine((self.now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine((now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
                                  datetime.min.time())
-        end = datetime.combine(self.yesterday_date.replace(day=1) - timedelta(days=1), datetime.max.time())
+        end = datetime.combine(yesterday_date.replace(day=1) - timedelta(days=1), datetime.max.time())
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_month = self.value_last_month + day.value
         logging.debug(f" last_month => {self.value_last_month}")
@@ -314,8 +340,10 @@ class Stat:
         }
 
     def current_month(self):
-        begin = datetime.combine(self.now_date.replace(day=1), datetime.min.time())
-        end = self.yesterday_date
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date.replace(day=1), datetime.min.time())
+        end = yesterday_date
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_month = self.value_current_month + day.value
         logging.debug(f" current_month => {self.value_current_month}")
@@ -326,8 +354,10 @@ class Stat:
         }
 
     def current_month_last_year(self):
-        begin = datetime.combine(self.now_date.replace(day=1), datetime.min.time()) - relativedelta(years=1)
-        end = self.yesterday_date - relativedelta(years=1)
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date.replace(day=1), datetime.min.time()) - relativedelta(years=1)
+        end = yesterday_date - relativedelta(years=1)
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_month_last_year = self.value_current_month_last_year + day.value
         logging.debug(f" current_month_last_year => {self.value_current_month_last_year}")
@@ -347,11 +377,13 @@ class Stat:
         return self.value_current_month_evolution
 
     def last_month_last_year(self):
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
         begin = datetime.combine(
-            (self.now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
+            (now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
             datetime.min.time()) - relativedelta(years=1)
         end = datetime.combine(
-            self.yesterday_date.replace(day=1) - timedelta(days=1),
+            yesterday_date.replace(day=1) - timedelta(days=1),
             datetime.max.time()) - relativedelta(years=1)
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_month_last_year = self.value_last_month_last_year + day.value
@@ -371,8 +403,10 @@ class Stat:
         return self.value_monthly_evolution
 
     def current_year(self):
-        begin = datetime.combine(self.now_date.replace(month=1, day=1), datetime.min.time())
-        end = self.yesterday_date
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date.replace(month=1, day=1), datetime.min.time())
+        end = yesterday_date
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_year = self.value_current_year + day.value
         logging.debug(f" current_year => {self.value_current_year}")
@@ -383,11 +417,13 @@ class Stat:
         }
 
     def current_year_last_year(self):
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
         begin = datetime.combine(
-            datetime.combine(self.now_date.replace(month=1, day=1), datetime.min.time()) - relativedelta(
+            datetime.combine(now_date.replace(month=1, day=1), datetime.min.time()) - relativedelta(
                 years=1),
             datetime.min.time())
-        end = self.yesterday_date - relativedelta(years=1)
+        end = yesterday_date - relativedelta(years=1)
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_year_last_year = self.value_current_year_last_year + day.value
         logging.debug(f" current_year_last_year => {self.value_current_year_last_year}")
@@ -398,7 +434,8 @@ class Stat:
         }
 
     def last_year(self):
-        begin = datetime.combine(self.now_date.replace(month=1, day=1) - relativedelta(years=1),
+        now_date = datetime.now(timezone.utc)
+        begin = datetime.combine(now_date.replace(month=1, day=1) - relativedelta(years=1),
                                  datetime.min.time())
         last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
         end = datetime.combine(begin.replace(month=1, day=last_day_of_month), datetime.max.time())
@@ -420,8 +457,10 @@ class Stat:
         return self.value_yearly_evolution
 
     def yesterday_hc_hp(self):
-        begin = datetime.combine(self.yesterday_date, datetime.min.time())
-        end = datetime.combine(self.now_date, datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date, datetime.min.time())
+        end = datetime.combine(now_date, datetime.max.time())
         for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
             if day.measure_type == "HP":
                 self.value_yesterday_hp = self.value_yesterday_hp + (day.value / (60 / day.interval))
@@ -439,28 +478,32 @@ class Stat:
         }
 
     def peak_offpeak_percent(self):
-        begin = self.yesterday_date - relativedelta(years=1)
-        end = self.yesterday_date
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = yesterday_date - relativedelta(years=1)
+        end = yesterday_date
+        value_peak_offpeak_percent_hp = 0
+        value_peak_offpeak_percent_hc = 0
+        value_peak_offpeak_percent_hp_vs_hc = 0
         for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
+            print(day.measure_type, day.date, day.value)
             if day.measure_type == "HP":
-                self.value_peak_offpeak_percent_hp = self.value_peak_offpeak_percent_hp + (
-                        day.value / (60 / day.interval))
+                value_peak_offpeak_percent_hp = value_peak_offpeak_percent_hp + day.value
             if day.measure_type == "HC":
-                self.value_peak_offpeak_percent_hc = self.value_peak_offpeak_percent_hc + (
-                        day.value / (60 / day.interval))
-        if self.value_peak_offpeak_percent_hc != 0:
-            self.value_peak_offpeak_percent_hp_vs_hc = \
-                (
-                        (100 * self.value_peak_offpeak_percent_hp) / self.value_peak_offpeak_percent_hc
-                ) - 100
-        logging.debug(f" peak_offpeak_percent_hp VS peak_offpeak_percent_hc => {self.value_peak_offpeak_percent_hp_vs_hc}")
-        return self.value_peak_offpeak_percent_hp_vs_hc
+                value_peak_offpeak_percent_hc = value_peak_offpeak_percent_hc + day.value
+        print(begin, end)
+        print(value_peak_offpeak_percent_hp, value_peak_offpeak_percent_hc)
+        if value_peak_offpeak_percent_hc != 0:
+            value_peak_offpeak_percent_hp_vs_hc = abs(((100 * value_peak_offpeak_percent_hc) / value_peak_offpeak_percent_hp) - 100)
+        logging.debug(f" peak_offpeak_percent_hp VS peak_offpeak_percent_hc => {value_peak_offpeak_percent_hp_vs_hc}")
+        return value_peak_offpeak_percent_hp_vs_hc
 
     # STAT V2
     def get_year(self, year, measure_type=None):
-        begin = datetime.combine(self.now_date.replace(year=year, month=1, day=1), datetime.min.time())
+        now_date = datetime.now(timezone.utc)
+        begin = datetime.combine(now_date.replace(year=year, month=1, day=1), datetime.min.time())
         last_day_of_month = calendar.monthrange(year, 12)[1]
-        end = datetime.combine(self.now_date.replace(year=year, month=12, day=last_day_of_month),
+        end = datetime.combine(now_date.replace(year=year, month=12, day=last_day_of_month),
                                datetime.max.time())
         value = 0
         if measure_type is None:
@@ -477,7 +520,9 @@ class Stat:
         }
 
     def get_year_linear(self, idx, measure_type=None):
-        end = datetime.combine(self.yesterday_date - relativedelta(years=idx), datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        end = datetime.combine(yesterday_date - relativedelta(years=idx), datetime.max.time())
         begin = datetime.combine(end - relativedelta(years=1), datetime.min.time())
         value = 0
         if measure_type is None:
@@ -494,12 +539,13 @@ class Stat:
         }
 
     def get_month(self, year, month=None, measure_type=None):
+        now_date = datetime.now(timezone.utc)
         if month is None:
             month = int(datetime.now().strftime('%m'))
-        begin = datetime.combine(self.now_date.replace(year=year, month=month, day=1),
+        begin = datetime.combine(now_date.replace(year=year, month=month, day=1),
                                  datetime.min.time())
         last_day_of_month = calendar.monthrange(year, month)[1]
-        end = datetime.combine(self.now_date.replace(year=year, month=month, day=last_day_of_month),
+        end = datetime.combine(now_date.replace(year=year, month=month, day=last_day_of_month),
                                datetime.max.time())
         value = 0
         if measure_type is None:
@@ -516,7 +562,9 @@ class Stat:
         }
 
     def get_month_linear(self, idx, measure_type=None):
-        end = datetime.combine(self.yesterday_date - relativedelta(years=idx), datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        end = datetime.combine(yesterday_date - relativedelta(years=idx), datetime.max.time())
         begin = datetime.combine(end - relativedelta(months=1), datetime.min.time())
         value = 0
         if measure_type is None:
@@ -533,16 +581,17 @@ class Stat:
         }
 
     def get_week(self, year, month=None, measure_type=None):
+        now_date = datetime.now(timezone.utc)
         if month is None:
             month = int(datetime.now().strftime('%m'))
         today = date.today()
         start = today - timedelta(days=today.weekday())
         end = start + timedelta(days=6)
         begin = datetime.combine(
-            self.now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
+            now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
             datetime.min.time())
         end = datetime.combine(
-            self.now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
+            now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
             datetime.max.time())
         value = 0
         if measure_type is None:
@@ -559,7 +608,9 @@ class Stat:
         }
 
     def get_week_linear(self, idx, measure_type=None):
-        end = datetime.combine(self.yesterday_date - relativedelta(years=idx), datetime.max.time())
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        end = datetime.combine(yesterday_date - relativedelta(years=idx), datetime.max.time())
         begin = datetime.combine(end - timedelta(days=7), datetime.min.time())
         value = 0
         if measure_type is None:

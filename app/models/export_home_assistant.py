@@ -245,8 +245,6 @@ class HomeAssistant:
         ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")
         if ecowatt_data:
             forecast = {}
-            begin = ""
-            end = ""
             for data in ecowatt_data:
                 for date, value in json.loads(data.detail.replace("'", '"')).items():
                     date = datetime.strptime(date, self.date_format_detail)
