@@ -404,6 +404,9 @@ class Job:
                 HomeAssistant(usage_point_id).export()
             elif target == "ecowatt":
                 HomeAssistant(usage_point_id).ecowatt()
+                HomeAssistant(usage_point_id).ecowatt_delta(0)
+                HomeAssistant(usage_point_id).ecowatt_delta(1)
+                HomeAssistant(usage_point_id).ecowatt_delta(2)
             export_finish()
 
         try:

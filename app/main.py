@@ -107,6 +107,7 @@ def import_job():
 @APP.on_event("startup")
 @repeat_every(seconds=3600, wait_first=True)
 def home_assistant_export():
+    Job().get_ecowatt()
     Job().export_home_assistant(target="ecowatt")
 
 

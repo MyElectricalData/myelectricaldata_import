@@ -101,6 +101,9 @@ class HomeAssistant:
 
         self.tempo()
         self.ecowatt()
+        self.ecowatt_delta(0)
+        self.ecowatt_delta(1)
+        self.ecowatt_delta(2)
 
     def sensor(self, **kwargs):
         topic = f"{self.discovery_prefix}/sensor/{kwargs['topic']}"
@@ -265,6 +268,48 @@ class HomeAssistant:
                 uniq_id=uniq_id,
                 attributes=attributes,
                 state=123456.00
+            )
+    def ecowatt_delta(self, delta):
+        uniq_id = f"myelectricaldata_{self.usage_point_id}_ecowatt_J{delta}"
+        logging.info(f"- sensor.{uniq_id}")
+        end = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days = delta) - timedelta(days=1) 
+        begin = end
+        ecowatt_data = self.db.get_ecowatt_range(begin, end, "asc")
+        if ecowatt_data:
+            stats = Stat(self.usage_point_id)            
+            if delta == 0:
+                max_history = 11
+                start = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(days=delta)
+            else:
+                max_history = 24
+                start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=delta)
+            forecast = {}
+            i = 0
+            begin = ""
+            end = ""
+            dayValue = ""
+            for data in ecowatt_data:
+                for date, value in json.loads(data.detail.replace("'", '"')).items():
+                    date = datetime.strptime(date, self.date_format_detail)
+                    if date >= start and i <= max_history:
+                        end = date + timedelta(hours=1)
+                        end = end.strftime(self.date_format_detail)
+                        if not begin:
+                            begin = date.strftime(self.date_format_detail)
+                        forecast[f'{date.strftime("%H")} h'] = value
+                        i = i + 1
+                dayValue = data.value
+            attributes = {
+                "forecast": forecast,
+                "begin": begin,
+                "end": end
+            }
+            self.sensor(
+                topic=f"myelectricaldata_ecowatt/{self.usage_point_id}_J{delta}",
+                name=f"{self.usage_point_id}.EcoWatt j{delta}",
+                uniq_id=uniq_id,
+                attributes=attributes,
+                state=dayValue
             )
 
     def myelectricaldata_usage_point_id(self, measurement_direction):
