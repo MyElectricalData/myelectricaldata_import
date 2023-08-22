@@ -18,7 +18,6 @@ class Status:
         self.headers = headers
 
     def ping(self):
-
         target = f"{self.url}/ping"
         status = {
             "version": get_version(),

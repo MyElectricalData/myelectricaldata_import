@@ -91,18 +91,18 @@ class Contract:
         current_cache = self.db.get_contract(usage_point_id=self.usage_point_id)
         if not current_cache:
             # No cache
-            title(f" No cache")
+            logging.info(" =>  Pas de cache")
             result = self.run()
         else:
             # Refresh cache
             if hasattr(self.usage_point_config, "refresh_contract") and self.usage_point_config.refresh_contract:
-                title(f" Refresh Cache")
+                logging.info(" =>  Mise à jour du cache")
                 result = self.run()
                 self.usage_point_config.refresh_contract = False
                 DB.set_usage_point(self.usage_point_id, self.usage_point_config.__dict__)
             else:
                 # Get data in cache
-                title(f" Query Cache")
+                logging.info(" =>  Récupération du cache")
                 result = {}
                 for column in current_cache.__table__.columns:
                     result[column.name] = str(getattr(current_cache, column.name))

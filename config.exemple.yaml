@@ -1,4 +1,4 @@
-cycle: 14400  # 4H
+port: 5000
 debug: true
 log2file: false
 wipe_influxdb: false # Work only with influxdb > 2.X
@@ -49,6 +49,10 @@ mqtt:
   client_id: myelectricaldata     # DOIT ETRE UNIQUE SUR LA TOTALITE DES CLIENTS CONNECTE AU SERVEUR MQTT
   retain: true
   qos: 0
+# Configuration SSL optionnel.
+#ssl:
+#  keyfile: "/data/key.pem"
+#  certfile: "/data/cert.pem"
 myelectricaldata:
   "MON_PDL_1":
     enable: 'true'

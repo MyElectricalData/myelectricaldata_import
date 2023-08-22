@@ -58,14 +58,14 @@ class Tempo:
         result = {}
         if not current_cache:
             # No cache
-            title(f" No cache")
+            title(f"No cache")
             result = self.run()
         else:
             last_item = current_cache[0]
             if last_item.date < self.valid_date:
                 result = self.run()
             else:
-                title(" Toutes les données sont déjà en cache")
+                logging.info(" => Toutes les données sont déjà en cache.")
         if "error" not in result:
             for key, value in result.items():
                 logging.info(f"{key}: {value}")

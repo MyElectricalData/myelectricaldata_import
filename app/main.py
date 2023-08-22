@@ -10,19 +10,20 @@ from fastapi_utils.tasks import repeat_every
 from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
 from dependencies import title, get_version, title_warning, logo
 from init import CONFIG, DB
+from models.jobs import Job
 from routers import account
 from routers import action
 from routers import data
 from routers import html
 from routers import info
-from tasks import Tasks
+
 
 if "DEV" in environ or "DEBUG" in environ:
     title_warning("Run in Development mode")
 else:
-    title(" Run in production mode")
+    title("Run in production mode")
 
-title(" Chargement du config.yaml...")
+title("Chargement du config.yaml...")
 usage_point_list = []
 if CONFIG.list_usage_point() is not None:
     for upi, upi_data in CONFIG.list_usage_point().items():
@@ -33,7 +34,7 @@ if CONFIG.list_usage_point() is not None:
 else:
     logging.warning("Aucun point de livraison détecté.")
 
-title(" Nettoyage de la base de données...")
+title("Nettoyage de la base de données...")
 DB.clean_database(usage_point_list)
 
 swagger_configuration = {
@@ -88,16 +89,25 @@ OPENAPI_SCHEMA["info"]["x-logo"] = {
 APP.openapi_schema = OPENAPI_SCHEMA
 
 CYCLE = CONFIG.get('cycle')
-if CYCLE < cycle_minimun:
-    logging.warning("Le cycle minimun est de 3600s")
-    CYCLE = cycle_minimun
-    CONFIG.set("cycle", cycle_minimun)
+if not CYCLE:
+    CYCLE = 14400
+else:
+    if CYCLE < cycle_minimun:
+        logging.warning("Le cycle minimun est de 3600s")
+        CYCLE = cycle_minimun
+        CONFIG.set("cycle", cycle_minimun)
 
 
 @APP.on_event("startup")
 @repeat_every(seconds=CYCLE, wait_first=False)
-def tasks():
-    Tasks()
+def import_job():
+    Job().boot()
+
+
+@APP.on_event("startup")
+@repeat_every(seconds=3600, wait_first=True)
+def home_assistant_export():
+    Job().export_home_assistant(target="ecowatt")
 
 
 if __name__ == '__main__':
@@ -107,19 +117,17 @@ if __name__ == '__main__':
     log_config["formatters"]["access"]["datefmt"] = LOG_FORMAT_DATE
     log_config["formatters"]["default"]["fmt"] = LOG_FORMAT
     log_config["formatters"]["default"]["datefmt"] = LOG_FORMAT_DATE
+    uvicorn_params = {
+        "host": "0.0.0.0",
+        "port": CONFIG.port(),
+        "log_config": log_config,
+    }
     if ("DEV" in environ and getenv("DEV")) or ("DEBUG" in environ and getenv("DEBUG")):
-        uvicorn.run(
-            "main:APP",
-            host="0.0.0.0",
-            port=5000,
-            reload=True,
-            reload_dirs=["/app"],
-            log_config=log_config,
-        )
-    else:
-        uvicorn.run(
-            "main:APP",
-            host="0.0.0.0",
-            port=5000,
-            log_config=log_config
-        )
+        uvicorn_params["reload"] = True
+        uvicorn_params["reload_dirs"] = ["/app"]
+
+    ssl_config = CONFIG.ssl_config()
+    if ssl_config:
+        uvicorn_params = {**uvicorn_params, **ssl_config}
+
+    uvicorn.run("main:APP", **uvicorn_params)

@@ -52,15 +52,16 @@ class Power:
         try:
             current_data = self.db.get_daily_power(self.usage_point_id, begin, end)
             if not current_data["missing_data"]:
-                title(" Toutes les données sont déjà en cache.")
+                logging.info(" => Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
                     output.append({'date': date, "value": data["value"]})
                 return output
             else:
-                title(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
+                logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 blacklist = 0
+                max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
@@ -74,34 +75,51 @@ class Power:
                                 "value": interval_reading_data["value"]
                             }
                         for single_date in daterange(begin, end):
-                            if single_date.strftime(self.date_format) in interval_reading_tmp:
-                                # FOUND
-                                single_date_value = interval_reading_tmp[single_date.strftime(self.date_format)]
-                                self.db.insert_daily_max_power(
-                                    usage_point_id=self.usage_point_id,
-                                    date=datetime.combine(single_date, datetime.min.time()),
-                                    event_date=single_date_value["date"],
-                                    value=single_date_value["value"],
-                                    blacklist=blacklist,
-                                )
-                            else:
-                                # NOT FOUND
-                                self.db.daily_max_power_fail_increment(
-                                    usage_point_id=self.usage_point_id,
-                                    date=datetime.combine(single_date, datetime.min.time()),
-                                )
+                            if single_date < max_histo:
+                                if single_date.strftime(self.date_format) in interval_reading_tmp:
+                                    # FOUND
+                                    single_date_value = interval_reading_tmp[single_date.strftime(self.date_format)]
+                                    self.db.insert_daily_max_power(
+                                        usage_point_id=self.usage_point_id,
+                                        date=datetime.combine(single_date, datetime.min.time()),
+                                        event_date=single_date_value["date"],
+                                        value=single_date_value["value"],
+                                        blacklist=blacklist,
+                                    )
+                                else:
+                                    # NOT FOUND
+                                    self.db.daily_max_power_fail_increment(
+                                        usage_point_id=self.usage_point_id,
+                                        date=datetime.combine(single_date, datetime.min.time()),
+                                    )
                         return interval_reading
                     else:
+                        if hasattr(data, "text"):
+                            description = json.loads(data.text)["detail"]
+                        else:
+                            description = data
+                        if hasattr(data, "status_code"):
+                            status_code = data.status_code
+                        else:
+                            status_code = 500
                         return {
                             "error": True,
-                            "description": json.loads(data.text)["detail"],
-                            "status_code": data.status_code
+                            "description": description,
+                            "status_code": status_code
                         }
                 else:
+                    if hasattr(data, "text"):
+                        description = json.loads(data.text)["detail"]
+                    else:
+                        description = data
+                    if hasattr(data, "status_code"):
+                        status_code = data.status_code
+                    else:
+                        status_code = 500
                     return {
                         "error": True,
-                        "description": json.loads(data.text)["detail"],
-                        "status_code": data.status_code
+                        "description": description,
+                        "status_code": status_code
                     }
         except Exception as e:
             logging.exception(e)
@@ -135,18 +153,13 @@ class Power:
                     "description": "MyElectricalData est indisponible."
                 }
             if "error" in response and response["error"]:
-                error = [
-                    "Echec de la récupération des données.",
-                    f' => {response["description"]}',
-                    f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
-                ]
-                logging.error(error)
-
+                logging.error("Echec de la récupération des données.")
+                logging.error(f' => {response["description"]}')
+                logging.error(f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
-                error = ["Arrêt de la récupération des données suite à une erreur.",
-                         f"Prochain lancement à {datetime.now() + timedelta(seconds=CONFIG.get('cycle'))}"]
-                logging.warning(error)
+                logging.error("Arrêt de la récupération des données suite à une erreur.")
+                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=CONFIG.get('cycle'))}")
         return result
 
     def reset(self, date=None):

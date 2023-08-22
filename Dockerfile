@@ -1,7 +1,5 @@
 FROM python:3.11-slim
 
-COPY ./app /app
-
 RUN apt-get update && \
     apt-get install -y \
     locales  \
@@ -17,8 +15,11 @@ ENV LANG fr_FR.UTF-8
 ENV LC_ALL fr_FR.UTF-8
 ENV TZ=Europe/Paris
 
-RUN pip install --upgrade pip pip-tools
-RUN #pip-compile -o /app/requirements.txt /app/pyproject.toml --pre
+RUN pip install --upgrade pip pip-tools setuptools
+
+COPY ./app /app
+
+RUN pip-compile -o /app/requirements.txt /app/pyproject.toml
 RUN pip install -r /app/requirements.txt
 RUN #pip install git+https://github.com/influxdata/influxdb-client-python.git@master
 

@@ -11,7 +11,7 @@ dependencies = [
     "requests",
     "markdown",
     "influxdb-client",
-    "PyYAML",
+    "PyYAML==6.0.1",
     "mergedeep",
     "Flask",
     "Flask-APScheduler",
@@ -29,6 +29,7 @@ dependencies = [
     "fastapi-utils",
     "python-multipart",
     "influxdb-client",
+#    "aiohttp",
 ]
 
 [project.optional-dependencies]

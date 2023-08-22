@@ -3,12 +3,13 @@ from jinja2 import Template
 
 from templates.models.configuration import Configuration
 from dependencies import APPLICATION_PATH
+from init import DB
 
 class Loading:
 
     def __init__(self):
         self.application_path = APPLICATION_PATH
-        self.configuration_div = Configuration(self.db, "Page de chargement", display_usage_point_id=True)
+        self.configuration_div = Configuration(DB, "Page de chargement", display_usage_point_id=True)
 
     def display(self):
         with open(f'{self.application_path}/templates/html/loading.html') as file_:

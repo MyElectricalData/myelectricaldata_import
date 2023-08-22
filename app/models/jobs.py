@@ -1,8 +1,9 @@
 import logging
 import time
 import traceback
+from os import getenv, environ
 
-from dependencies import str2bool, title, finish, get_version, log_usage_point_id
+from dependencies import str2bool, title, finish, get_version, log_usage_point_id, export_finish
 from init import DB, CONFIG
 from models.export_home_assistant import HomeAssistant
 from models.export_influxdb import ExportInfluxDB
@@ -18,10 +19,6 @@ from models.query_tempo import Tempo
 from models.stat import Stat
 
 
-def export_finish():
-    title(" Export terminé")
-
-
 class Job:
     def __init__(self, usage_point_id=None):
         self.config = CONFIG
@@ -32,6 +29,18 @@ class Job:
         self.home_assistant_config = self.config.home_assistant_config()
         self.influxdb_config = self.config.influxdb_config()
         self.wait_job_start = 10
+        self.tempo_enable = False
+
+        if self.usage_point_id is None:
+            self.usage_points = self.db.get_usage_point_all()
+        else:
+            self.usage_points = [self.db.get_usage_point(self.usage_point_id)]
+
+    def boot(self):
+        if ("DEV" in environ and getenv("DEV")) or ("DEBUG" in environ and getenv("DEBUG")):
+            logging.warning("=> Import job disable")
+        else:
+            self.job_import_data()
 
     def job_import_data(self, wait=True, target=None):
         if self.db.lock_status():
@@ -41,229 +50,91 @@ class Job:
             }
         else:
             self.db.lock()
+
             if wait:
-                title(" Démarrage du job d'importation dans 10s")
+                title("Démarrage du job d'importation dans 10s")
                 i = self.wait_job_start
                 while i > 0:
-                    title(f" {i}s")
+                    logging.info(f"{i}s")
                     time.sleep(1)
                     i = i - 1
-            if self.usage_point_id is None:
-                self.usage_points = self.db.get_usage_point_all()
-            else:
-                self.usage_points = [self.db.get_usage_point(self.usage_point_id)]
+
+            if target == "gateway_status" or target is None:
+                self.get_gateway_status()
 
             # ######################################################################################################
             # FETCH TEMPO DATA
-            try:
-                tempo_config = self.config.tempo_config()
-                if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
-                    self.get_tempo()
-                else:
-                    title(
-                        [f"Import Tempo désactivé"])
-            except Exception as e:
-                traceback.print_exc()
-                logging.error([f"Erreur lors de la récupération des données tempo", e])
+            if target == "tempo" or target is None:
+                self.get_tempo()
 
             # ######################################################################################################
             # FETCH ECOWATT DATA
-            try:
+            if target == "ecowatt" or target is None:
                 self.get_ecowatt()
-            except Exception as e:
-                traceback.print_exc()
-                logging.error([f"Erreur lors de la récupération des données EcoWatt", e])
 
             for self.usage_point_config in self.usage_points:
                 self.usage_point_id = self.usage_point_config.usage_point_id
                 log_usage_point_id(self.usage_point_id)
                 self.db.last_call_update(self.usage_point_id)
                 if self.usage_point_config.enable:
-                    try:
-                        if target == "gateway_status" or target is None:
-                            self.get_gateway_status()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération des informations de la passerelle", e])
-                    try:
-                        if target == "account_status" or target is None:
-                            self.get_account_status()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération du status de votre compte", e])
-                    try:
-                        if target == "contract" or target is None:
-                            self.get_contract()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération des informations du contract", e])
-                    try:
-                        if target == "addresses" or target is None:
-                            self.get_addresses()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération de vos coordonnées", e])
-                    try:
-                        if target == "consumption" or target is None:
-                            self.get_consumption()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération de votre consommation journalière", e])
-                    try:
-                        if target == "consumption_detail" or target is None:
-                            self.get_consumption_detail()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération de votre consommation détaillée", e])
-                    try:
-                        if target == "production" or target is None:
-                            self.get_production()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération de votre production journalière", e])
-                    try:
-                        if target == "production_detail" or target is None:
-                            self.get_production_detail()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération de votre production détaillée", e])
-                    try:
-                        if target == "consumption_max_power" or target is None:
-                            self.get_consumption_max_power()
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la récupération de votre puissance maximum journalière", e])
-                    try:
-                        if target == "price" or target is None:
-                            self.stat_price(self.usage_point_id)
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la génération des statistique tarifaire de consommation", e])
-                    try:
-                        if target == "price" and target is None:
-                            self.stat_price(self.usage_point_id, "production")
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de la génération des statistique tarifaire de production", e])
-                    try:
-                        # #######################################################################################################
-                        # # MQTT
-                        title(" Exportation MQTT")
-                        if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
-                            if target == "mqtt" or target is None:
-                                ExportMqtt(self.usage_point_id).status()
-                                ExportMqtt(self.usage_point_id).contract()
-                                ExportMqtt(self.usage_point_id).address()
-                                if hasattr(self.usage_point_config,
-                                           "consumption") and self.usage_point_config.consumption:
-                                    ExportMqtt(self.usage_point_id,
-                                               "consumption").daily_annual(
-                                        self.usage_point_config.consumption_price_base
-                                    )
-                                    ExportMqtt(self.usage_point_id,
-                                               "consumption").daily_linear(
-                                        self.usage_point_config.consumption_price_base
-                                    )
-                                if hasattr(self.usage_point_config,
-                                           "production") and self.usage_point_config.production:
-                                    ExportMqtt(self.usage_point_id,
-                                               "production").daily_annual(
-                                        self.usage_point_config.production_price
-                                    )
-                                    ExportMqtt(self.usage_point_id,
-                                               "production").daily_linear(
-                                        self.usage_point_config.production_price
-                                    )
-                                if hasattr(self.usage_point_config,
-                                           "consumption_detail") and self.usage_point_config.consumption_detail:
-                                    ExportMqtt(self.usage_point_id,
-                                               "consumption").detail_annual(
-                                        self.usage_point_config.consumption_price_hp,
-                                        self.usage_point_config.consumption_price_hc
-                                    )
-                                    ExportMqtt(self.usage_point_id,
-                                               "consumption").detail_linear(
-                                        self.usage_point_config.consumption_price_hp,
-                                        self.usage_point_config.consumption_price_hc
-                                    )
-                                if hasattr(self.usage_point_config,
-                                           "production_detail") and self.usage_point_config.production_detail:
-                                    ExportMqtt(self.usage_point_id,
-                                               "production").detail_annual(
-                                        self.usage_point_config.production_price
-                                    )
-                                    ExportMqtt(self.usage_point_id,
-                                               "production").detail_linear(
-                                        self.usage_point_config.production_price
-                                    )
-                                if hasattr(self.usage_point_config,
-                                           "consumption_max_power") and self.usage_point_config.consumption_max_power:
-                                    ExportMqtt(self.usage_point_id).max_power()
-                            export_finish()
-                        else:
-                            title(" Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de l'exportation des données dans MQTT", e])
+
+                    #######################################################################################################
+                    # CHECK ACCOUNT DATA
+                    if target == "account_status" or target is None:
+                        self.get_account_status()
+
+                    #######################################################################################################
+                    # CONTRACT
+                    if target == "contract" or target is None:
+                        self.get_contract()
+
+                    #######################################################################################################
+                    # ADDRESSE
+                    if target == "addresses" or target is None:
+                        self.get_addresses()
+
+                    #######################################################################################################
+                    # CONSUMPTION / PRODUCTION
+                    if target == "consumption" or target is None:
+                        self.get_consumption()
+
+                    if target == "consumption_detail" or target is None:
+                        self.get_consumption_detail()
+
+                    if target == "production" or target is None:
+                        self.get_production()
+
+                    if target == "production_detail" or target is None:
+                        self.get_production_detail()
+
+                    if target == "consumption_max_power" or target is None:
+                        self.get_consumption_max_power()
+
+                    #######################################################################################################
+                    # STATISTIQUES
+                    if target == "stat" or target is None:
+                        self.stat_price()
+
+                    #######################################################################################################
+                    # MQTT
+                    if target == "mqtt" or target is None:
+                        self.export_mqtt()
 
                     #######################################################################################################
                     # HOME ASSISTANT
-                    try:
-                        if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
-                            if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
-                                if target == "home_assistant" or target is None:
-                                    title(" Exportation Home Assistant")
-                                    HomeAssistant(self.usage_point_id).export()
-                                    export_finish()
-                            else:
-                                logging.critical("L'export Home Assistant est dépendant de MQTT, "
-                                                 "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
-                        else:
-                            title(" Exportation Home Assistant")
-                            title(" Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de l'exportation des données dans Home Assistant", e])
+                    if target == "home_assistant" or target is None:
+                        self.export_home_assistant()
 
                     #######################################################################################################
                     # INFLUXDB
-                    try:
-                        if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
-                            # INFLUXDB.purge_influxdb()
-                            if target == "influxdb" or target is None:
-                                title(" Export InfluxDB")
-                                if hasattr(self.usage_point_config,
-                                           "consumption") and self.usage_point_config.consumption:
-                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily()
-                                if hasattr(self.usage_point_config,
-                                           "production") and self.usage_point_config.production:
-                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).daily(
-                                        measurement_direction="production")
-                                if hasattr(self.usage_point_config,
-                                           "consumption_detail") and self.usage_point_config.consumption_detail:
-                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail()
-                                if hasattr(self.usage_point_config,
-                                           "production_detail") and self.usage_point_config.production_detail:
-                                    ExportInfluxDB(self.influxdb_config, self.usage_point_config).detail(
-                                        measurement_direction="production")
-
-                            tempo_config = self.config.tempo_config()
-                            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
-                                ExportInfluxDB(self.influxdb_config, self.usage_point_config).tempo()
-
-                            ExportInfluxDB(self.influxdb_config, self.usage_point_config).ecowatt()
-
-                            export_finish()
-                        else:
-                            title(" Exportation InfluxDB")
-                            title(" Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
-                    except Exception as e:
-                        traceback.print_exc()
-                        logging.error([f"Erreur lors de l'exportation des données dans InfluxDB", e])
+                    if target == "influxdb" or target is None:
+                        self.export_influxdb()
                 else:
                     logging.info(
                         f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9).")
+
             finish()
+
             self.usage_point_id = None
             self.db.unlock()
             return {
@@ -271,128 +142,379 @@ class Job:
                 "notif": "Importation terminée"
             }
 
-    def header_generate(self):
-        return {
+    def header_generate(self, token=True):
+        output = {
             'Content-Type': 'application/json',
-            'Authorization': self.usage_point_config.token,
             'call-service': "myelectricaldata",
             'version': get_version()
         }
+        if token:
+            output['Authorization'] = self.usage_point_config.token
+        return output
 
     def get_gateway_status(self):
-        title(f"[{self.usage_point_config.usage_point_id}] Statut de la passerelle :")
-        result = Status(
-            headers=self.header_generate(),
-        ).ping()
-        return result
+        detail = "Récupération du statut de la passerelle :"
+        try:
+            title(detail)
+            Status(headers=self.header_generate(token=False)).ping()
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_account_status(self):
-        title(f"[{self.usage_point_config.usage_point_id}] Check account status :")
-        result = Status(
-            headers=self.header_generate(),
-        ).status(usage_point_id=self.usage_point_config.usage_point_id)
-        return result
+        detail = "Récupération des informations du compte"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            export_finish()
+
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_contract(self):
-        title(f"[{self.usage_point_config.usage_point_id}] Récupération du contrat :")
-        result = Contract(
-            headers=self.header_generate(),
-            usage_point_id=self.usage_point_config.usage_point_id,
-            config=self.usage_point_config
-        ).get()
-        if "error" in result and result["error"]:
-            logging.error(result["description"])
-        return result
+        detail = "Récupération des informations contractuelles"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            Contract(headers=self.header_generate(), usage_point_id=usage_point_id, config=usage_point_config)\
+                .get()
+            export_finish()
+
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_addresses(self):
-        title(f"[{self.usage_point_config.usage_point_id}] Récupération des coordonnées :")
-        result = Address(
-            headers=self.header_generate(),
-            usage_point_id=self.usage_point_config.usage_point_id,
-        ).get()
-        if "error" in result and result["error"]:
-            logging.error(result["description"])
-        return result
+        detail = "Récupération des coordonnées postales"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            Address(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+            export_finish()
+
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_consumption(self):
-        result = {}
-        if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation journalière :")
-            result = Daily(
-                headers=self.header_generate(),
-                usage_point_id=self.usage_point_config.usage_point_id
-            ).get()
-        return result
+        detail = "Récupération de la consommation journalière"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
+                Daily(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+                export_finish()
+            else:
+                logging.info(f"{detail} désactivée sur le point de livraison")
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_consumption_detail(self):
-        result = {}
-        if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la consommation détaillée :")
-            result = Detail(
-                headers=self.header_generate(),
-                usage_point_id=self.usage_point_config.usage_point_id,
-            ).get()
-        return result
+        detail = "Récupération de la consommation détaillée"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            if hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail:
+                Detail(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+                export_finish()
+            else:
+                logging.info(f"{detail} désactivée sur le point de livraison")
+
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_production(self):
-        result = {}
-        if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production journalière :")
-            result = Daily(
-                headers=self.header_generate(),
-                usage_point_id=self.usage_point_config.usage_point_id,
-                measure_type="production"
-            ).get()
-        return result
+        detail = "Récupération de la production journalière"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            if hasattr(usage_point_config, "production") and usage_point_config.production:
+                Daily(
+                    headers=self.header_generate(),
+                    usage_point_id=usage_point_id,
+                    measure_type="production").get()
+                export_finish()
+            else:
+                logging.info(f"{detail} désactivée sur le point de livraison")
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_production_detail(self):
-        result = {}
-        if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-            title(f"[{self.usage_point_config.usage_point_id}] Récupération de la production détaillée :")
-            result = Detail(
-                headers=self.header_generate(),
-                usage_point_id=self.usage_point_config.usage_point_id,
-                measure_type="production"
-            ).get()
-        return result
+        detail = "Récupération de la production détaillée"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            if hasattr(usage_point_config, "production_detail") and usage_point_config.production_detail:
+                Detail(headers=self.header_generate(), usage_point_id=usage_point_id, measure_type="production").get()
+                export_finish()
+            else:
+                logging.info(f"{detail} désactivée sur le point de livraison")
+
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_consumption_max_power(self):
-        result = {}
-        if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption_max_power:
-            title(
-                f"[{self.usage_point_config.usage_point_id}] Récupération de la puissance maximun journalière :")
-            result = Power(
-                headers=self.header_generate(),
-                usage_point_id=self.usage_point_config.usage_point_id
-            ).get()
-        return result
+        detail = "Récupération de la puissance maximum journalière"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{self.usage_point_id}] {detail} :")
+            Power(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+            export_finish()
+
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)
 
     def get_tempo(self):
-        title(
-            f"Récupération des données Tempo :")
-        return Tempo().fetch()
+        try:
+            title(f"Récupération des données Tempo :")
+            tempo_config = self.config.tempo_config()
+            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                Tempo().fetch()
+                export_finish()
+            else:
+                title(f"Import Tempo désactivé")
+        except Exception as e:
+            traceback.print_exc()
+            logging.error("Erreur lors de la récupération des données Tempo")
+            logging.error(e)
 
     def get_ecowatt(self):
-        title(
-            f"Récupération des données EcoWatt :")
-        return Ecowatt().fetch()
+        try:
+            title(f"Récupération des données EcoWatt :")
+            Ecowatt().fetch()
+            export_finish()
+        except Exception as e:
+            traceback.print_exc()
+            logging.error("Erreur lors de la récupération des données EcoWatt")
+            logging.error(e)
 
-    def stat_price(self, usage_point_id, measurement_direction="consumption"):
-        title(
-            f"Génération des statistiques Tarifaire de {measurement_direction}:")
-        return Stat(usage_point_id=usage_point_id,
-                    measurement_direction=measurement_direction).generate_price()
+    def stat_price(self):
+        detail = "Génération des statistiques Tarifaire de consommation/production "
 
-    def home_assistant(self):
-        result = {}
-        if "enable" in self.home_assistant_config and self.home_assistant_config["enable"]:
-            title(
-                f"[{self.usage_point_config.usage_point_id}] Exportation de données dans Home Assistant (via l'auto-discovery MQTT).")
-            result = self.db.get_daily_all(self.usage_point_id, "consumption")
-        return result
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail} :")
+            if hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail:
+                logging.info("Consommation :")
+                Stat(usage_point_id=usage_point_id, measurement_direction="consumption").generate_price()
+            if hasattr(usage_point_config, "production_detail") and usage_point_config.production_detail:
+                logging.info("Production :")
+                Stat(usage_point_id=usage_point_id, measurement_direction="production").generate_price()
+            export_finish()
 
-    def influxdb(self):
-        result = {}
-        if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
-            title(f"[{self.usage_point_config.usage_point_id}] Exportation de données dans InfluxDB.")
-        return result
+        try:
+            if self.usage_point_id is None:
+                for usage_point_config in self.usage_points:
+                    if usage_point_config.enable:
+                        run(usage_point_config)
+            else:
+                run(self.usage_point_config)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de l'{detail.lower()}")
+            logging.error(e)
+
+    def export_home_assistant(self, target=None):
+        detail = "Exportation des données vers Home Assistant (via MQTT)"
+
+        def run(usage_point_config, target):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail}")
+            if target is None:
+                HomeAssistant(usage_point_id).export()
+            elif target == "ecowatt":
+                HomeAssistant(usage_point_id).ecowatt()
+            export_finish()
+
+        try:
+            if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
+                if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
+                    if self.usage_point_id is None:
+                        for usage_point_config in self.usage_points:
+                            if usage_point_config.enable:
+                                run(usage_point_config, target)
+                    else:
+                        run(self.usage_point_config, target)
+                else:
+                    logging.critical("L'export Home Assistant est dépendant de MQTT, "
+                                     "merci de configurer MQTT avant d'exporter vos données dans Home Assistant")
+            else:
+                title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de l'{detail.lower()}")
+            logging.error(e)
+
+    def export_influxdb(self):
+        detail = "Export InfluxDB"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id} {detail}")
+            export_influxdb = ExportInfluxDB(self.influxdb_config, usage_point_config)
+            if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
+                export_influxdb.daily()
+            if hasattr(usage_point_config, "production") and usage_point_config.production:
+                export_influxdb.daily(measurement_direction="production")
+            if hasattr(usage_point_config,
+                       "consumption_detail") and usage_point_config.consumption_detail:
+                export_influxdb.detail()
+            if hasattr(usage_point_config,
+                       "production_detail") and usage_point_config.production_detail:
+                export_influxdb.detail(measurement_direction="production")
+            tempo_config = self.config.tempo_config()
+            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                export_influxdb.tempo()
+            export_influxdb.ecowatt()
+            export_finish()
+
+        try:
+            if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
+                if self.usage_point_id is None:
+                    for usage_point_config in self.usage_points:
+                        if usage_point_config.enable:
+                            run(usage_point_config)
+                else:
+                    run(self.usage_point_config)
+            else:
+                title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de l'{detail.lower()}")
+            logging.error(e)
+
+    def export_mqtt(self):
+        detail = "Export MQTT"
+
+        def run(usage_point_config):
+            usage_point_id = usage_point_config.usage_point_id
+            title(f"[{usage_point_id}] {detail}")
+            export_mqtt = ExportMqtt(usage_point_id)
+            export_mqtt.status()
+            export_mqtt.contract()
+            export_mqtt.address()
+            export_mqtt.ecowatt()
+            export_mqtt.tempo()
+            if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
+                export_mqtt.daily_annual(usage_point_config.consumption_price_base,
+                                         measurement_direction="consumption")
+                export_mqtt.daily_linear(usage_point_config.consumption_price_base,
+                                         measurement_direction="consumption")
+            if hasattr(usage_point_config, "production") and usage_point_config.production:
+                export_mqtt.daily_annual(usage_point_config.production_price,
+                                         measurement_direction="production")
+                export_mqtt.daily_linear(usage_point_config.production_price,
+                                         measurement_direction="production")
+            if hasattr(usage_point_config,
+                       "consumption_detail") and usage_point_config.consumption_detail:
+                export_mqtt.detail_annual(usage_point_config.consumption_price_hp,
+                                          usage_point_config.consumption_price_hc,
+                                          measurement_direction="consumption")
+                export_mqtt.detail_linear(usage_point_config.consumption_price_hp,
+                                          usage_point_config.consumption_price_hc,
+                                          measurement_direction="consumption")
+            if hasattr(usage_point_config,
+                       "production_detail") and usage_point_config.production_detail:
+                export_mqtt.detail_annual(usage_point_config.production_price,
+                                          measurement_direction="production")
+                export_mqtt.detail_linear(usage_point_config.production_price,
+                                          measurement_direction="production")
+            if hasattr(usage_point_config,
+                       "consumption_max_power") and usage_point_config.consumption_max_power:
+                export_mqtt.max_power()
+            export_finish()
+
+        try:
+            if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
+                if self.usage_point_id is None:
+                    for usage_point_config in self.usage_points:
+                        if usage_point_config.enable:
+                            run(usage_point_config)
+                else:
+                    run(self.usage_point_config)
+            else:
+                title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+        except Exception as e:
+            traceback.print_exc()
+            logging.error(f"Erreur lors de la {detail.lower()}")
+            logging.error(e)

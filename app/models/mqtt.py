@@ -39,7 +39,7 @@ class Mqtt:
                 self.client.username_pw_set(self.username, self.password)
             self.client.connect(self.hostname, self.port)
             self.client.loop_start()
-            title(" Connection success")
+            title("Connection success")
         except Exception as e:
             logging.critical(["MQTT Connexion failed", e])
 

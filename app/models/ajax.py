@@ -45,7 +45,11 @@ class Ajax:
         self.usage_points_id_list = ""
 
     def gateway_status(self):
-        title(f"[{self.usage_point_id}] Check de l'état de la passerelle.")
+        if self.usage_point_id is not None:
+            msg = f"[{self.usage_point_id}] Check de l'état de la passerelle."
+        else:
+            msg = "Check de l'état de la passerelle."
+        title(msg)
         return Status().ping()
 
     def account_status(self):

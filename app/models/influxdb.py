@@ -3,17 +3,25 @@ import logging
 
 import influxdb_client
 from dateutil.tz import tzlocal
-from dependencies import title, separator, separator_warning
 from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
 from influxdb_client.client.write_api import ASYNCHRONOUS, SYNCHRONOUS
 
+from dependencies import title, separator, separator_warning
+
 
 class InfluxDB:
 
-    def __init__(self, hostname, port, token, org="myelectricaldata.fr", bucket="myelectricaldata",
-                 method="SYNCHRONOUS",
-                 write_options=None):
+    def __init__(
+            self,
+            hostname: str,
+            port: int,
+            token: str,
+            org: str = "myelectricaldata.fr",
+            bucket: str = "myelectricaldata",
+            method="SYNCHRONOUS",
+            write_options=None
+    ):
         if write_options is None:
             write_options = {}
         self.hostname = hostname
@@ -67,7 +75,8 @@ class InfluxDB:
         if self.retention != 0:
             day = int(self.retention / 60 / 60 / 24)
             logging.warning(f"<!> ATTENTION, InfluxDB est configuré avec une durée de rétention de {day} jours.")
-            logging.warning(f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci.")
+            logging.warning(
+                f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci.")
         else:
             logging.warning(" => Aucune durée de rétention de données détectée.")
 
@@ -83,7 +92,7 @@ class InfluxDB:
         )
         health = self.influxdb.health()
         if health.status == "pass":
-            title(" Connection success")
+            title("Connection success")
         else:
             logging.critical([
                 "Impossible de se connecter à la base influxdb.",
@@ -92,7 +101,7 @@ class InfluxDB:
                 "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
             ])
 
-        title(f" Méthode d'importation : {self.method.upper()}")
+        title(f"Méthode d'importation : {self.method.upper()}")
         if self.method.upper() == "ASYNCHRONOUS":
             logging.warning(
                 " <!> ATTENTION, le mode d'importation \"ASYNCHRONOUS\" est très consommateur de ressources système.")

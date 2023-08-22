@@ -1,7 +1,8 @@
 import requests
 import logging
 
-from dependencies import *
+from dependencies import str2bool
+from init import CONFIG
 
 
 
@@ -10,6 +11,11 @@ class Query(object):
     def __init__(self, endpoint, headers=None):
         self.endpoint = endpoint
         self.timeout = 60
+        check_ssl = CONFIG.get("ssl")
+        if check_ssl and "gateway" in check_ssl:
+            self.ssl_valid = str2bool(check_ssl["gateway"])
+        else:
+            self.ssl_valid = True
         if not headers:
             self.headers = {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -25,7 +31,7 @@ class Query(object):
         response = {}
         try:
             response = requests.request('GET', headers=self.headers, params=params, url=self.endpoint,
-                                        timeout=self.timeout)
+                                        timeout=self.timeout, verify=self.ssl_valid)
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
         except Exception as e:
@@ -41,7 +47,7 @@ class Query(object):
         response = {}
         try:
             response = requests.request('POST', headers=self.headers, params=params, data=data, url=self.endpoint,
-                                        timeout=self.timeout)
+                                        timeout=self.timeout, verify=self.ssl_valid)
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
         except Exception as e:
@@ -56,7 +62,7 @@ class Query(object):
         response = {}
         try:
             response = requests.request('DELETE', headers=self.headers, params=params, data=data, url=self.endpoint,
-                                        timeout=self.timeout)
+                                        timeout=self.timeout, verify=self.ssl_valid)
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
             return response
@@ -72,7 +78,7 @@ class Query(object):
         response = {}
         try:
             response = requests.request('UPDATE', headers=self.headers, params=params, data=data, url=self.endpoint,
-                                        timeout=self.timeout)
+                                        timeout=self.timeout, verify=self.ssl_valid)
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
             return response
@@ -88,7 +94,7 @@ class Query(object):
         response = {}
         try:
             response = requests.request('PUT', headers=self.headers, params=params, data=data, url=self.endpoint,
-                                        timeout=self.timeout)
+                                        timeout=self.timeout, verify=self.ssl_valid)
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
         except Exception as e:

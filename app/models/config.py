@@ -13,8 +13,9 @@ class Config:
         self.db = None
         self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
-        self.usage_point_config = {}
+        self.config = {}
         self.mandatory_parameters = {}
+        self.default_port = 5000
         #     "myelectricaldata": {
         #         "pdl": {
         #             "enable": True,
@@ -122,16 +123,16 @@ class Config:
         config_file = f'{self.path_file}'
         if os.path.exists(config_file):
             with open(f'{self.path}/config.yaml') as file:
-                self.usage_point_config = yaml.load(file, Loader=yaml.FullLoader)
+                self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         else:
             f = open(config_file, "a")
             f.write(yaml.dump(self.default))
             f.close()
             with open(f'{self.path}/config.yaml') as file:
-                self.usage_point_config = yaml.load(file, Loader=yaml.FullLoader)
+                self.config = yaml.load(file, Loader=yaml.FullLoader)
 
-        if self.usage_point_config is None:
+        if self.config is None:
             return {
                 "error": True,
                 "message": ["Impossible de charger le fichier de configuration.",
@@ -151,34 +152,34 @@ class Config:
             mandatory = False
             if key in self.mandatory_parameters:
                 mandatory = True
-            if mandatory and key not in self.usage_point_config[config_name]:
+            if mandatory and key not in self.config[config_name]:
                 lost_params.append(f"{config_name}.{key.upper()}")
             else:
-                if key not in self.usage_point_config[config_name]:
-                    self.usage_point_config[config_name][key] = data
+                if key not in self.config[config_name]:
+                    self.config[config_name][key] = data
 
         # CHECK ENEDIS GATEWAY CONFIGURATION
-        # if "myelectricaldata" not in self.usage_point_config:
+        # if "myelectricaldata" not in self.config:
         #     lost_params.append("myelectricaldata")
         # else:
-        #     if not isinstance(self.usage_point_config["myelectricaldata"], dict):
+        #     if not isinstance(self.config["myelectricaldata"], dict):
         #         lost_params.append("myelectricaldata.PDL")
         #     else:
-        #         for pdl, pdl_data in self.usage_point_config["myelectricaldata"].items():
+        #         for pdl, pdl_data in self.config["myelectricaldata"].items():
         #             if len(str(pdl)) != 14:
         #                 lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
-        #             if not isinstance(self.usage_point_config["myelectricaldata"][pdl], dict):
+        #             if not isinstance(self.config["myelectricaldata"][pdl], dict):
         #                 lost_params.append(f"myelectricaldata.{pdl}.TOKEN")
         #             else:
         #                 for key, data in self.default['myelectricaldata']['pdl'].items():
         #                     mandatory = False
         #                     if key in self.mandatory_parameters:
         #                         mandatory = True
-        #                     if mandatory and not key in self.usage_point_config["myelectricaldata"][pdl]:
+        #                     if mandatory and not key in self.config["myelectricaldata"][pdl]:
         #                         lost_params.append(f"myelectricaldata.{pdl}.{key.upper()}")
         #                     else:
-        #                         if key not in self.usage_point_config["myelectricaldata"][pdl]:
-        #                             self.usage_point_config["myelectricaldata"][pdl][key] = data
+        #                         if key not in self.config["myelectricaldata"][pdl]:
+        #                             self.config["myelectricaldata"][pdl][key] = data
 
         if lost_params:
             msg = [
@@ -191,13 +192,13 @@ class Config:
             msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
             logging.critical(msg)
         else:
-            title(" Config valid")
+            title("Config valid")
 
         return lost_params
 
     def display(self):
         logging.info("Display configuration :")
-        for key, value in self.usage_point_config.items():
+        for key, value in self.config.items():
             if type(value) is dict:
                 logging.info(f"  {key}:")
                 for dic_key, dic_value in value.items():
@@ -222,72 +223,97 @@ class Config:
 
     def get(self, path=None):
         if path:
-            if path in self.usage_point_config:
-                return self.usage_point_config[path]
+            if path in self.config:
+                return self.config[path]
             else:
                 return False
         else:
-            return self.usage_point_config
+            return self.config
 
     def set(self, path, value):
-        title(f" Switch {path} to {value}")
+        title(f"Switch {path} to {value}")
         with open(f'{self.path_file}', 'r+') as f:
             text = f.read()
             text = re.sub(fr'(?<={path}: ).*', str(value).lower(), text)
             f.seek(0)
             f.write(text)
             f.truncate()
-        self.usage_point_config = yaml.load(text, Loader=yaml.FullLoader)
+        self.config = yaml.load(text, Loader=yaml.FullLoader)
         self.db.set_config(path, value)
 
     def tempo_config(self):
-        if "tempo" in self.usage_point_config:
-            return self.usage_point_config["tempo"]
+        if "tempo" in self.config:
+            return self.config["tempo"]
         else:
             return False
 
     def storage_config(self):
-        if "storage_uri" in self.usage_point_config:
-            return self.usage_point_config["storage_uri"]
+        if "storage_uri" in self.config:
+            return self.config["storage_uri"]
         else:
             return False
 
     def mqtt_config(self):
-        if "mqtt" in self.usage_point_config:
-            return self.usage_point_config["mqtt"]
+        if "mqtt" in self.config:
+            return self.config["mqtt"]
         else:
             return False
 
     def home_assistant_config(self):
-        if "home_assistant" in self.usage_point_config:
-            return self.usage_point_config["home_assistant"]
+        if "home_assistant" in self.config:
+            return self.config["home_assistant"]
         else:
             return False
 
     def influxdb_config(self):
-        if "influxdb" in self.usage_point_config:
-            return self.usage_point_config["influxdb"]
+        if "influxdb" in self.config:
+            return self.config["influxdb"]
         else:
             return False
 
     def usage_point_id_config(self, usage_point_id):
-        if "myelectricaldata" in self.usage_point_config and usage_point_id in self.usage_point_config[
+        if "myelectricaldata" in self.config and usage_point_id in self.config[
             "myelectricaldata"]:
-            return self.usage_point_config["myelectricaldata"][usage_point_id]
+            return self.config["myelectricaldata"][usage_point_id]
         else:
             return False
 
     def list_usage_point(self):
-        return self.usage_point_config["myelectricaldata"]
+        return self.config["myelectricaldata"]
 
     def set_usage_point_config(self, usage_point_id, key, value):
-        if "myelectricaldata" in self.usage_point_config:
-            if usage_point_id not in self.usage_point_config["myelectricaldata"]:
-                self.usage_point_config["myelectricaldata"][usage_point_id] = {}
+        if "myelectricaldata" in self.config:
+            if usage_point_id not in self.config["myelectricaldata"]:
+                self.config["myelectricaldata"][usage_point_id] = {}
             if value is None or value == "None":
                 value = ""
-            self.usage_point_config["myelectricaldata"][usage_point_id][key] = str(value)
+            self.config["myelectricaldata"][usage_point_id][key] = str(value)
             with open(self.path_file, 'w') as outfile:
-                yaml.dump(self.usage_point_config, outfile, default_flow_style=False)
+                yaml.dump(self.config, outfile, default_flow_style=False)
         else:
             return False
+
+    def port(self):
+        if "port" in self.config:
+            return self.config["port"]
+        else:
+            return self.default_port
+
+    def ssl_config(self):
+        if "ssl" in self.config:
+            if "keyfile" in self.config["ssl"] and "certfile" in self.config["ssl"]:
+                return {
+                    "ssl_keyfile": self.config["ssl"]["keyfile"],
+                    "ssl_certfile": self.config["ssl"]["certfile"]
+                }
+            else:
+                logging.error("La configuration SSL est erronée.")
+                return {}
+        else:
+            return {}
+
+    def home_assistant_ws(self):
+        if "home_assistant_ws" in self.config:
+            return self.config["home_assistant_ws"]
+        else:
+            return {}

@@ -35,25 +35,28 @@ class ExportInfluxDB:
             price = self.usage_point_config.consumption_price_base
         else:
             price = self.usage_point_config.production_price
-        title(f'[{self.usage_point_id}] Envoi des données "{measurement_direction}" dans influxdb')
+        logging.info(f'Envoi des données "{measurement_direction.upper()}" dans influxdb')
         get_daily_all = self.db.get_daily_all(self.usage_point_id)
-
-
-        start = datetime.strftime(self.db.get_daily_last_date(self.usage_point_id), self.time_format)
-        end = datetime.strftime(self.db.get_daily_first_date(self.usage_point_id), self.time_format)
-        influxdb_data = INFLUXDB.count(start, end, measurement_direction)
-        count = 1
-        for data in influxdb_data:
-            for record in data.records:
-                count += record.get_value()
-        if len(get_daily_all) != count:
-            for daily in get_daily_all:
-                date = daily.date
-                start = datetime.strftime(date, "%Y-%m-%dT00:00:00Z")
-                end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
-                if current_month != date.strftime('%m'):
-                    logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-                if len(INFLUXDB.get(start, end, measurement_direction)) == 0:
+        get_daily_all_count = len(get_daily_all)
+        last_data = self.db.get_daily_last_date(self.usage_point_id, measurement_direction)
+        first_data = self.db.get_daily_first_date(self.usage_point_id, measurement_direction)
+        if last_data and first_data:
+            start = datetime.strftime(last_data, self.time_format)
+            end = datetime.strftime(first_data, self.time_format)
+            influxdb_data = INFLUXDB.count(start, end, measurement_direction)
+            count = 1
+            for data in influxdb_data:
+                for record in data.records:
+                    count += record.get_value()
+            if get_daily_all_count != count:
+                logging.info(f" Cache : {get_daily_all_count} / InfluxDb : {count}")
+                for daily in get_daily_all:
+                    date = daily.date
+                    # start = datetime.strftime(date, "%Y-%m-%dT00:00:00Z")
+                    # end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
+                    if current_month != date.strftime('%m'):
+                        logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
+                    # if len(INFLUXDB.get(start, end, measurement_direction)) == 0:
                     watt = daily.value
                     kwatt = watt / 1000
                     euro = kwatt * price
@@ -71,34 +74,45 @@ class ExportInfluxDB:
                             "price": float(forceRound(euro, 5))
                         },
                     )
-                current_month = date.strftime("%m")
+                    current_month = date.strftime("%m")
+                logging.info(f" => OK")
+            else:
+                logging.info(f" => Données synchronisées ({count} valeurs)")
         else:
-            logging.info(f"Données synchronisées ({count} valeurs)")
+            logging.info(f" => Aucune donnée")
 
     def detail(self, measurement_direction="consumption"):
         current_month = ""
         measurement = f"{measurement_direction}_detail"
-        title(f'[{self.usage_point_id}] Envoi des données "{measurement.upper()}" dans influxdb')
+        logging.info(f'Envoi des données "{measurement.upper()}" dans influxdb')
         get_detail_all = self.db.get_detail_all(self.usage_point_id, measurement_direction)
-        start = datetime.strftime(self.db.get_detail_last_date(self.usage_point_id), self.time_format)
-        end = datetime.strftime(self.db.get_detail_first_date(self.usage_point_id), self.time_format)
-        influxdb_data = INFLUXDB.count(start, end, measurement)
-        count = 1
-        for data in influxdb_data:
-            for record in data.records:
-                count += record.get_value()
-        if len(get_detail_all) != count:
-            for index, detail in enumerate(get_detail_all):
-                date = detail.date
-                start = datetime.strftime(date, self.time_format)
-                if current_month != date.strftime('%m'):
-                    logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
-                if index < (len(get_detail_all) - 1):
-                    next_item = get_detail_all[index + 1]
-                    end = datetime.strftime(next_item.date, self.time_format)
-                else:
-                    end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
-                if len(INFLUXDB.get(start, end, measurement)) == 0:
+        get_detail_all_count = len(get_detail_all)
+        last_data = self.db.get_detail_last_date(self.usage_point_id, measurement_direction)
+        first_data = self.db.get_detail_first_date(self.usage_point_id, measurement_direction)
+        if last_data and first_data:
+            start = datetime.strftime(last_data, self.time_format)
+            end = datetime.strftime(first_data, self.time_format)
+            influxdb_data = INFLUXDB.count(start, end, measurement)
+            count = 1
+            for data in influxdb_data:
+                for record in data.records:
+                    count += record.get_value()
+
+            # print(len(get_detail_all))
+            # print(count)
+            if get_detail_all_count != count:
+                logging.info(f" Cache : {get_detail_all_count} / InfluxDb : {count}")
+                for index, detail in enumerate(get_detail_all):
+                    date = detail.date
+                    # start = datetime.strftime(date, self.time_format)
+                    if current_month != date.strftime('%m'):
+                        logging.info(f" - {date.strftime('%Y')}-{date.strftime('%m')}")
+                    # if index < (len(get_detail_all) - 1):
+                    #     next_item = get_detail_all[index + 1]
+                    #     end = datetime.strftime(next_item.date, self.time_format)
+                    # else:
+                    #     end = datetime.strftime(date, "%Y-%m-%dT23:59:59Z")
+                    # if len(INFLUXDB.get(start, end, measurement)) == 0:
                     watt = detail.value
                     kwatt = watt / 1000
                     watth = watt / (60 / detail.interval)
@@ -128,52 +142,63 @@ class ExportInfluxDB:
                             "price": float(forceRound(euro, 5))
                         },
                     )
-                current_month = date.strftime("%m")
+                    current_month = date.strftime("%m")
+                logging.info(f" => OK")
+            else:
+                logging.info(f" => Données synchronisées ({count} valeurs)")
         else:
-            logging.info(f"Données synchronisées ({count} valeurs)")
+            logging.info(f" => Aucune donnée")
 
     def tempo(self):
         measurement = "tempo"
-        title(f'[{self.usage_point_id}] Envoi des données "TEMPO" dans influxdb')
+        logging.info('Envoi des données "TEMPO" dans influxdb')
         tempo_data = self.db.get_tempo()
-        for data in tempo_data:
-            INFLUXDB.write(
-                measurement=measurement,
-                date=self.tz.localize(data.date),
-                tags={
-                    "usage_point_id": self.usage_point_id,
-                },
-                fields={
-                    "color": data.color
-                },
-            )
-
-    def ecowatt(self):
-        measurement = "ecowatt"
-        title(f'[{self.usage_point_id}] Envoi des données "ECOWATT" dans influxdb')
-        ecowatt_data = self.db.get_ecowatt()
-        for data in ecowatt_data:
-            INFLUXDB.write(
-                measurement=f"{measurement}_daily",
-                date=self.tz.localize(data.date),
-                tags={
-                    "usage_point_id": self.usage_point_id,
-                },
-                fields={
-                    "value": data.value,
-                    "message": data.message
-                },
-            )
-            data_detail = ast.literal_eval(data.detail)
-            for date, value in data_detail.items():
-                date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+        if tempo_data:
+            for data in tempo_data:
                 INFLUXDB.write(
-                    measurement=f"{measurement}_detail",
-                    date=self.tz.localize(date),
+                    measurement=measurement,
+                    date=self.tz.localize(data.date),
                     tags={
                         "usage_point_id": self.usage_point_id,
                     },
                     fields={
-                        "value": value
+                        "color": data.color
                     },
                 )
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")
+
+    def ecowatt(self):
+        measurement = "ecowatt"
+        logging.info(f'Envoi des données "ECOWATT" dans influxdb')
+        ecowatt_data = self.db.get_ecowatt()
+        if ecowatt_data:
+            for data in ecowatt_data:
+                INFLUXDB.write(
+                    measurement=f"{measurement}_daily",
+                    date=self.tz.localize(data.date),
+                    tags={
+                        "usage_point_id": self.usage_point_id,
+                    },
+                    fields={
+                        "value": data.value,
+                        "message": data.message
+                    },
+                )
+                data_detail = ast.literal_eval(data.detail)
+                for date, value in data_detail.items():
+                    date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                    INFLUXDB.write(
+                        measurement=f"{measurement}_detail",
+                        date=self.tz.localize(date),
+                        tags={
+                            "usage_point_id": self.usage_point_id,
+                        },
+                        fields={
+                            "value": value
+                        },
+                    )
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")

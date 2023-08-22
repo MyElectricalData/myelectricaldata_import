@@ -91,15 +91,30 @@ class Detail:
             #     last_week = True
             # if not current_data["missing_data"] and not last_week:
             if not current_data["missing_data"]:
-                title(" Toutes les données sont déjà en cache.")
+                logging.info(" => Toutes les données sont déjà en cache.")
                 output = []
                 for date, data in current_data["date"].items():
                     output.append({'date': date, "value": data["value"]})
                 return output
             else:
-                title(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
+                logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
                 if hasattr(data, "status_code"):
+                    if data.status_code == 403:
+                        if hasattr(data, "text"):
+                            description = json.loads(data.text)["detail"]
+                        else:
+                            description = data
+                        if hasattr(data, "status_code"):
+                            status_code = data.status_code
+                        else:
+                            status_code = 500
+                        return {
+                            "error": True,
+                            "description": description,
+                            "status_code": status_code,
+                            "exit": True
+                        }
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)['meter_reading']
                         for interval_reading in meter_reading["interval_reading"]:
@@ -145,10 +160,18 @@ class Detail:
                             "status_code": data.status_code
                         }
                 else:
+                    if hasattr(data, "text"):
+                        description = json.loads(data.text)["detail"]
+                    else:
+                        description = data
+                    if hasattr(data, "status_code"):
+                        status_code = data.status_code
+                    else:
+                        status_code = 500
                     return {
                         "error": True,
-                        "description": json.loads(data.text)["detail"],
-                        "status_code": data.status_code
+                        "description": description,
+                        "status_code": status_code
                     }
         except Exception as e:
             logging.exception(e)
@@ -174,6 +197,13 @@ class Detail:
                 response = self.run(begin, end)
                 begin = begin - timedelta(days=self.max_detail)
                 end = end - timedelta(days=self.max_detail)
+            if "exit" in response:
+                finish = False
+                response = {
+                    "error": True,
+                    "description": response["description"],
+                    "status_code": response["status_code"]
+                }
             if response is not None:
                 result = [*result, *response]
             else:
@@ -182,18 +212,13 @@ class Detail:
                     "description": "MyElectricalData est indisponible."
                 }
             if "error" in response and response["error"]:
-                error = [
-                    "Echec de la récupération des données.",
-                    f' => {response["description"]}',
-                    f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}",
-                ]
-                logging.error(error)
-
+                logging.error("Echec de la récupération des données.")
+                logging.error(f' => {response["description"]}')
+                logging.error(f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
             if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
                 finish = False
-                error = ["Arrêt de la récupération des données suite à une erreur.",
-                         f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}"]
-                logging.warning(error)
+                logging.error("Arrêt de la récupération des données suite à une erreur.")
+                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}")
         return result
 
     def reset_daily(self, date):

@@ -47,7 +47,7 @@ class Configuration:
                 "plan": {
                     "title": "Type de plan",
                     "help": "Permet de définir la méthode de calcul dans l'estimation du coût.",
-                    "type": ["BASE", "HC/HP"],
+                    "type": ["BASE", "HC/HP", "Tempo"],
                     "default": "HC/HP"
                 },
                 "refresh_addresse": {

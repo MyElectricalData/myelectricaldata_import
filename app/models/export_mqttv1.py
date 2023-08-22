@@ -89,7 +89,7 @@ class ExportMqtt:
         }
         # print(consentement_expiration)
         self.mqtt_config.publish_multiple(consentement_expiration)
-        title(" Finish")
+        title("Finish")
 
     def contract(self):
         title(f"[{self.usage_point_id}] Exportation de données dans self.mqtt_config.")
@@ -101,9 +101,9 @@ class ExportMqtt:
             for column in contract_data.__table__.columns:
                 output[f"{self.usage_point_id}/contract/{column.name}"] = str(getattr(contract_data, column.name))
             self.mqtt_config.publish_multiple(output)
-            title(" Finish")
+            title("Finish")
         else:
-            title(" Failed")
+            title("Failed")
 
     def address(self):
         logging.info(f"[{self.usage_point_id}] Génération des messages d'addresse")
@@ -113,9 +113,9 @@ class ExportMqtt:
             for column in address_data.__table__.columns:
                 output[f"{self.usage_point_id}/address/{column.name}"] = str(getattr(address_data, column.name))
             self.mqtt_config.publish_multiple(output)
-            title(" Finish")
+            title("Finish")
         else:
-            title(" Failed")
+            title("Failed")
 
     def load_daily_data(self, begin, end, price, sub_prefix):
         logging.info(f" {begin.strftime(self.date_format)} => {end.strftime(self.date_format)}")
@@ -247,9 +247,9 @@ class ExportMqtt:
                 date_begin_current = date_begin_current - relativedelta(years=1)
                 if date_begin_current < date_begin:
                     date_begin_current = date_begin
-            title(" Finish")
+            title("Finish")
         else:
-            title(" No data")
+            title("No data")
 
     def daily_linear(self, price):
         logging.info("Génération des données linéaires")
@@ -277,9 +277,9 @@ class ExportMqtt:
                 if date_begin_current < date_begin:
                     date_begin_current = datetime.combine(date_begin, datetime.min.time())
                 idx = idx + 1
-            title(" Finish")
+            title("Finish")
         else:
-            title(" No data")
+            title("No data")
 
     def load_detail_data(self, begin, end, price_hp, price_hc, sub_prefix):
         logging.info(f" {begin.strftime(self.date_format)} => {end.strftime(self.date_format)}")
@@ -409,9 +409,9 @@ class ExportMqtt:
                 date_begin_current = date_begin_current - relativedelta(years=1)
                 if date_begin_current < date_begin:
                     date_begin_current = date_begin
-            title(" Finish")
+            title("Finish")
         else:
-            title(" No data")
+            title("No data")
 
     def detail_linear(self, price_hp, price_hc=0):
         logging.info("Génération des données linéaires détaillées")
@@ -439,6 +439,6 @@ class ExportMqtt:
                 if date_begin_current < date_begin:
                     date_begin_current = datetime.combine(date_begin, datetime.min.time())
                 idx = idx + 1
-            title(" Finish")
+            title("Finish")
         else:
-            title(" No data")
+            title("No data")

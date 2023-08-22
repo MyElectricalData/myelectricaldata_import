@@ -14,6 +14,7 @@ from models.influxdb import InfluxDB
 from models.mqtt import Mqtt
 
 # LOGGING CONFIGURATION
+config = {}
 if path.exists("/data/config.yaml"):
     with open(f'/data/config.yaml') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
@@ -41,6 +42,10 @@ else:
         datefmt=LOG_FORMAT_DATE,
         level=logging_level
     )
+
+if not path.exists("/data/config.yaml"):
+    logging.critical("Config file is not found (/data/config.yaml)")
+    exit()
 
 
 class EndpointFilter(logging.Filter):
@@ -75,21 +80,19 @@ DB.unlock()
 
 CONFIG.set_db(DB)
 
-INFLUXDB_CONFIG = CONFIG.influxdb_config()
 INFLUXB_ENABLE = False
 INFLUXDB = None
-
-if "method" in INFLUXDB_CONFIG:
-    method = INFLUXDB_CONFIG["method"]
-else:
-    method = "SYNCHRONOUS"
-
-write_options = []
-if "batching_options" in INFLUXDB_CONFIG:
-    write_options = INFLUXDB_CONFIG["batching_options"]
-
-if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]:
+INFLUXDB_CONFIG = CONFIG.influxdb_config()
+if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and str2bool(INFLUXDB_CONFIG["enable"]):
     INFLUXB_ENABLE = True
+    if "method" in INFLUXDB_CONFIG:
+        method = INFLUXDB_CONFIG["method"]
+    else:
+        method = "SYNCHRONOUS"
+
+    write_options = []
+    if "batching_options" in INFLUXDB_CONFIG:
+        write_options = INFLUXDB_CONFIG["batching_options"]
     INFLUXDB = InfluxDB(
         hostname=INFLUXDB_CONFIG["hostname"],
         port=INFLUXDB_CONFIG["port"],
@@ -104,8 +107,11 @@ if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and INFLUXDB_CONFIG["enable"]
         CONFIG.set("wipe_influxdb", False)
         time.sleep(1)
 
+MQTT_ENABLE = False
+MQTT = None
 MQTT_CONFIG = CONFIG.mqtt_config()
-if MQTT_CONFIG and "enable" in MQTT_CONFIG and MQTT_CONFIG["enable"]:
+if MQTT_CONFIG and "enable" in MQTT_CONFIG and str2bool(MQTT_CONFIG["enable"]):
+    MQTT_ENABLE = True
     MQTT = Mqtt(
         hostname=MQTT_CONFIG["hostname"],
         port=MQTT_CONFIG["port"],
