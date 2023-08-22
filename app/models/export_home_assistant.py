@@ -240,8 +240,8 @@ class HomeAssistant:
     def ecowatt_delta(self, name, delta):
         uniq_id = f"myelectricaldata_{self.usage_point_id}_ecowatt{name}"
         logging.info(f"- sensor.{uniq_id}")
-        current_data = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
-        fetch_date = current_data - timedelta(days=1)
+        current_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
+        fetch_date = current_date - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")
         if ecowatt_data:
             forecast = {}
@@ -250,7 +250,7 @@ class HomeAssistant:
                     date = datetime.strptime(date, self.date_format_detail)
                     forecast[f'{date.strftime("%H")} h'] = value
             attributes = {
-                "date": current_data.strftime(self.date_format),
+                "date": current_date.strftime(self.date_format),
                 "forecast": forecast,
             }
             self.sensor(
