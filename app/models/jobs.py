@@ -189,7 +189,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            Contract(headers=self.header_generate(), usage_point_id=usage_point_id, config=usage_point_config)\
+            Contract(headers=self.header_generate(), usage_point_id=usage_point_id, config=usage_point_config) \
                 .get()
             export_finish()
 
@@ -237,6 +237,7 @@ class Job:
                 export_finish()
             else:
                 logging.info(f"{detail} désactivée sur le point de livraison")
+
         try:
             if self.usage_point_id is None:
                 for usage_point_config in self.usage_points:
@@ -287,6 +288,7 @@ class Job:
                 export_finish()
             else:
                 logging.info(f"{detail} désactivée sur le point de livraison")
+
         try:
             if self.usage_point_id is None:
                 for usage_point_config in self.usage_points:
@@ -474,7 +476,10 @@ class Job:
             export_mqtt.contract()
             export_mqtt.address()
             export_mqtt.ecowatt()
-            export_mqtt.tempo()
+            if hasattr(usage_point_config, "consumption") and usage_point_config.consumption or hasattr(
+                    usage_point_config,
+                    "consumption_detail") and usage_point_config.consumption_detail:
+                export_mqtt.tempo()
             if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
                 export_mqtt.daily_annual(usage_point_config.consumption_price_base,
                                          measurement_direction="consumption")
