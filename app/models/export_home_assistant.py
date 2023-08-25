@@ -243,12 +243,14 @@ class HomeAssistant:
         current_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
         fetch_date = current_date - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")
+        dayValue=""
         if ecowatt_data:
             forecast = {}
             for data in ecowatt_data:
                 for date, value in json.loads(data.detail.replace("'", '"')).items():
                     date = datetime.strptime(date, self.date_format_detail)
                     forecast[f'{date.strftime("%H")} h'] = value
+                dayValue=data.value
             attributes = {
                 "date": current_date.strftime(self.date_format),
                 "forecast": forecast,
@@ -258,7 +260,7 @@ class HomeAssistant:
                 name=f"{self.usage_point_id}.EcoWatt{name}",
                 uniq_id=uniq_id,
                 attributes=attributes,
-                state=123456.00
+                state=dayValue
             )
 
     def myelectricaldata_usage_point_id(self, measurement_direction):
