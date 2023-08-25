@@ -632,92 +632,93 @@ class Stat:
         data = self.db.get_detail_all(self.usage_point_id, self.measurement_direction)
         result = {}
         last_month = ""
-        tempo_config = self.config.tempo_config()
-        tempo_data = self.db.get_tempo_range(data[0].date, data[-1].date)
-        for item in data:
-            year = item.date.strftime("%Y")
-            month = item.date.strftime("%m")
-            if month != last_month:
-                logging.info(f" - {year} / {month}")
-            measure_type = item.measure_type
-            tempo_date = datetime.combine(item.date, datetime.min.time())
-            interval = item.interval
-            if year not in result:
+        if data:
+            tempo_config = self.config.tempo_config()
+            tempo_data = self.db.get_tempo_range(data[0].date, data[-1].date)
+            for item in data:
+                year = item.date.strftime("%Y")
+                month = item.date.strftime("%m")
+                if month != last_month:
+                    logging.info(f" - {year} / {month}")
+                measure_type = item.measure_type
+                tempo_date = datetime.combine(item.date, datetime.min.time())
+                interval = item.interval
+                if year not in result:
 
-                result[year] = {
-                    "BASE": {"euro": 0, "kWh": 0, "Wh": 0},
-                    "TEMPO": {
-                        "BLUE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "BLUE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "WHITE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "WHITE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "RED_HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "RED_HP": {"euro": 0, "kWh": 0, "Wh": 0},
-                    },
-                    "HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                    "HP": {"euro": 0, "kWh": 0, "Wh": 0},
-                    "month": {}
-                }
-            if month not in result[year]["month"]:
-                result[year]["month"][month] = {
-                    "BASE": {"euro": 0, "kWh": 0, "Wh": 0},
-                    "TEMPO": {
-                        "BLUE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "BLUE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "WHITE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "WHITE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "RED_HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                        "RED_HP": {"euro": 0, "kWh": 0, "Wh": 0},
-                    },
-                    "HC": {"euro": 0, "kWh": 0, "Wh": 0},
-                    "HP": {"euro": 0, "kWh": 0, "Wh": 0}
-                }
-            if self.measurement_direction == "consumption":
-                price = self.usage_point_id_config.consumption_price_base
-            else:
-                price = self.usage_point_id_config.production_price
-            if measure_type == "HP":
-                price_hc_hp = self.usage_point_id_config.consumption_price_hp
-            else:
-                price_hc_hp = self.usage_point_id_config.consumption_price_hc
-            wh = (item.value) / (60 / interval)
-            kwh = (wh / 1000)
-            # YEARS
-            result[year]["BASE"]["Wh"] += wh
-            result[year]["BASE"]["kWh"] += kwh
-            result[year]["BASE"]["euro"] += (kwh * price)
-            result[year][measure_type]["Wh"] += wh
-            result[year][measure_type]["kWh"] += kwh
-            result[year][measure_type]["euro"] += (kwh * price_hc_hp)
-
-            # MONTH
-            result[year]["month"][month]["BASE"]["Wh"] += wh
-            result[year]["month"][month]["BASE"]["kWh"] += kwh
-            result[year]["month"][month]["BASE"]["euro"] += (kwh * price)
-            result[year]["month"][month][measure_type]["Wh"] += wh
-            result[year]["month"][month][measure_type]["kWh"] += kwh
-            result[year]["month"][month][measure_type]["euro"] += (kwh * price_hc_hp)
-
-            # TEMPO
-            if tempo_config:
-                hour = int(item.date.strftime("%H"))
-                if 6 <= hour < 22:
-                    measure_type = "HP"
+                    result[year] = {
+                        "BASE": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "TEMPO": {
+                            "BLUE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "BLUE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "WHITE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "WHITE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "RED_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "RED_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                        },
+                        "HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "month": {}
+                    }
+                if month not in result[year]["month"]:
+                    result[year]["month"][month] = {
+                        "BASE": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "TEMPO": {
+                            "BLUE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "BLUE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "WHITE_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "WHITE_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "RED_HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                            "RED_HP": {"euro": 0, "kWh": 0, "Wh": 0},
+                        },
+                        "HC": {"euro": 0, "kWh": 0, "Wh": 0},
+                        "HP": {"euro": 0, "kWh": 0, "Wh": 0}
+                    }
+                if self.measurement_direction == "consumption":
+                    price = self.usage_point_id_config.consumption_price_base
                 else:
-                    measure_type = "HC"
-                tempo_output = [x for x in tempo_data if x.date == tempo_date]
-                if tempo_output:
-                    color = tempo_output[0].color
+                    price = self.usage_point_id_config.production_price
+                if measure_type == "HP":
+                    price_hc_hp = self.usage_point_id_config.consumption_price_hp
+                else:
+                    price_hc_hp = self.usage_point_id_config.consumption_price_hc
+                wh = (item.value) / (60 / interval)
+                kwh = (wh / 1000)
+                # YEARS
+                result[year]["BASE"]["Wh"] += wh
+                result[year]["BASE"]["kWh"] += kwh
+                result[year]["BASE"]["euro"] += (kwh * price)
+                result[year][measure_type]["Wh"] += wh
+                result[year][measure_type]["kWh"] += kwh
+                result[year][measure_type]["euro"] += (kwh * price_hc_hp)
 
-                    tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
-                    result[year]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
-                    result[year]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
-                    result[year]["TEMPO"][f"{color}_{measure_type}"]["euro"] += kwh * tempo_price
-                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
-                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
-                    result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["euro"] += kwh * tempo_price
-            last_month = month
-        self.db.set_stat(self.usage_point_id, f"price_{self.measurement_direction}", json.dumps(result))
+                # MONTH
+                result[year]["month"][month]["BASE"]["Wh"] += wh
+                result[year]["month"][month]["BASE"]["kWh"] += kwh
+                result[year]["month"][month]["BASE"]["euro"] += (kwh * price)
+                result[year]["month"][month][measure_type]["Wh"] += wh
+                result[year]["month"][month][measure_type]["kWh"] += kwh
+                result[year]["month"][month][measure_type]["euro"] += (kwh * price_hc_hp)
+
+                # TEMPO
+                if tempo_config:
+                    hour = int(item.date.strftime("%H"))
+                    if 6 <= hour < 22:
+                        measure_type = "HP"
+                    else:
+                        measure_type = "HC"
+                    tempo_output = [x for x in tempo_data if x.date == tempo_date]
+                    if tempo_output:
+                        color = tempo_output[0].color
+
+                        tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
+                        result[year]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
+                        result[year]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
+                        result[year]["TEMPO"][f"{color}_{measure_type}"]["euro"] += kwh * tempo_price
+                        result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
+                        result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
+                        result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["euro"] += kwh * tempo_price
+                last_month = month
+            self.db.set_stat(self.usage_point_id, f"price_{self.measurement_direction}", json.dumps(result))
         return json.dumps(result)
 
     def delete(self):
