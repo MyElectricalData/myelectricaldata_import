@@ -161,9 +161,12 @@ def create_release(prerelease=False):
             for vers in tags:
                 if vers.startswith(beta_version):
                     found_version.append(vers)
-            found_version.sort()
-            next_version = found_version[-1]
-            next_version = int(next_version.split(".b")[1]) + 1
+            if found_version:
+                found_version.sort()
+                next_version = found_version[-1]
+                next_version = int(next_version.split(".b")[1]) + 1
+            else:
+                next_version = 1
             version = f"{beta_version}{next_version}"
         else:
             version = f"{version}-release"
