@@ -633,6 +633,18 @@ class Database:
         self.session.close()
         return True
 
+    def get_error_log(self, usage_point_id):
+        data = self.get_usage_point(usage_point_id)
+        return data.last_error
+
+    def set_error_log(self, usage_point_id, message):
+        values = {
+            UsagePoints.last_error: message
+        }
+        self.session.execute(update(UsagePoints, values=values).where(UsagePoints.usage_point_id == usage_point_id))
+        self.session.flush()
+        return True
+
     ## ----------------------------------------------------------------------------------------------------------------
     ## ADDRESSES
     ## ----------------------------------------------------------------------------------------------------------------

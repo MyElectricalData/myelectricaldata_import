@@ -496,6 +496,10 @@ class HomeAssistant:
         if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
             yesterday_consumption_max_power = stats.max_power(0)["value"]
 
+        error_last_call = self.db.get_error_log(self.usage_point_id)
+        if error_last_call is None:
+            error_last_call = ""
+
         attributes = {
             "yesterdayDate": stats.daily(0)["begin"],
             "yesterday": convert_kw(stats.daily(0)["value"]),
@@ -599,7 +603,7 @@ class HomeAssistant:
             "yesterday_evolution": round(yesterday_evolution, 2),
             "yearly_evolution": round(yearly_evolution, 2),
             "friendly_name": f"myelectricaldata.{self.usage_point_id}",
-            "errorLastCall": "",
+            "errorLastCall": error_last_call,
             "errorLastCallInterne": "",
             "current_week_number": yesterday.strftime("%V"),
             "offpeak_hours_enedis": offpeak_hours_enedis,

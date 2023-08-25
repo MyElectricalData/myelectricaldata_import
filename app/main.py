@@ -109,6 +109,11 @@ def import_job():
 def home_assistant_export():
     Job().export_home_assistant(target="ecowatt")
 
+@APP.on_event("startup")
+@repeat_every(seconds=600, wait_first=False)
+def gateway_status():
+    Job().get_gateway_status()
+
 
 if __name__ == '__main__':
     logo(get_version())

@@ -168,7 +168,12 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            status = Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            if "error" in status and status["error"]:
+                message = f'{status["status_code"]} - {status["description"]["detail"]}'
+                self.db.set_error_log(usage_point_id, message)
+            else:
+                self.db.set_error_log(usage_point_id, None)
             export_finish()
 
         try:
@@ -476,9 +481,8 @@ class Job:
             export_mqtt.contract()
             export_mqtt.address()
             export_mqtt.ecowatt()
-            if hasattr(usage_point_config, "consumption") and usage_point_config.consumption or hasattr(
-                    usage_point_config,
-                    "consumption_detail") and usage_point_config.consumption_detail:
+            if (hasattr(usage_point_config, "consumption") and usage_point_config.consumption) \
+                    or (hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail):
                 export_mqtt.tempo()
             if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
                 export_mqtt.daily_annual(usage_point_config.consumption_price_base,
