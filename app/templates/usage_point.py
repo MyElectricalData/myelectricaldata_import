@@ -217,7 +217,7 @@ class UsagePoint:
             body += self.offpeak_hours_table()
 
             # TEMPO
-            tempo_config = self.config.tempo_config()
+            tempo_config = self.db.get_tempo_config("price")
             if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                 body += f"<h1>Tempo</h1>"
                 today = datetime.combine(datetime.now(), datetime.min.time())
@@ -240,24 +240,24 @@ class UsagePoint:
                         "color": "background-color: #E74C3C",
                         "text_color": "color: #ECF0F1",
                         "text": f"""Rouge<br>
-                        06h00 -> 22h00 = {tempo_config['price_red_hp']}€ / kWh<br>
-                        22h00 -> 06h00 = {tempo_config['price_red_hc']}€ / kWh<br>
+                        06h00 -> 22h00 = {tempo_config['red_hp']}€ / kWh<br>
+                        22h00 -> 06h00 = {tempo_config['red_hc']}€ / kWh<br>
                         """
                     },
                     "WHITE": {
                         "color": "background-color: #ECF0F1",
                         "text_color": "color: #34495E",
                         "text": f"""Blanc<br>
-                        06h00 -> 22h00 = {tempo_config['price_white_hp']}€ / kWh<br>
-                        22h00 -> 06h00 = {tempo_config['price_white_hc']}€ / kWh
+                        06h00 -> 22h00 = {tempo_config['white_hp']}€ / kWh<br>
+                        22h00 -> 06h00 = {tempo_config['white_hc']}€ / kWh
                         """
                     },
                     "BLUE": {
                         "color": "background-color: #3498DB",
                         "text_color": "color: #ECF0F1",
                         "text": f"""Bleu<br>
-                        06h00 -> 22h00 = {tempo_config['price_blue_hp']}€ / kWh<br>
-                        22h00 -> 06h00 = {tempo_config['price_blue_hc']}€ / kWh
+                        06h00 -> 22h00 = {tempo_config['blue_hp']}€ / kWh<br>
+                        22h00 -> 06h00 = {tempo_config['blue_hc']}€ / kWh
                         """
                     }
                 }

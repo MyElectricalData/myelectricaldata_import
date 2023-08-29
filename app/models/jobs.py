@@ -353,10 +353,14 @@ class Job:
 
     def get_tempo(self):
         try:
-            title(f"Récupération des données Tempo :")
             tempo_config = self.config.tempo_config()
             if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                title(f"Récupération des données Tempo :")
                 Tempo().fetch()
+                title(f"Récupération des jours Tempo :")
+                Tempo().fetch_day()
+                title(f"Récupération des tarifs Tempo :")
+                Tempo().fetch_price()
                 export_finish()
             else:
                 title(f"Import Tempo désactivé")

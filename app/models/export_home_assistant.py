@@ -18,6 +18,8 @@ def convert_kw(value):
 
 
 def convert_kw_to_euro(value, price):
+    if type(price) == str:
+        price = float(price.replace(",", "."))
     return round(value / 1000 * price, 1)
 
 
@@ -81,8 +83,8 @@ class HomeAssistant:
         else:
             self.subscribed_power = None
         self.usage_point = self.db.get_usage_point(self.usage_point_id)
-
         self.mqtt = MQTT
+        self.tempo_color = None
 
     def export(self):
         if (hasattr(self.config, "consumption") and self.config.consumption
@@ -100,6 +102,8 @@ class HomeAssistant:
             self.history_usage_point_id("production")
 
         self.tempo()
+        self.tempo_days()
+        self.tempo_price()
         self.ecowatt()
 
     def sensor(self, **kwargs):
@@ -115,18 +119,19 @@ class HomeAssistant:
             "json_attr_t": f"{topic}/attributes",
             "device_class": device_class,
             "device": {
-                "identifiers": [
-                    f"linky_{self.usage_point_id}"
-                ],
-                "name": f"Linky {self.usage_point_id}",
-                "model": "Linky",
+                "identifiers": kwargs['device_identifiers'],
+                "name": kwargs['device_name'],
+                "model": kwargs['device_model'],
                 "manufacturer": "MyElectricalData"
             }
         }
         if "unit_of_measurement" in kwargs:
             config["unit_of_measurement"] = kwargs["unit_of_measurement"]
+        attributes_params = {}
+        if "attributes" in kwargs:
+            attributes_params = kwargs["attributes"]
         attributes = {
-            **kwargs["attributes"],
+            **attributes_params,
             **{
                 "version": get_version(),
                 "numPDL": self.usage_point_id,
@@ -156,6 +161,9 @@ class HomeAssistant:
         self.sensor(
             topic=f"myelectricaldata_{measurement_direction}_last_{days}_day/{self.usage_point_id}",
             name=f"{measurement_direction}_{self.usage_point_id}.last{days}day",
+            device_identifiers=f"linky_{self.usage_point_id}",
+            device_name=f"Linky {self.usage_point_id}",
+            device_model="linky",
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,
@@ -179,6 +187,9 @@ class HomeAssistant:
         self.sensor(
             topic=f"myelectricaldata_{measurement_direction}_history/{self.usage_point_id}",
             name=f"{measurement_direction}_{self.usage_point_id}.history",
+            device_identifiers=f"linky_{self.usage_point_id}",
+            device_name=f"Linky {self.usage_point_id}",
+            device_model="linky",
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,
@@ -187,7 +198,7 @@ class HomeAssistant:
         )
 
     def tempo(self):
-        uniq_id = f"myelectricaldata_{self.usage_point_id}_tempo_today"
+        uniq_id = f"myelectricaldata_rte_tempo_today"
         logging.info(f"- sensor.{uniq_id}")
         begin = datetime.combine(datetime.now(), datetime.min.time())
         end = datetime.combine(datetime.now(), datetime.max.time())
@@ -201,15 +212,19 @@ class HomeAssistant:
         attributes = {
             "date": date
         }
+        self.tempo_color = state
         self.sensor(
-            topic=f"myelectricaldata_tempo/today",
-            name=f"{self.usage_point_id}.TempoToday",
+            topic=f"myelectricaldata_rte_tempo/today",
+            name=f"rte.TempoToday",
+            device_identifiers=f"rte_tempo",
+            device_name=f"RTE Tempo",
+            device_model="RTE",
             uniq_id=uniq_id,
             attributes=attributes,
             state=state
         )
 
-        uniq_id = f"myelectricaldata_{self.usage_point_id}_tempo_tomorrow"
+        uniq_id = f"myelectricaldata_rte_tempo_tomorrow"
         logging.info(f"- sensor.{uniq_id}")
         begin = begin + timedelta(days=1)
         end = end + timedelta(days=1)
@@ -224,11 +239,58 @@ class HomeAssistant:
             "date": date
         }
         self.sensor(
-            topic=f"myelectricaldata_tempo/tomorrow",
-            name=f"{self.usage_point_id}.TempoTomorrow",
+            topic=f"myelectricaldata_rte_tempo/tomorrow",
+            name=f"rte.TempoTomorrow",
+            device_identifiers=f"rte_tempo",
+            device_name=f"RTE Tempo",
+            device_model="RTE",
             uniq_id=uniq_id,
             attributes=attributes,
             state=state
+        )
+
+    def tempo_days(self):
+        tempo_days = self.db.get_tempo_config("days")
+        for color, days in tempo_days.items():
+            self.tempo_days_sensor(f"{color}", days)
+
+    def tempo_days_sensor(self, color, days):
+        uniq_id = f"myelectricaldata_edf_tempo_days_{color}"
+        logging.info(f"- sensor.{uniq_id}")
+        self.sensor(
+            topic=f"myelectricaldata_edf_tempo_days/{color}",
+            name=f"edf.TempoDays{color.capitalize()}",
+            device_identifiers=f"edf_tempo",
+            device_name=f"EDF Tempo",
+            device_model="EDF",
+            uniq_id=uniq_id,
+            state=days
+        )
+
+    def tempo_price(self):
+        tempo_price = self.db.get_tempo_config("price")
+        if 22 > int(datetime.now().strftime("%H")) < 6:
+            measure_type = "hc"
+        else:
+            measure_type = "hp"
+        current_price = tempo_price[f"{self.tempo_color.lower()}_{measure_type}"].replace(",", ".")
+        self.tempo_price_sensor(f"current", current_price, "Current")
+        for color, price in tempo_price.items():
+            self.tempo_price_sensor(f"{color}", price.replace(",", "."),
+                                    f"{color.split('_')[0].capitalize()}{color.split('_')[1].capitalize()}")
+
+    def tempo_price_sensor(self, color, price, name):
+        uniq_id = f"myelectricaldata_edf_tempo_price_{color}"
+        logging.info(f"- sensor.{uniq_id}")
+        self.sensor(
+            topic=f"myelectricaldata_edf_tempo_price/{color}",
+            name=f"edf.TempoPrice{name}",
+            device_identifiers=f"edf_tempo",
+            device_name=f"EDF Tempo",
+            device_model="EDF",
+            uniq_id=uniq_id,
+            state=price,
+            unit_of_measurement="€"
         )
 
     def ecowatt(self):
@@ -238,7 +300,7 @@ class HomeAssistant:
         self.ecowatt_delta("_J2", 2)
 
     def ecowatt_delta(self, name, delta):
-        uniq_id = f"myelectricaldata_{self.usage_point_id}_ecowatt{name}"
+        uniq_id = f"myelectricaldata_rte_ecowatt{name}"
         logging.info(f"- sensor.{uniq_id}")
         current_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
         fetch_date = current_date - timedelta(days=1)
@@ -247,17 +309,20 @@ class HomeAssistant:
         if ecowatt_data:
             forecast = {}
             for data in ecowatt_data:
+                dayValue = data.value
                 for date, value in json.loads(data.detail.replace("'", '"')).items():
                     date = datetime.strptime(date, self.date_format_detail)
                     forecast[f'{date.strftime("%H")} h'] = value
-                dayValue += data.value
             attributes = {
                 "date": current_date.strftime(self.date_format),
                 "forecast": forecast,
             }
             self.sensor(
-                topic=f"myelectricaldata_ecowatt{name}/{self.usage_point_id}",
-                name=f"{self.usage_point_id}.EcoWatt{name}",
+                topic=f"myelectricaldata_rte_ecowatt{name}/tempo",
+                name=f"rte.EcoWatt{name}",
+                device_identifiers=f"rte_ecowatt",
+                device_name=f"RTE EcoWatt",
+                device_model="RTE",
                 uniq_id=uniq_id,
                 attributes=attributes,
                 state=dayValue
@@ -440,7 +505,7 @@ class HomeAssistant:
                         yesterday_hp_value_cost = convert_kw_to_euro(hp, self.consumption_price_hp)
                     dailyweek_cost.append(round(value, 1))
             elif hasattr(self.config, "plan") and self.config.plan.upper() == "TEMPO":
-                tempo_config = CONFIG.tempo_config()
+                tempo_config = self.db.get_tempo_config("price")
                 for i in range(7):
                     tempo_data = stats.tempo(i)["value"]
                     hp = tempo_data["blue_hp"] + tempo_data["white_hp"] + tempo_data["red_hp"]
@@ -448,14 +513,14 @@ class HomeAssistant:
                     dailyweek_HP.append(convert_kw(hp))
                     dailyweek_HC.append(convert_kw(hc))
                     cost_hp = (
-                            convert_kw_to_euro(tempo_data["blue_hp"], tempo_config["price_blue_hp"])
-                            + convert_kw_to_euro(tempo_data["white_hp"], tempo_config["price_white_hp"])
-                            + convert_kw_to_euro(tempo_data["red_hp"], tempo_config["price_red_hp"])
+                            convert_kw_to_euro(tempo_data["blue_hp"], tempo_config["blue_hp"])
+                            + convert_kw_to_euro(tempo_data["white_hp"], tempo_config["white_hp"])
+                            + convert_kw_to_euro(tempo_data["red_hp"], tempo_config["red_hp"])
                     )
                     cost_hc = (
-                            convert_kw_to_euro(tempo_data["blue_hc"], tempo_config["price_blue_hc"])
-                            + convert_kw_to_euro(tempo_data["white_hc"], tempo_config["price_white_hc"])
-                            + convert_kw_to_euro(tempo_data["red_hc"], tempo_config["price_red_hc"])
+                            convert_kw_to_euro(tempo_data["blue_hc"], tempo_config["blue_hc"])
+                            + convert_kw_to_euro(tempo_data["white_hc"], tempo_config["white_hc"])
+                            + convert_kw_to_euro(tempo_data["red_hc"], tempo_config["red_hc"])
                     )
                     dailyweek_costHP.append(cost_hp)
                     dailyweek_costHC.append(cost_hc)
@@ -617,6 +682,9 @@ class HomeAssistant:
         self.sensor(
             topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}",
             name=f"{measurement_direction}_{self.usage_point_id}",
+            device_identifiers=f"linky_{self.usage_point_id}",
+            device_name=f"Linky {self.usage_point_id}",
+            device_model="linky",
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,
@@ -629,6 +697,9 @@ class HomeAssistant:
         self.sensor(
             topic=f"myelectricaldata/{self.usage_point_id}",
             name=self.usage_point_id,
+            device_identifiers=f"linky_{self.usage_point_id}",
+            device_name=f"Linky {self.usage_point_id}",
+            device_model="linky",
             uniq_id=uniq_id,
             unit_of_measurement="kWh",
             attributes=attributes,

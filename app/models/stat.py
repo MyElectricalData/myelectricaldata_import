@@ -633,7 +633,7 @@ class Stat:
         result = {}
         last_month = ""
         if data:
-            tempo_config = self.config.tempo_config()
+            tempo_config = self.db.get_tempo_config("price")
             tempo_data = self.db.get_tempo_range(data[0].date, data[-1].date)
             for item in data:
                 year = item.date.strftime("%Y")
@@ -709,8 +709,9 @@ class Stat:
                     tempo_output = [x for x in tempo_data if x.date == tempo_date]
                     if tempo_output:
                         color = tempo_output[0].color
-
-                        tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
+                        tempo_price = tempo_config[f"{color.lower()}_{measure_type.lower()}"]
+                        if type(tempo_price) == str:
+                            tempo_price = float(tempo_price.replace(",", "."))
                         result[year]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
                         result[year]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
                         result[year]["TEMPO"][f"{color}_{measure_type}"]["euro"] += kwh * tempo_price

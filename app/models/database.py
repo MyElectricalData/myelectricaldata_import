@@ -22,6 +22,7 @@ from db_schema import (
     ProductionDetail,
     ConsumptionDailyMaxPower,
     Tempo,
+    TempoConfig,
     Ecowatt,
     Statistique
 )
@@ -1747,6 +1748,27 @@ class Database:
             )
         self.session.flush()
         return True
+
+    ## -----------------------------------------------------------------------------------------------------------------
+    ## TEMPO CONFIG
+    ## -----------------------------------------------------------------------------------------------------------------
+    def get_tempo_config(self, key):
+        query = select(TempoConfig).where(TempoConfig.key == key)
+        data = self.session.scalars(query).one_or_none()
+        if data is not None:
+            data = json.loads(data.value)
+        self.session.close()
+        return data
+
+    def set_tempo_config(self, key, value):
+        query = select(TempoConfig).where(TempoConfig.key == key)
+        config = self.session.scalars(query).one_or_none()
+        if config:
+            config.value = json.dumps(value)
+        else:
+            self.session.add(TempoConfig(key=key, value=json.dumps(value)))
+        self.session.flush()
+        self.session.close()
 
     ## -----------------------------------------------------------------------------------------------------------------
     ## ECOWATT

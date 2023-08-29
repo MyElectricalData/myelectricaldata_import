@@ -357,6 +357,20 @@ class Tempo(Base):
                f")"
 
 
+class TempoConfig(Base):
+    __tablename__ = 'tempo_config'
+
+    key = Column(Text, primary_key=True, index=True, unique=True)
+    value = Column(Text, nullable=False)
+
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+
+    def __str__(self):
+        return self.value
+
+
 class Ecowatt(Base):
     __tablename__ = 'ecowatt'
 
