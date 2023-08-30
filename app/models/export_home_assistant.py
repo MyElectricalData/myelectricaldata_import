@@ -29,8 +29,8 @@ def truncate(f, n):
 
 def convert_price(price):
     if type(price) == str:
-        price = float(price.replace(",", "."))
-    return "{:.4f}".format(price / 100)
+        price = price.replace(",", ".")
+    return float(price)
 
 
 class HomeAssistant:
@@ -394,14 +394,14 @@ class HomeAssistant:
                     dailyweek_HP.append(convert_kw(hp))
                     dailyweek_HC.append(convert_kw(hc))
                     cost_hp = (
-                            convert_kw_to_euro(tempo_data["blue_hp"], tempo_config["blue_hp"])
-                            + convert_kw_to_euro(tempo_data["white_hp"], tempo_config["white_hp"])
-                            + convert_kw_to_euro(tempo_data["red_hp"], tempo_config["red_hp"])
+                            convert_kw_to_euro(tempo_data["blue_hp"], convert_price(tempo_config["blue_hp"]))
+                            + convert_kw_to_euro(tempo_data["white_hp"], convert_price(tempo_config["white_hp"]))
+                            + convert_kw_to_euro(tempo_data["red_hp"], convert_price(tempo_config["red_hp"]))
                     )
                     cost_hc = (
-                            convert_kw_to_euro(tempo_data["blue_hc"], tempo_config["blue_hc"])
-                            + convert_kw_to_euro(tempo_data["white_hc"], tempo_config["white_hc"])
-                            + convert_kw_to_euro(tempo_data["red_hc"], tempo_config["red_hc"])
+                            convert_kw_to_euro(tempo_data["blue_hc"], convert_price(tempo_config["blue_hc"]))
+                            + convert_kw_to_euro(tempo_data["white_hc"], convert_price(tempo_config["white_hc"]))
+                            + convert_kw_to_euro(tempo_data["red_hc"], convert_price(tempo_config["red_hc"]))
                     )
                     dailyweek_costHP.append(cost_hp)
                     dailyweek_costHC.append(cost_hc)
