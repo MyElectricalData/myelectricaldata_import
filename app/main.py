@@ -116,6 +116,19 @@ def gateway_status():
 
 
 if __name__ == '__main__':
+
+    # from pypdf import PdfReader
+    # import requests
+    # url = "https://particulier.edf.fr/content/dam/2-Actifs/Documents/Offres/Grille_prix_Tarif_Bleu.pdf"
+    # file = "/tmp/Grille_prix_Tarif_Bleu.pdf"
+    # r = requests.get(url, allow_redirects=True, verify=False)
+    # reader = PdfReader(file)
+    # text = reader.pages[0].extract_text() + "\n"
+    # for line in text.splitlines():
+    #     if line.startswith("6 "):
+    #         print(line)
+    # exit()
+
     logo(get_version())
     log_config = uvicorn.config.LOGGING_CONFIG
     log_config["formatters"]["access"]["fmt"] = LOG_FORMAT
