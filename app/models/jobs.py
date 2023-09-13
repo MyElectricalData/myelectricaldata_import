@@ -28,6 +28,7 @@ class Job:
         self.usage_point_config = {}
         self.mqtt_config = self.config.mqtt_config()
         self.home_assistant_config = self.config.home_assistant_config()
+        self.home_assistant_ws_config = self.config.home_assistant_ws_config()
         self.influxdb_config = self.config.influxdb_config()
         self.wait_job_start = 10
         self.tempo_enable = False
@@ -446,7 +447,10 @@ class Job:
         detail = "Import des données vers l'onglet Energy de Home Assistant (WebSocket)"
         usage_point_id = self.usage_point_config.usage_point_id
         title(f"[{usage_point_id}] {detail}")
-        HomeAssistantWs(usage_point_id)
+        if "enable" in self.home_assistant_ws_config and str2bool(self.home_assistant_ws_config["enable"]):
+            HomeAssistantWs(usage_point_id)
+        else:
+            title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
 
     def export_influxdb(self):
         detail = "Export InfluxDB"

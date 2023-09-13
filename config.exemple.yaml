@@ -8,16 +8,15 @@ wipe_influxdb: false # Work only with influxdb > 2.X
 # storage_uri: postgresql://myelectricaldata:myelectricaldata@postgres:5432/myelectricaldata
 tempo:
   enable: true
-  price_blue_hc: 0.097
-  price_blue_hp: 0.1249
-  price_red_hc: 0.1216
-  price_red_hp: 0.6712
-  price_white_hc: 0.114
-  price_white_hp: 0.1508
-home_assistant:
+home_assistant: # WITH MQTT DISCOVERY
   enable: true
   discovery: true
   discovery_prefix: homeassistant
+home_assistant_ws: # FOR ENERGY TAB
+  enable: true
+  ssl: true
+  token: HOME_ASSISTANT_TOKEN_GENERATE_IN_PROFILE_TABS_(BOTTOM)
+  url: myhomeassistant.domain.fr
 influxdb:
   enable: true
   hostname: influxdb

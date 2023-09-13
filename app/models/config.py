@@ -105,6 +105,12 @@ class Config:
                 "enable": False,
                 "discovery_prefix": "homeassistant",
             },
+            "home_assistant_ws": {
+                "enable": False,
+                "ssl": True,
+                "token": "",
+                "url": ""
+            },
             "influxdb": {
                 "enable": False,
                 "hostname": "influxdb",
@@ -262,6 +268,12 @@ class Config:
     def home_assistant_config(self):
         if "home_assistant" in self.config:
             return self.config["home_assistant"]
+        else:
+            return False
+
+    def home_assistant_ws_config(self):
+        if "home_assistant_ws" in self.config:
+            return self.config["home_assistant_ws"]
         else:
             return False
 
