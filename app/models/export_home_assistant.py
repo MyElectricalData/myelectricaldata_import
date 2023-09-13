@@ -1,12 +1,11 @@
 import json
 import logging
 from datetime import datetime, timedelta
-from math import floor
 
 import pytz
 from dateutil.relativedelta import relativedelta
 
-from dependencies import get_version
+from dependencies import get_version, truncate
 from init import MQTT, DB, CONFIG
 from models.stat import Stat
 
@@ -21,11 +20,6 @@ def convert_kw_to_euro(value, price):
     if type(price) == str:
         price = float(price.replace(",", "."))
     return round(value / 1000 * price, 1)
-
-
-def truncate(f, n):
-    return floor(f * 10 ** n) / 10 ** n
-
 
 def convert_price(price):
     if type(price) == str:
@@ -135,8 +129,6 @@ class HomeAssistant:
                 "manufacturer": "MyElectricalData"
             }
         }
-        from pprint import pprint
-        pprint(config)
         if "unit_of_measurement" in kwargs:
             config["unit_of_measurement"] = kwargs["unit_of_measurement"]
         if "numPDL" in kwargs:
@@ -591,7 +583,7 @@ class HomeAssistant:
         }
         self.tempo_color = state
         self.sensor(
-            topic=f"myelectricaldata_rte_tempo/today",
+            topic=f"myelectricaldata_rte/tempo_today",
             name=f"Today",
             device_name=f"RTE Tempo",
             device_model="RTE",
@@ -615,7 +607,7 @@ class HomeAssistant:
             "date": date
         }
         self.sensor(
-            topic=f"myelectricaldata_rte_tempo/tomorrow",
+            topic=f"myelectricaldata_rte/tempo_tomorrow",
             name=f"Tomorrow",
             device_name=f"RTE Tempo",
             device_model="RTE",
@@ -633,8 +625,8 @@ class HomeAssistant:
     def tempo_days_sensor(self, color, days):
         uniq_id = f"days_{color}"
         self.sensor(
-            topic=f"myelectricaldata_edf_tempo_days/{color}",
-            name=f"Days{color.capitalize()}",
+            topic=f"myelectricaldata_edf/tempo_days_{color}",
+            name=f"Days {color.capitalize()}",
             device_name="EDF Tempo",
             device_model="EDF",
             device_identifiers=f"edf_tempo",
@@ -666,7 +658,7 @@ class HomeAssistant:
 
         }
         self.sensor(
-            topic=f"myelectricaldata_edf_tempo/info",
+            topic=f"myelectricaldata_edf/tempo_info",
             name=f"Info",
             device_name="EDF Tempo",
             device_model="EDF",
@@ -685,8 +677,9 @@ class HomeAssistant:
 
     def tempo_price_sensor(self, color, price, name):
         uniq_id = f"price_{color}"
+        name = f"{name[0:-2]} {name[-2:]}"
         self.sensor(
-            topic=f"myelectricaldata_edf_tempo_price/{color}",
+            topic=f"myelectricaldata_edf/tempo_price_{color}",
             name=f"Price {name}",
             device_name="EDF Tempo",
             device_model="EDF",
@@ -702,7 +695,7 @@ class HomeAssistant:
         self.ecowatt_delta("J2", 2)
 
     def ecowatt_delta(self, name, delta):
-        uniq_id = f"{name}"
+        uniq_id = f"ecowatt_{name}"
         current_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
         fetch_date = current_date - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")
@@ -719,7 +712,7 @@ class HomeAssistant:
                 "forecast": forecast,
             }
             self.sensor(
-                topic=f"myelectricaldata_rte_ecowatt{name}/tempo",
+                topic=f"myelectricaldata_rte/ecowatt_{name}",
                 name=f"{name}",
                 device_name="RTE EcoWatt",
                 device_model="RTE",

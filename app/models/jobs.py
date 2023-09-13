@@ -6,6 +6,7 @@ from os import getenv, environ
 from dependencies import str2bool, title, finish, get_version, log_usage_point_id, export_finish
 from init import DB, CONFIG
 from models.export_home_assistant import HomeAssistant
+from models.export_home_assistant_ws import HomeAssistantWs
 from models.export_influxdb import ExportInfluxDB
 from models.export_mqtt import ExportMqtt
 from models.query_address import Address
@@ -124,6 +125,11 @@ class Job:
                     # HOME ASSISTANT
                     if target == "home_assistant" or target is None:
                         self.export_home_assistant()
+
+                    #######################################################################################################
+                    # HOME ASSISTANT WS
+                    if target == "home_assistant_ws" or target is None:
+                        self.export_home_assistant_ws()
 
                     #######################################################################################################
                     # INFLUXDB
@@ -435,6 +441,12 @@ class Job:
             traceback.print_exc()
             logging.error(f"Erreur lors de l'{detail.lower()}")
             logging.error(e)
+
+    def export_home_assistant_ws(self):
+        detail = "Import des données vers l'onglet Energy de Home Assistant (WebSocket)"
+        usage_point_id = self.usage_point_config.usage_point_id
+        title(f"[{usage_point_id}] {detail}")
+        HomeAssistantWs(usage_point_id)
 
     def export_influxdb(self):
         detail = "Export InfluxDB"

@@ -29,7 +29,11 @@ dependencies = [
     "fastapi-utils",
     "python-multipart",
     "influxdb-client",
-    "pypdf ",
+    "pypdf",
+    "asyncio",
+#    "asyncws",
+    "aiohttp",
+    "websocket-client",
 ]
 
 [project.optional-dependencies]

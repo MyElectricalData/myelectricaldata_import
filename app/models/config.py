@@ -316,4 +316,4 @@ class Config:
         if "home_assistant_ws" in self.config:
             return self.config["home_assistant_ws"]
         else:
-            return {}
+            return None

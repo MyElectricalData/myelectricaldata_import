@@ -1202,20 +1202,24 @@ class Database:
             .where(table.id == unique_id)
         ).first()
 
-    def get_detail_range(self, usage_point_id, begin, end, measurement_direction="consumption"):
+    def get_detail_range(self, usage_point_id, begin, end, measurement_direction="consumption", order="desc"):
         if measurement_direction == "consumption":
             table = ConsumptionDetail
             relation = UsagePoints.relation_consumption_detail
         else:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
+        if order == "desc":
+            order = table.date.desc()
+        else:
+            order = table.date.asc()
         query = (
             select(table)
             .join(relation)
             .where(table.usage_point_id == usage_point_id)
             .where(table.date >= begin)
             .where(table.date <= end)
-            .order_by(table.date.desc())
+            .order_by(order)
         )
         logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).all()
