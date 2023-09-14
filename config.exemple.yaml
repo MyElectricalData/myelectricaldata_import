@@ -17,6 +17,10 @@ home_assistant_ws: # FOR ENERGY TAB
   ssl: true
   token: HOME_ASSISTANT_TOKEN_GENERATE_IN_PROFILE_TABS_(BOTTOM)
   url: myhomeassistant.domain.fr
+ssl:
+  gateway: True
+  certfile: ""
+  keyfile: ""
 influxdb:
   enable: true
   hostname: influxdb

@@ -552,7 +552,7 @@ class HomeAssistant:
             # "info": info
         }
 
-        uniq_id = f"linky_{measurement_direction}"
+        uniq_id = f"linky_{self.usage_point_id}_{measurement_direction}"
         self.sensor(
             topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}",
             name=f"{measurement_direction}",

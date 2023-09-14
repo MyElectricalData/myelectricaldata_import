@@ -3,6 +3,7 @@ import os
 import re
 
 import yaml
+
 from dependencies import title, separator
 
 
@@ -51,12 +52,6 @@ class Config:
             "log2file": False,
             "tempo": {
                 "enable": True,
-                "price_blue_hc": 0.097,
-                "price_blue_hp": 0.1249,
-                "price_red_hc": 0.1216,
-                "price_red_hp": 0.6712,
-                "price_white_hc": 0.114,
-                "price_white_hp": 0.1508,
             },
             "myelectricaldata": {
                 "pdl": {
@@ -119,6 +114,11 @@ class Config:
                 "org": "myelectricaldata",
                 "bucket": "myelectricaldata",
                 "method": "synchronous"
+            },
+            "ssl": {
+                "gateway": True,
+                "certfile": None,
+                "keyfile": None,
             }
         }
 
@@ -314,10 +314,15 @@ class Config:
     def ssl_config(self):
         if "ssl" in self.config:
             if "keyfile" in self.config["ssl"] and "certfile" in self.config["ssl"]:
-                return {
-                    "ssl_keyfile": self.config["ssl"]["keyfile"],
-                    "ssl_certfile": self.config["ssl"]["certfile"]
-                }
+                if (self.config["ssl"]["keyfile"] != "" and self.config["ssl"]["keyfile"] is not None and
+                        self.config["ssl"]["certfile"] != "" and self.config["ssl"]["certfile"] is not None):
+                    return {
+                        "ssl_keyfile": self.config["ssl"]["keyfile"],
+                        "ssl_certfile": self.config["ssl"]["certfile"]
+                    }
+                else:
+                    logging.error("La configuration SSL est erronée.")
+                    return {}
             else:
                 logging.error("La configuration SSL est erronée.")
                 return {}

@@ -447,7 +447,7 @@ class Job:
         detail = "Import des données vers l'onglet Energy de Home Assistant (WebSocket)"
         usage_point_id = self.usage_point_config.usage_point_id
         title(f"[{usage_point_id}] {detail}")
-        if "enable" in self.home_assistant_ws_config and str2bool(self.home_assistant_ws_config["enable"]):
+        if self.home_assistant_ws_config and "enable" in self.home_assistant_ws_config and str2bool(self.home_assistant_ws_config["enable"]):
             HomeAssistantWs(usage_point_id)
         else:
             title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")

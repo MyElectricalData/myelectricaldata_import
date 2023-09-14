@@ -136,150 +136,155 @@ class HomeAssistantWs:
 
     def import_data(self):
         logging.info(f"Importation des données du point de livraison : {self.usage_point_id}")
-        plan = self.usage_point_id_config.plan.upper()
-        if self.usage_point_id_config.consumption_detail:
-            logging.info("Consommation")
-            measure_type = "consumption"
-            detail = DB.get_detail_all(self.usage_point_id, order_dir="desc")
+        try:
+            plan = self.usage_point_id_config.plan.upper()
+            if self.usage_point_id_config.consumption_detail:
+                logging.info("Consommation")
+                measure_type = "consumption"
+                detail = DB.get_detail_all(self.usage_point_id, order_dir="desc")
 
-            cost = 0
-            last_year = None
-            last_month = None
+                cost = 0
+                last_year = None
+                last_month = None
 
-            stats_kwh = {}
-            stats_euro = {}
+                stats_kwh = {}
+                stats_euro = {}
 
-            db_tempo_price = DB.get_tempo_config("price")
-            tempo_color_ref = {}
-            for tempo_data in DB.get_tempo():
-                tempo_color_ref[tempo_data.date] = tempo_data.color
+                db_tempo_price = DB.get_tempo_config("price")
+                tempo_color_ref = {}
+                for tempo_data in DB.get_tempo():
+                    tempo_color_ref[tempo_data.date] = tempo_data.color
 
-            for data in detail:
-                year = int(f'{data.date.strftime("%Y")}')
-                if last_year is None or year != last_year:
-                    logging.info(f"{year} :")
-                month = int(f'{data.date.strftime("%m")}')
-                if last_month is None or month != last_month:
-                    logging.info(f"- {month}")
-                last_year = year
-                last_month = month
-                hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
-                name = f"MyElectricalData - {self.usage_point_id}"
-                statistic_id = f"myelectricaldata:{self.usage_point_id}"
-                value = data.value / (60 / data.interval)
-                if plan == "BASE":
-                    name = f"{name} {plan} {measure_type}"
-                    statistic_id = f"{statistic_id}_{plan.lower()}_{measure_type}"
-                    cost = value * self.usage_point_id_config.consumption_price_base / 1000
-                elif plan == "HC/HP":
-                    if data.measure_type == "HC":
-                        name = f"{name} HC {measure_type}"
-                        statistic_id = f"{statistic_id}_hc_{measure_type}"
-                        cost = value * self.usage_point_id_config.consumption_price_hc / 1000
+                for data in detail:
+                    year = int(f'{data.date.strftime("%Y")}')
+                    if last_year is None or year != last_year:
+                        logging.info(f"{year} :")
+                    month = int(f'{data.date.strftime("%m")}')
+                    if last_month is None or month != last_month:
+                        logging.info(f"- {month}")
+                    last_year = year
+                    last_month = month
+                    hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
+                    name = f"MyElectricalData - {self.usage_point_id}"
+                    statistic_id = f"myelectricaldata:{self.usage_point_id}"
+                    value = data.value / (60 / data.interval)
+                    if plan == "BASE":
+                        name = f"{name} {plan} {measure_type}"
+                        statistic_id = f"{statistic_id}_{plan.lower()}_{measure_type}"
+                        cost = value * self.usage_point_id_config.consumption_price_base / 1000
+                    elif plan == "HC/HP":
+                        if data.measure_type == "HC":
+                            name = f"{name} HC {measure_type}"
+                            statistic_id = f"{statistic_id}_hc_{measure_type}"
+                            cost = value * self.usage_point_id_config.consumption_price_hc / 1000
+                        else:
+                            name = f"{name} HP {measure_type}"
+                            statistic_id = f"{statistic_id}_hp_{measure_type}"
+                            cost = value * self.usage_point_id_config.consumption_price_hp / 1000
+                    elif plan == "TEMPO":
+                        if 600 <= hour_minute < 2200:
+                            hour_type = "HP"
+                        else:
+                            hour_type = "HC"
+                        if 600 <= hour_minute <= 2330:
+                            date = datetime.combine(data.date, datetime.min.time())
+                        else:
+                            date = datetime.combine(data.date - timedelta(days=1), datetime.min.time())
+
+                        if date not in tempo_color_ref:
+                            logging.error(f"Import impossible, pas de donnée tempo sur la date du {data.date}")
+                        else:
+                            day_color = tempo_color_ref[date]
+                            tempo_color = f"{day_color}{hour_type}"
+                            tempo_color_price_key = f"{day_color.lower()}_{hour_type.lower()}"
+                            tempo_price = float(db_tempo_price[tempo_color_price_key])
+                            cost = value / 1000 * tempo_price
+                            name = f"{name} {tempo_color} {measure_type}"
+                            statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measure_type}"
                     else:
-                        name = f"{name} HP {measure_type}"
-                        statistic_id = f"{statistic_id}_hp_{measure_type}"
-                        cost = value * self.usage_point_id_config.consumption_price_hp / 1000
-                elif plan == "TEMPO":
-                    if 600 <= hour_minute < 2200:
-                        hour_type = "HP"
-                    else:
-                        hour_type = "HC"
-                    if 600 <= hour_minute <= 2330:
-                        date = datetime.combine(data.date, datetime.min.time())
-                    else:
-                        date = datetime.combine(data.date - timedelta(days=1), datetime.min.time())
+                        logging.error(f"Plan {plan} inconnu.")
 
-                    if date not in tempo_color_ref:
-                        logging.error(f"Import impossible, pas de donnée tempo sur la date du {data.date}")
-                    else:
-                        day_color = tempo_color_ref[date]
-                        tempo_color = f"{day_color}{hour_type}"
-                        tempo_color_price_key = f"{day_color.lower()}_{hour_type.lower()}"
-                        tempo_price = float(db_tempo_price[tempo_color_price_key])
-                        cost = value / 1000 * tempo_price
-                        name = f"{name} {tempo_color} {measure_type}"
-                        statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measure_type}"
-                else:
-                    logging.error(f"Plan {plan} inconnu.")
+                    date = TZ_PARIS.localize(data.date, "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0, microsecond=0)
+                    key = date.strftime("%Y-%m-%d %H:%M:%S")
 
-                date = TZ_PARIS.localize(data.date, "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0, microsecond=0)
-                key = date.strftime("%Y-%m-%d %H:%M:%S")
+                    # KWH
+                    if statistic_id not in stats_kwh:
+                        stats_kwh[statistic_id] = {
+                            "name": name,
+                            "sum": 0,
+                            "data": {}
+                        }
+                    if key not in stats_kwh[statistic_id]["data"]:
+                        stats_kwh[statistic_id]["data"][key] = {
+                            "start": date.isoformat(),
+                            "state": 0,
+                            "sum": 0
+                        }
+                    value = value / 1000
+                    stats_kwh[statistic_id]["data"][key]["state"] = stats_kwh[statistic_id]["data"][key]["state"] + value
+                    stats_kwh[statistic_id]["sum"] += value
+                    stats_kwh[statistic_id]["data"][key]["sum"] = stats_kwh[statistic_id]["sum"]
 
-                # KWH
-                if statistic_id not in stats_kwh:
-                    stats_kwh[statistic_id] = {
-                        "name": name,
-                        "sum": 0,
-                        "data": {}
+                    # EURO
+                    statistic_id = f"{statistic_id}_cost"
+                    if statistic_id not in stats_euro:
+                        stats_euro[statistic_id] = {
+                            "name": f"{name} Cost",
+                            "sum": 0,
+                            "data": {}
+                        }
+                    if key not in stats_euro[statistic_id]["data"]:
+                        stats_euro[statistic_id]["data"][key] = {
+                            "start": date.isoformat(),
+                            "state": 0,
+                            "sum": 0
+                        }
+                    stats_euro[statistic_id]["data"][key]["state"] += cost
+                    stats_euro[statistic_id]["sum"] += cost
+                    stats_euro[statistic_id]["data"][key]["sum"] = stats_euro[statistic_id]["sum"]
+
+                for statistic_id, data in stats_kwh.items():
+                    metadata = {
+                        "has_mean": False,
+                        "has_sum": True,
+                        "name": data["name"],
+                        "source": "myelectricaldata",
+                        "statistic_id": statistic_id,
+                        "unit_of_measurement": "kWh",
                     }
-                if key not in stats_kwh[statistic_id]["data"]:
-                    stats_kwh[statistic_id]["data"][key] = {
-                        "start": date.isoformat(),
-                        "state": 0,
-                        "sum": 0
+                    import_statistics = {
+                        "id": self.id,
+                        "type": "recorder/import_statistics",
+                        "metadata": metadata,
+                        "stats": list(data["data"].values())
                     }
-                value = value / 1000
-                stats_kwh[statistic_id]["data"][key]["state"] = stats_kwh[statistic_id]["data"][key]["state"] + value
-                stats_kwh[statistic_id]["sum"] += value
-                stats_kwh[statistic_id]["data"][key]["sum"] = stats_kwh[statistic_id]["sum"]
+                    self.send(import_statistics)
 
-                # EURO
-                statistic_id = f"{statistic_id}_cost"
-                if statistic_id not in stats_euro:
-                    stats_euro[statistic_id] = {
-                        "name": f"{name} Cost",
-                        "sum": 0,
-                        "data": {}
+                for statistic_id, data in stats_euro.items():
+                    metadata = {
+                        "has_mean": False,
+                        "has_sum": True,
+                        "name": data["name"],
+                        "source": "myelectricaldata",
+                        "statistic_id": statistic_id,
+                        "unit_of_measurement": "EURO",
                     }
-                if key not in stats_euro[statistic_id]["data"]:
-                    stats_euro[statistic_id]["data"][key] = {
-                        "start": date.isoformat(),
-                        "state": 0,
-                        "sum": 0
+                    import_statistics = {
+                        "id": self.id,
+                        "type": "recorder/import_statistics",
+                        "metadata": metadata,
+                        "stats": list(data["data"].values())
                     }
-                stats_euro[statistic_id]["data"][key]["state"] += cost
-                stats_euro[statistic_id]["sum"] += cost
-                stats_euro[statistic_id]["data"][key]["sum"] = stats_euro[statistic_id]["sum"]
+                    self.send(import_statistics)
 
-            for statistic_id, data in stats_kwh.items():
-                metadata = {
-                    "has_mean": False,
-                    "has_sum": True,
-                    "name": data["name"],
-                    "source": "myelectricaldata",
-                    "statistic_id": statistic_id,
-                    "unit_of_measurement": "kWh",
-                }
-                import_statistics = {
-                    "id": self.id,
-                    "type": "recorder/import_statistics",
-                    "metadata": metadata,
-                    "stats": list(data["data"].values())
-                }
-                self.send(import_statistics)
-
-            for statistic_id, data in stats_euro.items():
-                metadata = {
-                    "has_mean": False,
-                    "has_sum": True,
-                    "name": data["name"],
-                    "source": "myelectricaldata",
-                    "statistic_id": statistic_id,
-                    "unit_of_measurement": "EURO",
-                }
-                import_statistics = {
-                    "id": self.id,
-                    "type": "recorder/import_statistics",
-                    "metadata": metadata,
-                    "stats": list(data["data"].values())
-                }
-                self.send(import_statistics)
-
-        if self.usage_point_id_config.production_detail:
-            logging.info("Production")
-            # measure_type = "production"
-            logging.error("L'import de la production n'est pas fonctionnel pour l'instant.")
-            # detail = DB.get_detail_all(self.usage_point_id, order_dir="desc", measurement_direction="production")
-            # print(detail)
-        #
+            if self.usage_point_id_config.production_detail:
+                logging.info("Production")
+                # measure_type = "production"
+                logging.error("L'import de la production n'est pas fonctionnel pour l'instant.")
+                # detail = DB.get_detail_all(self.usage_point_id, order_dir="desc", measurement_direction="production")
+                # print(detail)
+            #
+        except Exception as e:
+            self.ws.close()
+            logging.error(e)
+            logging.critical("Erreur lors de l'export des données vers Home Assistant")
