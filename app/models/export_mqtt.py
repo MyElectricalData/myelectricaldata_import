@@ -444,9 +444,25 @@ class ExportMqtt:
 
     def tempo(self):
         logging.info("Envoie des données Tempo")
+        mqtt_data = {}
         tempo_data = self.db.get_stat(self.usage_point_id, "price_consumption")
+        tempo_price = self.db.get_tempo_config("price")
+        if tempo_price:
+            for color, price in tempo_price.items():
+                mqtt_data[f"tempo/price/{color}"] = price
+        tempo_days= self.db.get_tempo_config("days")
+        if tempo_days:
+            for color, days in tempo_days.items():
+                mqtt_data[f"tempo/days/{color}"] = days
+        today = datetime.combine(datetime.now(), datetime.min.time())
+        tempo_color = self.db.get_tempo_range(today, today)
+        if tempo_color:
+            mqtt_data[f"tempo/color/today"] = tempo_color[0].color
+        tomorrow = today + timedelta(days=1)
+        tempo_color = self.db.get_tempo_range(tomorrow, tomorrow)
+        if tempo_color:
+            mqtt_data[f"tempo/color/tomorrow"] = tempo_color[0].color
         if tempo_data:
-            mqtt_data = {}
             for year, data in ast.literal_eval(tempo_data[0].value).items():
                 for color, tempo in data["TEMPO"].items():
                     mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/Wh"] = round(tempo['Wh'], 2)

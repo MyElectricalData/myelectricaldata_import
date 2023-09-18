@@ -1,5 +1,6 @@
 import datetime
 import logging
+from math import floor
 from os import environ, getenv
 
 from art import decor, text2art
@@ -13,7 +14,6 @@ if "APPLICATION_PATH_DATA" in environ:
     APPLICATION_PATH_DATA = getenv("APPLICATION_PATH_DATA")
 else:
     APPLICATION_PATH_DATA = "/data"
-
 
 paypal_footer = """
 <div style="text-align: center" id="paypal" class="paypal_link">
@@ -68,6 +68,10 @@ def reformat_json(yaml):
     return result
 
 
+def truncate(f, n):
+    return floor(f * 10 ** n) / 10 ** n
+
+
 def title(message):
     separator()
     if type(message) is list:
@@ -85,15 +89,18 @@ def title_warning(message):
 
 
 def separator():
-    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    logging.info(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
 def separator_warning():
-    logging.warning("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    logging.warning(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
 def export_finish():
-    logging.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ TERMINE ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    logging.info(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ TERMINE ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
 def logo(version):

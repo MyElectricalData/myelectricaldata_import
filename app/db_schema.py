@@ -8,14 +8,8 @@ Base = declarative_base()  # Required
 class Config(Base):
     __tablename__ = 'config'
 
-    key = Column(Text,
-                 primary_key=True,
-                 index=True,
-                 unique=True
-                 )
-    value = Column(Text,
-                   nullable=False
-                   )
+    key = Column(Text, primary_key=True, index=True, unique=True)
+    value = Column(Text, nullable=False)
 
     def __init__(self, key, value):
         self.key = key
@@ -28,137 +22,45 @@ class Config(Base):
 class UsagePoints(Base):
     __tablename__ = 'usage_points'
 
-    usage_point_id = Column(Text,
-                            primary_key=True,
-                            unique=True,
-                            nullable=False,
-                            index=True
-                            )
+    usage_point_id = Column(Text, primary_key=True, unique=True, nullable=False, index=True)
 
-    name = Column(Text,
-                  nullable=False
-                  )
-    cache = Column(Boolean,
-                   nullable=False,
-                   default=False
-                   )
-    consumption = Column(Boolean,
-                         nullable=False,
-                         default=True
-                         )
-    consumption_detail = Column(Boolean,
-                                nullable=False,
-                                default=False
-                                )
-    production = Column(Boolean,
-                        nullable=False,
-                        default=False
-                        )
-    production_detail = Column(Boolean,
-                               nullable=False,
-                               default=False
-                               )
-    consumption_price_base = Column(Float,
-                                    nullable=False,
-                                    default=0
-                                    )
-    consumption_price_hc = Column(Float,
-                                  nullable=False,
-                                  default=0
-                                  )
-    consumption_price_hp = Column(Float,
-                                  nullable=False,
-                                  default=0
-                                  )
-    production_price = Column(Float,
-                              nullable=False,
-                              default=0
-                              )
-    offpeak_hours_0 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_1 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_2 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_3 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_4 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_5 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_6 = Column(Text,
-                             nullable=True
-                             )
-    plan = Column(Text,
-                  nullable=False,
-                  default="BASE"
-                  )
-    refresh_addresse = Column(Boolean,
-                              nullable=False,
-                              default=False
-                              )
-    refresh_contract = Column(Boolean,
-                              nullable=False,
-                              default=False
-                              )
-    token = Column(Text,
-                   nullable=False
-                   )
-    progress = Column(Integer,
-                      nullable=False,
-                      default="0"
-                      )
-    progress_status = Column(Text,
-                             nullable=False,
-                             default=""
-                             )
-    enable = Column(Boolean,
-                    nullable=False,
-                    default=True
-                    )
-    consentement_expiration = Column(DateTime,
-                                     nullable=True,
-                                     )
-    call_number = Column(Integer,
-                         nullable=True,
-                         )
-    quota_reached = Column(Boolean,
-                           nullable=True,
-                           )
-    quota_limit = Column(Integer,
-                         nullable=True,
-                         )
-    quota_reset_at = Column(DateTime,
-                            nullable=True,
-                            )
-    last_call = Column(DateTime,
-                       nullable=True,
-                       )
-    ban = Column(Boolean,
-                 nullable=True,
-                 )
-    consumption_max_date = Column(DateTime,
-                                  nullable=True,
-                                  )
-    consumption_detail_max_date = Column(DateTime,
-                                         nullable=True,
-                                         )
-    production_max_date = Column(DateTime,
-                                 nullable=True,
-                                 )
-    production_detail_max_date = Column(DateTime,
-                                        nullable=True,
-                                        )
-    consumption_max_power = Column(Boolean,
-                                   nullable=False,
-                                   default=True
-                                   )
+    name = Column(Text, nullable=False)
+    cache = Column(Boolean, nullable=False, default=False)
+    consumption = Column(Boolean, nullable=False, default=True)
+    consumption_detail = Column(Boolean, nullable=False, default=False)
+    production = Column(Boolean, nullable=False, default=False)
+    production_detail = Column(Boolean, nullable=False, default=False)
+    consumption_price_base = Column(Float, nullable=False, default=0)
+    consumption_price_hc = Column(Float, nullable=False, default=0)
+    consumption_price_hp = Column(Float, nullable=False, default=0)
+    production_price = Column(Float, nullable=False, default=0)
+    offpeak_hours_0 = Column(Text, nullable=True)
+    offpeak_hours_1 = Column(Text, nullable=True)
+    offpeak_hours_2 = Column(Text, nullable=True)
+    offpeak_hours_3 = Column(Text, nullable=True)
+    offpeak_hours_4 = Column(Text, nullable=True)
+    offpeak_hours_5 = Column(Text, nullable=True)
+    offpeak_hours_6 = Column(Text, nullable=True)
+    plan = Column(Text, nullable=False, default="BASE")
+    refresh_addresse = Column(Boolean, nullable=False, default=False)
+    refresh_contract = Column(Boolean, nullable=False, default=False)
+    token = Column(Text, nullable=False)
+    progress = Column(Integer, nullable=False, default="0")
+    progress_status = Column(Text, nullable=False, default="")
+    enable = Column(Boolean, nullable=False, default=True)
+    consentement_expiration = Column(DateTime, nullable=True)
+    call_number = Column(Integer, nullable=True)
+    quota_reached = Column(Boolean, nullable=True)
+    quota_limit = Column(Integer, nullable=True)
+    quota_reset_at = Column(DateTime, nullable=True)
+    last_call = Column(DateTime, nullable=True)
+    ban = Column(Boolean, nullable=True)
+    consumption_max_date = Column(DateTime, nullable=True)
+    consumption_detail_max_date = Column(DateTime, nullable=True, )
+    production_max_date = Column(DateTime, nullable=True)
+    production_detail_max_date = Column(DateTime, nullable=True)
+    consumption_max_power = Column(Boolean, nullable=False, default=True)
+    last_error = Column(Text, nullable=True)
 
     relation_addressess = relationship("Addresses", back_populates="usage_point")
     relation_contract = relationship("Contracts", back_populates="usage_point")
@@ -208,6 +110,7 @@ class UsagePoints(Base):
                f"consumption_detail_max_date={self.consumption_detail_max_date!r}, " \
                f"production_max_date={self.production_max_date!r}, " \
                f"production_detail_max_date={self.production_detail_max_date!r}, " \
+               f"last_error={self.last_error!r}, " \
                f")"
 
 
@@ -215,40 +118,16 @@ class Addresses(Base):
     __tablename__ = 'addresses'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    street = Column(Text,
-                    nullable=True
-                    )
-    locality = Column(Text,
-                      nullable=True
-                      )
-    postal_code = Column(Text,
-                         nullable=True
-                         )
-    insee_code = Column(Text,
-                        nullable=True
-                        )
-    city = Column(Text,
-                  nullable=True
-                  )
-    country = Column(Text,
-                     nullable=True
-                     )
-    geo_points = Column(Text,
-                        nullable=True
-                        )
-    count = Column(Integer,
-                   nullable=False
-                   )
+    id = Column(Integer, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    street = Column(Text, nullable=True)
+    locality = Column(Text, nullable=True)
+    postal_code = Column(Text, nullable=True)
+    insee_code = Column(Text, nullable=True)
+    city = Column(Text, nullable=True)
+    country = Column(Text, nullable=True)
+    geo_points = Column(Text, nullable=True)
+    count = Column(Integer, nullable=False)
 
     usage_point = relationship("UsagePoints", back_populates="relation_addressess")
 
@@ -271,64 +150,24 @@ class Contracts(Base):
     __tablename__ = 'contracts'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    usage_point_status = Column(Text,
-                                nullable=False
-                                )
-    meter_type = Column(Text,
-                        nullable=False
-                        )
-    segment = Column(Text,
-                     nullable=False
-                     )
-    subscribed_power = Column(Text,
-                              nullable=False
-                              )
-    last_activation_date = Column(DateTime,
-                                  nullable=False
-                                  )
-    distribution_tariff = Column(Text,
-                                 nullable=False
-                                 )
-    offpeak_hours_0 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_1 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_2 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_3 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_4 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_5 = Column(Text,
-                             nullable=True
-                             )
-    offpeak_hours_6 = Column(Text,
-                             nullable=True
-                             )
-    contract_status = Column(Text,
-                             nullable=False
-                             )
-    last_distribution_tariff_change_date = Column(DateTime,
-                                                  nullable=False
-                                                  )
-    count = Column(Integer,
-                   nullable=False
-                   )
+    id = Column(Integer, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    usage_point_status = Column(Text, nullable=False)
+    meter_type = Column(Text, nullable=False)
+    segment = Column(Text, nullable=False)
+    subscribed_power = Column(Text, nullable=False)
+    last_activation_date = Column(DateTime, nullable=False)
+    distribution_tariff = Column(Text, nullable=False)
+    offpeak_hours_0 = Column(Text, nullable=True)
+    offpeak_hours_1 = Column(Text, nullable=True)
+    offpeak_hours_2 = Column(Text, nullable=True)
+    offpeak_hours_3 = Column(Text, nullable=True)
+    offpeak_hours_4 = Column(Text, nullable=True)
+    offpeak_hours_5 = Column(Text, nullable=True)
+    offpeak_hours_6 = Column(Text, nullable=True)
+    contract_status = Column(Text, nullable=False)
+    last_distribution_tariff_change_date = Column(DateTime, nullable=False)
+    count = Column(Integer, nullable=False)
 
     usage_point = relationship("UsagePoints", back_populates="relation_contract")
 
@@ -359,30 +198,12 @@ class ConsumptionDaily(Base):
     __tablename__ = 'consumption_daily'
     # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(String,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    date = Column(DateTime,
-                  nullable=False
-                  )
-    value = Column(Integer,
-                   nullable=False
-                   )
-    blacklist = Column(Integer,
-                       nullable=False,
-                       default=0
-                       )
-    fail_count = Column(Integer,
-                        nullable=False,
-                        default=0
-                        )
+    id = Column(String, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False)
+    value = Column(Integer, nullable=False)
+    blacklist = Column(Integer, nullable=False, default=0)
+    fail_count = Column(Integer, nullable=False, default=0)
 
     usage_point = relationship("UsagePoints", back_populates="relation_consumption_daily")
 
@@ -401,36 +222,14 @@ class ConsumptionDetail(Base):
     __tablename__ = 'consumption_detail'
     # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(String,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    date = Column(DateTime,
-                  nullable=False
-                  )
-    value = Column(Integer,
-                   nullable=False
-                   )
-    interval = Column(Integer,
-                      nullable=False
-                      )
-    measure_type = Column(Text,
-                          nullable=False
-                          )
-    blacklist = Column(Integer,
-                       nullable=False,
-                       default=0
-                       )
-    fail_count = Column(Integer,
-                        nullable=False,
-                        default=0
-                        )
+    id = Column(String, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False)
+    value = Column(Integer, nullable=False)
+    interval = Column(Integer, nullable=False)
+    measure_type = Column(Text, nullable=False)
+    blacklist = Column(Integer, nullable=False, default=0)
+    fail_count = Column(Integer, nullable=False, default=0)
 
     usage_point = relationship("UsagePoints", back_populates="relation_consumption_detail")
 
@@ -451,30 +250,12 @@ class ProductionDaily(Base):
     __tablename__ = 'production_daily'
     # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(String,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    date = Column(DateTime,
-                  nullable=False
-                  )
-    value = Column(Integer,
-                   nullable=False
-                   )
-    blacklist = Column(Integer,
-                       nullable=False,
-                       default=0
-                       )
-    fail_count = Column(Integer,
-                        nullable=False,
-                        default=0
-                        )
+    id = Column(String, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False)
+    value = Column(Integer, nullable=False)
+    blacklist = Column(Integer, nullable=False, default=0)
+    fail_count = Column(Integer, nullable=False, default=0)
 
     usage_point = relationship("UsagePoints", back_populates="relation_production_daily")
 
@@ -493,36 +274,14 @@ class ProductionDetail(Base):
     __tablename__ = 'production_detail'
     # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(String,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    date = Column(DateTime,
-                  nullable=False
-                  )
-    value = Column(Integer,
-                   nullable=False
-                   )
-    interval = Column(Integer,
-                      nullable=False
-                      )
-    measure_type = Column(Text,
-                          nullable=False
-                          )
-    blacklist = Column(Integer,
-                       nullable=False,
-                       default=0
-                       )
-    fail_count = Column(Integer,
-                        nullable=False,
-                        default=0
-                        )
+    id = Column(String, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False)
+    value = Column(Integer, nullable=False)
+    interval = Column(Integer, nullable=False)
+    measure_type = Column(Text, nullable=False)
+    blacklist = Column(Integer, nullable=False, default=0)
+    fail_count = Column(Integer, nullable=False, default=0)
 
     usage_point = relationship("UsagePoints", back_populates="relation_production_detail")
 
@@ -543,22 +302,10 @@ class Statistique(Base):
     __tablename__ = 'statistique'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    key = Column(Text,
-                 nullable=False
-                 )
-    value = Column(Integer,
-                   nullable=False
-                   )
+    id = Column(Integer, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    key = Column(Text, nullable=False)
+    value = Column(Integer, nullable=False)
 
     usage_point = relationship("UsagePoints", back_populates="relation_stats")
 
@@ -575,33 +322,13 @@ class ConsumptionDailyMaxPower(Base):
     __tablename__ = 'consumption_daily_max_power'
     # __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(String,
-                primary_key=True,
-                index=True,
-                unique=True,
-                )
-    usage_point_id = Column(Text,
-                            ForeignKey("usage_points.usage_point_id"),
-                            nullable=False,
-                            index=True
-                            )
-    date = Column(DateTime,
-                  nullable=False
-                  )
-    event_date = Column(DateTime,
-                        nullable=True
-                        )
-    value = Column(Integer,
-                   nullable=False
-                   )
-    blacklist = Column(Integer,
-                       nullable=False,
-                       default=0
-                       )
-    fail_count = Column(Integer,
-                        nullable=False,
-                        default=0
-                        )
+    id = Column(String, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False)
+    event_date = Column(DateTime, nullable=True)
+    value = Column(Integer, nullable=False)
+    blacklist = Column(Integer, nullable=False, default=0)
+    fail_count = Column(Integer, nullable=False, default=0)
 
     usage_point = relationship("UsagePoints", back_populates="relation_consumption_daily_max_power")
 
@@ -620,15 +347,8 @@ class ConsumptionDailyMaxPower(Base):
 class Tempo(Base):
     __tablename__ = 'tempo'
 
-    date = Column(DateTime,
-                  primary_key=True,
-                  index=True,
-                  unique=True,
-                  )
-    color = Column(Text,
-                   nullable=False,
-                   index=True
-                   )
+    date = Column(DateTime, primary_key=True, index=True, unique=True)
+    color = Column(Text, nullable=False, index=True)
 
     def __repr__(self):
         return f"Tempo(" \
@@ -636,26 +356,28 @@ class Tempo(Base):
                f"color={self.color!r}, " \
                f")"
 
+
+class TempoConfig(Base):
+    __tablename__ = 'tempo_config'
+
+    key = Column(Text, primary_key=True, index=True, unique=True)
+    value = Column(Text, nullable=False)
+
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+
+    def __str__(self):
+        return self.value
+
+
 class Ecowatt(Base):
     __tablename__ = 'ecowatt'
 
-    date = Column(DateTime,
-                  primary_key=True,
-                  index=True,
-                  unique=True,
-                  )
-    value = Column(Integer,
-                   nullable=False,
-                   index=True
-                   )
-    message = Column(Text,
-                   nullable=False,
-                   index=True
-                   )
-    detail = Column(Text,
-                   nullable=False,
-                   index=True
-                   )
+    date = Column(DateTime, primary_key=True, index=True, unique=True)
+    value = Column(Integer, nullable=False, index=True)
+    message = Column(Text, nullable=False, index=True)
+    detail = Column(Text, nullable=False, index=True)
 
     def __repr__(self):
         return f"Ecowatt(" \

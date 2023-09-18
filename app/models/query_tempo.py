@@ -73,3 +73,57 @@ class Tempo:
             logging.error(result)
             return "OK"
         return result
+
+    def fetch_day(self):
+        target = f"{self.url}/edf/tempo/days"
+        query_response = Query(endpoint=target).get()
+        if query_response.status_code == 200:
+            try:
+                response_json = json.loads(query_response.text)
+                self.db.set_tempo_config("days", response_json)
+                response = {
+                    "error": False,
+                    "description": "",
+                    "items": response_json
+                }
+                logging.info(" => Toutes les valeurs sont misent à jours.")
+            except Exception as e:
+                logging.error(e)
+                traceback.print_exc()
+                response = {
+                    "error": True,
+                    "description": "Erreur lors de la récupération de jours Tempo."
+                }
+            return response
+        else:
+            return {
+                "error": True,
+                "description": json.loads(query_response.text)["detail"]
+            }
+
+    def fetch_price(self):
+        target = f"{self.url}/edf/tempo/price"
+        query_response = Query(endpoint=target).get()
+        if query_response.status_code == 200:
+            try:
+                response_json = json.loads(query_response.text)
+                self.db.set_tempo_config("price", response_json)
+                response = {
+                    "error": False,
+                    "description": "",
+                    "items": response_json
+                }
+                logging.info(" => Toutes les valeurs sont misent à jours.")
+            except Exception as e:
+                logging.error(e)
+                traceback.print_exc()
+                response = {
+                    "error": True,
+                    "description": "Erreur lors de la récupération de jours Tempo."
+                }
+            return response
+        else:
+            return {
+                "error": True,
+                "description": json.loads(query_response.text)["detail"]
+            }

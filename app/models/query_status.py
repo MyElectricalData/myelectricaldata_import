@@ -82,5 +82,6 @@ class Status:
                 traceback.print_exc()
             return {
                 "error": True,
-                "description": "MyElectricalData indisponible."
+                "status_code": response.status_code,
+                "description": json.loads(response.text)
             }

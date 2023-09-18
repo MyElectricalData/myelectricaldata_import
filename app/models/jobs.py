@@ -6,6 +6,7 @@ from os import getenv, environ
 from dependencies import str2bool, title, finish, get_version, log_usage_point_id, export_finish
 from init import DB, CONFIG
 from models.export_home_assistant import HomeAssistant
+from models.export_home_assistant_ws import HomeAssistantWs
 from models.export_influxdb import ExportInfluxDB
 from models.export_mqtt import ExportMqtt
 from models.query_address import Address
@@ -27,6 +28,7 @@ class Job:
         self.usage_point_config = {}
         self.mqtt_config = self.config.mqtt_config()
         self.home_assistant_config = self.config.home_assistant_config()
+        self.home_assistant_ws_config = self.config.home_assistant_ws_config()
         self.influxdb_config = self.config.influxdb_config()
         self.wait_job_start = 10
         self.tempo_enable = False
@@ -126,6 +128,11 @@ class Job:
                         self.export_home_assistant()
 
                     #######################################################################################################
+                    # HOME ASSISTANT WS
+                    if target == "home_assistant_ws" or target is None:
+                        self.export_home_assistant_ws()
+
+                    #######################################################################################################
                     # INFLUXDB
                     if target == "influxdb" or target is None:
                         self.export_influxdb()
@@ -168,7 +175,12 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            status = Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            if "error" in status and status["error"]:
+                message = f'{status["status_code"]} - {status["description"]["detail"]}'
+                self.db.set_error_log(usage_point_id, message)
+            else:
+                self.db.set_error_log(usage_point_id, None)
             export_finish()
 
         try:
@@ -189,7 +201,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            Contract(headers=self.header_generate(), usage_point_id=usage_point_id, config=usage_point_config)\
+            Contract(headers=self.header_generate(), usage_point_id=usage_point_id, config=usage_point_config) \
                 .get()
             export_finish()
 
@@ -237,6 +249,7 @@ class Job:
                 export_finish()
             else:
                 logging.info(f"{detail} désactivée sur le point de livraison")
+
         try:
             if self.usage_point_id is None:
                 for usage_point_config in self.usage_points:
@@ -287,6 +300,7 @@ class Job:
                 export_finish()
             else:
                 logging.info(f"{detail} désactivée sur le point de livraison")
+
         try:
             if self.usage_point_id is None:
                 for usage_point_config in self.usage_points:
@@ -346,10 +360,14 @@ class Job:
 
     def get_tempo(self):
         try:
-            title(f"Récupération des données Tempo :")
             tempo_config = self.config.tempo_config()
             if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+                title(f"Récupération des données Tempo :")
                 Tempo().fetch()
+                title(f"Récupération des jours Tempo :")
+                Tempo().fetch_day()
+                title(f"Récupération des tarifs Tempo :")
+                Tempo().fetch_price()
                 export_finish()
             else:
                 title(f"Import Tempo désactivé")
@@ -425,6 +443,15 @@ class Job:
             logging.error(f"Erreur lors de l'{detail.lower()}")
             logging.error(e)
 
+    def export_home_assistant_ws(self):
+        detail = "Import des données vers l'onglet Energy de Home Assistant (WebSocket)"
+        usage_point_id = self.usage_point_config.usage_point_id
+        title(f"[{usage_point_id}] {detail}")
+        if self.home_assistant_ws_config and "enable" in self.home_assistant_ws_config and str2bool(self.home_assistant_ws_config["enable"]):
+            HomeAssistantWs(usage_point_id)
+        else:
+            title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
+
     def export_influxdb(self):
         detail = "Export InfluxDB"
 
@@ -474,7 +501,9 @@ class Job:
             export_mqtt.contract()
             export_mqtt.address()
             export_mqtt.ecowatt()
-            export_mqtt.tempo()
+            if (hasattr(usage_point_config, "consumption") and usage_point_config.consumption) \
+                    or (hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail):
+                export_mqtt.tempo()
             if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
                 export_mqtt.daily_annual(usage_point_config.consumption_price_base,
                                          measurement_direction="consumption")
