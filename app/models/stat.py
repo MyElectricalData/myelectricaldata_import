@@ -112,6 +112,21 @@ class Stat:
             "end": end.strftime(self.date_format)
         }
 
+    def tempo_color(self, index=0):
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(yesterday_date - timedelta(days=index), datetime.min.time())
+        end = datetime.combine(begin, datetime.max.time())
+        value = ""
+        for data in self.db.get_tempo_range(begin, end):
+            logging.info(f"tempo data: {data}")
+            value = value + data.color
+        return {
+            "value": value,
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+        
     def max_power(self, index=0):
         now_date = datetime.now(timezone.utc)
         yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
