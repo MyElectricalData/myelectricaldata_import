@@ -90,10 +90,14 @@ if INFLUXDB_CONFIG and "enable" in INFLUXDB_CONFIG and str2bool(INFLUXDB_CONFIG[
     else:
         method = "SYNCHRONOUS"
 
+    if "scheme" not in INFLUXDB_CONFIG:
+        INFLUXDB_CONFIG["scheme"] = "http"
+
     write_options = []
     if "batching_options" in INFLUXDB_CONFIG:
         write_options = INFLUXDB_CONFIG["batching_options"]
     INFLUXDB = InfluxDB(
+        scheme=INFLUXDB_CONFIG["scheme"],
         hostname=INFLUXDB_CONFIG["hostname"],
         port=INFLUXDB_CONFIG["port"],
         token=INFLUXDB_CONFIG["token"],

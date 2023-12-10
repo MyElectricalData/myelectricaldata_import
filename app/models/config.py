@@ -15,8 +15,8 @@ class Config:
         self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
         self.config = {}
-        self.mandatory_parameters = {}
         self.default_port = 5000
+        self.mandatory_parameters = {}
         #     "myelectricaldata": {
         #         "pdl": {
         #             "enable": True,
@@ -51,7 +51,7 @@ class Config:
             "debug": False,
             "log2file": False,
             "tempo": {
-                "enable": True,
+                "enable": False,
             },
             "myelectricaldata": {
                 "pdl": {

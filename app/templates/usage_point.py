@@ -9,6 +9,7 @@ from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
+from models.stat import Stat
 from init import CONFIG, DB
 
 
@@ -280,7 +281,8 @@ class UsagePoint:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 self.generate_data("consumption")
                 self.consumption()
-                recap_consumption = self.recap(data=self.recap_consumption_data)
+                # recap_consumption = self.recap(data=self.recap_consumption_data)
+                recap_consumption = self.recapv2()
                 body += "<h2>Consommation</h2>"
                 body += str(recap_consumption)
                 body += '<div id="chart_daily_consumption"></div>'
@@ -906,4 +908,67 @@ class UsagePoint:
             body += "</table>"
         else:
             body = "Pas de données."
+        return body
+
+    def recapv2(self, measurement_direction="consumption"):
+
+        idx = 0
+        finish = False
+        output_data = {
+            "years": {},
+            "linear": {}
+        }
+        body_year = ""
+        body_linear = ""
+        while not finish:
+            linear_data = Stat(self.usage_point_id, measurement_direction).get_year_linear(idx)
+            idx += 1
+            if linear_data["value"] == 0:
+                finish = True
+            else:
+                year = linear_data["end"].split("-")[0]
+                year_data = Stat(self.usage_point_id, measurement_direction).get_year(int(year))
+                output_data["years"][year] = year_data['value']
+                output_data["linear"][year] = {
+                    "begin": linear_data["begin"],
+                    "end": linear_data["end"],
+                    "value": linear_data["value"]
+                }
+
+        for year, value in output_data["years"].items():
+            body_year += f"""
+            <td class="table_recap_data">
+                <div class='recap_years_title'>{year}</div>
+                <div class='recap_years_value'>{round(value / 1000)} kWh</div>
+            </td>
+            """
+        for year, data in output_data["linear"].items():
+            last_year = str(int(year)-1)
+            data_last_years = 0
+            if last_year in output_data["linear"]:
+                data_last_years = round((100 * int(data["value"])) / int(output_data["linear"][last_year]["value"]) - 100, 2)
+            if data_last_years >= 0:
+                if data_last_years == 0:
+                    data_last_years_class = "blue"
+                else:
+                    data_last_years_class = "red"
+                    data_last_years = f"+{data_last_years}"
+            else:
+                data_last_years_class = "green"
+            body_linear += f"""
+            <td class="table_recap_data">
+                <div class='recap_years_title'>{data["begin"]} => {data["end"]}</div>
+                <div class='recap_years_value'>{round(data["value"] / 1000)} kWh</div>
+                <div class='recap_years_value {data_last_years_class}'><b>{data_last_years}%</b></div>
+            </td>
+            """
+        body = '<table class="table_recap"><tr>'
+        body += '<th class="table_recap_header">Annuel</th>'
+        body += body_year
+        body += "</tr>"
+        body += "<tr>"
+        body += '<th class="table_recap_header">Annuel linéaire</th>'
+        body += body_linear
+        body += "</tr>"
+        body += "</table>"
         return body

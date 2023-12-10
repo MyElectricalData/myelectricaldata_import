@@ -3,17 +3,17 @@ import logging
 
 import influxdb_client
 from dateutil.tz import tzlocal
+from dependencies import title, separator, separator_warning
 from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
 from influxdb_client.client.write_api import ASYNCHRONOUS, SYNCHRONOUS
-
-from dependencies import title, separator, separator_warning
 
 
 class InfluxDB:
 
     def __init__(
             self,
+            scheme: str,
             hostname: str,
             port: int,
             token: str,
@@ -24,6 +24,7 @@ class InfluxDB:
     ):
         if write_options is None:
             write_options = {}
+        self.scheme = scheme
         self.hostname = hostname
         self.port = port
         self.token = token
@@ -85,7 +86,7 @@ class InfluxDB:
         logging.info(f"Connect to InfluxDB {self.hostname}:{self.port}")
         date_utils.date_helper = DateHelper(timezone=tzlocal())
         self.influxdb = influxdb_client.InfluxDBClient(
-            url=f"http://{self.hostname}:{self.port}",
+            url=f"{self.scheme}://{self.hostname}:{self.port}",
             token=self.token,
             org=self.org,
             timeout="600000"
@@ -94,12 +95,14 @@ class InfluxDB:
         if health.status == "pass":
             title("Connection success")
         else:
-            logging.critical([
-                "Impossible de se connecter à la base influxdb.",
-                "",
-                "Vous pouvez récupérer un exemple ici :",
-                "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file"
-            ])
+            logging.critical("""
+            
+Impossible de se connecter à la base influxdb.
+
+Vous pouvez récupérer un exemple ici :
+https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file
+""")
+            exit(1)
 
         title(f"Méthode d'importation : {self.method.upper()}")
         if self.method.upper() == "ASYNCHRONOUS":

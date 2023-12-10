@@ -18,6 +18,8 @@ art==5.7
     # via myelectricaldata_import (pyproject.toml)
 async-timeout==4.0.3
     # via aiohttp
+asyncio==3.4.3
+    # via myelectricaldata_import (pyproject.toml)
 attrs==23.1.0
     # via aiohttp
 certifi==2022.9.24
