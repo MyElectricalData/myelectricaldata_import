@@ -1,6 +1,7 @@
 from sqlalchemy import (Column, ForeignKey, Float, Integer, Text, Boolean, DateTime, String)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 Base = declarative_base()  # Required
 
@@ -69,6 +70,7 @@ class UsagePoints(Base):
     relation_production_daily = relationship("ProductionDaily", back_populates="usage_point")
     relation_production_detail = relationship("ProductionDetail", back_populates="usage_point")
     relation_stats = relationship("Statistique", back_populates="usage_point")
+    relation_plan = relationship("Plan", back_populates="usage_point")
     relation_consumption_daily_max_power = relationship("ConsumptionDailyMaxPower", back_populates="usage_point")
 
     def __repr__(self):
@@ -385,4 +387,28 @@ class Ecowatt(Base):
                f"value={self.value!r}, " \
                f"message={self.message!r}, " \
                f"detail={self.detail!r}, " \
+               f")"
+
+
+class Plan(Base):
+    __tablename__ = 'plan'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = Column(Integer, primary_key=True, index=True, unique=True)
+    usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    type = Column(Text, nullable=False, index=True)
+    price = Column(Text, nullable=True, index=True)
+    offpeak_hours = Column(Text, nullable=True, index=True)
+
+    usage_point = relationship("UsagePoints", back_populates="relation_plan")
+
+    def __repr__(self):
+        return f"Plan(" \
+               f"id={self.id!r}, " \
+               f"usage_point_id={self.usage_point_id!r}, " \
+               f"date={self.date!r}, " \
+               f"type={self.type!r}, " \
+               f"price={self.price!r}, " \
+               f"offpeak_hours={self.offpeak_hours!r}, " \
                f")"

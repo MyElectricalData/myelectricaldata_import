@@ -1,4 +1,5 @@
 import json
+import ast
 from datetime import datetime, timedelta
 
 import markdown
@@ -215,7 +216,7 @@ class UsagePoint:
                 address_data=address,
             )
             body = markdown.markdown(body, extensions=['fenced_code', 'codehilite'])
-            body += self.offpeak_hours_table()
+            body += self.display_plan()
 
             # TEMPO
             tempo_config = self.db.get_tempo_config("price")
@@ -290,7 +291,7 @@ class UsagePoint:
             # RATIO HP/HC
             if hasattr(self.usage_point_config,
                        "consumption_detail") and self.usage_point_config.consumption_detail:
-                self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id, order_dir="asc"))
+                # self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id, order_dir="asc"))
                 body += "<h2>Ratio HC/HP</h2>"
                 body += "<table class='table_hchp'><tr>"
                 body += str(self.recap_hc_hp)
@@ -551,6 +552,79 @@ class UsagePoint:
             )
             return html
 
+    def display_plan(self):
+        all_plan = self.db.get_plan_all(self.usage_point_id)
+        default = {
+            "date": "-",
+            "type": "-",
+            "base": "-",
+            "hc": "-",
+            "hp": "-",
+            "monday": "-",
+            "tuesday": "-",
+            "wednesday": "-",
+            "thursday": "-",
+            "friday": "-",
+            "saturday": "-",
+            "sunday": "-",
+        }
+        html = """
+        <table class='table_plan'>
+            <tr>
+                <th rowspan="2">Date</th>
+                <th rowspan="2">Type</th>
+                <th colspan="3">Tarif</th>
+                <th colspan="7">Heures creuses</th>
+            </tr>
+            <tr>
+                <th>BASE</th>
+                <th>HC</th>
+                <th>HP</th>
+                <th>Lundi</th>
+                <th>Mardi</th>
+                <th>Mercredi</th>
+                <th>Jeudi</th>
+                <th>Vendredi</th>
+                <th>Samedi</th>
+                <th>Dimanche</th>
+            </tr>
+            <tr>
+            """
+        for plan in all_plan:
+            data = {
+                **default,
+                **plan.__dict__,
+            }
+            if "price" in plan.__dict__ and ast.literal_eval(plan.__dict__["price"]) is not None:
+                data = {
+                    **data,
+                    **ast.literal_eval(plan.__dict__["price"])
+                }
+            if "offpeak_hours" in plan.__dict__ and ast.literal_eval(plan.__dict__["offpeak_hours"]) is not None:
+                data = {
+                    **data,
+                    **ast.literal_eval(plan.__dict__["offpeak_hours"])
+                }
+            if data["date"] != "-":
+                data["date"] = data["date"].strftime("%Y-%m-%d")
+            html += f"""<tr>
+                <td>{data["date"]}</td>
+                <td>{data["type"]}</td>
+                <td>{data["base"]}</td>
+                <td>{data["hc"]}</td>
+                <td>{data["hp"]}</td>
+                <td>{data["monday"]}</td>
+                <td>{data["tuesday"]}</td>
+                <td>{data["wednesday"]}</td>
+                <td>{data["thursday"]}</td>
+                <td>{data["friday"]}</td>
+                <td>{data["saturday"]}</td>
+                <td>{data["sunday"]}</td>
+            </tr>"""
+
+        html += "</tr></table>"
+        return html
+
     def contract_data(self):
         contract_data = {}
         if self.contract is not None:
@@ -765,7 +839,11 @@ class UsagePoint:
         for detail in data:
             year = detail.date.strftime("%Y")
             value = detail.value
-            measurement_direction = detail.measure_type
+
+            # GET MESURE TYPE
+            # measurement_direction = detail.measure_type
+            self.db.get_mesure_type(self.usage_point_id, detail.date)
+
             if not year in recap:
                 recap[year] = {
                     "HC": 0,

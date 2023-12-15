@@ -6,11 +6,6 @@ import traceback
 from datetime import datetime, timedelta
 from os.path import exists
 
-from sqlalchemy import (create_engine, delete, inspect, update, select, func, desc, asc)
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.pool import NullPool
-
-from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
     Contracts,
@@ -24,9 +19,15 @@ from db_schema import (
     Tempo,
     TempoConfig,
     Ecowatt,
-    Statistique
+    Statistique,
+    Plan
 )
 from dependencies import str2bool, title, get_version, title_warning
+from sqlalchemy import (create_engine, delete, inspect, update, select, func, desc, asc)
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.pool import NullPool
+
+from config import MAX_IMPORT_TRY
 
 # available_database = ["sqlite", "postgresql", "mysql+pymysql"]
 available_database = ["sqlite", "postgresql"]
@@ -277,32 +278,6 @@ class Database:
                 usage_points.production = str2bool(data["production"])
             if "production_detail" in data and data["production_detail"] is not None:
                 usage_points.production_detail = str2bool(data["production_detail"])
-            if "production_price" in data and data["production_price"] is not None:
-                usage_points.production_price = data["production_price"]
-            if "consumption_price_base" in data and data["consumption_price_base"] is not None:
-                usage_points.consumption_price_base = data["consumption_price_base"]
-            if "consumption_price_hc" in data and data["consumption_price_hc"] is not None:
-                usage_points.consumption_price_hc = data["consumption_price_hc"]
-            if "consumption_price_hp" in data and data["consumption_price_hp"] is not None:
-                usage_points.consumption_price_hp = data["consumption_price_hp"]
-            if "offpeak_hours_0" in data and data["offpeak_hours_0"] is not None:
-                usage_points.offpeak_hours_0 = data["offpeak_hours_0"]
-            if "offpeak_hours_1" in data and data["offpeak_hours_1"] is not None:
-                usage_points.offpeak_hours_1 = data["offpeak_hours_1"]
-            if "offpeak_hours_2" in data and data["offpeak_hours_2"] is not None:
-                usage_points.offpeak_hours_2 = data["offpeak_hours_2"]
-            if "offpeak_hours_3" in data and data["offpeak_hours_3"] is not None:
-                usage_points.offpeak_hours_3 = data["offpeak_hours_3"]
-            if "offpeak_hours_4" in data and data["offpeak_hours_4"] is not None:
-                usage_points.offpeak_hours_4 = data["offpeak_hours_4"]
-            if "offpeak_hours_5" in data and data["offpeak_hours_5"] is not None:
-                usage_points.offpeak_hours_5 = data["offpeak_hours_5"]
-            if "offpeak_hours_6" in data and data["offpeak_hours_6"] is not None:
-                usage_points.offpeak_hours_6 = data["offpeak_hours_6"]
-            if "plan" in data and data["plan"] is not None:
-                usage_points.plan = data["plan"]
-            else:
-                usage_points.plan = "BASE"
             if "refresh_addresse" in data and data["refresh_addresse"] is not None:
                 usage_points.refresh_addresse = str2bool(data["refresh_addresse"])
             if "refresh_contract" in data and data["refresh_contract"] is not None:
@@ -394,62 +369,6 @@ class Database:
                 production_price = data["production_price"]
             else:
                 production_price = 0
-            if (
-                    "consumption_price_base" in data
-                    and data["consumption_price_base"] is not None
-                    and data["consumption_price_base"] != ""
-            ):
-                consumption_price_base = data["consumption_price_base"]
-            else:
-                consumption_price_base = 0
-            if (
-                    "consumption_price_hc" in data
-                    and data["consumption_price_hc"] is not None
-                    and data["consumption_price_hc"] != ""
-            ):
-                consumption_price_hc = data["consumption_price_hc"]
-            else:
-                consumption_price_hc = 0
-            if (
-                    "consumption_price_hp" in data
-                    and data["consumption_price_hp"] is not None
-                    and data["consumption_price_hp"] != ""
-            ):
-                consumption_price_hp = data["consumption_price_hp"]
-            else:
-                consumption_price_hp = 0
-            if "offpeak_hours_0" in data and data["offpeak_hours_0"] is not None:
-                offpeak_hours_0 = data["offpeak_hours_0"]
-            else:
-                offpeak_hours_0 = ""
-            if "offpeak_hours_1" in data and data["offpeak_hours_1"] is not None:
-                offpeak_hours_1 = data["offpeak_hours_1"]
-            else:
-                offpeak_hours_1 = ""
-            if "offpeak_hours_2" in data and data["offpeak_hours_2"] is not None:
-                offpeak_hours_2 = data["offpeak_hours_2"]
-            else:
-                offpeak_hours_2 = ""
-            if "offpeak_hours_3" in data and data["offpeak_hours_3"] is not None:
-                offpeak_hours_3 = data["offpeak_hours_3"]
-            else:
-                offpeak_hours_3 = ""
-            if "offpeak_hours_4" in data and data["offpeak_hours_4"] is not None:
-                offpeak_hours_4 = data["offpeak_hours_4"]
-            else:
-                offpeak_hours_4 = ""
-            if "offpeak_hours_5" in data and data["offpeak_hours_5"] is not None:
-                offpeak_hours_5 = data["offpeak_hours_5"]
-            else:
-                offpeak_hours_5 = ""
-            if "offpeak_hours_6" in data and data["offpeak_hours_6"] is not None:
-                offpeak_hours_6 = data["offpeak_hours_6"]
-            else:
-                offpeak_hours_6 = ""
-            if "plan" in data and data["plan"] is not None:
-                plan = data["plan"]
-            else:
-                plan = "BASE"
             if "refresh_addresse" in data and data["refresh_addresse"] is not None:
                 refresh_addresse = data["refresh_addresse"]
             else:
@@ -544,17 +463,6 @@ class Database:
                     production=str2bool(production),
                     production_detail=str2bool(production_detail),
                     production_price=production_price,
-                    consumption_price_base=consumption_price_base,
-                    consumption_price_hc=consumption_price_hc,
-                    consumption_price_hp=consumption_price_hp,
-                    offpeak_hours_0=offpeak_hours_0,
-                    offpeak_hours_1=offpeak_hours_1,
-                    offpeak_hours_2=offpeak_hours_2,
-                    offpeak_hours_3=offpeak_hours_3,
-                    offpeak_hours_4=offpeak_hours_4,
-                    offpeak_hours_5=offpeak_hours_5,
-                    offpeak_hours_6=offpeak_hours_6,
-                    plan=plan,
                     refresh_addresse=str2bool(refresh_addresse),
                     refresh_contract=str2bool(refresh_contract),
                     token=token,
@@ -629,6 +537,14 @@ class Database:
         self.session.close()
 
     def delete_usage_point(self, usage_point_id):
+        self.session.execute(delete(Addresses).where(Addresses.usage_point_id == usage_point_id))
+        self.session.execute(delete(Contracts).where(Contracts.usage_point_id == usage_point_id))
+        self.session.execute(
+            delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id))
+        self.session.execute(delete(ConsumptionDetail).where(ConsumptionDetail.usage_point_id == usage_point_id))
+        self.session.execute(delete(ConsumptionDaily).where(ConsumptionDaily.usage_point_id == usage_point_id))
+        self.session.execute(delete(ProductionDetail).where(ProductionDetail.usage_point_id == usage_point_id))
+        self.session.execute(delete(ProductionDaily).where(ProductionDaily.usage_point_id == usage_point_id))
         self.session.execute(delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id))
         self.session.flush()
         self.session.close()
@@ -1851,3 +1767,57 @@ class Database:
             delete(Statistique)
             .where(Statistique.usage_point_id == usage_point_id)
         )
+
+    ## ----------------------------------------------------------------------------------------------------------------
+    ## PLAN
+    ## ----------------------------------------------------------------------------------------------------------------
+    def get_plan_all(self, usage_point_id):
+        return self.session.scalars(
+            select(Plan)
+            .join(UsagePoints.relation_plan)
+            .where(Plan.usage_point_id == usage_point_id)
+        ).all()
+
+    def get_plan(self, usage_point_id, date, order="desc"):
+        if order == "desc":
+            order = Plan.date.desc()
+        else:
+            order = Plan.date.asc()
+        return self.session.scalars(
+            select(Plan)
+            .where(Plan.usage_point_id == usage_point_id)
+            .where(Plan.date <= date)
+            .order_by(order)
+        ).all()
+
+    def set_plan(self, usage_point_id, date, type, price, offpeak_hours):
+        current_value = self.get_plan(usage_point_id, date)
+        if current_value:
+            for item in current_value:
+                item.type = type
+                item.price = str(price)
+                item.offpeak_hours = str(offpeak_hours)
+        else:
+            self.session.add(
+                Plan(
+                    usage_point_id=usage_point_id,
+                    date=date,
+                    type=type,
+                    price=str(price),
+                    offpeak_hours=str(offpeak_hours),
+                )
+            )
+        self.session.flush()
+        return True
+
+    def del_plan_all(self, usage_point_id):
+        self.session.execute(
+            delete(Plan)
+            .where(Plan.usage_point_id == usage_point_id)
+        )
+
+    def get_mesure_type(self, usage_point_id, date, measurement_direction="consumption"):
+        plan = self.get_plan(usage_point_id, date)
+        print(plan)
+        self.get_detail_date(usage_point_id, date, measurement_direction)
+

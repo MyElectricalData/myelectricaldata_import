@@ -1,5 +1,6 @@
 import logging
 from os import getenv, environ
+from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, APIRouter
@@ -29,6 +30,16 @@ if CONFIG.list_usage_point() is not None:
     for upi, upi_data in CONFIG.list_usage_point().items():
         logging.info(f"{upi}")
         DB.set_usage_point(upi, upi_data)
+        DB.del_plan_all(upi)
+        for date, plan_data in upi_data["plan"].items():
+            price = None
+            offpeak_hours = None
+            if "price" in plan_data:
+                price = plan_data["price"]
+            if "offpeak_hours" in plan_data:
+                offpeak_hours = plan_data["offpeak_hours"]
+            date = datetime.strptime(str(date), "%Y-%m-%d")
+            DB.set_plan(usage_point_id=upi, date=date, type=plan_data["type"], price=price, offpeak_hours=offpeak_hours)
         usage_point_list.append(upi)
         logging.info("  => Success")
 else:

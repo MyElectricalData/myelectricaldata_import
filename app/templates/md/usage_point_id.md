@@ -23,4 +23,4 @@ Statut du contrat : **{{ contract_data['contract_status'] | default("Pas de donn
 
 Dernière date de changement du tarif : **{{ contract_data['last_distribution_tariff_change_date'] | default("Pas de données.") }}**
 
-Seuil heures creuses / pleines :
+Mes abonnements :

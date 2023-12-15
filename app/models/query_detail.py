@@ -126,30 +126,30 @@ class Detail:
                             date = date_object - timedelta(minutes=int(interval))
                             # date = date.strftime(self.date_detail_format)
                             # GET WEEKDAY
-                            date_days = date_object.weekday()
-                            date_hour_minute = date_object.strftime('%H:%M')
-                            measure_type = "HP"
-                            day_offpeak_hours = self.offpeak_hours[date_days]
-                            if day_offpeak_hours is not None:
-                                for offpeak_hour in day_offpeak_hours.split(";"):
-                                    if offpeak_hour != "None" and offpeak_hour != "" and offpeak_hour is not None:
-                                        offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
+                            # date_days = date_object.weekday()
+                            # date_hour_minute = date_object.strftime('%H:%M')
+                            # measure_type = "HP"
+                            # day_offpeak_hours = self.offpeak_hours[date_days]
+                            # if day_offpeak_hours is not None:
+                            #     for offpeak_hour in day_offpeak_hours.split(";"):
+                            #         if offpeak_hour != "None" and offpeak_hour != "" and offpeak_hour is not None:
+                                        # offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
                                         # FORMAT HOUR WITH 2 DIGIT
-                                        offpeak_begin = datetime.strptime(offpeak_begin, '%H:%M')
-                                        offpeak_begin = datetime.strftime(offpeak_begin, '%H:%M')
-                                        offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
+                                        # offpeak_begin = datetime.strptime(offpeak_begin, '%H:%M')
+                                        # offpeak_begin = datetime.strftime(offpeak_begin, '%H:%M')
+                                        # offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
                                         # FORMAT HOUR WITH 2 DIGIT
-                                        offpeak_stop = datetime.strptime(offpeak_stop, '%H:%M')
-                                        offpeak_stop = datetime.strftime(offpeak_stop, '%H:%M')
-                                        result = is_between(date_hour_minute, (offpeak_begin, offpeak_stop))
-                                        if result:
-                                            measure_type = "HC"
+                                        # offpeak_stop = datetime.strptime(offpeak_stop, '%H:%M')
+                                        # offpeak_stop = datetime.strftime(offpeak_stop, '%H:%M')
+                                        # result = is_between(date_hour_minute, (offpeak_begin, offpeak_stop))
+                                        # if result:
+                                        #     measure_type = "HC"
                             self.db.insert_detail(
                                 usage_point_id=self.usage_point_id,
                                 date=date,
                                 value=value,
                                 interval=interval,
-                                measure_type=measure_type,
+                                measure_type="",
                                 blacklist=0,
                             )
                         return meter_reading["interval_reading"]

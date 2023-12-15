@@ -723,6 +723,18 @@ table td {
     text-align: center;
     border-collapse: collapse;
 }
+.table_plan {
+    width: 100%;
+    text-align: center;
+    border-collapse: collapse;
+}
+.table_plan th {
+    background: var(--sde-bg-color);
+    color: var(--main-bg-color);
+    border: 1px solid var(--main-bg-color);
+    text-align: center;
+    border-collapse: collapse;
+}
 
 .loadingoverlay {
     height: 40px !important;
