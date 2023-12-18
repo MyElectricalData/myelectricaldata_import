@@ -22,7 +22,7 @@ ssl:
   certfile: ""
   keyfile: ""
 influxdb:
-  enable: true
+  enable: true #Set to false if you do not deploy influxdb
   hostname: influxdb
   port: 8086
   token: myelectricaldata
@@ -43,7 +43,7 @@ influxdb:
     max_retry_delay: 125_000
     exponential_base: 2
 mqtt:
-  enable: true
+  enable: true #Set to false if you rely on autodiscovery from homeassistant
   hostname: mosquitto
   port: 1883
   username: null
@@ -57,7 +57,7 @@ mqtt:
 #  keyfile: "/data/key.pem"
 #  certfile: "/data/cert.pem"
 myelectricaldata:
-  "MON_PDL_1":
+  "MON_PDL_1": #Should be set to your PDL 14 digits
     enable: 'true'
     token: TOKEN_DE_MON_PDL_1
     name: "Maison"
