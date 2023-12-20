@@ -1,16 +1,18 @@
+import ast
 import json
+import logging
 from datetime import datetime, timedelta
 
 import markdown
 from dependencies import APPLICATION_PATH, get_version
+from init import CONFIG, DB
 from jinja2 import Template
 from mergedeep import Strategy, merge
+from models.stat import Stat
 from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
-from models.stat import Stat
-from init import CONFIG, DB
 
 
 class UsagePoint:
@@ -290,7 +292,7 @@ class UsagePoint:
             # RATIO HP/HC
             if hasattr(self.usage_point_config,
                        "consumption_detail") and self.usage_point_config.consumption_detail:
-                self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id, order_dir="asc"))
+                self.generate_chart_hc_hp()
                 body += "<h2>Ratio HC/HP</h2>"
                 body += "<table class='table_hchp'><tr>"
                 body += str(self.recap_hc_hp)
@@ -760,37 +762,32 @@ class UsagePoint:
         else:
             return "Pas de données."
 
-    def generate_chart_hc_hp(self, data):
-        recap = {}
-        for detail in data:
-            year = detail.date.strftime("%Y")
-            value = detail.value
-            measurement_direction = detail.measure_type
-            if not year in recap:
-                recap[year] = {
-                    "HC": 0,
-                    "HP": 0,
-                }
-            recap[year][measurement_direction] = recap[year][measurement_direction] + value
-        for year, data in recap.items():
-            if self.recap_hc_hp == "Pas de données.":
-                self.recap_hc_hp = ""
-            self.recap_hc_hp += f'<td class="table_hp_hc_recap" style="width: {100 / len(recap)}%" id="piChart{year}"></td>'
-            self.javascript += "google.charts.load('current', {'packages':['corechart']});"
-            self.javascript += f"google.charts.setOnLoadCallback(piChart{year});"
-            self.javascript += f"function piChart{year}() " + "{"
-            self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
-            self.javascript += f"['HC',     {data['HC']}],"
-            self.javascript += f"['HP',     {data['HP']}],"
-            self.javascript += """
-                ]);
-
-                var options = {
-                    title: '""" + year + """',
-                };"""
-            self.javascript += f"var chart = new google.visualization.PieChart(document.getElementById('piChart{year}'));"
-            self.javascript += """chart.draw(data, options);
-            }"""
+    def generate_chart_hc_hp(self):
+        price_consumption = self.db.get_stat(self.usage_point_id, "price_consumption")
+        if price_consumption and hasattr(price_consumption[0], "value"):
+            recap = ast.literal_eval(price_consumption[0].value)
+            for year, data in sorted(recap.items(), reverse=True):
+                if self.recap_hc_hp == "Pas de données.":
+                    self.recap_hc_hp = ""
+                self.recap_hc_hp += f'<td class="table_hp_hc_recap" style="width: {100 / len(recap)}%" id="piChart{year}"></td>'
+                self.javascript += "google.charts.load('current', {'packages':['corechart']});"
+                self.javascript += f"google.charts.setOnLoadCallback(piChart{year});"
+                self.javascript += f"function piChart{year}() " + "{"
+                self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
+                self.javascript += f"['HC',     {data['HC']['Wh']}],"
+                self.javascript += f"['HP',     {data['HP']['Wh']}],"
+                # self.javascript += f"['BASE',     {data['BASE']['Wh']}],"
+                self.javascript += """
+                    ]);
+    
+                    var options = {
+                        title: '""" + year + """',
+                    };"""
+                self.javascript += f"var chart = new google.visualization.PieChart(document.getElementById('piChart{year}'));"
+                self.javascript += """chart.draw(data, options);
+                }"""
+        else:
+            logging.error("Pas de données.")
 
     def generate_data(self, measurement_direction):
         data = self.db.get_daily_all(self.usage_point_id, measurement_direction)
@@ -828,17 +825,58 @@ class UsagePoint:
             if data:
                 data_value = json.loads(data.value)
                 for years, value in data_value.items():
-                    html += "<tr>"
-                    html += f"<td class='table_recap_header'>{years}</td>"
-                    html += f"<td>{round(value['BASE']['euro'], 2)} €</td>"
-                    html += f"<td>{round(value['HC']['euro'] + value['HP']['euro'], 2)} €</td>"
+                    price_base = round(value['BASE']['euro'], 2)
+                    price_hchp = round(value['HC']['euro'] + value['HP']['euro'], 2)
                     tempo_config = self.config.tempo_config()
+                    price_tempo = None
                     if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                         value_tempo = 0
                         for color, tempo in value["TEMPO"].items():
                             value_tempo = value_tempo + tempo['euro']
-                        html += f"<td>{round(value_tempo, 2)} €</td>"
-                    # html += str(value)
+                        price_tempo = round(value_tempo, 2)
+                    html += "<tr>"
+                    html += f"<td class='table_recap_header'>{years}</td>"
+                    evolution_1 = round(price_base - price_hchp, 2)
+                    evolution_2 = round(price_base - price_tempo, 2)
+                    color_1 = "green"
+                    color_2 = "green"
+                    if price_base > price_hchp:
+                        color_1 = "red"
+                        evolution_1 = f"+{evolution_1}"
+                    if price_tempo and price_base > price_tempo:
+                        color_2 = "red"
+                        evolution_2 = f"+{evolution_2}"
+                    html += f"<td><b style='font-size: 18px'>{price_base} €</b>" \
+                            f"<br><span style='color: {color_1}; font-size: 12px'>HC/HP : {evolution_1}€</span><br>" \
+                            f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></td>"
+                    evolution_1 = round(price_hchp - price_base, 2)
+                    evolution_2 = round(price_hchp - price_tempo, 2)
+                    color_1 = "green"
+                    color_2 = "green"
+                    if price_hchp > price_base:
+                        color_1 = "red"
+                        evolution_1 = f"+{evolution_1}"
+                    if price_tempo and price_hchp > price_tempo:
+                        color_2 = "red"
+                        evolution_2 = f"+{evolution_2}"
+                    html += f"<td><b style='font-size: 18px'>{price_hchp} €</b>" \
+                            f"<br><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
+                            f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></td>"
+                    if price_tempo:
+                        evolution_1 = round(price_tempo - price_base, 2)
+                        evolution_2 = round(price_tempo - price_hchp, 2)
+                        color_1 = "green"
+                        color_2 = "green"
+                        if price_tempo > price_base:
+                            color_1 = "red"
+                            evolution_1 = f"+{evolution_1}"
+                        if price_tempo and price_tempo > price_hchp:
+                            color_2 = "red"
+                            evolution_2 = f"+{evolution_2}"
+                        html += f"<td><b style='font-size: 18px'>{price_tempo} €</b>" \
+                                f"<br><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
+                                f"<span style='color: {color_2}; font-size: 12px'>HC/HP : {evolution_2}€</span></td>"
+
             html += "</table>"
         return html
 
@@ -943,10 +981,11 @@ class UsagePoint:
             </td>
             """
         for year, data in output_data["linear"].items():
-            last_year = str(int(year)-1)
+            last_year = str(int(year) - 1)
             data_last_years = 0
             if last_year in output_data["linear"]:
-                data_last_years = round((100 * int(data["value"])) / int(output_data["linear"][last_year]["value"]) - 100, 2)
+                data_last_years = round(
+                    (100 * int(data["value"])) / int(output_data["linear"][last_year]["value"]) - 100, 2)
             if data_last_years >= 0:
                 if data_last_years == 0:
                     data_last_years_class = "blue"

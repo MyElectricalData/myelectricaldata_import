@@ -70,9 +70,10 @@ class Stat:
         end = datetime.combine(begin, datetime.max.time())
         value = 0
         for data in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-            if measure_type is None or (measure_type == "HP" and data.measure_type == "HP"):
+            day_measure_type = self.get_mesure_type(data.date)
+            if measure_type is None or (measure_type == "HP" and day_measure_type == "HP"):
                 value = value + data.value / (60 / data.interval)
-            elif measure_type is None or (measure_type == "HC" and data.measure_type == "HC"):
+            elif measure_type is None or (measure_type == "HC" and day_measure_type == "HC"):
                 value = value + data.value / (60 / data.interval)
         return {
             "value": value,
@@ -462,9 +463,10 @@ class Stat:
         begin = datetime.combine(yesterday_date, datetime.min.time())
         end = datetime.combine(now_date, datetime.max.time())
         for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-            if day.measure_type == "HP":
+            measure_type = self.get_mesure_type(day.date)
+            if measure_type == "HP":
                 self.value_yesterday_hp = self.value_yesterday_hp + (day.value / (60 / day.interval))
-            if day.measure_type == "HC":
+            if measure_type == "HC":
                 self.value_yesterday_hc = self.value_yesterday_hc + (day.value / (60 / day.interval))
         logging.debug(f" yesterday_hc => HC : {self.value_yesterday_hc}")
         logging.debug(f" yesterday_hp => HP : {self.value_yesterday_hp}")
@@ -486,9 +488,10 @@ class Stat:
         value_peak_offpeak_percent_hc = 0
         value_peak_offpeak_percent_hp_vs_hc = 0
         for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-            if day.measure_type == "HP":
+            measure_type = self.get_mesure_type(day.date)
+            if measure_type == "HP":
                 value_peak_offpeak_percent_hp = value_peak_offpeak_percent_hp + day.value
-            if day.measure_type == "HC":
+            if measure_type == "HC":
                 value_peak_offpeak_percent_hc = value_peak_offpeak_percent_hc + day.value
         if value_peak_offpeak_percent_hc != 0:
             value_peak_offpeak_percent_hp_vs_hc = abs(((100 * value_peak_offpeak_percent_hc) / value_peak_offpeak_percent_hp) - 100)
@@ -508,7 +511,8 @@ class Stat:
                 value = value + day.value
         else:
             for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-                if day.measure_type == measure_type:
+                day_measure_type = self.get_mesure_type(day.date)
+                if day_measure_type == measure_type:
                     value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
@@ -527,7 +531,8 @@ class Stat:
                 value = value + day.value
         else:
             for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-                if day.measure_type == measure_type:
+                day_measure_type = self.get_mesure_type(day.date)
+                if day_measure_type == measure_type:
                     value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
@@ -550,7 +555,8 @@ class Stat:
                 value = value + day.value
         else:
             for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-                if day.measure_type == measure_type:
+                day_measure_type = self.get_mesure_type(day.date)
+                if day_measure_type == measure_type:
                     value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
@@ -569,7 +575,8 @@ class Stat:
                 value = value + day.value
         else:
             for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-                if day.measure_type == measure_type:
+                day_measure_type = self.get_mesure_type(day.date)
+                if day_measure_type == measure_type:
                     value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
@@ -596,7 +603,8 @@ class Stat:
                 value = value + day.value
         else:
             for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-                if day.measure_type == measure_type:
+                day_measure_type = self.get_mesure_type(day.date)
+                if day_measure_type == measure_type:
                     value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
@@ -615,7 +623,8 @@ class Stat:
                 value = value + day.value
         else:
             for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
-                if day.measure_type == measure_type:
+                day_measure_type = self.get_mesure_type(day.date)
+                if day_measure_type == measure_type:
                     value = value + (day.value / (60 / day.interval))
         return {
             "value": value,
@@ -627,6 +636,31 @@ class Stat:
         data = self.db.get_stat(self.usage_point_id, f"price_{self.measurement_direction}")
         return json.loads(data[0].value)
         # return ast.literal_eval()
+
+    def get_mesure_type(self, date):
+        offpeak_hours = {}
+        for i in range(0, 7):
+            offpeak_hours[i] = getattr(self.usage_point_id_config, f'offpeak_hours_{i}')
+        # GET WEEKDAY
+        date_days = date.weekday()
+        date_hour_minute = date.strftime('%H:%M')
+        measure_type = "HP"
+        day_offpeak_hours = offpeak_hours[date_days]
+        if day_offpeak_hours is not None:
+            for offpeak_hour in day_offpeak_hours.split(";"):
+                if offpeak_hour != "None" and offpeak_hour != "" and offpeak_hour is not None:
+                    offpeak_begin = offpeak_hour.split("-")[0].replace('h', ':').replace('H', ':')
+                    # FORMAT HOUR WITH 2 DIGIT
+                    offpeak_begin = datetime.strptime(offpeak_begin, '%H:%M')
+                    offpeak_begin = datetime.strftime(offpeak_begin, '%H:%M')
+                    offpeak_stop = offpeak_hour.split("-")[1].replace('h', ':').replace('H', ':')
+                    # FORMAT HOUR WITH 2 DIGIT
+                    offpeak_stop = datetime.strptime(offpeak_stop, '%H:%M')
+                    offpeak_stop = datetime.strftime(offpeak_stop, '%H:%M')
+                    result = self.is_between(date_hour_minute, (offpeak_begin, offpeak_stop))
+                    if result:
+                        measure_type = "HC"
+        return measure_type
 
     def generate_price(self):
         data = self.db.get_detail_all(self.usage_point_id, self.measurement_direction)
@@ -640,7 +674,9 @@ class Stat:
                 month = item.date.strftime("%m")
                 if month != last_month:
                     logging.info(f" - {year} / {month}")
-                measure_type = item.measure_type
+
+                measure_type = self.get_mesure_type(item.date)
+
                 tempo_date = datetime.combine(item.date, datetime.min.time())
                 interval = item.interval
                 if year not in result:
@@ -725,41 +761,7 @@ class Stat:
     def delete(self):
         self.db.del_stat(self.usage_point_id)
 
-# w = item.value
-# kw = (item.value / 1000) / (60 / interval)
-#
-# # YEARS
-# result[year]["BASE"]["w"] += w
-# result[year]["BASE"]["kw"] += kw
-# result[year]["BASE"]["euro"] += kw * price
-# result[year][measure_type]["w"] += w
-# result[year][measure_type]["kw"] += kw
-# result[year][measure_type]["euro"] += (kw * price_hc_hp)
-#
-# # MONTH
-# result[year]["month"][month]["BASE"]["w"] += w
-# result[year]["month"][month]["BASE"]["kw"] += kw
-# result[year]["month"][month]["BASE"]["euro"] += (kw * price)
-# result[year]["month"][month][measure_type]["w"] += w
-# result[year]["month"][month][measure_type]["kw"] += kw
-# result[year]["month"][month][measure_type]["euro"] += (kw * price_hc_hp)
-#
-# # TEMPO
-# if tempo_config:
-#     hour = int(item.date.strftime("%H"))
-#     if 6 <= hour < 22:
-#         measure_type = "HP"
-#     else:
-#         measure_type = "HC"
-#     tempo_output = [x for x in tempo_data if x.date == tempo_date]
-#     if tempo_output:
-#         color = tempo_output[0].color
-#
-#         tempo_price = tempo_config[f"price_{color.lower()}_{measure_type.lower()}"]
-#         result[year]["TEMPO"][f"{color}_{measure_type}"]["w"] += w
-#         result[year]["TEMPO"][f"{color}_{measure_type}"]["kw"] += kw
-#         result[year]["TEMPO"][f"{color}_{measure_type}"]["euro"] += (kw * tempo_price)
-#         result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["w"] += w
-#         result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["kw"] += kw
-#         result[year]["month"][month]["TEMPO"][f"{color}_{measure_type}"]["euro"] += (kw * tempo_price)
-# last_month = month
+    def is_between(self, time, time_range):
+        if time_range[1] < time_range[0]:
+            return time >= time_range[0] or time < time_range[1]
+        return time_range[0] < time <= time_range[1]
