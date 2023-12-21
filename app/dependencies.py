@@ -1,6 +1,5 @@
 import datetime
 import logging
-import os.path
 from math import floor
 from os import environ, getenv, path
 
@@ -136,7 +135,7 @@ def finish():
 
 
 def get_version():
-    version_file = os.path.join(APPLICATION_PATH, "VERSION")
+    version_file = path.join(APPLICATION_PATH, "VERSION")
     f = open(version_file, "r")
     version = f.read()
     f.close()
