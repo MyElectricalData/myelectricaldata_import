@@ -7,7 +7,7 @@ from os import getenv, environ, path
 import yaml
 
 from config import LOG_FORMAT, LOG_FORMAT_DATE
-from dependencies import APPLICATION_PATH_DATA, str2bool
+from dependencies import APPLICATION_PATH_DATA, CONFIG_PATH, str2bool
 from models.config import Config
 from models.database import Database
 from models.influxdb import InfluxDB
@@ -15,8 +15,9 @@ from models.mqtt import Mqtt
 
 # LOGGING CONFIGURATION
 config = {}
-if path.exists("/data/config.yaml"):
-    with open(f'/data/config.yaml') as file:
+
+if path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
 if "DEBUG" in environ and str2bool(getenv("DEBUG")):
@@ -43,8 +44,8 @@ else:
         level=logging_level
     )
 
-if not path.exists("/data/config.yaml"):
-    logging.critical("Config file is not found (/data/config.yaml)")
+if not path.exists(CONFIG_PATH):
+    logging.critical(f"Config file is not found ({CONFIG_PATH})")
     exit()
 
 
@@ -68,7 +69,7 @@ uvicorn_logger.addFilter(EndpointFilter(path="/import_status"))
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 CONFIG = Config(
-    path=APPLICATION_PATH_DATA
+    path=CONFIG_PATH
 )
 CONFIG.load()
 CONFIG.display()
