@@ -5,15 +5,15 @@ wipe_influxdb: false # Work only with influxdb > 2.X
 # Par défaut le backend en local dans le /data/cache.db du conteneur.
 # Mais il est possible de basculer sur une base de données externe de type SQLite ou PostgreSQL
 # Exemple pour Postgres :
-# storage_uri: postgresql://myelectricaldata:myelectricaldata@postgres:5432/myelectricaldata
+#storage_uri: postgresql://myelectricaldata:myelectricaldata@postgres:5432/myelectricaldata
 tempo:
-  enable: true
+  enable: false
 home_assistant: # WITH MQTT DISCOVERY
   enable: true
   discovery: true
   discovery_prefix: homeassistant
 home_assistant_ws: # FOR ENERGY TAB
-  enable: true
+  enable: false
   ssl: true
   token: HOME_ASSISTANT_TOKEN_GENERATE_IN_PROFILE_TABS_(BOTTOM)
   url: myhomeassistant.domain.fr
@@ -22,7 +22,7 @@ ssl:
   certfile: ""
   keyfile: ""
 influxdb:
-  enable: true
+  enable: false
   scheme: http
   hostname: influxdb
   port: 8086
@@ -44,7 +44,7 @@ influxdb:
     max_retry_delay: 125_000
     exponential_base: 2
 mqtt:
-  enable: true
+  enable: false
   hostname: mosquitto
   port: 1883
   username: null
@@ -58,6 +58,7 @@ mqtt:
 #  keyfile: "/data/key.pem"
 #  certfile: "/data/cert.pem"
 myelectricaldata:
+  # Configuration de mon point de livraison (ne pas oublier d'adapter MON_PDL_1 avec votre numéro de PDL)
   "MON_PDL_1":
     enable: 'true'
     token: TOKEN_DE_MON_PDL_1
@@ -86,30 +87,30 @@ myelectricaldata:
     production_detail_max_date: "2021-06-01"
     refresh_addresse: 'false'
     refresh_contract: 'false'
-  "MON_PDL_2_AVEC_PRODUCTION":
-    enable: 'true'
-    token: TOKEN_DE_MON_PDL_2
-    name: "Maison de vacances"
-    cache: 'true'
-    consumption: 'true'
-    consumption_detail: 'true'
-    consumption_price_base: '0.175'
-    consumption_price_hc: '0.175'
-    consumption_price_hp: '0.175'
-    consumption_max_date: "2021-06-01"
-    consumption_detail_max_date: "2021-06-01"
-    offpeak_hours_0: ''
-    offpeak_hours_1: ''
-    offpeak_hours_2: ''
-    offpeak_hours_3: ''
-    offpeak_hours_4: ''
-    offpeak_hours_5: ''
-    offpeak_hours_6: ''
-    plan: BASE
-    production: 'true'
-    production_detail: 'true'
-    production_price: '0.10'
-    production_max_date: "2021-06-01"
-    production_detail_max_date: "2021-06-01"
-    refresh_addresse: 'false'
-    refresh_contract: 'false'
+#  "MON_PDL_2_AVEC_PRODUCTION":
+#    enable: 'true'
+#    token: TOKEN_DE_MON_PDL_2
+#    name: "Maison de vacances"
+#    cache: 'true'
+#    consumption: 'true'
+#    consumption_detail: 'true'
+#    consumption_price_base: '0.175'
+#    consumption_price_hc: '0.175'
+#    consumption_price_hp: '0.175'
+#    consumption_max_date: "2021-06-01"
+#    consumption_detail_max_date: "2021-06-01"
+#    offpeak_hours_0: ''
+#    offpeak_hours_1: ''
+#    offpeak_hours_2: ''
+#    offpeak_hours_3: ''
+#    offpeak_hours_4: ''
+#    offpeak_hours_5: ''
+#    offpeak_hours_6: ''
+#    plan: BASE
+#    production: 'true'
+#    production_detail: 'true'
+#    production_price: '0.10'
+#    production_max_date: "2021-06-01"
+#    production_detail_max_date: "2021-06-01"
+#    refresh_addresse: 'false'
+#    refresh_contract: 'false'

@@ -813,6 +813,7 @@ class UsagePoint:
             data = data[0]
             html = """
             <table style='width: 100%; text-align: center' class='table_recap'>
+            
                 <tr class='table_recap_header'>
                     <td>Années</td>
                     <td>Base</td>
@@ -836,48 +837,72 @@ class UsagePoint:
                         price_tempo = round(value_tempo, 2)
                     html += "<tr>"
                     html += f"<td class='table_recap_header'>{years}</td>"
-                    evolution_1 = round(price_base - price_hchp, 2)
-                    evolution_2 = round(price_base - price_tempo, 2)
-                    color_1 = "green"
-                    color_2 = "green"
-                    if price_base > price_hchp:
-                        color_1 = "red"
-                        evolution_1 = f"+{evolution_1}"
-                    if price_tempo and price_base > price_tempo:
-                        color_2 = "red"
-                        evolution_2 = f"+{evolution_2}"
-                    html += f"<td><b style='font-size: 18px'>{price_base} €</b>" \
-                            f"<br><span style='color: {color_1}; font-size: 12px'>HC/HP : {evolution_1}€</span><br>" \
-                            f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></td>"
                     evolution_1 = round(price_hchp - price_base, 2)
-                    evolution_2 = round(price_hchp - price_tempo, 2)
+                    evolution_2 = round(price_tempo - price_base, 2)
                     color_1 = "green"
                     color_2 = "green"
-                    if price_hchp > price_base:
+                    if price_base < price_hchp:
                         color_1 = "red"
                         evolution_1 = f"+{evolution_1}"
-                    if price_tempo and price_hchp > price_tempo:
+                    if price_tempo and price_base < price_tempo:
                         color_2 = "red"
                         evolution_2 = f"+{evolution_2}"
-                    html += f"<td><b style='font-size: 18px'>{price_hchp} €</b>" \
-                            f"<br><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
-                            f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></td>"
+                    text_color = "var(--text-color);"
+                    if color_1 == "red" and color_2 == "red":
+                        text_color = "rgb(16, 150, 24);"
+                    html += f"<td>" \
+                            f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{price_base} €</b></div>" \
+                            f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>HC/HP : {evolution_1}€</span><br>" \
+                            f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></div>" \
+                            f"</td>"
+                    evolution_1 = round(price_base - price_hchp, 2)
+                    evolution_2 = round(price_tempo - price_hchp, 2)
+                    color_1 = "green"
+                    color_2 = "green"
+                    if price_hchp < price_base:
+                        color_1 = "red"
+                        evolution_1 = f"+{evolution_1}"
+                    if price_tempo and price_hchp < price_tempo:
+                        color_2 = "red"
+                        evolution_2 = f"+{evolution_2}"
+                    text_color = "var(--text-color);"
+                    if color_1 == "red" and color_2 == "red":
+                        text_color = "rgb(16, 150, 24);"
+                    html += f"<td>" \
+                            f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{price_hchp} €</b></div>" \
+                            f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
+                            f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></div>" \
+                            f"</td>"
                     if price_tempo:
-                        evolution_1 = round(price_tempo - price_base, 2)
-                        evolution_2 = round(price_tempo - price_hchp, 2)
+                        evolution_1 = round(price_base - price_tempo, 2)
+                        evolution_2 = round(price_hchp - price_tempo, 2)
                         color_1 = "green"
                         color_2 = "green"
-                        if price_tempo > price_base:
+                        if price_tempo < price_base:
                             color_1 = "red"
                             evolution_1 = f"+{evolution_1}"
-                        if price_tempo and price_tempo > price_hchp:
+                        if price_tempo and price_tempo < price_hchp:
                             color_2 = "red"
                             evolution_2 = f"+{evolution_2}"
-                        html += f"<td><b style='font-size: 18px'>{price_tempo} €</b>" \
-                                f"<br><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
-                                f"<span style='color: {color_2}; font-size: 12px'>HC/HP : {evolution_2}€</span></td>"
+                        text_color = "var(--text-color);"
+                        if color_1 == "red" and color_2 == "red":
+                            text_color = "rgb(16, 150, 24);"
+                        html += f"<td>" \
+                                f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{price_tempo} €</b></div>" \
+                                f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
+                                f"<span style='color: {color_2}; font-size: 12px'>HC/HP : {evolution_2}€</span></div>" \
+                                f"</td>"
 
             html += "</table>"
+            # html += """
+            # <table style='border: none;'>
+            #         <tr>
+            #             <td style='width: 30px; background-color: green'>&nbsp;</td>
+            #             <td style='border: none'>Gain&nbsp;&nbsp;</td>
+            #             <td style='width: 30px; background-color: #FF0000'>&nbsp;</td>
+            #             <td style='border: none'>Perte</td>
+            #         </tr>
+            # </table>"""
         return html
 
     def recap(self, data):
