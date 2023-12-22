@@ -1,31 +1,11 @@
-# All services required to test myelectricaldata
 version: "3.9"
 services:
-  homeassistant:
-    image: ghcr.io/home-assistant/home-assistant:stable
-    privileged: true
+  myelectricaldata:
+    image: m4dm4rtig4n/myelectricaldata:latest
     restart: unless-stopped
+    volumes:
+      - ./data:/data
     environment:
       TZ: Europe/Paris
-    volumes:
-      - ./tests/integration/homeassistant/config:/config
-      - /run/dbus:/run/dbus:ro
     ports:
-      - 8123:8123
-  mqtt:
-    image: emqx/nanomq:latest
-    ports:
-      - 1893:1883
-      - 8093:8083
-      - 8893:8883
-  myelectricaldata:
-    build: .
-    depends_on:
-      - mqtt
-      - homeassistant
-    ports:
-      - 5000:5000
-    environment:
-      DEBUG: true
-    volumes:
-      - ./tests/integration/myelectricaldata:/data
+      - '5000:5000'
