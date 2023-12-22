@@ -4,15 +4,15 @@ import re
 
 import yaml
 
-from dependencies import title, separator, CONFIG_PATH
+from dependencies import title, separator
 
 
 class Config:
 
-    def __init__(self, path=CONFIG_PATH):
-        self.path = os.path.dirname(path)     # Folder containing the config file
+    def __init__(self, path="/data"):
+        self.path = path
         self.db = None
-        self.file = os.path.basename(path)      # Name of the config file
+        self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
         self.config = {}
         self.default_port = 5000
@@ -128,14 +128,14 @@ class Config:
     def load(self):
         config_file = f'{self.path_file}'
         if os.path.exists(config_file):
-            with open(config_file) as file:
+            with open(f'{self.path}/config.yaml') as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         else:
             f = open(config_file, "a")
             f.write(yaml.dump(self.default))
             f.close()
-            with open(config_file) as file:
+            with open(f'{self.path}/config.yaml') as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         if self.config is None:

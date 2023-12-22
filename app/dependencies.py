@@ -1,7 +1,7 @@
 import datetime
 import logging
 from math import floor
-from os import environ, getenv, path
+from os import environ, getenv
 
 from art import decor, text2art
 
@@ -14,11 +14,6 @@ if "APPLICATION_PATH_DATA" in environ:
     APPLICATION_PATH_DATA = getenv("APPLICATION_PATH_DATA")
 else:
     APPLICATION_PATH_DATA = "/data"
-
-if "CONFIG_PATH" in environ:
-    CONFIG_PATH = getenv("CONFIG_PATH")
-else:
-    CONFIG_PATH = path.join(APPLICATION_PATH_DATA, "config.yaml")
 
 paypal_footer = """
 <div style="text-align: center" id="paypal" class="paypal_link">
@@ -135,8 +130,7 @@ def finish():
 
 
 def get_version():
-    version_file = path.join(APPLICATION_PATH, "VERSION")
-    f = open(version_file, "r")
+    f = open("/app/VERSION", "r")
     version = f.read()
     f.close()
     return version.strip()

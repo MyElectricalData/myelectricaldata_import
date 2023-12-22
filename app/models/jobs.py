@@ -41,11 +41,10 @@ class Job:
     def boot(self):
         if ("DEV" in environ and getenv("DEV")) or ("DEBUG" in environ and getenv("DEBUG")):
             logging.warning("=> Import job disable")
-            return False
         else:
-            return self.job_import_data()["status"]
+            self.job_import_data()
 
-    def job_import_data(self, wait=True, target=None) -> dict:
+    def job_import_data(self, wait=True, target=None):
         if self.db.lock_status():
             return {
                 "status": False,
@@ -160,11 +159,11 @@ class Job:
             output['Authorization'] = self.usage_point_config.token
         return output
 
-    def get_gateway_status(self) -> dict:
+    def get_gateway_status(self):
         detail = "Récupération du statut de la passerelle :"
         try:
             title(detail)
-            return Status(headers=self.header_generate(token=False)).ping()
+            Status(headers=self.header_generate(token=False)).ping()
         except Exception as e:
             traceback.print_exc()
             logging.error(f"Erreur lors de la {detail.lower()}")
