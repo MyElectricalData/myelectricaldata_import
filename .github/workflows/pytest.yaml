@@ -3,9 +3,10 @@ name: Run Pytests
 on:
   # Run workflow automatically whenever the app or tests are updated
   push:
-#    paths:
-#      - app/**
-#      - tests/**
+    paths:
+      - .github/workflows/pytest.yaml
+      - app/**
+      - tests/**
 
 jobs:
   pytest:
@@ -30,4 +31,4 @@ jobs:
       - name: Test with pytest
         run: |
           pip install pytest pytest-cov
-          python -m pytest ../tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+          python -m pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
