@@ -4,11 +4,11 @@ import traceback
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
-from dependencies import title
 
 from config import URL
-from models.query import Query
+from dependencies import title
 from init import DB, CONFIG
+from models.query import Query
 
 
 class Tempo:
@@ -18,6 +18,7 @@ class Tempo:
         self.db = DB
         self.url = URL
         self.valid_date = datetime.combine(datetime.now() + relativedelta(days=1), datetime.min.time())
+        self.nb_check_day = 31
 
     def run(self):
         start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
@@ -61,8 +62,13 @@ class Tempo:
             title(f"No cache")
             result = self.run()
         else:
-            last_item = current_cache[0]
-            if last_item.date < self.valid_date:
+            valid_date = self.valid_date
+            missing_date = False
+            for i in range(self.nb_check_day):
+                if current_cache[i].date != valid_date:
+                    missing_date = True
+                valid_date = valid_date - relativedelta(days=1)
+            if missing_date:
                 result = self.run()
             else:
                 logging.info(" => Toutes les données sont déjà en cache.")

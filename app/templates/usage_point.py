@@ -9,6 +9,7 @@ from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
+from models.stat import Stat
 from init import CONFIG, DB
 
 
@@ -280,7 +281,8 @@ class UsagePoint:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 self.generate_data("consumption")
                 self.consumption()
-                recap_consumption = self.recap(data=self.recap_consumption_data)
+                # recap_consumption = self.recap(data=self.recap_consumption_data)
+                recap_consumption = self.recapv2()
                 body += "<h2>Consommation</h2>"
                 body += str(recap_consumption)
                 body += '<div id="chart_daily_consumption"></div>'
@@ -808,12 +810,34 @@ class UsagePoint:
             self.recap_production_data = result
 
     def get_price(self, measurement_direction):
+
+        def generate_price_compare(data):
+            evolution_1 = round(data["price_2"] - data["price_1"], 2)
+            evolution_2 = round(data["price_3"] - data["price_1"], 2)
+            color_1 = "green"
+            color_2 = "green"
+            if data["price_1"] < data["price_2"]:
+                color_1 = "red"
+                evolution_1 = f"+{evolution_1}"
+            if data["price_3"] and data["price_1"] < data["price_3"]:
+                color_2 = "red"
+                evolution_2 = f"+{evolution_2}"
+            text_color = "var(--text-color);"
+            if color_1 == "red" and color_2 == "red":
+                text_color = "rgb(16, 150, 24);"
+            return f"<td>" \
+                    f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{data['price_1']} €</b></div>" \
+                    f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>{data['lib_1']} : {evolution_1}€</span><br>" \
+                    f"<span style='color: {color_2}; font-size: 12px'>{data['lib_2']} : {evolution_2}€</span></div>" \
+                    f"</td>"
+
         data = self.db.get_stat(self.usage_point_id, f"price_{measurement_direction}")
         html = ""
         if len(data) > 0:
             data = data[0]
             html = """
             <table style='width: 100%; text-align: center' class='table_recap'>
+            
                 <tr class='table_recap_header'>
                     <td>Années</td>
                     <td>Base</td>
@@ -835,9 +859,83 @@ class UsagePoint:
                         value_tempo = 0
                         for color, tempo in value["TEMPO"].items():
                             value_tempo = value_tempo + tempo['euro']
+<<<<<<< HEAD
+                        price_tempo = round(value_tempo, 2)
+                    html += "<tr>"
+                    html += f"<td class='table_recap_header'>{years}</td>"
+                    # evolution_1 = round(price_hchp - price_base, 2)
+                    # evolution_2 = round(price_tempo - price_base, 2)
+                    # color_1 = "green"
+                    # color_2 = "green"
+                    # if price_base < price_hchp:
+                    #     color_1 = "red"
+                    #     evolution_1 = f"+{evolution_1}"
+                    # if price_tempo and price_base < price_tempo:
+                    #     color_2 = "red"
+                    #     evolution_2 = f"+{evolution_2}"
+                    # text_color = "var(--text-color);"
+                    # if color_1 == "red" and color_2 == "red":
+                    #     text_color = "rgb(16, 150, 24);"
+                    # html += f"<td>" \
+                    #         f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{price_base} €</b></div>" \
+                    #         f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>HC/HP : {evolution_1}€</span><br>" \
+                    #         f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></div>" \
+                    #         f"</td>"
+                    html += generate_price_compare({"price_1": price_base, "price_2": price_hchp, "price_3": price_tempo, "lib_1": "HC/HP", "lib_2": "Tempo"})
+                    html += generate_price_compare({"price_1": price_hchp, "price_2": price_base, "price_3": price_tempo, "lib_1": "Base", "lib_2": "Tempo"})
+                    html += generate_price_compare({"price_1": price_tempo, "price_2": price_base, "price_3": price_hchp, "lib_1": "Base", "lib_2": "HC/HP"})
+                    # evolution_1 = round(price_base - price_hchp, 2)
+                    # evolution_2 = round(price_tempo - price_hchp, 2)
+                    # color_1 = "green"
+                    # color_2 = "green"
+                    # if price_hchp < price_base:
+                    #     color_1 = "red"
+                    #     evolution_1 = f"+{evolution_1}"
+                    # if price_tempo and price_hchp < price_tempo:
+                    #     color_2 = "red"
+                    #     evolution_2 = f"+{evolution_2}"
+                    # text_color = "var(--text-color);"
+                    # if color_1 == "red" and color_2 == "red":
+                    #     text_color = "rgb(16, 150, 24);"
+                    # html += f"<td>" \
+                    #         f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{price_hchp} €</b></div>" \
+                    #         f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
+                    #         f"<span style='color: {color_2}; font-size: 12px'>Tempo : {evolution_2}€</span></div>" \
+                    #         f"</td>"
+                    # if price_tempo:
+                    #     evolution_1 = round(price_base - price_tempo, 2)
+                    #     evolution_2 = round(price_hchp - price_tempo, 2)
+                    #     color_1 = "green"
+                    #     color_2 = "green"
+                    #     if price_tempo < price_base:
+                    #         color_1 = "red"
+                    #         evolution_1 = f"+{evolution_1}"
+                    #     if price_tempo and price_tempo < price_hchp:
+                    #         color_2 = "red"
+                    #         evolution_2 = f"+{evolution_2}"
+                    #     text_color = "var(--text-color);"
+                    #     if color_1 == "red" and color_2 == "red":
+                    #         text_color = "rgb(16, 150, 24);"
+                    #     html += f"<td>" \
+                    #             f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{price_tempo} €</b></div>" \
+                    #             f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>Base : {evolution_1}€</span><br>" \
+                    #             f"<span style='color: {color_2}; font-size: 12px'>HC/HP : {evolution_2}€</span></div>" \
+                    #             f"</td>"
+
+=======
                         html += f"<td>{round(value_tempo, 2)} €</td>"
                     # html += str(value)
+>>>>>>> parent of e1abda8... 0.9.4
             html += "</table>"
+            # html += """
+            # <table style='border: none;'>
+            #         <tr>
+            #             <td style='width: 30px; background-color: green'>&nbsp;</td>
+            #             <td style='border: none'>Gain&nbsp;&nbsp;</td>
+            #             <td style='width: 30px; background-color: #FF0000'>&nbsp;</td>
+            #             <td style='border: none'>Perte</td>
+            #         </tr>
+            # </table>"""
         return html
 
     def recap(self, data):
@@ -906,4 +1004,67 @@ class UsagePoint:
             body += "</table>"
         else:
             body = "Pas de données."
+        return body
+
+    def recapv2(self, measurement_direction="consumption"):
+
+        idx = 0
+        finish = False
+        output_data = {
+            "years": {},
+            "linear": {}
+        }
+        body_year = ""
+        body_linear = ""
+        while not finish:
+            linear_data = Stat(self.usage_point_id, measurement_direction).get_year_linear(idx)
+            idx += 1
+            if linear_data["value"] == 0:
+                finish = True
+            else:
+                year = linear_data["end"].split("-")[0]
+                year_data = Stat(self.usage_point_id, measurement_direction).get_year(int(year))
+                output_data["years"][year] = year_data['value']
+                output_data["linear"][year] = {
+                    "begin": linear_data["begin"],
+                    "end": linear_data["end"],
+                    "value": linear_data["value"]
+                }
+
+        for year, value in output_data["years"].items():
+            body_year += f"""
+            <td class="table_recap_data">
+                <div class='recap_years_title'>{year}</div>
+                <div class='recap_years_value'>{round(value / 1000)} kWh</div>
+            </td>
+            """
+        for year, data in output_data["linear"].items():
+            last_year = str(int(year)-1)
+            data_last_years = 0
+            if last_year in output_data["linear"]:
+                data_last_years = round((100 * int(data["value"])) / int(output_data["linear"][last_year]["value"]) - 100, 2)
+            if data_last_years >= 0:
+                if data_last_years == 0:
+                    data_last_years_class = "blue"
+                else:
+                    data_last_years_class = "red"
+                    data_last_years = f"+{data_last_years}"
+            else:
+                data_last_years_class = "green"
+            body_linear += f"""
+            <td class="table_recap_data">
+                <div class='recap_years_title'>{data["begin"]} => {data["end"]}</div>
+                <div class='recap_years_value'>{round(data["value"] / 1000)} kWh</div>
+                <div class='recap_years_value {data_last_years_class}'><b>{data_last_years}%</b></div>
+            </td>
+            """
+        body = '<table class="table_recap"><tr>'
+        body += '<th class="table_recap_header">Annuel</th>'
+        body += body_year
+        body += "</tr>"
+        body += "<tr>"
+        body += '<th class="table_recap_header">Annuel linéaire</th>'
+        body += body_linear
+        body += "</tr>"
+        body += "</table>"
         return body

@@ -7,8 +7,8 @@ import pkg_resources
 from InquirerPy import inquirer, prompt
 from InquirerPy.base import Choice
 
-docker_compose = "docker-compose -f dev/docker-compose.dev.yaml"
-docker_compose_test = "docker-compose -f dev/docker-compose.test.yaml"
+docker_compose = "docker compose -f dev/docker-compose.dev.yaml"
+docker_compose_test = "docker compose -f dev/docker-compose.test.yaml"
 
 
 def cmd(cmd, path="./"):
@@ -83,7 +83,7 @@ def run(dev=False, debug=False, test=False):
     else:
         compose = docker_compose
     command = (
-        f"{compose} run -p 5000:5000 "
+        f"{compose} run -p 8080:5000 "
         f"{mode_debug} {mode_dev} myelectricaldata_import"
     )
     logging.info(command)

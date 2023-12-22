@@ -110,7 +110,7 @@ class HomeAssistant:
             self.ecowatt()
 
     def sensor(self, **kwargs):
-        logging.info(f"- sensor.{kwargs['device_name'].lower().replace(' ', '_')}_{kwargs['uniq_id']}")
+        logging.info(f"- sensor.{kwargs['device_name'].lower().replace(' ', '_')}_{kwargs['name'].lower().replace(' ', '_')}")
         topic = f"{self.discovery_prefix}/sensor/{kwargs['topic']}"
         if "device_class" not in kwargs:
             device_class = None
@@ -155,7 +155,7 @@ class HomeAssistant:
 
     # sensor.linky_01226049119129_myelectricaldata_consumption_01226049119129_history
     def last_x_day(self, days, measurement_direction):
-        uniq_id = f"linky_{measurement_direction}_last{days}day"
+        uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_last{days}day"
         end = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
         range = self.db.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
@@ -178,7 +178,7 @@ class HomeAssistant:
         )
 
     def history_usage_point_id(self, measurement_direction):
-        uniq_id = f"linky_{measurement_direction}_history"
+        uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_history"
         stats = Stat(self.usage_point_id, measurement_direction)
         state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
@@ -552,7 +552,7 @@ class HomeAssistant:
             # "info": info
         }
 
-        uniq_id = f"linky_{self.usage_point_id}_{measurement_direction}"
+        uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}"
         self.sensor(
             topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}",
             name=f"{measurement_direction}",
@@ -568,7 +568,7 @@ class HomeAssistant:
         )
 
     def tempo(self):
-        uniq_id = f"today"
+        uniq_id = f"myelectricaldata_tempo_today"
         begin = datetime.combine(datetime.now(), datetime.min.time())
         end = datetime.combine(datetime.now(), datetime.max.time())
         tempo_data = self.db.get_tempo_range(begin, end, "asc")
@@ -593,7 +593,7 @@ class HomeAssistant:
             state=state
         )
 
-        uniq_id = f"tomorrow"
+        uniq_id = f"myelectricaldata_tempo_tomorrow"
         begin = begin + timedelta(days=1)
         end = end + timedelta(days=1)
         tempo_data = self.db.get_tempo_range(begin, end, "asc")
@@ -623,7 +623,7 @@ class HomeAssistant:
             self.tempo_days_sensor(f"{color}", days)
 
     def tempo_days_sensor(self, color, days):
-        uniq_id = f"days_{color}"
+        uniq_id = f"myelectricaldata_tempo_days_{color}"
         self.sensor(
             topic=f"myelectricaldata_edf/tempo_days_{color}",
             name=f"Days {color.capitalize()}",
@@ -635,7 +635,7 @@ class HomeAssistant:
         )
 
     def tempo_info(self):
-        uniq_id = f"info"
+        uniq_id = f"myelectricaldata_tempo_info"
         tempo_days = self.db.get_tempo_config("days")
         tempo_price = self.db.get_tempo_config("price")
         if 22 > int(datetime.now().strftime("%H")) < 6:
@@ -676,7 +676,7 @@ class HomeAssistant:
                                     f"{color.split('_')[0].capitalize()}{color.split('_')[1].capitalize()}")
 
     def tempo_price_sensor(self, color, price, name):
-        uniq_id = f"price_{color}"
+        uniq_id = f"myelectricaldata_tempo_price_{color}"
         name = f"{name[0:-2]} {name[-2:]}"
         self.sensor(
             topic=f"myelectricaldata_edf/tempo_price_{color}",
@@ -695,7 +695,7 @@ class HomeAssistant:
         self.ecowatt_delta("J2", 2)
 
     def ecowatt_delta(self, name, delta):
-        uniq_id = f"ecowatt_{name}"
+        uniq_id = f"myelectricaldata_ecowatt_{name}"
         current_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
         fetch_date = current_date - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")

@@ -14,3 +14,4 @@
 /app/templates/models/__pycache__/
 /app/models/__pycache__/
 /app/routers/__pycache__/
+tests/__pycache__/test_jobs.cpython-310-pytest-7.4.0.pyc
