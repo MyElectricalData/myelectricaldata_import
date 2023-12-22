@@ -641,6 +641,14 @@ class Database:
         self.session.close()
 
     def delete_usage_point(self, usage_point_id):
+        self.session.execute(delete(Addresses).where(Addresses.usage_point_id == usage_point_id))
+        self.session.execute(delete(Contracts).where(Contracts.usage_point_id == usage_point_id))
+        self.session.execute(
+            delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id))
+        self.session.execute(delete(ConsumptionDetail).where(ConsumptionDetail.usage_point_id == usage_point_id))
+        self.session.execute(delete(ConsumptionDaily).where(ConsumptionDaily.usage_point_id == usage_point_id))
+        self.session.execute(delete(ProductionDetail).where(ProductionDetail.usage_point_id == usage_point_id))
+        self.session.execute(delete(ProductionDaily).where(ProductionDaily.usage_point_id == usage_point_id))
         self.session.execute(delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id))
         self.session.flush()
         self.session.close()
