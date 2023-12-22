@@ -3,9 +3,9 @@ name: Run Pytests
 on:
   # Run workflow automatically whenever the app or tests are updated
   push:
-    paths:
-      - app/**
-      - tests/**
+#    paths:
+#      - app/**
+#      - tests/**
 
 jobs:
   pytest:
