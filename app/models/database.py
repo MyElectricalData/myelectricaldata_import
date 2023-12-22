@@ -9,6 +9,7 @@ from os.path import exists
 from sqlalchemy import (create_engine, delete, inspect, update, select, func, desc, asc)
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.pool import NullPool
+
 from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
@@ -25,17 +26,14 @@ from db_schema import (
     Ecowatt,
     Statistique
 )
-from dependencies import str2bool, title, get_version, title_warning, APPLICATION_PATH_DATA, APPLICATION_PATH
-
-from alembic.config import Config as AlembicConfig
-from alembic import command
+from dependencies import str2bool, title, get_version, title_warning
 
 # available_database = ["sqlite", "postgresql", "mysql+pymysql"]
 available_database = ["sqlite", "postgresql"]
 
 
 class Database:
-    def __init__(self, config, path=APPLICATION_PATH_DATA):
+    def __init__(self, config, path="/data"):
         self.config = config
         self.path = path
 
@@ -50,17 +48,7 @@ class Database:
             else:
                 logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
 
-        # Use alembic commands rather than dropping into shell for running migrations
-        alembic_dir = os.path.join(APPLICATION_PATH, "alembic")
-        alembic_ini = os.path.join(APPLICATION_PATH, "alembic.ini")
-        alembic_cfg = AlembicConfig(alembic_ini)
-        alembic_cfg.set_main_option('script_location', alembic_dir)
-
-        # Define DB_URL envvar rather than using set_main_option so that command line
-        # migrations are still possible
-        os.environ["DB_URL"] = self.uri
-
-        command.upgrade(alembic_cfg, "head")
+        os.system(f"cd /app; DB_URL='{self.uri}' alembic upgrade head ")
 
         self.engine = create_engine(
             self.uri, echo=False,
