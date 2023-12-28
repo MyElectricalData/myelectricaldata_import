@@ -124,7 +124,8 @@ class Detail:
                             date_object = datetime.strptime(date, self.date_detail_format)
                             # CHANGE DATE TO BEGIN RANGE
                             date = date_object - timedelta(minutes=int(interval))
-                            date = date.strftime(self.date_detail_format)
+                            # date = date.strftime(self.date_detail_format)
+                            # print(date)
                             # GET WEEKDAY
                             # date_days = date_object.weekday()
                             # date_hour_minute = date_object.strftime('%H:%M')
