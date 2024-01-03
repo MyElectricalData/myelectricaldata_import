@@ -9,7 +9,6 @@ from os.path import exists
 from sqlalchemy import (create_engine, delete, inspect, update, select, func, desc, asc)
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.pool import NullPool
-
 from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
@@ -26,14 +25,14 @@ from db_schema import (
     Ecowatt,
     Statistique
 )
-from dependencies import str2bool, title, get_version, title_warning
+from dependencies import str2bool, title, get_version, title_warning, APPLICATION_PATH_DATA, APPLICATION_PATH
 
 # available_database = ["sqlite", "postgresql", "mysql+pymysql"]
 available_database = ["sqlite", "postgresql"]
 
 
 class Database:
-    def __init__(self, config, path="/data"):
+    def __init__(self, config, path=APPLICATION_PATH_DATA):
         self.config = config
         self.path = path
 
@@ -48,7 +47,7 @@ class Database:
             else:
                 logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
 
-        os.system(f"cd /app; DB_URL='{self.uri}' alembic upgrade head ")
+        os.system(f"cd {APPLICATION_PATH}; DB_URL='{self.uri}' alembic upgrade head ")
 
         self.engine = create_engine(
             self.uri, echo=False,

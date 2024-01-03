@@ -4,12 +4,12 @@ import re
 
 import yaml
 
-from dependencies import title, separator
+from dependencies import title, separator, APPLICATION_PATH_DATA
 
 
 class Config:
 
-    def __init__(self, path="/data"):
+    def __init__(self, path=APPLICATION_PATH_DATA):
         self.path = path
         self.db = None
         self.file = "config.yaml"
@@ -128,14 +128,14 @@ class Config:
     def load(self):
         config_file = f'{self.path_file}'
         if os.path.exists(config_file):
-            with open(f'{self.path}/config.yaml') as file:
+            with open(config_file) as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         else:
             f = open(config_file, "a")
             f.write(yaml.dump(self.default))
             f.close()
-            with open(f'{self.path}/config.yaml') as file:
+            with open(config_file) as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         if self.config is None:
