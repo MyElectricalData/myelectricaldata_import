@@ -714,16 +714,27 @@ class UsagePoint:
                 self.recap_production_data != {}
                 and self.usage_point_config.production != {}
         ):
-            compare_compsuption_production = {}
-            for month, value in self.recap_consumption_data[year]["month"].items():
-                if month not in compare_compsuption_production:
-                    compare_compsuption_production[month] = []
-                compare_compsuption_production[month].append(float(value) / 1000)
+            # For a given year, we want to return the union of all months where
+            # energy was either consumed or produced.
+            # e.g. if there was [consumption C1, no production] in Jan,
+            #      and [no consumption, production P2] in Feb
+            #      we will return: [Jan, C1, 0], [Feb, 0, P2]
+            compare_comsuption_production = {}
+            consumption_months = []
+            if year in self.recap_consumption_data:
+                consumption_months = self.recap_consumption_data[year].get("month", {}).keys()
 
-            for month, value in self.recap_production_data[year]["month"].items():
-                if month not in compare_compsuption_production:
-                    compare_compsuption_production[month] = []
-                compare_compsuption_production[month].append(float(value) / 1000)
+            production_months = []
+            if year in self.recap_production_data:
+                production_months = self.recap_production_data[year].get("month", {}).keys()
+
+            all_months = set(consumption_months) | set(production_months)
+
+            for month in all_months:
+                consumption = self.recap_consumption_data[year]["month"][month] if month in consumption_months else 0
+                production = self.recap_production_data[year]["month"][month] if month in production_months else 0
+                compare_comsuption_production[month] = [float(consumption) / 1000, float(production) / 1000]
+
             self.javascript += """            
             google.charts.load("current", {packages:["corechart"]});
             google.charts.setOnLoadCallback(drawChartProductionVsConsumption""" + year + """);
@@ -731,7 +742,7 @@ class UsagePoint:
                 var data = google.visualization.arrayToDataTable([
                 ['Mois', 'Consommation', 'Production'],
             """
-            for month, data in compare_compsuption_production.items():
+            for month, data in compare_comsuption_production.items():
                 table_value = ""
                 for idx, value in enumerate(data):
                     if value == "":

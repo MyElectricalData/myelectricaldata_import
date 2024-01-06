@@ -68,7 +68,7 @@ def test_header_generate(job, caplog):
     expected_logs = ""
     # FIXME: header_generate() assumes job.usage_point_config is populated from a side effect
     for job.usage_point_config in job.usage_points:
-        assert {'Authorization': '', 'Content-Type': 'application/json', 'call-service': 'myelectricaldata',
+        assert {'Authorization': job.usage_point_config.token, 'Content-Type': 'application/json', 'call-service': 'myelectricaldata',
                 'version': get_version()} == job.header_generate()
     assert expected_logs == caplog.text
 
