@@ -52,6 +52,7 @@ mqtt:
   client_id: myelectricaldata     # DOIT ETRE UNIQUE SUR LA TOTALITE DES CLIENTS CONNECTE AU SERVEUR MQTT
   retain: true
   qos: 0
+#  ca_cert: /certs/ca.pem         # Certificate Authority a utiliser pour etablir une connection SSL au server MQTT
 # Configuration SSL optionnel.
 #ssl:
 #  keyfile: "/data/key.pem"
