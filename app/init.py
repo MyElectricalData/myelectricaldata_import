@@ -15,8 +15,9 @@ from models.mqtt import Mqtt
 
 # LOGGING CONFIGURATION
 config = {}
-if path.exists("/data/config.yaml"):
-    with open(f'/data/config.yaml') as file:
+CONFIG_PATH = path.join(APPLICATION_PATH_DATA, "config.yaml")
+if path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
 if "DEBUG" in environ and str2bool(getenv("DEBUG")):
@@ -43,8 +44,8 @@ else:
         level=logging_level
     )
 
-if not path.exists("/data/config.yaml"):
-    logging.critical("Config file is not found (/data/config.yaml)")
+if not path.exists(CONFIG_PATH):
+    logging.critical(f"Config file is not found ({CONFIG_PATH})")
     exit()
 
 
