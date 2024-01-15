@@ -63,7 +63,7 @@ INFO = {
     "description": "",
     "contact": {
         "name": "m4dm4rtig4n",
-        "url": "https://github.com/MyElectricalData/myelectricaldata/issues",
+        "url": "https://github.com/MyElectricalData/myelectricaldata_import/issues",
     },
     "license_info": {
         "name": "Apache 2.0",
