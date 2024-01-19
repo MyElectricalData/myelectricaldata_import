@@ -337,6 +337,30 @@ class HomeAssistant:
             "begin": yesterday_hc_hp["begin"],
             "end": yesterday_hc_hp["end"]
         }
+        # current_week_hc_hp
+        current_week_hc_hp = stats.current_week_hc_hp()
+        current_week_hc_value = current_week_hc_hp["value"]["hc"]
+        current_week_hp_value = current_week_hc_hp["value"]["hp"]
+        info["current_week_hc_hp"] = {
+            "begin": current_week_hc_hp["begin"],
+            "end": current_week_hc_hp["end"]
+        }         
+        # current_month_hc_hp
+        current_month_hc_hp = stats.current_month_hc_hp()
+        current_month_hc_value = current_month_hc_hp["value"]["hc"]
+        current_month_hp_value = current_month_hc_hp["value"]["hp"]
+        info["current_month_hc_hp"] = {
+            "begin": current_month_hc_hp["begin"],
+            "end": current_month_hc_hp["end"]
+        } 
+        # current_year_hc_hp
+        current_year_hc_hp = stats.current_year_hc_hp()
+        current_year_hc_value = current_year_hc_hp["value"]["hc"]
+        current_year_hp_value = current_year_hc_hp["value"]["hp"]
+        info["current_year_hc_hp"] = {
+            "begin": current_year_hc_hp["begin"],
+            "end": current_year_hc_hp["end"]
+        }        
 
         # evolution
         peak_offpeak_percent = stats.peak_offpeak_percent()
@@ -457,6 +481,8 @@ class HomeAssistant:
                 convert_kw(stats.daily(6)["value"])
             ],
             "current_week": convert_kw(current_week_value),
+            "current_week_HC": convert_kw(current_week_hc_value),
+            "current_week_HP": convert_kw(current_week_hp_value),            
             "last_week": convert_kw(last_week_value),
             "day_1": convert_kw(stats.daily(0)["value"]),
             "day_2": convert_kw(stats.daily(1)["value"]),
@@ -468,10 +494,14 @@ class HomeAssistant:
             "current_week_last_year": convert_kw(current_week_last_year_value),
             "last_month": convert_kw(last_month_value),
             "current_month": convert_kw(current_month_value),
+            "current_month_HC": convert_kw(current_month_hc_value),
+            "current_month_HP": convert_kw(current_month_hp_value),
             "current_month_last_year": convert_kw(current_month_last_year_value),
             "last_month_last_year": convert_kw(last_month_last_year_value),
             "last_year": convert_kw(last_year_value),
             "current_year": convert_kw(current_year_value),
+            "current_year_HC": convert_kw(current_year_hc_value),
+            "current_year_HP": convert_kw(current_year_hp_value),            
             "current_year_last_year": convert_kw(current_year_last_year_value),
             "dailyweek": [
                 stats.daily(0)["begin"],

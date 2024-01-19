@@ -39,6 +39,12 @@ class Stat:
         self.value_last_year = 0
         self.value_yesterday_hp = 0
         self.value_yesterday_hc = 0
+        self.value_current_week_hc = 0
+        self.value_current_week_hp = 0        
+        self.value_current_month_hc = 0
+        self.value_current_month_hp = 0
+        self.value_current_year_hc = 0
+        self.value_current_year_hp = 0        
         self.value_peak_offpeak_percent_hp = 0
         self.value_peak_offpeak_percent_hc = 0
         self.value_current_week_evolution = 0
@@ -127,7 +133,7 @@ class Stat:
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format)
         }
-
+        
     def max_power(self, index=0):
         now_date = datetime.now(timezone.utc)
         yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
@@ -494,6 +500,72 @@ class Stat:
             "end": end.strftime(self.date_format)
         }
 
+    def current_week_hc_hp(self):
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date - relativedelta(weeks=1), datetime.min.time())
+        end = datetime.combine(yesterday_date, datetime.max.time())
+        for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
+            measure_type = self.get_mesure_type(day.date)
+            if measure_type == "HP":
+                self.value_current_week_hp = self.value_current_week_hp + (day.value / (60 / day.interval))
+            if measure_type == "HC":
+                self.value_current_week_hc = self.value_current_week_hc + (day.value / (60 / day.interval))
+        logging.debug(f" current_week_hc => HC : {self.value_current_week_hc}")
+        logging.debug(f" current_week_hp => HP : {self.value_current_week_hp}")
+        return {
+            "value": {
+                "hc": self.value_current_week_hc,
+                "hp": self.value_current_week_hp
+            },
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }
+        
+    def current_year_hc_hp(self):
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date.replace(month=1, day=1), datetime.min.time())
+        end = yesterday_date
+        for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
+            measure_type = self.get_mesure_type(day.date)
+            if measure_type == "HP":
+                self.value_current_year_hp = self.value_current_year_hp + (day.value / (60 / day.interval))
+            if measure_type == "HC":
+                self.value_current_year_hc = self.value_current_year_hc + (day.value / (60 / day.interval))
+        logging.debug(f" current_year_hc => HC : {self.value_current_year_hc}")
+        logging.debug(f" current_year_hp => HP : {self.value_current_year_hp}")
+        return {
+            "value": {
+                "hc": self.value_current_year_hc,
+                "hp": self.value_current_year_hp
+            },
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }   
+
+    def current_month_hc_hp(self):
+        now_date = datetime.now(timezone.utc)
+        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
+        begin = datetime.combine(now_date.replace(day=1), datetime.min.time())
+        end = yesterday_date
+        for day in self.db.get_detail_range(self.usage_point_id, begin, end, self.measurement_direction):
+            measure_type = self.get_mesure_type(day.date)
+            if measure_type == "HP":
+                self.value_current_month_hp = self.value_current_month_hp + (day.value / (60 / day.interval))
+            if measure_type == "HC":
+                self.value_current_month_hc = self.value_current_month_hc + (day.value / (60 / day.interval))
+        logging.debug(f" current_month_hc => HC : {self.value_current_month_hc}")
+        logging.debug(f" current_month_hp => HP : {self.value_current_month_hp}")
+        return {
+            "value": {
+                "hc": self.value_current_month_hc,
+                "hp": self.value_current_month_hp
+            },
+            "begin": begin.strftime(self.date_format),
+            "end": end.strftime(self.date_format)
+        }  
+
     def peak_offpeak_percent(self):
         now_date = datetime.now(timezone.utc)
         yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
@@ -676,7 +748,7 @@ class Stat:
                     if result:
                         measure_type = "HC"
         return measure_type
-
+    
     def generate_price(self):
         data = self.db.get_detail_all(self.usage_point_id, self.measurement_direction)
         result = {}
@@ -689,9 +761,7 @@ class Stat:
                 month = item.date.strftime("%m")
                 if month != last_month:
                     logging.info(f" - {year} / {month}")
-
                 measure_type = self.get_mesure_type(item.date)
-
                 tempo_date = datetime.combine(item.date, datetime.min.time())
                 interval = item.interval
                 if year not in result:
