@@ -16,7 +16,8 @@ class Mqtt:
             prefix="myelectricaldata",
             retain=True,
             qos=0,
-            port=1883
+            port=1883,
+            ca_cert=None
     ):
         self.hostname = hostname
         self.port = port
@@ -28,6 +29,7 @@ class Mqtt:
         self.qos = qos
 
         self.client = {}
+        self.ca_cert = ca_cert
         self.connect()
 
     def connect(self):
@@ -37,6 +39,9 @@ class Mqtt:
             self.client = mqtt.Client(self.client_id)
             if self.username != "" and self.password != "":
                 self.client.username_pw_set(self.username, self.password)
+            if self.ca_cert:
+                logging.info(f"Using ca_cert: {self.ca_cert}")
+                self.client.tls_set(ca_certs=self.ca_cert)
             self.client.connect(self.hostname, self.port)
             self.client.loop_start()
             title("Connection success")
