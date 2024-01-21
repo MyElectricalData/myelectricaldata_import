@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12.1-slim
 
 RUN apt-get update && \
     apt-get install -y \
@@ -17,20 +17,14 @@ ENV TZ=Europe/Paris
 
 RUN pip install --upgrade pip pip-tools setuptools
 
-COPY ./app /app
+COPY ./src /app
 
 RUN pip-compile -o /app/requirements.txt /app/pyproject.toml
 RUN pip install -r /app/requirements.txt
-RUN #pip install git+https://github.com/influxdata/influxdb-client-python.git@master
 
 RUN mkdir /data
 RUN mkdir /log
 
-#RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-#RUN apt-get install wget
-#RUN /bin/wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-#RUN apt-get update
-#RUN apt-get -y install postgresql
 RUN apt-get clean
 
 CMD ["python", "-u", "/app/main.py"]

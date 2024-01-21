@@ -29,11 +29,11 @@ def mock_config(data_dir):
                 "consumption": True,
                 "consumption_detail": True,
                 "production": True,
-                "production_detail": True
+                "production_detail": True,
             },
             "pdl2": {"enable": False},
-            "pdl3": {"enable": False}
-        }
+            "pdl3": {"enable": False},
+        },
     }
 
     with open(os.path.join(data_dir, filename), "w") as fp:
@@ -51,6 +51,7 @@ def mock_datadir():
 # TODO: Extract as a function in main.py to avoid duplication
 def copied_from_main():
     from init import CONFIG, DB
+
     usage_point_list = []
     if CONFIG.list_usage_point() is not None:
         for upi, upi_data in CONFIG.list_usage_point().items():
