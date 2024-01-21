@@ -122,4 +122,5 @@ if MQTT_CONFIG and "enable" in MQTT_CONFIG and str2bool(MQTT_CONFIG["enable"]):
         prefix=MQTT_CONFIG["prefix"],
         retain=MQTT_CONFIG["retain"],
         qos=MQTT_CONFIG["qos"],
+        ca_cert=MQTT_CONFIG.get("ca_cert"),
     )
