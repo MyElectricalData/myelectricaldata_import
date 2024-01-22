@@ -1,20 +1,20 @@
 version: "3.9"
 services:
-  myelectricaldata_import:
-    build: ./../
-#    image: m4dm4rtig4n/myelectricaldata:0.8.13-beta2
-    environment:
-      TZ: Europe/Paris
-    ports:
-      - '5000:5001'
-    links:
-      - influxdb
-      - mosquitto
-      - postgres
-    volumes:
-      - ./../data/cache:/data
-      - ./../data/log:/log
-      - ./../app:/app
+#  myelectricaldata_import:
+#    build: ./../
+##    image: m4dm4rtig4n/myelectricaldata:0.8.13-beta2
+#    environment:
+#      TZ: Europe/Paris
+#    ports:
+#      - '5000:5000'
+#    links:
+#      - influxdb
+#      - mosquitto
+#      - postgres
+#    volumes:
+#      - ./../data/cache:/data
+#      - ./../data/log:/log
+#      - ./../app:/app
       
   influxdb:
     image: influxdb:2.4

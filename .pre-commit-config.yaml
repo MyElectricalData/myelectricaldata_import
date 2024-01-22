@@ -1,0 +1,26 @@
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        name: black
+        always_run: true
+        entry: bash -c 'make black'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+#      - id: flake8
+#        name: flake8
+#        always_run: true
+#        entry: bash -c 'make flake8'
+#        language: system
+#        types: [python]
+#        pass_filenames: false
+
+#      - id: pylint
+#        name: pylint
+#        always_run: true
+#        entry: bash -c 'make pylint'
+#        language: system
+#        types: [python]
+#        pass_filenames: false

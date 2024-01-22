@@ -71,7 +71,7 @@ services:
       - mosquitto
     volumes:
       - ./data:/data
-      - ./app:/app
+      - ./src:/app
     command: tail -f /dev/null
      
   influxdb:
