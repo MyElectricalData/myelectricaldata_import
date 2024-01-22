@@ -2,6 +2,19 @@
 
 
 
+## v0.10.0-rc.6 (2024-01-22)
+
+### Fix
+
+* fix: outpit indentation ([`54a818b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/54a818b6afa5c406861c5636b2b32fdd0868570a))
+
+* fix: regenerate version to debug ([`97ee434`](https://github.com/MyElectricalData/myelectricaldata_import/commit/97ee434c1b89de0ab723f13a34bfbcb2071405e8))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`eba1f8f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/eba1f8ffb386fa1be03e29c93ae8fe022c95d9fc))
+
+
 ## v0.10.0-rc.5 (2024-01-22)
 
 ### Fix
