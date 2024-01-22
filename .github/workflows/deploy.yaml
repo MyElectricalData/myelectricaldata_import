@@ -21,19 +21,19 @@ jobs:
         with:
           args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
 
-        - name: Get version
-          id: informations
-          run: |
-            version=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"')
-            echo "version=${version}" >> "$GITHUB_OUTPUT"
-            release_type=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
-            if [ "$release_type" == "" ]; then
-              # RELEASE
-              echo "release_type=release" >> "$GITHUB_OUTPUT"
-            else
-              # PRERELEASE
-              echo "release_type=prerelease" >> "$GITHUB_OUTPUT"
-            fi
+      - name: Get version
+        id: informations
+        run: |
+          version=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"')
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          release_type=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
+          if [ "$release_type" == "" ]; then
+            # RELEASE
+            echo "release_type=release" >> "$GITHUB_OUTPUT"
+          else
+            # PRERELEASE
+            echo "release_type=prerelease" >> "$GITHUB_OUTPUT"
+          fi
     outputs:
       version: ${{ steps.informations.outputs.version }}
       release_type: ${{ steps.informations.outputs.release_type }}
