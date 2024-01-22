@@ -2,6 +2,13 @@
 
 
 
+## v0.10.0-rc.3 (2024-01-22)
+
+### Fix
+
+* fix: runs-on worker ([`7a1800b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7a1800b7e5b4b066c3684629072851a56b6a7d18))
+
+
 ## v0.10.0-rc.2 (2024-01-22)
 
 ### Fix
