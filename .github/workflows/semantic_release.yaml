@@ -1,0 +1,41 @@
+name: "semantic_release"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  #################################################################################################################
+  # SEMANTIC RELEASE
+  Semantic-Release:
+    runs-on: [self-hosted, decathlon]
+    environment: production
+    concurrency: release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      ################################################################################################################
+      # PRE CLEAN
+      - name: Pre clean
+        uses: dktunited/.github/actions/cleaner@main
+
+      #################################################################################################################
+      # GENERATE RELEASE
+      - name: Release
+        uses: python-semantic-release/python-semantic-release@v8.7.0
+        with:
+         directory: ./
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         push: true
+
+      #################################################################################################################
+      # Post CLEAN
+      - name: Post clean
+        uses: dktunited/.github/actions/cleaner@main
