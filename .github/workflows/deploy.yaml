@@ -75,8 +75,8 @@ jobs:
             m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}            
             m4dm4rtig4n/myelectricaldata:latest-dev
 
-#      ##################################################################################################################
-#      # LATEST
+      ##################################################################################################################
+      # LATEST
       - name: Build and push
         uses: docker/build-push-action@v5
         if: ${{ needs.informations.outputs.release_type }} == "release"
@@ -131,8 +131,8 @@ jobs:
             m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}            
             m4dm4rtig4n/myelectricaldata:latest-dev
 
-#      ##################################################################################################################
-#      # LATEST
+      ##################################################################################################################
+      # LATEST
       - name: Build and push
         uses: docker/build-push-action@v5
         if: ${{ needs.informations.outputs.release_type }} == "release"
@@ -187,8 +187,8 @@ jobs:
             m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}            
             m4dm4rtig4n/myelectricaldata:latest-dev
 
-#      ##################################################################################################################
-#      # LATEST
+      ##################################################################################################################
+      # LATEST
       - name: Build and push
         uses: docker/build-push-action@v5
         if: ${{ needs.informations.outputs.release_type }} == "release"
@@ -243,8 +243,8 @@ jobs:
             m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}            
             m4dm4rtig4n/myelectricaldata:latest-dev
 
-#      ##################################################################################################################
-#      # LATEST
+      ##################################################################################################################
+      # LATEST
       - name: Build and push
         uses: docker/build-push-action@v5
         if: ${{ needs.informations.outputs.release_type }} == "release"
@@ -265,7 +265,7 @@ jobs:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}**/latest ARMv7 image version is up to date'
 
 
- Finish:
+  Finish:
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Discord notification
