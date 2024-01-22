@@ -2,6 +2,19 @@
 
 
 
+## v0.10.0-rc.5 (2024-01-22)
+
+### Fix
+
+* fix: vars prefix ([`467f8bd`](https://github.com/MyElectricalData/myelectricaldata_import/commit/467f8bd65c49e807d9f5de2cbd7dd2f52a171b40))
+
+* fix: deploy version vars ([`844d1ca`](https://github.com/MyElectricalData/myelectricaldata_import/commit/844d1ca6a8adaad552ff1ac4a0c23871fa3a4ef9))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`c9f334c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c9f334c192e79adc647e829018b5627a68707a02))
+
+
 ## v0.10.0-rc.4 (2024-01-22)
 
 ### Fix
