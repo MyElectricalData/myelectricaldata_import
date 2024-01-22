@@ -2,6 +2,17 @@
 
 
 
+## v0.10.0-rc.7 (2024-01-22)
+
+### Fix
+
+* fix: remove pip-compile ([`6049475`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6049475acf67b9c4f7fcc5b659a2fb8c22bef79a))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`51ee6c9`](https://github.com/MyElectricalData/myelectricaldata_import/commit/51ee6c9ae2a91b7d3c1251efd4e87c8658a3badc))
+
+
 ## v0.10.0-rc.6 (2024-01-22)
 
 ### Fix
