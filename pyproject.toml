@@ -71,7 +71,7 @@ version_toml = [
 
 commit_version_number = true
 version_variables = [
-    "src/main.py.py:VERSION",
+    "src/main.py:VERSION",
 ]
 
 [tool.semantic_release.branches.main]
