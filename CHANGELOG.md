@@ -2,6 +2,17 @@
 
 
 
+## v0.10.0-rc.10 (2024-01-22)
+
+### Fix
+
+* fix: cd yaml ([`f1857d6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f1857d6d353c7e4f39f77b900aa76f67a0764d8e))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`1d98b6b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1d98b6b4c4b790825abc3fab702627b90e6a3a4e))
+
+
 ## v0.10.0-rc.9 (2024-01-22)
 
 ### Fix
