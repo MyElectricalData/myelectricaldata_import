@@ -17,9 +17,9 @@ jobs:
       - name: Get version
         id: informations
         run: |
-          version=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"')
+          version=$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"')
           echo "version=${version}" >> "$GITHUB_OUTPUT"
-          release_type=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
+          release_type=$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
           if [ "$release_type" == "" ]; then
             # RELEASE
             echo "release_type=release" >> "$GITHUB_OUTPUT"
@@ -47,7 +47,7 @@ jobs:
   # BUILD & PUSH IMAGE
   Build-And-Push-Image:
     needs: [informations, Begin]
-    name: Build & Push AMD64
+    name: Build & Push
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
@@ -102,7 +102,7 @@ jobs:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}/latest** image version is up to date'
 
   Finish:
-    needs: [Build-And-Push-Image]
+    needs: [informations, Build-And-Push-Image]
     name: Finish
     runs-on: [ ubuntu-latest ]
     steps:

@@ -151,6 +151,7 @@ class Detail:
                                 interval=interval,
                                 measure_type="",
                                 blacklist=0,
+                                mesure_type=self.measure_type,
                             )
                         return meter_reading["interval_reading"]
                     else:

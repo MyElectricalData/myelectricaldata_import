@@ -5,13 +5,14 @@ from init import CONFIG, DB
 from models.ajax import Ajax
 from templates.index import Index
 from templates.usage_point import UsagePoint
+from dependencies import APPLICATION_PATH
 
 ROUTER = APIRouter(tags=["HTML"], include_in_schema=False)
 
 
 @ROUTER.get("/favicon.ico")
 async def favicon():
-    return FileResponse("/app/static/favicon.ico")
+    return FileResponse(f"{APPLICATION_PATH}/static/favicon.ico")
 
 
 @ROUTER.get("/", response_class=HTMLResponse)

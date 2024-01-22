@@ -30,6 +30,7 @@ def mock_config(data_dir):
                 "consumption_detail": True,
                 "production": True,
                 "production_detail": True,
+                "token": "abcd",
             },
             "pdl2": {"enable": False},
             "pdl3": {"enable": False},

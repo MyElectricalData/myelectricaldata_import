@@ -1,9 +1,11 @@
 import datetime
 import logging
 from math import floor
-from os import environ, getenv, path
+from os import environ, getenv
 
 from art import decor, text2art
+
+from __version__ import VERSION
 
 if environ.get("APPLICATION_PATH") is None:
     APPLICATION_PATH = "/app"
@@ -138,11 +140,7 @@ def finish():
 
 
 def get_version():
-    version_file = path.join(APPLICATION_PATH, "VERSION")
-    f = open(version_file, "r")
-    version = f.read()
-    f.close()
-    return version.strip()
+    return VERSION
 
 
 def log_usage_point_id(usage_point_id):
