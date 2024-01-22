@@ -1,8 +1,6 @@
-name: "[STAGING] Build/Push Image to GAR"
+name: "Build/Push Image to Docker Hub"
 
 on:
-#  release:
-#    types: [published]
   workflow_run:
     workflows: ["semantic_release"]
     types:
@@ -16,7 +14,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Get version
-        id: information
+        id: informations
         run: |
           version=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"')
           echo "version=${version}" >> "$GITHUB_ENV"
@@ -28,6 +26,9 @@ jobs:
             # PRERELEASE
             echo "release_type=prerelease" >> "GITHUB_OUTPUT"
           fi
+      outputs:
+        version: ${{ steps.informations.outputs.version }}
+        release_type: ${{ steps.informations.outputs.release_type }}
 
   #################################################################################################################
   # BUILD & PUSH IMAGE
@@ -38,7 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
+      #################################################################################################################
+      # SETUP DOCKER
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -48,6 +50,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Discord notification building state
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -55,7 +58,7 @@ jobs:
         with:
           args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
 
-      ##################################################################################################################
+      #################################################################################################################
       # VERSION
       - name: Build and push ${{ needs.informations.outputs.version }}
         uses: docker/build-push-action@v3
@@ -69,7 +72,7 @@ jobs:
             m4dm4rtig4n/enedisgateway2mqtt:${{ needs.informations.outputs.version }}
             m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}
 
-      - name: Discord notification {{ needs.informations.outputs.version }} image version is up to date
+      - name: Discord notification ${{ needs.informations.outputs.version }} image version is up to date
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
