@@ -2,6 +2,17 @@
 
 
 
+## v0.10.0-rc.14 (2024-01-22)
+
+### Fix
+
+* fix: build arch ([`94a47c3`](https://github.com/MyElectricalData/myelectricaldata_import/commit/94a47c36710954d42d87732f112456aecc87a75e))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`2634fe2`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2634fe2fec5f07dfe90431d8248a9219924f96ba))
+
+
 ## v0.10.0-rc.13 (2024-01-22)
 
 ### Fix
