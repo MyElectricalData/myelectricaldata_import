@@ -2,6 +2,17 @@
 
 
 
+## v0.10.0-rc.9 (2024-01-22)
+
+### Fix
+
+* fix: yaml format ([`56fee28`](https://github.com/MyElectricalData/myelectricaldata_import/commit/56fee28df353632632066fcfac15e45536e7db7c))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`b434e2e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b434e2e0516da067c736ec036297be9e786cce1f))
+
+
 ## v0.10.0-rc.8 (2024-01-22)
 
 ### Fix
