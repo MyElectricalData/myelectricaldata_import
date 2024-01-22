@@ -27,9 +27,9 @@ jobs:
             # PRERELEASE
             echo "release_type=prerelease" >> "$GITHUB_OUTPUT"
           fi
-      outputs:
-        version: ${{ steps.informations.outputs.version }}
-        release_type: ${{ steps.informations.outputs.release_type }}
+    outputs:
+      version: ${{ steps.informations.outputs.version }}
+      release_type: ${{ steps.informations.outputs.release_type }}
 
   #################################################################################################################
   # BUILD & PUSH IMAGE
