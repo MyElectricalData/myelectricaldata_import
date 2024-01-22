@@ -2,6 +2,13 @@
 
 
 
+## v0.10.0-rc.8 (2024-01-22)
+
+### Fix
+
+* fix: dispath docker arch ([`47e0941`](https://github.com/MyElectricalData/myelectricaldata_import/commit/47e0941239b172ce6fec13f4d6f8445b758a8299))
+
+
 ## v0.10.0-rc.7 (2024-01-22)
 
 ### Fix

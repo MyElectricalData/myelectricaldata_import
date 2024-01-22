@@ -17,7 +17,7 @@ from routers import data
 from routers import html
 from routers import info
 
-VERSION = "0.10.0-rc.7"
+VERSION = "0.10.0-rc.8"
 
 if "DEV" in environ or "DEBUG" in environ:
     title_warning("Run in Development mode")
