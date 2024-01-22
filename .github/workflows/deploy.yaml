@@ -20,18 +20,6 @@ jobs:
         run: |
           version=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"')
           echo "version=${version}" >> "$GITHUB_ENV"
-          release_type=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
-          if [ "$release_type" == "" ]; then
-            # RELEASE
-            echo "release_type=release" >> "$GITHUB_ENV"
-          else
-            # PRERELEASE
-            echo "release_type=prerelease" >> "$GITHUB_ENV"
-          fi
-
-    outputs:
-      version: env.version
-      release_type: env.release_type
 
   #################################################################################################################
   # BUILD & PUSH IMAGE
@@ -58,9 +46,7 @@ jobs:
         uses: Ilshidur/action-discord@master
         with:
           args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
-      - name: Switch app/VERSION
-        run: |
-          echo "${{ needs.informations.outputs.version }}" > app/VERSION
+
       ##################################################################################################################
       # VERSION
       - name: Build and push ${{ needs.informations.outputs.version }}
