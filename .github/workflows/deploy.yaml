@@ -102,7 +102,7 @@ jobs:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}/latest** image version is up to date'
 
   Finish:
-    needs: [Build-And-Push-Image-AMD64, Build-And-Push-Image-ARM64, Build-And-Push-Image-ARMv6, Build-And-Push-Image-ARMv7]
+    needs: [Build-And-Push-Image]
     name: Finish
     runs-on: [ ubuntu-latest ]
     steps:
