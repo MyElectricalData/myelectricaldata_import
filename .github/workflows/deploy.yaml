@@ -266,6 +266,8 @@ jobs:
 
 
   Finish:
+    needs: [Build-And-Push-Image-AMD64, Build-And-Push-Image-ARM64, Build-And-Push-Image-ARMv6, Build-And-Push-Image-ARMv7]
+    name: Finish
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Discord notification
