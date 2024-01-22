@@ -1,7 +1,5 @@
 SHELL := /bin/bash
 
-VERSION :=  $(shell cat src/VERSION)
-
 PY = python3
 VENV = .venv
 BIN=$(VENV)/bin
@@ -136,3 +134,7 @@ pylint: init
 ##Run pre-commit
 pre-commit: init
 	@$(call poetry, pre-commit run --all-files, "Run pre-commit test")
+
+## Docker build
+docker-build:
+	docker build -t myelectricaldata_import:dev .

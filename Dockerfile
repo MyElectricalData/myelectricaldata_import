@@ -19,7 +19,6 @@ RUN pip install --upgrade pip pip-tools setuptools
 
 COPY ./src /app
 
-RUN pip-compile -o /app/requirements.txt /app/pyproject.toml
 RUN pip install -r /app/requirements.txt
 
 RUN mkdir /data
