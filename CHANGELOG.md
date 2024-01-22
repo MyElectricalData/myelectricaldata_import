@@ -2,6 +2,15 @@
 
 
 
+## v0.10.0-rc.11 (2024-01-22)
+
+### Fix
+
+* fix: yaml cd ([`ff2e669`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ff2e669269f885bb71b5f4d86ef1b8a377209dfb))
+
+* fix: yaml format ([`46da4b4`](https://github.com/MyElectricalData/myelectricaldata_import/commit/46da4b49479ee0de6a5d68b67af778759488d28b))
+
+
 ## v0.10.0-rc.10 (2024-01-22)
 
 ### Fix
