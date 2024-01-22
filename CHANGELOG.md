@@ -2,6 +2,17 @@
 
 
 
+## v0.10.0-rc.13 (2024-01-22)
+
+### Fix
+
+* fix: cd ([`4e2dc94`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4e2dc94211be5d259a711e72a509062660b41493))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`4942aab`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4942aab4bb578615a96a1f6a1f3533d7c9a8c459))
+
+
 ## v0.10.0-rc.12 (2024-01-22)
 
 ### Fix
