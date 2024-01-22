@@ -20,6 +20,14 @@ jobs:
         run: |
           version=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"')
           echo "version=${version}" >> "$GITHUB_ENV"
+          release_type=$(cat src/main.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
+          if [ "$release_type" == "" ]; then
+            # RELEASE
+            echo "release_type=release" >> "GITHUB_OUTPUT"
+          else
+            # PRERELEASE
+            echo "release_type=prerelease" >> "GITHUB_OUTPUT"
+          fi
 
   #################################################################################################################
   # BUILD & PUSH IMAGE
@@ -56,7 +64,6 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
           context: .
-#          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:${{ needs.informations.outputs.version }}
@@ -68,11 +75,11 @@ jobs:
         uses: Ilshidur/action-discord@master
         with:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}** image version is up to date'
+
       ##################################################################################################################
       # LATEST-DEV
       - name: Build and push
         uses: docker/build-push-action@v2
-#        if: ${{ github.event.release.prerelease }}
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -84,14 +91,14 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
-        if: ${{ github.event.release.prerelease }}
         with:
           args: '**MyElectricalData** : **latest-dev** image version is up to date'
+
 #      ##################################################################################################################
 #      # LATEST
       - name: Build and push
         uses: docker/build-push-action@v2
-        if: ${{ !github.event.release.prerelease }}
+        if: ${{ needs.informations.outputs.release_type }} == "release"
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
@@ -99,13 +106,15 @@ jobs:
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:latest
             m4dm4rtig4n/myelectricaldata:latest
+
       - name: Discord notification
-        if: ${{ !github.event.release.prerelease }}
+        if: ${{ needs.informations.outputs.release_type }} == "release"
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
         with:
           args: '**MyElectricalData** : **latest** image version is up to date'
+
       ##################################################################################################################
       # FINISH
       - name: Discord notification
