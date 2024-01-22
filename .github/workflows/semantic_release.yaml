@@ -10,7 +10,7 @@ jobs:
   #################################################################################################################
   # SEMANTIC RELEASE
   Semantic-Release:
-    runs-on: [self-hosted, decathlon]
+    runs-on: ubuntu-latest
     environment: production
     concurrency: release
     permissions:
@@ -21,11 +21,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      ################################################################################################################
-      # PRE CLEAN
-      - name: Pre clean
-        uses: dktunited/.github/actions/cleaner@main
-
       #################################################################################################################
       # GENERATE RELEASE
       - name: Release
@@ -34,8 +29,3 @@ jobs:
          directory: ./
          github_token: ${{ secrets.GITHUB_TOKEN }}
          push: true
-
-      #################################################################################################################
-      # Post CLEAN
-      - name: Post clean
-        uses: dktunited/.github/actions/cleaner@main
