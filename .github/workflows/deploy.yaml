@@ -14,13 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Discord notification building state
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        uses: Ilshidur/action-discord@master
-        with:
-          args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
-
       - name: Get version
         id: informations
         run: |
@@ -38,11 +31,23 @@ jobs:
       version: ${{ steps.informations.outputs.version }}
       release_type: ${{ steps.informations.outputs.release_type }}
 
+  Begin:
+    needs: [informations]
+    name: Finish
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Discord notification building state
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
+
   #################################################################################################################
   # BUILD & PUSH IMAGE
   Build-And-Push-Image-AMD64:
-    needs: [informations]
-    name: Build & Deploy in docker.io
+    needs: [Begin]
+    name: Build & Push AMD64
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
@@ -97,8 +102,8 @@ jobs:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}**/latest AMD64 image version is up to date'
 
   Build-And-Push-Image-ARM64:
-    needs: [informations]
-    name: Build & Deploy in docker.io
+    needs: [Begin]
+    name: Build & Push ARM64
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
@@ -153,8 +158,8 @@ jobs:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}**/latest ARM64 image version is up to date'
 
   Build-And-Push-Image-ARMv6:
-    needs: [informations]
-    name: Build & Deploy in docker.io
+    needs: [Begin]
+    name: Build & Push ARMv6
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
@@ -209,8 +214,8 @@ jobs:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}**/latest ARMv6 image version is up to date'
 
   Build-And-Push-Image-ARMv7:
-    needs: [informations]
-    name: Build & Deploy in docker.io
+    needs: [Begin]
+    name: Build & Push ARMv7
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
@@ -263,7 +268,6 @@ jobs:
         uses: Ilshidur/action-discord@master
         with:
           args: '**MyElectricalData** : **${{ needs.informations.outputs.version }}**/latest ARMv7 image version is up to date'
-
 
   Finish:
     needs: [Build-And-Push-Image-AMD64, Build-And-Push-Image-ARM64, Build-And-Push-Image-ARMv6, Build-And-Push-Image-ARMv7]
