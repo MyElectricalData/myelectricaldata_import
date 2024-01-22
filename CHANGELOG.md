@@ -2,6 +2,13 @@
 
 
 
+## v0.10.0-rc.12 (2024-01-22)
+
+### Fix
+
+* fix: cd ([`469bf46`](https://github.com/MyElectricalData/myelectricaldata_import/commit/469bf46aae56685d658d1c1921b7d0e16b38becc))
+
+
 ## v0.10.0-rc.11 (2024-01-22)
 
 ### Fix
