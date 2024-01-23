@@ -2,6 +2,23 @@
 
 
 
+## v0.10.0-rc.16 (2024-01-23)
+
+### Fix
+
+* fix: condition ([`b15e73a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b15e73aea6804cbf0af3a62c28b6b8dda902f1ad))
+
+### Unknown
+
+* Merge pull request #466 from MyElectricalData/koukihai-to-upstream/443
+
+Koukihai to upstream/443 ([`368537e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/368537ec256e87a1cc8babaf9e22fd8c1f6bd7d0))
+
+* Merge branch &#39;main&#39; into koukihai-to-upstream/443 ([`c38baa6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c38baa667a2e3aac4c4462ff7bb14d9857b1f7a0))
+
+* Merge branch &#39;to-upstream/443&#39; of github.com:koukihai/myelectricaldata_import into koukihai-to-upstream/443 ([`46bb802`](https://github.com/MyElectricalData/myelectricaldata_import/commit/46bb802dc7a58a98e1614b5ceeb640a2b29e0bd4))
+
+
 ## v0.10.0-rc.15 (2024-01-22)
 
 ### Fix
@@ -182,6 +199,10 @@
 
 * fix: semantic release ([`df63a45`](https://github.com/MyElectricalData/myelectricaldata_import/commit/df63a45ac335ad18766bc833f06191a1055b1e25))
 
+* fix: populate production details ([`d01bcad`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d01bcad87263dcb6f3232c6857cabd1bc03522bf))
+
+* fix: handle inconsistent consumption/production ([`b1302ab`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b1302ab07b2ade2965ff587e2572c42406158636))
+
 * fix: url issues github ([`80f050f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/80f050ff078a21f9d7fcb085b015ed13150e45df))
 
 * fix: tempo ([`09f2c4d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/09f2c4db131aa1b9055d33928df8560ebfe71515))
@@ -215,6 +236,8 @@ Unittests for jobs.py ([`0010b81`](https://github.com/MyElectricalData/myelectri
 * Merge pull request #456 from Rathorian/master
 
 fix: url issues github ([`b9c25d1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b9c25d15840625594eb0df640edeab9bd55f5b12))
+
+* add test_usage_point ([`ab1b353`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ab1b35369910b9dd5483b9bb747f1ab8afc284af))
 
 * Unittests for jobs.py ([`2590a8d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2590a8d4855bfd6afd90415b6d563e9846b76b25))
 
