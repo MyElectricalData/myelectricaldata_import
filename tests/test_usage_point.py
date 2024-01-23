@@ -23,7 +23,7 @@ def test_consumption_vs_production_consistent():
                   seriesType: 'bars',
                   series: {5: {type: 'line'}}
                 };
-    
+
                 var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_2023'));
                 chart.draw(data, options);
             }
@@ -56,7 +56,7 @@ def test_consumption_vs_production_wrong_year():
                   seriesType: 'bars',
                   series: {5: {type: 'line'}}
                 };
-    
+
                 var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_2022'));
                 chart.draw(data, options);
             }
@@ -89,7 +89,7 @@ def test_consumption_vs_production_inconsistent():
                   seriesType: 'bars',
                   series: {5: {type: 'line'}}
                 };
-    
+
                 var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_2023'));
                 chart.draw(data, options);
             }

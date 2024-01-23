@@ -41,7 +41,7 @@ def test_boot(mocker, caplog, job, envvar_to_true):
     assert res is None
     if envvar_to_true in ["DEV"]:
         assert 0 == m.call_count, "job_import_data should not be called"
-        assert "WARNING  root:jobs.py:43 => Import job disable\n" == caplog.text
+        assert "WARNING  root:jobs.py:50 => Import job disable\n" == caplog.text
     else:
         # FIXME: job_import_data is called when DEBUG=true
         assert "" == caplog.text
@@ -59,7 +59,7 @@ def test_job_import_data(mocker, job, caplog):
     res = job.job_import_data(target=None)
 
     # FIXME: Logline says 10s regardless of job.wait_job_start
-    expected_logs += "INFO     root:dependencies.py:81 DÉMARRAGE DU JOB D'IMPORTATION DANS 10S\n"
+    expected_logs += "INFO     root:dependencies.py:88 DÉMARRAGE DU JOB D'IMPORTATION DANS 10S\n"
     assert res["status"] is True
     for method, m in mockers.items():
         if method in PER_JOB_METHODS:
@@ -95,9 +95,9 @@ def test_get_gateway_status(job, caplog, ping_side_effect, mocker):
     job.get_gateway_status()
 
     if ping_side_effect:
-        assert "ERROR    root:jobs.py:169 Erreur lors de la récupération du statut de la passerelle :" in caplog.text
+        assert "ERROR    root:jobs.py:170 Erreur lors de la récupération du statut de la passerelle :" in caplog.text
     else:
-        assert "INFO     root:dependencies.py:81 RÉCUPÉRATION DU STATUT DE LA PASSERELLE :" in caplog.text
+        assert "INFO     root:dependencies.py:88 RÉCUPÉRATION DU STATUT DE LA PASSERELLE :" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -129,19 +129,19 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
 
     res = job.get_account_status()
 
-    assert "INFO     root:dependencies.py:81 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
+    assert "INFO     root:dependencies.py:88 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
     if status_side_effect is None and is_supported:
         assert expected_count == m_set_error_log.call_count
         if status_return_value.get("error"):
             m_set_error_log.assert_called_with("pdl1", "5xx - proper error")
     elif status_side_effect:
-        assert "ERROR    root:jobs.py:195 Erreur lors de la récupération des informations du compte" in caplog.text
-        assert f"ERROR    root:jobs.py:196 {status_side_effect}" in caplog.text
+        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
+        assert f"ERROR    root:jobs.py:197 {status_side_effect}" in caplog.text
         # set_error_log is not called in case status() raises an exception
         assert 0 == m_set_error_log.call_count
     elif not is_supported:
-        assert "ERROR    root:jobs.py:195 Erreur lors de la récupération des informations du compte" in caplog.text
-        assert "ERROR    root:jobs.py:196 'status_code'" in caplog.text
+        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
+        assert "ERROR    root:jobs.py:197 'status_code'" in caplog.text
         # FIXME: set_error_log is not called in case status() returns
         # a dict with an error key but no status_code or description.detail
         assert 0 == m_set_error_log.call_count
@@ -156,17 +156,17 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
 @pytest.mark.parametrize(
     "method, patch, details, line_no",
     [
-        ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 217),
-        ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 238),
-        ("get_consumption", "models.query_daily.Daily.get", "Récupération de la consommation journalière", 262),
-        ("get_consumption_detail", "models.query_detail.Detail.get", "Récupération de la consommation détaillée", 286),
-        ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 313),
-        ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 337),
+        ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 221),
+        ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 242),
+        ("get_consumption", "models.query_daily.Daily.get", "Récupération de la consommation journalière", 266),
+        ("get_consumption_detail", "models.query_detail.Detail.get", "Récupération de la consommation détaillée", 290),
+        ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 318),
+        ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 346),
         (
             "get_consumption_max_power",
             "models.query_power.Power.get",
             "Récupération de la puissance maximum journalière",
-            358,
+            367,
         ),
     ],
 )
@@ -214,9 +214,9 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
 
     if method == "get_consumption_max_power" and job.usage_point_id is None:
         # This method uses self.usage_point_id instead of usage_point_id
-        assert f"INFO     root:dependencies.py:81 [NONE] {details.upper()} :" in caplog.text
+        assert f"INFO     root:dependencies.py:88 [NONE] {details.upper()} :" in caplog.text
     else:
-        assert f"INFO     root:dependencies.py:81 [PDL1] {details.upper()} :" in caplog.text
+        assert f"INFO     root:dependencies.py:88 [PDL1] {details.upper()} :" in caplog.text
 
     if side_effect:
         # When get() throws an exception, no error is displayed
