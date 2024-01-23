@@ -66,7 +66,7 @@ jobs:
 
       #################################################################################################################
       # VERSION
-      - name: Build and push ${{ needs.informations.outputs.version }}
+      - name: Build and push ${{ needs.informations.outputs.version }} / latest-dev
         uses: docker/build-push-action@v5
         with:
           file: Dockerfile
@@ -75,8 +75,7 @@ jobs:
           push: true
           tags: |
             m4dm4rtig4n/enedisgateway2mqtt:${{ needs.informations.outputs.version }}
-            m4dm4rtig4n/enedisgateway2mqtt:latest-dev
-            
+            m4dm4rtig4n/enedisgateway2mqtt:latest-dev            
             m4dm4rtig4n/myelectricaldata:${{ needs.informations.outputs.version }}            
             m4dm4rtig4n/myelectricaldata:latest-dev
 
@@ -84,7 +83,7 @@ jobs:
       # LATEST
       - name: Build and push
         uses: docker/build-push-action@v5
-        if: ${{ needs.informations.outputs.release_type }} == "release"
+        if: ${{ needs.informations.outputs.release_type == 'release' }}
         with:
           file: Dockerfile
           context: .
