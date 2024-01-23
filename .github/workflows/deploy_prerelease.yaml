@@ -18,7 +18,7 @@ jobs:
         id: informations
         run: |
           version=$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"')
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "version=v${version}" >> "$GITHUB_OUTPUT"
           release_type=$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
           if [ "$release_type" == "" ]; then
             # RELEASE
