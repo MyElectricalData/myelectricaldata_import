@@ -1,8 +1,8 @@
-name: "Build/Push Image to Docker Hub"
+name: "Build/Push Pre Release"
 
 on:
   workflow_run:
-    workflows: ["semantic_release"]
+    workflows: ["Pre-Release"]
     types:
       - completed
 
