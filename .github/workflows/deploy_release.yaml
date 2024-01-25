@@ -59,7 +59,7 @@ jobs:
 
   Discord-Finish:
     needs: [Build-And-Push-Image]
-    uses: MyElectricalData/.github/.github/actions/discord@main
+    uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
     with:
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       MESSAGE: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
