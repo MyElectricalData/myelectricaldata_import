@@ -43,14 +43,14 @@ jobs:
   Discord-Begin:
     needs: [informations]
     if: ${{ needs.informations.outputs.build  == true }}
-    uses: MyElectricalData/.github/actions/discord@main
+    uses: MyElectricalData/.github/workflows/discord.yaml@main
     with:
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       MESSAGE: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
 
   Build-And-Push-Image:
     needs: [informations, Discord-Begin]
-    uses: MyElectricalData/.github/actions/dockerhub-build-push@main
+    uses: MyElectricalData/.github/workflows/dockerhub-build-push.yaml@main
     with:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -63,7 +63,7 @@ jobs:
 
   Discord-Finish:
     needs: [Build-And-Push-Image]
-    uses: MyElectricalData/.github/actions/discord@main
+    uses: MyElectricalData/.github/workflows/discord.yaml@main
     with:
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       MESSAGE: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
