@@ -1,11 +1,7 @@
-name: Release
+name: "Build/Push Release"
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "The tag RC version to release."
-        required: true
 
 env:
   IMAGE_REPO: m4dm4rtig4n
@@ -16,6 +12,7 @@ jobs:
   informations:
     runs-on: [ ubuntu-latest ]
     steps:
+      - uses: actions/checkout@v2
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
@@ -29,10 +26,11 @@ jobs:
           version=$(echo "${{ github.event.inputs.version }} |awk -F '-' '{print $1}')"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           
-          if [ $(docker manifest inspect ${IMAGE_REPO}/${IMAGE_NAME}:${version}) == "" ]; then
-            echo "build=true" >> "$GITHUB_OUTPUT"
+          if [ $(docker manifest inspect ${IMAGE_REPO}/${IMAGE_NAME}:${version}  > /dev/null ; echo $?) -eq 0 ]; then
+            echo "Image already build => SKIP BUILDING"          
+            echo "build=false" >> "$GITHUB_OUTPUT"
           else
-            echo "build=false" >> "$GITHUB_OUTPUT"    
+            echo "build=true" >> "$GITHUB_OUTPUT"    
 
     outputs:
       version: ${{ steps.informations.outputs.version }}

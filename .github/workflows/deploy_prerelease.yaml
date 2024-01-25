@@ -1,6 +1,7 @@
-name: "Build/Push Pre Release"
+name: "Build/Push Pre-Release"
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Pre-Release"]
     types:
@@ -23,38 +24,32 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Get version
+      - name: Generate release version
         id: informations
         run: |
-          version=v$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"')
+          version=$(echo "${{ github.event.inputs.version }} |awk -F '-' '{print $1}')"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
-          release_type=$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"'| grep rc)
-          if [ "$release_type" == "" ]; then
-            # RELEASE
-            echo "release_type=release" >> "$GITHUB_OUTPUT"
+          
+          if [ $(docker manifest inspect ${IMAGE_REPO}/${IMAGE_NAME}:${version}  > /dev/null ; echo $?) -eq 0 ]; then
+            echo "Image already build => SKIP BUILDING"          
+            echo "build=false" >> "$GITHUB_OUTPUT"
           else
-            # PRERELEASE
-            echo "release_type=prerelease" >> "$GITHUB_OUTPUT"
-          fi
-
-          if [ $(docker manifest inspect ${IMAGE_REPO}/${IMAGE_NAME}:${version}) == "" ]; then
-            echo "build=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "build=false" >> "$GITHUB_OUTPUT"         
+            echo "build=true" >> "$GITHUB_OUTPUT"    
 
     outputs:
       version: ${{ steps.informations.outputs.version }}
-      release_type: ${{ steps.informations.outputs.release_type }}
       build: ${{ steps.informations.outputs.build }}
 
   Discord-Begin:
+    needs: [informations]
+    if: ${{ needs.informations.outputs.build  == true }}
     uses: MyElectricalData/.github/actions/discord@main
     with:
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       MESSAGE: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
 
   Build-And-Push-Image:
-    needs: [informations, Begin]
+    needs: [informations, Discord-Begin]
     uses: MyElectricalData/.github/actions/dockerhub-build-push@main
     with:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -67,6 +62,7 @@ jobs:
       LATEST: false
 
   Discord-Finish:
+    needs: [Build-And-Push-Image]
     uses: MyElectricalData/.github/actions/discord@main
     with:
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
