@@ -44,18 +44,18 @@ jobs:
       IMAGE_REPO: ${{ steps.informations.outputs.IMAGE_REPO }}
       IMAGE_NAME: ${{ steps.informations.outputs.IMAGE_NAME }}
 
-#  Discord-Begin:
-#    needs: [informations]
-#    if: ${{ needs.informations.outputs.build  == 'true' }}
-#    uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
-#    with:
-#      MESSAGE: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
-#    secrets:
-#      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+  Discord-Begin:
+    needs: [informations]
+    if: ${{ needs.informations.outputs.build  == 'true' }}
+    uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
+    with:
+      MESSAGE: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
+    secrets:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
   Build-And-Push-Image:
-#    needs: [informations, Discord-Begin]
-    needs: [informations]
+    needs: [informations, Discord-Begin]
+#    needs: [informations]
     if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/dockerhub-build-push.yaml@main
     with:
@@ -68,11 +68,11 @@ jobs:
     secrets:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-#  Discord-Finish:
-#    needs: [informations, Build-And-Push-Image]
-#    if: ${{ needs.informations.outputs.build  == 'true' }}
-#    uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
-#    with:
-#      MESSAGE: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
-#    secrets:
-#      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+  Discord-Finish:
+    needs: [informations, Build-And-Push-Image]
+    if: ${{ needs.informations.outputs.build  == 'true' }}
+    uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
+    with:
+      MESSAGE: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
+    secrets:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
