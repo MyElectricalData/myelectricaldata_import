@@ -2,6 +2,17 @@
 
 
 
+## v0.10.0-rc.18 (2024-01-26)
+
+### Fix
+
+* fix: ci secret ([`690f8ca`](https://github.com/MyElectricalData/myelectricaldata_import/commit/690f8cae29919a470490f69f990ac0389ee2d09b))
+
+### Unknown
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`6821339`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6821339cc41c22fcc3af664ce4819e82bd80dd5e))
+
+
 ## v0.10.0-rc.17 (2024-01-26)
 
 ### Chore
