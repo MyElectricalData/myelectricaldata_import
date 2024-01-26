@@ -23,7 +23,7 @@ jobs:
       - name: Generate release version
         id: informations
         run: |
-          version=$(echo "${{ github.event.inputs.version }} |awk -F '-' '{print $1}')"
+          version=$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"')
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           
           if [ $(docker manifest inspect ${IMAGE_REPO}/${IMAGE_NAME}:${version}  > /dev/null ; echo $?) -eq 0 ]; then
@@ -31,6 +31,7 @@ jobs:
             echo "build=false" >> "$GITHUB_OUTPUT"
           else
             echo "build=true" >> "$GITHUB_OUTPUT"    
+          fi
 
     outputs:
       version: ${{ steps.informations.outputs.version }}
@@ -38,16 +39,16 @@ jobs:
 
   Discord-Begin:
     needs: [informations]
-    if: ${{ needs.informations.outputs.build  == true }}
+    if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
     with:
       MESSAGE: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
     secrets:
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
-
   Build-And-Push-Image:
     needs: [informations, Discord-Begin]
+    if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/dockerhub-build-push.yaml@main
     with:
       IMAGE_REPO: ${IMAGE_REPO}
@@ -61,7 +62,8 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   Discord-Finish:
-    needs: [Build-And-Push-Image]
+    needs: [informations, Build-And-Push-Image]
+    if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
     with:
       MESSAGE: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
