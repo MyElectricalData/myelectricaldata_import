@@ -36,12 +36,10 @@ jobs:
           else
             echo "build=true" >> "$GITHUB_OUTPUT"    
           fi
-          echo "IMAGE_REPO=${IMAGE_REPO}" >> "$GITHUB_OUTPUT"
           echo "IMAGE_NAME=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
     outputs:
       version: ${{ steps.informations.outputs.version }}
       build: ${{ steps.informations.outputs.build }}
-      IMAGE_REPO: ${{ steps.informations.outputs.IMAGE_REPO }}
       IMAGE_NAME: ${{ steps.informations.outputs.IMAGE_NAME }}
 
 #  Discord-Begin:
@@ -59,13 +57,13 @@ jobs:
     if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/dockerhub-build-push.yaml@main
     with:
-      IMAGE_REPO: ${{ needs.informations.outputs.IMAGE_REPO }}
       IMAGE_NAME: ${{ needs.informations.outputs.IMAGE_NAME }}
       PUSH: true
       TAG: ${{ needs.informations.outputs.version }}
       PLATFORM: "linux/amd64, linux/arm64, linux/arm/v6, linux/arm/v7"
       LATEST: false
     secrets:
+      IMAGE_REPO: ${{ secrets.IMAGE_REPO }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
