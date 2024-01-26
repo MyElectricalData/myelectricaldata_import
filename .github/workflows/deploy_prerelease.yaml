@@ -45,25 +45,28 @@ jobs:
     if: ${{ needs.informations.outputs.build  == true }}
     uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
     with:
-      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       MESSAGE: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
+    secrets:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
   Build-And-Push-Image:
     needs: [informations, Discord-Begin]
     uses: MyElectricalData/.github/.github/workflows/dockerhub-build-push.yaml@main
     with:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       IMAGE_REPO: ${IMAGE_REPO}
       IMAGE_NAME: ${IMAGE_NAME}
       PUSH: true
       TAG: ${{ needs.informations.outputs.version }}
       PLATFORM: "linux/amd64, linux/arm64, linux/arm/v6, linux/arm/v7"
       LATEST: false
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   Discord-Finish:
     needs: [Build-And-Push-Image]
     uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
     with:
-      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       MESSAGE: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
+    secrets:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
