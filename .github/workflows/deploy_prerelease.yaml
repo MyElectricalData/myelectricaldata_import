@@ -54,7 +54,8 @@ jobs:
 #      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
   Build-And-Push-Image:
-    needs: [informations, Discord-Begin]
+#    needs: [informations, Discord-Begin]
+    needs: [informations]
     if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/dockerhub-build-push.yaml@main
     with:
