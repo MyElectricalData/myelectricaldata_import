@@ -2,6 +2,47 @@
 
 
 
+## v0.10.0-rc.17 (2024-01-26)
+
+### Chore
+
+* chore: test ([`3bbeacc`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3bbeacced3cb697aff0d66d75c1dba0ce9697e11))
+
+* chore: test ([`9ea527e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9ea527e22799ea5ca4dbd041c9182f1e284693de))
+
+* chore: rename ([`ddbd8ce`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ddbd8ce1bd9ea2a3a0ba77cf296c9815efcbb6c8))
+
+### Fix
+
+* fix: rework ([`2c977d0`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2c977d039db928e24a0f1ecbaeea026b2638a437))
+
+* fix: fix ([`8876423`](https://github.com/MyElectricalData/myelectricaldata_import/commit/88764230e4cd3d9e117954d6f03d3e689099db96))
+
+* fix: move .github ([`8ed6a1a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8ed6a1aa39dca8f25e2f7eab3e2d9066565df327))
+
+* fix: move to .github ([`1ec1838`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1ec1838c76f82bfa877321d0df95e8d8a2970272))
+
+* fix: test ([`2711d09`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2711d09f9ebee2d0833d3e4e3764e4492f81eed6))
+
+* fix: test ([`4f51752`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4f517523d8e9b94cf3948c86b26d491e01787b55))
+
+* fix: test ([`27b9e8b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/27b9e8b1d36e58ef9f7c7bb7d3c943c675c3090f))
+
+* fix: test ([`1d34f10`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1d34f105ab55ddb2cf38ce168dab9039e08e8f12))
+
+* fix: test ([`a918b9e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a918b9ef878e2ac8463c89977a5315115dfe7f04))
+
+* fix: test ([`b786759`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b786759f22816935df5b9d4cb2ee3c4dbc23c98b))
+
+* fix: release ([`27b08c7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/27b08c7c27baea6340c79ca5e9779f9aaf25510e))
+
+* fix: use external workflow ([`ebe074c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ebe074ca99eb649df96ee6d51ba3391e7964f141))
+
+### Unknown
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`4d66a52`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4d66a52c0a79897b23af38b52f864c44ee821fdb))
+
+
 ## v0.10.0-rc.16 (2024-01-23)
 
 ### Fix
