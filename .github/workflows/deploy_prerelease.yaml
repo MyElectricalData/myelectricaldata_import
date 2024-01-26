@@ -55,8 +55,8 @@ jobs:
     if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/dockerhub-build-push.yaml@main
     with:
-      IMAGE_REPO: ${IMAGE_REPO}
-      IMAGE_NAME: ${IMAGE_NAME}
+      IMAGE_REPO: ${{ env.IMAGE_REPO }}
+      IMAGE_NAME: ${{ env.IMAGE_NAME }}
       PUSH: true
       TAG: ${{ needs.informations.outputs.version }}
       PLATFORM: "linux/amd64, linux/arm64, linux/arm/v6, linux/arm/v7"
