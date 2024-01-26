@@ -27,7 +27,7 @@ jobs:
       - name: Generate release version
         id: informations
         run: |
-          version=$(echo "${{ github.event.inputs.version }} |awk -F '-' '{print $1}')"
+          version=$(cat src/__version__.py |grep VERSION| awk '{print $3}' | tr -d '"')
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           
           if [ $(docker manifest inspect ${IMAGE_REPO}/${IMAGE_NAME}:${version}  > /dev/null ; echo $?) -eq 0 ]; then
