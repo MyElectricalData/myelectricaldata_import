@@ -43,7 +43,7 @@ jobs:
 
   Discord-Begin:
     needs: [informations]
-    if: ${{ needs.informations.outputs.build  == true }}
+    if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
     with:
       MESSAGE: '**MyElectricalData** : Version **${{ needs.informations.outputs.version }}** is in building state...'
@@ -52,6 +52,7 @@ jobs:
 
   Build-And-Push-Image:
     needs: [informations, Discord-Begin]
+    if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/dockerhub-build-push.yaml@main
     with:
       IMAGE_REPO: ${IMAGE_REPO}
@@ -65,7 +66,8 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   Discord-Finish:
-    needs: [Build-And-Push-Image]
+    needs: [informations, Build-And-Push-Image]
+    if: ${{ needs.informations.outputs.build  == 'true' }}
     uses: MyElectricalData/.github/.github/workflows/discord.yaml@main
     with:
       MESSAGE: '**MyElectricalData** : New version available **${{ needs.informations.outputs.version }}**'
