@@ -9,6 +9,7 @@ data
 .pytest_cache
 .coverage
 
+.tox
 /__pycache__/
 /src/alembic/__pycache__/
 /src/alembic/versions/__pycache__/
