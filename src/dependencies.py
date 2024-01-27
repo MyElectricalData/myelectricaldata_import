@@ -48,7 +48,7 @@ def daterange(start_date, end_date):
 
 def str2bool(v):
     if type(v) != bool:
-        return v.lower() in ("yes", "true", "t", "1")
+        return v and v.lower() in ("yes", "true", "t", "1")
     else:
         return v
 
