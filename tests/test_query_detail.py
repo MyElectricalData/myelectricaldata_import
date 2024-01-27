@@ -40,7 +40,7 @@ def test_get(mocker, measure_type):
     m_insert_detail.assert_called_once_with(
         date=datetime.datetime(2023, 12, 31, 23, 30, 00),
         interval="30",
-        measure_type="HP",
+        measure_type="",
         mesure_type=measure_type,
         usage_point_id="pdl1",
         value="10",

@@ -759,7 +759,7 @@ class UsagePoint:
                 ['Mois', 'Consommation', 'Production'],
             """
             )
-            for month, data in compare_compsuption_production.items():
+            for month, data in compare_comsuption_production.items():
                 table_value = ""
                 for idx, value in enumerate(data):
                     if value == "":

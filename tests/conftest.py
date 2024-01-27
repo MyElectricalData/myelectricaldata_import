@@ -69,7 +69,7 @@ def copied_from_main():
 @pytest.fixture(scope="session", autouse=True)
 def update_paths():
     project_root = os.path.abspath(os.path.join(os.path.realpath(__file__), "..", ".."))
-    app_path = os.path.join(project_root, "app")
+    app_path = os.path.join(project_root, "src")
     with mock_datadir() as data_dir:
         with setenv(APPLICATION_PATH=app_path, APPLICATION_PATH_DATA=data_dir), mock_config(data_dir):
             copied_from_main()
