@@ -1,11 +1,13 @@
-name: "Release"
+name: "Pre-Release"
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
 
-  Semantic-Release:
+  Semantic-Pre-Release:
     uses: MyElectricalData/.github/.github/workflows/python_semantic_release.yaml@main
     with:
-      PRE_RELEASE: false
+      PRE_RELEASE: true

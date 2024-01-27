@@ -8,5 +8,5 @@ data
 .venv
 .pytest_cache
 .coverage
-
+.tox
 **/__pycache__/
