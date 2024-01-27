@@ -104,7 +104,10 @@ class ExportMqtt:
                 get_daily_year = stat.get_year(year=year)
                 get_daily_month = stat.get_month(year=year)
                 get_daily_week = stat.get_week(year=year)
-                sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
+                if year == int(datetime.now().strftime("%Y")):
+                    sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/current"
+                else:
+                    sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
                 mqtt_data = {
                     # thisYear
                     f"{sub_prefix}/thisYear/dateBegin": get_daily_year["begin"],
@@ -247,7 +250,10 @@ class ExportMqtt:
                     measure_type="HC",
                 )
 
-                sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
+                if year == int(datetime.now().strftime("%Y")):
+                    sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/current" 
+                else:
+                    sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
                 mqtt_data = {
                     # thisYear - HP
                     f"{sub_prefix}/thisYear/hp/Wh": get_detail_year_hp["value"],
@@ -460,6 +466,8 @@ class ExportMqtt:
             mqtt_data[f"tempo/color/tomorrow"] = tempo_color[0].color
         if tempo_data:
             for year, data in ast.literal_eval(tempo_data[0].value).items():
+                if year == datetime.now().strftime("%Y"):
+                    year = "current"
                 for color, tempo in data["TEMPO"].items():
                     mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/Wh"] = round(
                         tempo["Wh"], 2
