@@ -123,6 +123,7 @@ upload_to_vcs_release = true
 norecursedirs = ".git .tox *.egg* old docs dist build"
 env_files = ["../.env.debug", "../.env.sample", "../.env"]
 addopts = "-rw"
+log_level = "DEBUG"
 pythonpath = [
     "src"
 ]
