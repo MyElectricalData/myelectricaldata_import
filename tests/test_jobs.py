@@ -39,11 +39,10 @@ def test_boot(mocker, caplog, job, envvar_to_true):
         res = job.boot()
 
     assert res is None
-    if envvar_to_true in ["DEV"]:
+    if envvar_to_true:
         assert 0 == m.call_count, "job_import_data should not be called"
         assert "WARNING  root:jobs.py:50 => Import job disable\n" == caplog.text
     else:
-        # FIXME: job_import_data is called when DEBUG=true
         assert "" == caplog.text
         m.assert_called_once()
 
