@@ -53,12 +53,12 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
 
     if is_truthy_response:
         if status_code != 200:
+            # If the status code is truthy, but not 200, the contents of response['detail'] are logged
             assert f'ERROR    root:query_status.py:75 {status_response["detail"]}\n'
 
         if not is_complete:
             # If some fields are missing from a truthy response, an exception is thrown and an error message is displayed
             assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
-            # If the status code is truthy, but not 200, the contents of response['detail'] are logged
 
             # db.usage_point_update is not called
             assert 0 == m_usage_point_update.call_count
