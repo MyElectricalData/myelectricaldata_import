@@ -2,6 +2,80 @@
 
 
 
+## v0.10.0-rc.20 (2024-01-29)
+
+### Ci
+
+* ci: update ([`719169c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/719169c77723d21cf908ed059b32edd330c7aa7e))
+
+### Fix
+
+* fix: add dev mode ([`7becf9e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7becf9ec6939cbd25245bbacd72ae45822d039de))
+
+### Unknown
+
+* Merge pull request #473 from vingerha/main
+
+Replacing &#39;year&#39;-number with &#39;current&#39; in case it is current year ([`b3bda75`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b3bda75fa3e33febe32fd5468acac4abc34715bb))
+
+* Replaying &#39;year&#39;-number with &#39;current&#39; in case it is current year
+
+Allows to call MQTT topics having data for current tear directly from HA sensor (and others) ([`4fd6afa`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4fd6afa7f187baeb3592e066b431975aa174be2e))
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`810742c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/810742c7300615f4d7851b6a2d3c09c41bb802ac))
+
+
+## v0.10.0-rc.19 (2024-01-27)
+
+### Ci
+
+* ci: test ([`963095e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/963095e9af91d34df6e1dced26ac8d2af67d30d0))
+
+* ci: test ([`d468100`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d468100c445e5e815d86c16e287712e07c5074d3))
+
+* ci: test ([`5024826`](https://github.com/MyElectricalData/myelectricaldata_import/commit/50248260ddad3626d148d9352095863210659a8a))
+
+* ci: test ([`8bfefc3`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8bfefc3499d8032bfd31f12893a5d18905623f97))
+
+* ci: test ([`78250d8`](https://github.com/MyElectricalData/myelectricaldata_import/commit/78250d87b5a6191a30a312e84123bd71eee1ba8f))
+
+* ci: test ([`a9f4c6c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a9f4c6cb1b9c05d05648658283352f82422c9f30))
+
+* ci: test ([`337df7d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/337df7d0d1e6fe441f58adb832800cf33403dbbc))
+
+* ci: test ([`704ad6c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/704ad6ca07fd45cf436eaf2cdfdb4cf6651d8526))
+
+* ci: test ([`d5b2276`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d5b22763f5022e8618b3530f3ac4127befabd7d5))
+
+* ci: test ([`7684b09`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7684b092e058c6d945cbef10f9a2855ccb086b4e))
+
+* ci: test ([`8ab3f15`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8ab3f15855a70563dce936c9acc043c64abd1328))
+
+* ci: test ([`b587f83`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b587f83e98e6abc3f89e79d34fea1c045d1c3e2c))
+
+* ci: test ([`81c3a18`](https://github.com/MyElectricalData/myelectricaldata_import/commit/81c3a1886e2350f99486b239d98bfeb33e639e3a))
+
+* ci: test ([`3e312d1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3e312d1499fbe791f2ca0df8f69d7d280c8e2f64))
+
+### Fix
+
+* fix: remove pytest.ini (configuration in pyproject.toml) ([`55a9929`](https://github.com/MyElectricalData/myelectricaldata_import/commit/55a99291c8ebee722b1bebbaaf9c314ad6be33de))
+
+* fix: update lib ([`ae9ace4`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ae9ace4f51c905e618c625e1e7a6aefdd8de1dee))
+
+### Unknown
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`1c234a1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1c234a13b2a31384aea3d28beae1c674f4ba75c2))
+
+* Merge pull request #469 from koukihai/to-upstream/fix-tests
+
+fix: tests ([`602e2f1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/602e2f131538679a9afe80eb97634b82fb4e224f))
+
+* Merge branch &#39;main&#39; into to-upstream/fix-tests ([`5482eab`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5482eaba6b4062ddf1662b7bbca609e6ab729069))
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`c335f51`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c335f5116bb66813e7826cb06a0d9d255bb173f6))
+
+
 ## v0.10.0-rc.18 (2024-01-26)
 
 ### Fix
@@ -48,6 +122,8 @@
 * fix: release ([`27b08c7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/27b08c7c27baea6340c79ca5e9779f9aaf25510e))
 
 * fix: use external workflow ([`ebe074c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ebe074ca99eb649df96ee6d51ba3391e7964f141))
+
+* fix: tests ([`b82e817`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b82e817bbd5825978a2aa79e9015ed975e660bdf))
 
 ### Unknown
 

@@ -227,9 +227,10 @@ class ExportMqtt:
             date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1), datetime.min.time())
             finish = False
             while not finish:
-                sub_prefix = (
-                    f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
-                )
+                if date_begin_current.strftime("%Y") == datetime.now().strftime("%Y"):
+                    sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/current"
+                else:
+                    sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
                 self.load_daily_data(date_begin_current, date_end, price, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:
@@ -391,9 +392,10 @@ class ExportMqtt:
             date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1), datetime.min.time())
             finish = False
             while not finish:
-                sub_prefix = (
-                    f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
-                )
+                if date_begin_current.strftime("%Y") == datetime.now().strftime("%Y"):
+                    sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/current"
+                else:
+                    sub_prefix = f"{self.usage_point_id}/{self.measurement_direction}/annual/{date_begin_current.strftime('%Y')}"
                 self.load_detail_data(date_begin_current, date_end, price_hp, price_hc, sub_prefix)
                 # CALCUL NEW DATE
                 if date_begin_current == date_begin:

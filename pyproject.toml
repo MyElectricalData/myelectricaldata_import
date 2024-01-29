@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "myelectricaldata-import"
-version = "0.10.0-rc.18"
+version = "0.10.0-rc.20"
 description = "MyElectricalData official client"
 authors = ["Clément VALENTIN <m4dm4rtig4n@gmail.com>"]
 readme = "README.md"
@@ -123,6 +123,7 @@ upload_to_vcs_release = true
 norecursedirs = ".git .tox *.egg* old docs dist build"
 env_files = ["../.env.debug", "../.env.sample", "../.env"]
 addopts = "-rw"
+log_level = "DEBUG"
 pythonpath = [
     "src"
 ]
