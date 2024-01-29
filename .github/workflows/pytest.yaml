@@ -1,18 +1,3 @@
-# Tests Unitaires
-
-### Execution manuelle
-Pour executer les tests unitaires de ce projet, veuillez vous placer a la racine du projet, et executez la commande
-suivante:
-
-```commandline
-pip install pytest pytest-cov pytest-mock requests-mock
-python -m pytest --cov=src/ --cov-report=xml
-```
-
-### Execution automatisée
-Pour executer les tests unitaires a partir d'une github action, veuillez utiliser une action similaire a la suivante:
-
-```file
 name: Run Pytests
 
 on:
@@ -54,4 +39,3 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
-```
