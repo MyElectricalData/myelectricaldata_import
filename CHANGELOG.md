@@ -2,6 +2,29 @@
 
 
 
+## v0.10.0-rc.20 (2024-01-29)
+
+### Ci
+
+* ci: update ([`719169c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/719169c77723d21cf908ed059b32edd330c7aa7e))
+
+### Fix
+
+* fix: add dev mode ([`7becf9e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7becf9ec6939cbd25245bbacd72ae45822d039de))
+
+### Unknown
+
+* Merge pull request #473 from vingerha/main
+
+Replacing &#39;year&#39;-number with &#39;current&#39; in case it is current year ([`b3bda75`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b3bda75fa3e33febe32fd5468acac4abc34715bb))
+
+* Replaying &#39;year&#39;-number with &#39;current&#39; in case it is current year
+
+Allows to call MQTT topics having data for current tear directly from HA sensor (and others) ([`4fd6afa`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4fd6afa7f187baeb3592e066b431975aa174be2e))
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`810742c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/810742c7300615f4d7851b6a2d3c09c41bb802ac))
+
+
 ## v0.10.0-rc.19 (2024-01-27)
 
 ### Ci
