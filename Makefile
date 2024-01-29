@@ -89,8 +89,19 @@ enable_debug:
 disable_debug:
 	sed -i "s/DEBUG=.*/DEBUG=false/g" .env
 
+## Enable debug mode
+enable_dev:
+	sed -i "s/DEV=.*/DEV=true/g" .env
+
+## Disable debug mode
+disable_dev:
+	sed -i "s/DEV=.*/DEV=false/g" .env
+
 ## Run in local
 run: init disable_debug bootstrap
+
+## Run local dev (without debug)
+dev: init disable_debug enable_dev up bootstrap
 
 ## Run in local in debug
 debug: init enable_debug up bootstrap down

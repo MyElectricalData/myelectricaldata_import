@@ -251,7 +251,7 @@ class ExportMqtt:
                 )
 
                 if year == int(datetime.now().strftime("%Y")):
-                    sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/current" 
+                    sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/current"
                 else:
                     sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
                 mqtt_data = {
