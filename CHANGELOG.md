@@ -2,6 +2,29 @@
 
 
 
+## v0.10.0-rc.21 (2024-01-29)
+
+### Fix
+
+* fix: imports conftest ([`9ceab7d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9ceab7d35eb51017c342685d027a9e573d1082d0))
+
+### Test
+
+* test: add github action ([`a7b1900`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a7b19000591a4b19fe3af5e7fd97c02e5d151850))
+
+### Unknown
+
+* Merge pull request #474 from koukihai/koukihai/mock-requests
+
+tests: Mock requests et DB ([`94adc88`](https://github.com/MyElectricalData/myelectricaldata_import/commit/94adc884a8ed3a3958daf7a9ee43d7728d748c10))
+
+* move comment ([`e2736fe`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e2736fe5a708f1b47531ef5e00106e7a3758c086))
+
+* Merge remote-tracking branch &#39;upstream/main&#39; into koukihai/mock-requests ([`5cbb69e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5cbb69ee716a36014e4eaa8ef2e8dd78c0894493))
+
+* mock: /valid_access/{usage_point_id}/cache ([`803de87`](https://github.com/MyElectricalData/myelectricaldata_import/commit/803de879fe29bf9b99a8557d0725500c81e73ada))
+
+
 ## v0.10.0-rc.20 (2024-01-29)
 
 ### Ci
@@ -11,6 +34,8 @@
 ### Fix
 
 * fix: add dev mode ([`7becf9e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7becf9ec6939cbd25245bbacd72ae45822d039de))
+
+* fix: support DEV/DEBUG update ([`00bd332`](https://github.com/MyElectricalData/myelectricaldata_import/commit/00bd332b78ebefd8e7b1b712bd3e65af7de03c5b))
 
 ### Unknown
 
