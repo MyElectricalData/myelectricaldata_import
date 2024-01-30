@@ -411,7 +411,7 @@ let datatable_config_power = {
             $.LoadingOverlay("show", loading);
         },
         complete: function () {
-            $.LoadingOverlay("show", loading);
+            $.LoadingOverlay("hide", loading);
         },
     },
     columnDefs: [

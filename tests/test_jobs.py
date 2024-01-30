@@ -4,16 +4,16 @@ from conftest import setenv
 
 EXPORT_METHODS = ["export_influxdb", "export_home_assistant_ws", "export_home_assistant", "export_mqtt"]
 PER_USAGE_POINT_METHODS = [
-                              "get_account_status",
-                              "get_contract",
-                              "get_addresses",
-                              "get_consumption",
-                              "get_consumption_detail",
-                              "get_production",
-                              "get_production_detail",
-                              "get_consumption_max_power",
-                              "stat_price",
-                          ] + EXPORT_METHODS
+    "get_account_status",
+    "get_contract",
+    "get_addresses",
+    "get_consumption",
+    "get_consumption_detail",
+    "get_production",
+    "get_production_detail",
+    "get_consumption_max_power",
+    "stat_price",
+] + EXPORT_METHODS
 PER_JOB_METHODS = ["get_gateway_status", "get_tempo", "get_ecowatt"]
 
 
@@ -74,11 +74,11 @@ def test_header_generate(job, caplog):
     # FIXME: header_generate() assumes job.usage_point_config is populated from a side effect
     for job.usage_point_config in job.usage_points:
         assert {
-                   "Authorization": job.usage_point_config.token,
-                   "Content-Type": "application/json",
-                   "call-service": "myelectricaldata",
-                   "version": get_version(),
-               } == job.header_generate()
+            "Authorization": job.usage_point_config.token,
+            "Content-Type": "application/json",
+            "call-service": "myelectricaldata",
+            "version": get_version(),
+        } == job.header_generate()
     assert expected_logs == caplog.text
 
 
@@ -92,10 +92,10 @@ def test_header_generate(job, caplog):
         ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 318),
         ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 346),
         (
-                "get_consumption_max_power",
-                "models.query_power.Power.get",
-                "Récupération de la puissance maximum journalière",
-                367,
+            "get_consumption_max_power",
+            "models.query_power.Power.get",
+            "Récupération de la puissance maximum journalière",
+            367,
         ),
     ],
 )
