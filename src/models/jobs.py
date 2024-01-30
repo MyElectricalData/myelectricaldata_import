@@ -46,7 +46,7 @@ class Job:
             self.usage_points = [self.db.get_usage_point(self.usage_point_id)]
 
     def boot(self):
-        if ("DEV" in environ and str2bool(getenv("DEV"))) or ("DEBUG" in environ and str2bool(getenv("DEBUG"))):
+        if str2bool(getenv("DEV")) or str2bool(getenv("DEBUG")):
             logging.warning("=> Import job disable")
         else:
             self.job_import_data()
