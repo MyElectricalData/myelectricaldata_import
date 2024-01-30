@@ -17,7 +17,10 @@ $(document.body).on('click', '.datatable_button', function () {
                 .done(function (data) {
                     data = $.parseJSON(JSON.stringify(data))
                     if (tag.includes("detail") && type != "reset") {
-                        setTimeout(function(){$('#dataTableConsommationDetail').DataTable(datatable_consumption_detail).ajax.reload();;}, 1000);
+                        setTimeout(function () {
+                            $('#dataTableConsommationDetail').DataTable(datatable_consumption_detail).ajax.reload();
+                            ;
+                        }, 1000);
                     }
                     if (data.hasOwnProperty('error') && data['error'] === "true") {
                         $('[id="' + tag + '_' + type + '_' + date + '"]').css("display", "block");
@@ -38,12 +41,24 @@ $(document.body).on('click', '.datatable_button', function () {
                             $('[id="' + tag + '_conso_w_' + date + '"]').html("0");
                             $('[id="' + tag + '_conso_kw_' + date + '"]').html("0");
                             $('[id="' + tag + '_conso_a_' + date + '"]').html("0");
+                            $('[id="' + tag + '_hc_daily_' + date + '"]').html("-");
+                            $('[id="' + tag + '_hp_daily_' + date + '"]').html("-");
                             $('[id="' + tag + '_fail_count_' + date + '"]').html(data["result"]['fail_count']);
                             $('[id="' + tag + '_blacklist_' + date + '"]').css("display", "block");
                             $('[id="' + tag + '_whitelist_' + date + '"]').css("display", "none")
                             $('[id="' + tag + '_blacklist_' + date + '"]').removeClass("datatable_button_disable");
                         } else {
                             if (data["result"]["date"] === date) {
+                                if (data["result"]['hc'] == 0) {
+                                    hc = "-"
+                                } else {
+                                    hc = data["result"]['hc'] / 1000
+                                }
+                                if (data["result"]['hp'] == 0) {
+                                    hp = "-"
+                                } else {
+                                    hp = data["result"]['hp'] / 1000
+                                }
                                 $('[id="' + tag + '_reset_' + date + '"]').css("display", "block");
                                 $('[id="' + tag + '_import_' + date + '"]').css("display", "none");
                                 $('[id="' + tag + '_icon_' + date + '"]').removeClass("icon_failed");
@@ -54,6 +69,8 @@ $(document.body).on('click', '.datatable_button', function () {
                                 ampere = data["result"]['value'] / 230
                                 ampere = Math.round((ampere + Number.EPSILON) * 100) / 100
                                 $('[id="' + tag + '_conso_a_' + date + '"]').html(ampere);
+                                $('[id="' + tag + '_hc_daily_' + date + '"]').html(hc);
+                                $('[id="' + tag + '_hp_daily_' + date + '"]').html(hp);
                                 $('[id="' + tag + '_fail_count_' + date + '"]').html(data["result"]['fail_count']);
                                 $('[id="' + tag + '_blacklist_' + date + '"]').css("display", "block");
                                 $('[id="' + tag + '_whitelist_' + date + '"]').css("display", "none");
@@ -96,6 +113,8 @@ $(document.body).on('click', '.datatable_button', function () {
                             $('[id="' + tag + '_icon_' + date + '"]').addClass("icon_success");
                             $('[id="' + tag + '_conso_w_' + date + '"]').html("0");
                             $('[id="' + tag + '_conso_kw_' + date + '"]').html("0");
+                            $('[id="' + tag + '_hc_daily_' + date + '"]').html("-");
+                            $('[id="' + tag + '_hp_daily_' + date + '"]').html("-");
                             $('[id="' + tag + '_reset_' + date + '"]').css("display", "none");
                             $('[id="' + tag + '_import_' + date + '"]').css("display", "block");
                             $('[id="' + tag + '_import_' + date + '"]').addClass("datatable_button_disable");
@@ -117,7 +136,8 @@ $(document.body).on('click', '.datatable_button', function () {
 
 
 let french = {
-    processing: "Traitement en cours...",
+    // processing: "Traitement en cours...",
+    processing: '<div class="d-flex justify-content-center align-items-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Traitement en cours...</span></div></div>',
     search: "Rechercher&nbsp;:",
     lengthMenu: "Afficher _MENU_ &eacute;l&eacute;ments",
     info: "Affichage de l'&eacute;lement _START_ &agrave; _END_ sur _TOTAL_ &eacute;l&eacute;ments",
@@ -139,6 +159,30 @@ let french = {
     }
 }
 
+var consumption_columnDefs = [];
+consumption_columnDefs.push({targets: 0, className: 'dt-body-center dt-head-center'});
+consumption_columnDefs.push({targets: 1, className: 'dt-body-center dt-head-center'});
+consumption_columnDefs.push({targets: 2, className: 'dt-body-center dt-head-center'});
+consumption_columnDefs.push({targets: 3, className: 'dt-body-center dt-head-center', orderable: false});
+consumption_columnDefs.push({targets: 4, className: 'dt-body-center dt-head-center', orderable: false});
+consumption_columnDefs.push({targets: 5, className: 'dt-body-center dt-head-center', orderable: false});
+consumption_columnDefs.push({targets: 6, className: 'dt-body-center dt-head-center',});
+consumption_columnDefs.push({targets: 7, className: 'dt-head-center', orderable: false});
+consumption_columnDefs.push({targets: 8, className: 'dt-body-center dt-head-center loading_bg', orderable: false});
+consumption_columnDefs.push({targets: 9, className: 'dt-body-center dt-head-center loading_bg', orderable: false});
+
+var consumption_columns = [];
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+consumption_columns.push({"width": "auto"});
+
 let datatable_consumption = {
     processing: true,
     serverSide: true,
@@ -152,48 +196,8 @@ let datatable_consumption = {
             $.LoadingOverlay("hide", loading);
         },
     },
-    columnDefs: [
-        {
-            targets: 0,
-            className: 'dt-body-center dt-head-center',
-        },
-        {
-            targets: 1,
-            className: 'dt-body-center dt-head-center',
-        },
-        {
-            targets: 2,
-            className: 'dt-body-center dt-head-center',
-        },
-        {
-            targets: 3,
-            className: 'dt-body-center dt-head-center',
-        },
-        {
-            targets: 4,
-            className: 'dt-head-center',
-            orderable: false
-        },
-        {
-            targets: 5,
-            className: 'dt-body-center dt-head-center loading_bg',
-            orderable: false
-        },
-        {
-            targets: 6,
-            className: 'dt-body-center dt-head-center loading_bg',
-            orderable: false
-        },
-    ],
-    columns: [
-        {"width": "30%"},
-        {"width": "30%"},
-        {"width": "30%"},
-        {"width": "10px"},
-        {"width": "50px"},
-        {"width": "50px"},
-        {"width": "50px"},
-    ],
+    columnDefs: consumption_columnDefs,
+    columns: consumption_columns,
     aoColumnDefs: [
         {
             "mRender": function (data, type, row) {
@@ -407,7 +411,7 @@ let datatable_config_power = {
             $.LoadingOverlay("show", loading);
         },
         complete: function () {
-            $.LoadingOverlay("hide", loading);
+            $.LoadingOverlay("show", loading);
         },
     },
     columnDefs: [

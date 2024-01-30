@@ -221,6 +221,7 @@ class UsagePoint:
             body += self.offpeak_hours_table()
 
             # TEMPO
+            tempo_config = None
             if self.usage_point_config.plan == "Tempo":
                 tempo_config = self.db.get_tempo_config("price")
                 body += f"<h1>Tempo</h1>"
@@ -359,6 +360,9 @@ class UsagePoint:
                             <th class="title">Date</th>
                             <th class="title">Consommation (Wh)</th>
                             <th class="title">Consommation (kWh)</th>
+                            <th class="title">HC (kWh)</th> 
+                            <th class="title">HP (kWh)</th> 
+                            <th class="title">Tempo</th>                                                           
                             <th class="title">Échec</th>
                             <th class="title">En&nbsp;cache</th>
                             <th class="title">Cache</th>
@@ -370,6 +374,9 @@ class UsagePoint:
                             <th class="title">Date</th>
                             <th class="title">Consommation (Wh)</th>
                             <th class="title">Consommation (kWh)</th>
+                            <th class="title">HC (kWh)</th> 
+                            <th class="title">HP (kWh)</th> 
+                            <th class="title">Tempo</th>                                                    
                             <th class="title">Échec</th>
                             <th class="title">En&nbsp;cache</th>
                             <th class="title">Cache</th>

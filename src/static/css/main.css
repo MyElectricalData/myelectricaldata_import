@@ -218,6 +218,7 @@ code {
 #paypal_form {
     height: 55px;
 }
+
 #paypal_img {
     width: 170px;
     background: var(--main-bg-color);
@@ -292,10 +293,10 @@ select {
 }
 
 select option {
-  /*margin: 40px;*/
-  /*background: rgba(0, 0, 0, 0.3);*/
-  /*color: #fff;*/
-  /*text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);*/
+    /*margin: 40px;*/
+    /*background: rgba(0, 0, 0, 0.3);*/
+    /*color: #fff;*/
+    /*text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);*/
     border-radius: 0px;
     padding: 3px;
     font-weight: bolder;
@@ -321,7 +322,7 @@ select option {
 }
 
 .table_configuration input[type=text]:focus {
-  border: 3px solid #555;
+    border: 3px solid #555;
 }
 
 
@@ -365,6 +366,7 @@ select option {
     background: var(--main-bg-color);
     color: var(--sde-bg-color);
 }
+
 .btn-blue:hover {
     padding: 6px;
     font-weight: bold;
@@ -412,6 +414,42 @@ table td {
     -webkit-mask-size: contain;
     background-repeat: no-repeat no-repeat;
     height: 30px;
+}
+
+.tempo_red {
+    background-color: var(--text-warning);
+    background-size: auto;
+    mask: url("/static/img/tempo_red.svg") no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url("/static/img/tempo_red.svg") no-repeat center;
+    -webkit-mask-size: contain;
+    background-repeat: no-repeat no-repeat;
+    height: 30px;
+    color: var(--text-warning)
+}
+
+.tempo_white {
+    background-color: #b8b8b8;
+    background-size: auto;
+    mask: url("/static/img/tempo_white.svg") no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url("/static/img/tempo_white.svg") no-repeat center;
+    -webkit-mask-size: contain;
+    background-repeat: no-repeat no-repeat;
+    color: #b8b8b8;
+    height: 30px;
+}
+
+.tempo_blue {
+    background-color: var(--code-color);
+    background-size: auto;
+    mask: url("/static/img/tempo_blue.svg") no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url("/static/img/tempo_blue.svg") no-repeat center;
+    -webkit-mask-size: contain;
+    background-repeat: no-repeat no-repeat;
+    height: 30px;
+    color: var(--code-color)
 }
 
 .recap_wrap {
@@ -691,20 +729,20 @@ table td {
     cursor: pointer;
 }
 
- div#pop-up {
-   display: none;
-   position: absolute;
-   width: 10px;
-   padding: 10px;
-   background: #eeeeee;
-   color: #000000;
-   border: 1px solid #1a1a1a;
-   font-size: 90%;
- }
+div#pop-up {
+    display: none;
+    position: absolute;
+    width: 10px;
+    padding: 10px;
+    background: #eeeeee;
+    color: #000000;
+    border: 1px solid #1a1a1a;
+    font-size: 90%;
+}
 
 .error {
-  color: red;
-  /*background-color: #acf;*/
+    color: red;
+    /*background-color: #acf;*/
 }
 
 .dataTables_wrapper .dataTables_length {
@@ -716,6 +754,7 @@ table td {
     text-align: center;
     border-collapse: collapse;
 }
+
 .table_offpeak_hours th {
     background: var(--sde-bg-color);
     color: var(--main-bg-color);
@@ -740,4 +779,14 @@ table td {
 
 .loadingoverlay_text {
     animation: blinker 1s linear infinite !important;
+}
+
+.dataTables_wrapper .dataTables_processing {
+    position: absolute;
+    top: 20% !important;
+    border: none;
+}
+
+div.dataTables_processing > div:last-child {
+  display: none;
 }

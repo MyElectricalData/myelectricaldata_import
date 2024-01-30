@@ -5,6 +5,7 @@ from dependencies import title
 from dateutil.relativedelta import relativedelta
 from config import DAILY_MAX_DAYS, URL
 from models.query import Query
+from models.stat import Stat
 from init import CONFIG, DB
 
 
@@ -216,6 +217,9 @@ class Daily:
             }
         for item in result:
             if date.strftime(self.date_format) in item["date"]:
+                print(Stat(self.usage_point_id, self.measure_type).get_daily(date, "hc"))
+                item["hc"] = Stat(self.usage_point_id, self.measure_type).get_daily(date, "hc")
+                item["hp"] = Stat(self.usage_point_id, self.measure_type).get_daily(date, "hp")
                 return item
         return {
             "error": True,
