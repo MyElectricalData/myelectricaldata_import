@@ -2,11 +2,32 @@
 
 
 
+## v0.10.0-rc.22 (2024-01-30)
+
+### Feature
+
+* feat: add hp/hp &amp; tempo to daily comsuption ([`6d0c4b7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6d0c4b715e15127caa38171f2217fde906e6da4c))
+
+### Fix
+
+* fix: loading hide ([`a9035b6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a9035b61b7834a5b590c94e4848b61c32ab72095))
+
+### Unknown
+
+* Merge pull request #475 from MyElectricalData/feat/hp-hp-tempo-daily
+
+Feat/hp hp tempo daily ([`0ae2ff0`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0ae2ff0c78edbe6ad88717aae45167659b529850))
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`d4439c6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d4439c62de890e787b63e7c3cb39781e2b4b91d7))
+
+
 ## v0.10.0-rc.21 (2024-01-29)
 
 ### Fix
 
 * fix: imports conftest ([`9ceab7d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9ceab7d35eb51017c342685d027a9e573d1082d0))
+
+* fix: tempo data in usage_point ([`27df24c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/27df24c032fc0d182514c5ad89131325b154008e))
 
 ### Test
 
@@ -23,6 +44,8 @@ tests: Mock requests et DB ([`94adc88`](https://github.com/MyElectricalData/myel
 * Merge remote-tracking branch &#39;upstream/main&#39; into koukihai/mock-requests ([`5cbb69e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5cbb69ee716a36014e4eaa8ef2e8dd78c0894493))
 
 * mock: /valid_access/{usage_point_id}/cache ([`803de87`](https://github.com/MyElectricalData/myelectricaldata_import/commit/803de879fe29bf9b99a8557d0725500c81e73ada))
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`f1314a2`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f1314a221ac6cc111e8d59321e73a1f6f1c120c3))
 
 
 ## v0.10.0-rc.20 (2024-01-29)
