@@ -779,6 +779,15 @@ class Stat:
             )
         return json.dumps(result)
 
+    def get_daily(self, date, mesure_type):
+        begin = datetime.combine(date, datetime.min.time())
+        end = datetime.combine(date, datetime.max.time())
+        value = 0
+        for item in self.db.get_detail_range(self.usage_point_id, begin, end):
+            if self.get_mesure_type(item.date).upper() == mesure_type.upper():
+                value += item.value / (60 / item.interval)
+        return value
+
     def delete(self):
         self.db.del_stat(self.usage_point_id)
 

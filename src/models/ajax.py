@@ -256,6 +256,8 @@ class Ajax:
                 "result": {
                     "value": 0,
                     "date": date,
+                    "hc": "-",
+                    "hp": "-",
                     "fail_count": result[target]["fail_count"],
                 },
             }
@@ -273,13 +275,17 @@ class Ajax:
                         "fail_count": 0,
                     },
                 }
+                if "hc" in result[target]:
+                    data["result"]["hc"] = (result[target]["hc"],)
+                if "hp" in result[target]:
+                    data["result"]["hp"] = (result[target]["hp"],)
                 if "event_date" in result[target]:
                     data["result"]["event_date"] = result[target]["event_date"]
             else:
                 data = {
                     "error": "false",
                     "notif": f'Importation de la "{target}" du {date}',
-                    "result": {"value": 0, "date": 0, "fail_count": 0},
+                    "result": {"value": 0, "date": 0, "hc": "-", "hp": "-", "fail_count": 0},
                 }
             return data
 
@@ -459,10 +465,12 @@ class Ajax:
                 0: "date",
                 1: "value",
                 2: "value",
-                3: "fail_count",
-                4: "cache",
-                5: "import_clean",
-                6: "blacklist",
+                3: "value",
+                4: "value",
+                5: "fail_count",
+                6: "cache",
+                7: "import_clean",
+                8: "blacklist",
             }
             all_data = self.db.get_daily_datatable(
                 usage_point_id=self.usage_point_id,
@@ -629,10 +637,43 @@ class Ajax:
                     cache_state = (
                         f'<div id="{measurement_direction}_icon_{target}_{date_text}" class="icon_failed">0</div>'
                     )
+                tempo = self.db.get_tempo_range(
+                    db_data.date.strftime(self.date_format), db_data.date.strftime(self.date_format)
+                )
+                if tempo and tempo[0]:
+                    if tempo[0].color == "RED":
+                        temp_color = (
+                            f'<div id="{measurement_direction}_tempo_{target}_{date_text}" class="tempo_red">2</div>'
+                        )
+                    elif tempo[0].color == "WHITE":
+                        temp_color = (
+                            f'<div id="{measurement_direction}_tempo_{target}_{date_text}" class="tempo_white">1</div>'
+                        )
+                    else:
+                        temp_color = (
+                            f'<div id="{measurement_direction}_tempo_{target}_{date_text}" class="tempo_blue">0</div>'
+                        )
+                else:
+                    temp_color = f'<div id="{measurement_direction}_tempo_{target}_{date_text}" class="">-</div>'
+                hc = Stat(self.usage_point_id, "consumption").get_daily(db_data.date, "hc")
+                if hc == 0:
+                    hc = "-"
+                else:
+                    hc = hc / 1000
+                hp = Stat(self.usage_point_id, "consumption").get_daily(db_data.date, "hp")
+                if hp == 0:
+                    hp = "-"
+                else:
+                    hp = hp / 1000
+                hc_kw = f'<div id="{measurement_direction}_hc_{target}_{date_text}" class="">{hc}</div>'
+                hp_kw = f'<div id="{measurement_direction}_hp_{target}_{date_text}" class="">{hp}</div>'
                 day_data = [
                     date_text,
                     conso_w,
                     conso_kw,
+                    hc_kw,
+                    hp_kw,
+                    temp_color,
                     fail_count,
                     cache_state,
                     self.datatable_button(measurement_direction, db_data)["cache"],

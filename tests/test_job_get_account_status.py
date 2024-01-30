@@ -10,26 +10,31 @@ from test_jobs import job
         ({"incomplete": "response"}, 200),
         ({"detail": "truthy response"}, 300),
         ({"detail": "falsy response"}, 500),
-        ({
-             "consent_expiration_date": "2099-01-01T00:00:00",
-             "call_number": 42,
-             "quota_limit": 42,
-             "quota_reached": 42,
-             "quota_reset_at": "2099-01-01T00:00:00.000000",
-             "ban": False
-         }, 200)],
+        (
+            {
+                "consent_expiration_date": "2099-01-01T00:00:00",
+                "call_number": 42,
+                "quota_limit": 42,
+                "quota_reached": 42,
+                "quota_reset_at": "2099-01-01T00:00:00.000000",
+                "ban": False,
+            },
+            200,
+        ),
+    ],
 )
 def test_get_account_status(mocker, job, caplog, status_response, status_code, requests_mock):
     from config import URL
 
     m_set_error_log = mocker.patch("models.database.Database.set_error_log")
-    m_usage_point_update = mocker.patch('models.database.Database.usage_point_update')
+    m_usage_point_update = mocker.patch("models.database.Database.usage_point_update")
     mocker.patch("models.jobs.Job.header_generate")
     requests_mocks = list()
 
     if job.usage_point_id:
-        rm = requests_mock.get(f"{URL}/valid_access/{job.usage_point_id}/cache", json=status_response,
-                               status_code=status_code)
+        rm = requests_mock.get(
+            f"{URL}/valid_access/{job.usage_point_id}/cache", json=status_response, status_code=status_code
+        )
         requests_mocks.append(rm)
         expected_count = 1
         # FIXME: If job has usage_point_id, get_account_status() expects
@@ -39,16 +44,23 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
     else:
         enabled_usage_points = [up for up in job.usage_points if up.enable]
         for u in enabled_usage_points:
-            rm = requests_mock.get(f"{URL}/valid_access/{u.usage_point_id}/cache", json=status_response,
-                                   status_code=status_code)
+            rm = requests_mock.get(
+                f"{URL}/valid_access/{u.usage_point_id}/cache", json=status_response, status_code=status_code
+            )
             requests_mocks.append(rm)
         expected_count = len(enabled_usage_points)
 
     res = job.get_account_status()
 
     assert "INFO     root:dependencies.py:88 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
-    is_complete = {"consent_expiration_date", "call_number", "quota_limit", "quota_reached", "quota_reset_at",
-                   "ban"}.issubset(set(status_response.keys()))
+    is_complete = {
+        "consent_expiration_date",
+        "call_number",
+        "quota_limit",
+        "quota_reached",
+        "quota_reset_at",
+        "ban",
+    }.issubset(set(status_response.keys()))
     is_truthy_response = 200 <= status_code < 400
 
     if is_truthy_response:
