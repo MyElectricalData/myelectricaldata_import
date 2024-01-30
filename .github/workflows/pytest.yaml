@@ -2,11 +2,14 @@ name: Run Pytests
 
 on:
   # Run workflow automatically whenever the workflow, app or tests are updated
-  push:
-    paths:
-      - .github/workflows/pytest.yaml                    # Assuming this file is stored in .github/workflows/pytest.yaml
-      - src/**
-      - tests/**
+#  push:
+#    paths:
+#      - .github/workflows/pytest.yaml                    # Assuming this file is stored in .github/workflows/pytest.yaml
+#      - src/**
+#      - tests/**
+  pull_request:
+    branches:
+      - main
 
 jobs:
   pytest:
