@@ -1,7 +1,6 @@
 import pytest
-
 from db_schema import UsagePoints
-from tests.conftest import setenv
+from conftest import setenv
 
 EXPORT_METHODS = ["export_influxdb", "export_home_assistant_ws", "export_home_assistant", "export_mqtt"]
 PER_USAGE_POINT_METHODS = [
@@ -39,11 +38,10 @@ def test_boot(mocker, caplog, job, envvar_to_true):
         res = job.boot()
 
     assert res is None
-    if envvar_to_true in ["DEV"]:
+    if envvar_to_true:
         assert 0 == m.call_count, "job_import_data should not be called"
         assert "WARNING  root:jobs.py:50 => Import job disable\n" == caplog.text
     else:
-        # FIXME: job_import_data is called when DEBUG=true
         assert "" == caplog.text
         m.assert_called_once()
 
@@ -54,21 +52,19 @@ def test_job_import_data(mocker, job, caplog):
         mockers[method] = mocker.patch(f"models.jobs.Job.{method}")
 
     count_enabled_jobs = len([j for j in job.usage_points if j.enable])
-    expected_logs = ""
 
     res = job.job_import_data(target=None)
 
     # FIXME: Logline says 10s regardless of job.wait_job_start
-    expected_logs += "INFO     root:dependencies.py:88 DÉMARRAGE DU JOB D'IMPORTATION DANS 10S\n"
+    assert "INFO     root:dependencies.py:88 DÉMARRAGE DU JOB D'IMPORTATION DANS 10S\n" in caplog.text
     assert res["status"] is True
+
     for method, m in mockers.items():
         if method in PER_JOB_METHODS:
             assert m.call_count == 1
         else:
             assert m.call_count == count_enabled_jobs
         m.reset_mock()
-
-    assert expected_logs in caplog.text
 
 
 def test_header_generate(job, caplog):
@@ -84,73 +80,6 @@ def test_header_generate(job, caplog):
             "version": get_version(),
         } == job.header_generate()
     assert expected_logs == caplog.text
-
-
-@pytest.mark.parametrize("ping_side_effect", [None, Exception("Mocker: Ping failed")])
-def test_get_gateway_status(job, caplog, ping_side_effect, mocker):
-    m_ping = mocker.patch("models.query_status.Status.ping")
-    m_ping.side_effect = ping_side_effect
-    m_ping.return_value = {"mocked": "true"}
-
-    job.get_gateway_status()
-
-    if ping_side_effect:
-        assert "ERROR    root:jobs.py:170 Erreur lors de la récupération du statut de la passerelle :" in caplog.text
-    else:
-        assert "INFO     root:dependencies.py:88 RÉCUPÉRATION DU STATUT DE LA PASSERELLE :" in caplog.text
-
-
-@pytest.mark.parametrize(
-    "status_return_value, is_supported",
-    [
-        ({}, True),
-        ({"any_key": "any_value"}, True),
-        ({"error": "only"}, False),
-        ({"error": "with all fields", "status_code": "5xx", "description": {"detail": "proper error"}}, True),
-    ],
-)
-@pytest.mark.parametrize("status_side_effect", [None, Exception("Mocker: Status failed")])
-def test_get_account_status(mocker, job, caplog, status_side_effect, status_return_value, is_supported):
-    m_status = mocker.patch("models.query_status.Status.status")
-    m_set_error_log = mocker.patch("models.database.Database.set_error_log")
-    mocker.patch("models.jobs.Job.header_generate")
-
-    m_status.side_effect = status_side_effect
-    m_status.return_value = status_return_value
-
-    enabled_usage_points = [up for up in job.usage_points if up.enable]
-    if not job.usage_point_id:
-        expected_count = len(enabled_usage_points)
-    else:
-        expected_count = 1
-        # If job has usage_point_id, get_account_status() expects
-        # job.usage_point_config.usage_point_id to be populated from a side effect
-        job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
-
-    res = job.get_account_status()
-
-    assert "INFO     root:dependencies.py:88 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
-    if status_side_effect is None and is_supported:
-        assert expected_count == m_set_error_log.call_count
-        if status_return_value.get("error"):
-            m_set_error_log.assert_called_with("pdl1", "5xx - proper error")
-    elif status_side_effect:
-        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
-        assert f"ERROR    root:jobs.py:197 {status_side_effect}" in caplog.text
-        # set_error_log is not called in case status() raises an exception
-        assert 0 == m_set_error_log.call_count
-    elif not is_supported:
-        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
-        assert "ERROR    root:jobs.py:197 'status_code'" in caplog.text
-        # FIXME: set_error_log is not called in case status() returns
-        # a dict with an error key but no status_code or description.detail
-        assert 0 == m_set_error_log.call_count
-
-    # Ensuring status() is called exactly as many times as enabled usage_points
-    # and only once per enabled usage_point
-    assert expected_count == m_status.call_count
-    for j in enabled_usage_points:
-        m_status.assert_called_once_with(usage_point_id=j.usage_point_id)
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,77 @@
 
 
 
+## v0.10.0-rc.22 (2024-01-30)
+
+### Feature
+
+* feat: add hp/hp &amp; tempo to daily comsuption ([`6d0c4b7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6d0c4b715e15127caa38171f2217fde906e6da4c))
+
+### Fix
+
+* fix: loading hide ([`a9035b6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a9035b61b7834a5b590c94e4848b61c32ab72095))
+
+### Unknown
+
+* Merge pull request #475 from MyElectricalData/feat/hp-hp-tempo-daily
+
+Feat/hp hp tempo daily ([`0ae2ff0`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0ae2ff0c78edbe6ad88717aae45167659b529850))
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`d4439c6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d4439c62de890e787b63e7c3cb39781e2b4b91d7))
+
+
+## v0.10.0-rc.21 (2024-01-29)
+
+### Fix
+
+* fix: imports conftest ([`9ceab7d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9ceab7d35eb51017c342685d027a9e573d1082d0))
+
+* fix: tempo data in usage_point ([`27df24c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/27df24c032fc0d182514c5ad89131325b154008e))
+
+### Test
+
+* test: add github action ([`a7b1900`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a7b19000591a4b19fe3af5e7fd97c02e5d151850))
+
+### Unknown
+
+* Merge pull request #474 from koukihai/koukihai/mock-requests
+
+tests: Mock requests et DB ([`94adc88`](https://github.com/MyElectricalData/myelectricaldata_import/commit/94adc884a8ed3a3958daf7a9ee43d7728d748c10))
+
+* move comment ([`e2736fe`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e2736fe5a708f1b47531ef5e00106e7a3758c086))
+
+* Merge remote-tracking branch &#39;upstream/main&#39; into koukihai/mock-requests ([`5cbb69e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5cbb69ee716a36014e4eaa8ef2e8dd78c0894493))
+
+* mock: /valid_access/{usage_point_id}/cache ([`803de87`](https://github.com/MyElectricalData/myelectricaldata_import/commit/803de879fe29bf9b99a8557d0725500c81e73ada))
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`f1314a2`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f1314a221ac6cc111e8d59321e73a1f6f1c120c3))
+
+
+## v0.10.0-rc.20 (2024-01-29)
+
+### Ci
+
+* ci: update ([`719169c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/719169c77723d21cf908ed059b32edd330c7aa7e))
+
+### Fix
+
+* fix: add dev mode ([`7becf9e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7becf9ec6939cbd25245bbacd72ae45822d039de))
+
+* fix: support DEV/DEBUG update ([`00bd332`](https://github.com/MyElectricalData/myelectricaldata_import/commit/00bd332b78ebefd8e7b1b712bd3e65af7de03c5b))
+
+### Unknown
+
+* Merge pull request #473 from vingerha/main
+
+Replacing &#39;year&#39;-number with &#39;current&#39; in case it is current year ([`b3bda75`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b3bda75fa3e33febe32fd5468acac4abc34715bb))
+
+* Replaying &#39;year&#39;-number with &#39;current&#39; in case it is current year
+
+Allows to call MQTT topics having data for current tear directly from HA sensor (and others) ([`4fd6afa`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4fd6afa7f187baeb3592e066b431975aa174be2e))
+
+* Merge remote-tracking branch &#39;refs/remotes/origin/main&#39; ([`810742c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/810742c7300615f4d7851b6a2d3c09c41bb802ac))
+
+
 ## v0.10.0-rc.19 (2024-01-27)
 
 ### Ci
