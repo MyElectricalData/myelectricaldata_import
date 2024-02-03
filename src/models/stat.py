@@ -604,15 +604,20 @@ class Stat:
         now_date = datetime.now(timezone.utc)
         if month is None:
             month = int(datetime.now().strftime("%m"))
-        today = date.today()
-        start = today - timedelta(days=today.weekday())
+        
+        #adapt for day in leap-year
+        if datetime.now.strftime("%m%d") == "0229" and int(year) != int(datetime.now().strftime("%Y")):
+            today = date.today() + timedelta(days=1)
+        else:
+            today = date.today()
+        start = today.replace(year=year, month=month) - timedelta(days=today.replace(year=year, month=month).weekday())
         end = start + timedelta(days=6)
         begin = datetime.combine(
-            now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
+            start,
             datetime.min.time(),
         )
         end = datetime.combine(
-            now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
+            end,
             datetime.max.time(),
         )
         value = 0
@@ -778,6 +783,15 @@ class Stat:
                 json.dumps(result),
             )
         return json.dumps(result)
+
+    def get_daily(self, date, mesure_type):
+        begin = datetime.combine(date, datetime.min.time())
+        end = datetime.combine(date, datetime.max.time())
+        value = 0
+        for item in self.db.get_detail_range(self.usage_point_id, begin, end):
+            if self.get_mesure_type(item.date).upper() == mesure_type.upper():
+                value += item.value / (60 / item.interval)
+        return value
 
     def delete(self):
         self.db.del_stat(self.usage_point_id)
