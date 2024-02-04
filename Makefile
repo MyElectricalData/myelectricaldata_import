@@ -108,11 +108,11 @@ debug: init enable_debug up bootstrap down
 
 ## Start all external ressource necessary to debug (MQTT, InfluxDB,...)
 up:
-	cd dev; docker compose up --force-recreate --detach; cd -
+	docker compose -f dev/docker-compose.dev.yaml start
 
 ## Stop all external ressource necessary to debug (MQTT, InfluxDB,...)
 down:
-	docker compose down
+	docker compose -f dev/docker-compose.dev.yaml stop
 
 ## Run PyTest only
 test: pytest

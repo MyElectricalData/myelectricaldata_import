@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "myelectricaldata-import"
-version = "0.1.0"
+version = "0.10.0-rc.22"
 description = "MyElectricalData official client"
 authors = ["Clément VALENTIN <m4dm4rtig4n@gmail.com>"]
 readme = "README.md"
@@ -76,12 +76,8 @@ version_variables = [
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"
-prerelease = false
-
-[tool.semantic_release.branches."*"]
-match = ".*"
-prerelease = true
 prerelease_token = "rc"
+prerelease = true
 
 [tool.semantic_release.changelog]
 template_dir = "templates"
