@@ -8,9 +8,9 @@ define title
 @/bin/echo -e "\n------------------------------------------------\n${1}\n------------------------------------------------\n"
 endef
 define poetry
-$(call title, ${2})
-touch .env
-poetry run -vvv ${1}
+	$(call title, ${2})
+	touch .env
+	~/.asdf/shims/poetry run -vvv ${1}
 endef
 
 check: check_asdf
@@ -108,11 +108,11 @@ debug: init enable_debug up bootstrap down
 
 ## Start all external ressource necessary to debug (MQTT, InfluxDB,...)
 up:
-	docker compose -f dev/docker-compose.dev.yaml start
+	cd dev; docker compose up --force-recreate --detach; cd -
 
 ## Stop all external ressource necessary to debug (MQTT, InfluxDB,...)
 down:
-	docker compose -f dev/docker-compose.dev.yaml stop
+	docker compose down
 
 ## Run PyTest only
 test: pytest

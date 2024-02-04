@@ -75,9 +75,13 @@ version_variables = [
 ]
 
 [tool.semantic_release.branches.main]
-match = "(main|master|feat/poetry)"
-prerelease_token = "rc"
+match = "(main|master)"
+prerelease = false
+
+[tool.semantic_release.branches."*"]
+match = ".*"
 prerelease = true
+prerelease_token = "rc"
 
 [tool.semantic_release.changelog]
 template_dir = "templates"

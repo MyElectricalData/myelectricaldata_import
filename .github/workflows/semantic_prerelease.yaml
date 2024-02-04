@@ -9,5 +9,3 @@ jobs:
 
   Semantic-Pre-Release:
     uses: MyElectricalData/.github/.github/workflows/python_semantic_release.yaml@main
-    with:
-      PRE_RELEASE: true

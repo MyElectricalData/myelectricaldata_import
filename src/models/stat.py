@@ -604,7 +604,7 @@ class Stat:
         now_date = datetime.now(timezone.utc)
         if month is None:
             month = int(datetime.now().strftime("%m"))
-        #adapt for day in leap-year
+        # adapt for day in leap-year
         if datetime.now().strftime("%m%d") == "0229" and int(year) != int(datetime.now().strftime("%Y")):
             today = date.today() + timedelta(days=1)
         else:
