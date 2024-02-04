@@ -604,15 +604,19 @@ class Stat:
         now_date = datetime.now(timezone.utc)
         if month is None:
             month = int(datetime.now().strftime("%m"))
-        today = date.today()
-        start = today - timedelta(days=today.weekday())
+        #adapt for day in leap-year
+        if datetime.now().strftime("%m%d") == "0229" and int(year) != int(datetime.now().strftime("%Y")):
+            today = date.today() + timedelta(days=1)
+        else:
+            today = date.today()
+        start = today.replace(year=year, month=month) - timedelta(days=today.replace(year=year, month=month).weekday())
         end = start + timedelta(days=6)
         begin = datetime.combine(
-            now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
+            start,
             datetime.min.time(),
         )
         end = datetime.combine(
-            now_date.replace(year=year, month=month, day=int(start.strftime("%d"))),
+            end,
             datetime.max.time(),
         )
         value = 0
