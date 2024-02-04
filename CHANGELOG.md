@@ -2,6 +2,13 @@
 
 
 
+## v0.10.0-rc.24 (2024-02-04)
+
+### Fix
+
+* fix: migrate to sem input ([`2c5999f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2c5999f62054914f5a96b0ec21008d24dabb5073))
+
+
 ## v0.10.0-rc.23 (2024-02-04)
 
 ### Chore
