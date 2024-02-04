@@ -1,6 +1,44 @@
 # CHANGELOG
 
 
+
+## v0.10.0-rc.23 (2024-02-04)
+
+### Chore
+
+* chore: clean ([`5e1c2dd`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5e1c2dda28a8471a395134cb0bd10f7e8750d862))
+
+### Ci
+
+* ci: run ci only on PR to main ([`2dfb992`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2dfb99216a7120a14af9b10cdfbcdb25cdef3938))
+
+### Fix
+
+* fix: generate rc ([`697834c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/697834c6693e5366dfa72abdbe02fc05c9ad1cd1))
+
+### Unknown
+
+* Clean ([`8fc7819`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8fc7819bf438f5b080ce2c86efb0c68ec25ad3e7))
+
+* Merge pull request #482 from MyElectricalData/vingerha-main
+
+chore: clean ([`211c2db`](https://github.com/MyElectricalData/myelectricaldata_import/commit/211c2db1e6e4e57dd6c9a29b242507b5d35b2a63))
+
+* Merge pull request #481 from vingerha/main
+
+Fix: get_week ([`988b9a6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/988b9a69ea7518e0a264cce6a1621bae1ee99442))
+
+* Fix: typo in get_week
+
+now instead of now() ([`6c96e78`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6c96e784c958b9ea334be0ec99f17f0fccacf141))
+
+* Merge branch &#39;main&#39; of https://github.com/vingerha/myelectricaldata ([`0bfaa5e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0bfaa5e6f7120236798337e6cb3c8a092377fce7))
+
+* Fix get_week
+
+Base on &#39;today&#39; and adapt for leap-year situation ([`55b4e6e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/55b4e6ee1d59742d9522411088d0d739187b29c1))
+
+
 ## v0.10.0-rc.22 (2024-01-30)
 
 ### Feature
