@@ -2,6 +2,19 @@
 
 
 
+## v0.10.1-rc.2 (2024-02-05)
+
+### Fix
+
+* fix: add install-github ([`7276830`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7276830bd71103362af87ff4d485e3a5e60c9661))
+
+### Unknown
+
+* Merge pull request #487 from MyElectricalData/fix/tempo_days
+
+fix: add install-github ([`23ac718`](https://github.com/MyElectricalData/myelectricaldata_import/commit/23ac718143a088f1df453fb00c0c2a930aefc9f6))
+
+
 ## v0.10.1-rc.1 (2024-02-05)
 
 ### Ci
