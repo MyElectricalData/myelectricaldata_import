@@ -2,7 +2,14 @@
 
 
 
-## v0.3.0 (2024-02-05)
+## v0.3.0-rc.1 (2024-02-05)
+
+### Feature
+
+* feat: increment release ([`1f7b318`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1f7b318c38d894ccf9c8ad1301cd97007a503122))
+
+
+## v0.3.0 (2024-02-04)
 
 ### Feature
 
