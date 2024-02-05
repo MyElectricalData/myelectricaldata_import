@@ -2,6 +2,17 @@
 
 
 
+## v0.2.0 (2024-02-05)
+
+### Feature
+
+* feat: increment ([`6b12e4d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6b12e4da878bd7c1d3fb9f4c58ba6f1ab8aae434))
+
+### Unknown
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`3780e26`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3780e26bc2bbe615321398410c592fb2e4a56e63))
+
+
 ## v0.1.0 (2024-02-05)
 
 
