@@ -2,6 +2,13 @@
 
 
 
+## v0.10.0 (2024-02-05)
+
+### Feature
+
+* feat: release 0.10.0 ([`69efe32`](https://github.com/MyElectricalData/myelectricaldata_import/commit/69efe3279d5bbffd7ddb4567ab25ee1f7b773b96))
+
+
 ## v0.9.0 (2024-02-05)
 
 ### Feature
