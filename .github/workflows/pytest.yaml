@@ -17,7 +17,10 @@ jobs:
     name: Run pytests
     runs-on: ubuntu-latest
     steps:
-      - run: echo 1
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: TEST
       # - name: generate FR locale
       #   run: sudo locale-gen fr_FR.UTF-8
       # - uses: actions/checkout@v4
