@@ -13,9 +13,9 @@ define poetry
 	~/.asdf/shims/poetry run -vvv ${1}
 endef
 
-check: check_asdf
+check: check-asdf
 
-check_asdf:
+check-asdf:
 	@if ! command -v asdf &> /dev/null; then \
 		echo "Error: asdf is not installed. Please install asdf first."; \
 		echo " => https://asdf-vm.com/guide/getting-started.html"; \
@@ -30,9 +30,15 @@ generate-dependencies:
 	poetry export --without-hashes --output src/requirements.txt
 
 ## Install dev environment
-install: install_libdev install_asdf upgrade_pip configure_poetry
+install: install-libdev install-asdf upgrade-pip configure-poetry
 
-install_libdev:
+## Minimun install to speed run on Github
+install-github:
+	@$(call title,"ASDF Install in .tool-versions")
+	asdf plugin-add poetry https://github.com/asdf-community/asdf-poetry.git
+	asdf install poetry
+
+install-libdev:
 	@$(call title, Install libdev requirement for python\n=> https://github.com/pyenv/pyenv/wiki#suggested-build-environment)
 	if [ "$(shell uname)" == "Darwin" ]; then \
 		brew install openssl readline sqlite3 xz zlib tcl-tk; \
@@ -41,16 +47,16 @@ install_libdev:
 		sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev; \
 	fi
 
-install_asdf:
+install-asdf:
 	@$(call title,"ASDF Install in .tool-versions")
 	asdf plugin-add poetry https://github.com/asdf-community/asdf-poetry.git
 	asdf plugin-add python
 	asdf install
 
-upgrade_pip:
+upgrade-pip:
 	@$(call poetry, pip install --upgrade pip, "Upgrade pip")
 
-configure_poetry:
+configure-poetry:
 	@$(call title,"Poetry set python version")
 	sed -i 's/python = .*/python = "$(shell cat .tool-versions|grep 'python' | cut -d " " -f 2)"/g' pyproject.toml
 	sed -i 's/FROM python:.*/FROM python:'$(shell cat .tool-versions|grep 'python' | cut -d " " -f 2)'-slim/g' Dockerfile
@@ -82,29 +88,29 @@ bootstrap:
 	@$(call poetry, --ansi python src/main.py, "Run main.py")
 
 ## Enable debug mode
-enable_debug:
+enable-debug:
 	sed -i "s/DEBUG=.*/DEBUG=true/g" .env
 
 ## Disable debug mode
-disable_debug:
+disable-debug:
 	sed -i "s/DEBUG=.*/DEBUG=false/g" .env
 
 ## Enable debug mode
-enable_dev:
+enable-dev:
 	sed -i "s/DEV=.*/DEV=true/g" .env
 
 ## Disable debug mode
-disable_dev:
+disable-dev:
 	sed -i "s/DEV=.*/DEV=false/g" .env
 
 ## Run in local
-run: init disable_debug bootstrap
+run: init disable-debug bootstrap
 
 ## Run local dev (without debug)
-dev: init disable_debug enable_dev up bootstrap
+dev: init disable-debug enable-dev up bootstrap
 
 ## Run in local in debug
-debug: init enable_debug up bootstrap down
+debug: init enable-debug up bootstrap down
 
 ## Start all external ressource necessary to debug (MQTT, InfluxDB,...)
 up:
