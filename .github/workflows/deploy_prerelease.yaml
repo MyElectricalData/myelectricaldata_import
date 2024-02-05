@@ -1,4 +1,4 @@
-name: "Build/Push Pre-Release"
+name: "[STAGING] Build/Push Pre-Release"
 
 on:
   workflow_dispatch:

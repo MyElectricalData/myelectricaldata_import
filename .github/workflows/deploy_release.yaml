@@ -1,4 +1,4 @@
-name: "Build/Push Release"
+name: "[PRODUCTION] Build/Push Release"
 
 on:
   workflow_dispatch:

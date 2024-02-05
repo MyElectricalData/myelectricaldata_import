@@ -1,4 +1,4 @@
-name: Run Pytests
+name: "[CI] Run Pytests"
 
 on:
   # Run workflow automatically whenever the workflow, app or tests are updated
