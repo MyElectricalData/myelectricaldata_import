@@ -2,6 +2,17 @@
 
 
 
+## v0.10.0-rc.25 (2024-02-05)
+
+### Fix
+
+* fix: clean ([`f39bebe`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f39bebe9c0f8254baa9a12994d661ad6eb162ca5))
+
+### Unknown
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import ([`963755a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/963755afd78b53c2a9d3ea1daa63e85be3547bee))
+
+
 ## v0.10.0-rc.24 (2024-02-04)
 
 ### Fix
