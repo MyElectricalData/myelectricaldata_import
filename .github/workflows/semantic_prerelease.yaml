@@ -3,7 +3,7 @@ name: "[STAGING] Pre-Release"
 on:
   push:
     branches:
-      - coucou
+      - main
 
 jobs:
 

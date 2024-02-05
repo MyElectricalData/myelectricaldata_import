@@ -2,10 +2,6 @@ name: "[PRODUCTION] Release"
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-  
 
 jobs:
 
