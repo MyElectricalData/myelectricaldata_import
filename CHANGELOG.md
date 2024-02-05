@@ -2,6 +2,49 @@
 
 
 
+## v0.10.1-rc.1 (2024-02-05)
+
+### Ci
+
+* ci: clean ([`ca54fa6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ca54fa6ae2c51c4ad8acf6b11d3b11e0d1843449))
+
+* ci: fix ([`48a4aed`](https://github.com/MyElectricalData/myelectricaldata_import/commit/48a4aed734f43e1a57112f225ad7c5f9d0e244f3))
+
+* ci: clean workflow ([`40b51e3`](https://github.com/MyElectricalData/myelectricaldata_import/commit/40b51e39f1a177a6b14bab0114512a22e54c58e5))
+
+* ci: test ([`3661dff`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3661dff643ce1d042f8e8a96545399d3b5be4892))
+
+* ci: test ([`1106e25`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1106e25b45ebb4bd0e48e54e2cea4fe166eca58b))
+
+* ci: test ([`5d64ddc`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5d64ddc5ab17d0ba19b93788047af42599a5a140))
+
+* ci: test ([`91a5df6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/91a5df649908e5d3e9b572a1bb49b256f9ce20b2))
+
+* ci: test ([`9460710`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9460710cc45816b1b30492c013584fa0bb0a4a60))
+
+* ci: test ([`0bf182a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0bf182a35fc39e4de8d0c2bb7ebdc6d808f55a2a))
+
+* ci: test ([`99ae339`](https://github.com/MyElectricalData/myelectricaldata_import/commit/99ae3394e6cdbe4e574685526186ad73d90357c1))
+
+### Fix
+
+* fix: tempo days color ([`bdee3e1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/bdee3e1796f3cadeea4dd998cce9433e6955b63a))
+
+### Unknown
+
+* Merge pull request #486 from MyElectricalData/fix/tempo_days
+
+Fix/tempo days ([`2ed1ca6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2ed1ca6668e893116e881e84867cefde332280c6))
+
+* Merge pull request #484 from MyElectricalData/ci/test
+
+ci: test ([`a2562d7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a2562d78e406ae1d216fa00f66f0b92e4a260fc3))
+
+* Merge pull request #483 from MyElectricalData/ci/test
+
+ci: test ([`f64dc29`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f64dc293e42292cc56f0583906e237524a03cef8))
+
+
 ## v0.10.0 (2024-02-05)
 
 ### Feature
