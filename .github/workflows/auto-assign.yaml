@@ -1,4 +1,4 @@
-name: Auto Assign
+name: "[CHORE] Auto Assign"
 on:
   issues:
     types: [opened]

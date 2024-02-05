@@ -1,3 +1,4 @@
+name: "[CHORE] Auto Close issue"
 on:
   issues:
     types: [opened] 
