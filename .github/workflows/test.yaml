@@ -2,10 +2,8 @@ name: "TEST"
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: 'Run Pytests'
-    types:
-      - completed
+  repository_dispatch:
+    types: [TEST]
 
 jobs:
   test:
