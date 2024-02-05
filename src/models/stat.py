@@ -120,7 +120,7 @@ class Stat:
         end = datetime.combine(begin, datetime.max.time())
         value = ""
         for data in self.db.get_tempo_range(begin, end):
-            logging.info(f"tempo data: {data}")
+            logging.debug(f"tempo data: {data}")
             value = value + data.color
         return {
             "value": value,

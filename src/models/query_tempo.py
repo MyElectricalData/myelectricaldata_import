@@ -1,7 +1,7 @@
 import json
 import logging
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 
@@ -18,6 +18,11 @@ class Tempo:
         self.url = URL
         self.valid_date = datetime.combine(datetime.now() + relativedelta(days=1), datetime.min.time())
         self.nb_check_day = 31
+        self.total_tempo_days = {
+            "red": 22,
+            "white": 43,
+            "blue": 300,
+        }
 
     def run(self):
         start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
@@ -77,6 +82,31 @@ class Tempo:
         else:
             logging.error(result)
             return "OK"
+        return result
+
+    def calc_day(self):
+        """
+        Calculates the number of days left for each color based on the current date.
+
+        Args:
+            None
+
+        Returns:
+            A dictionary containing the number of days left for each color.
+
+        """
+        now = datetime.now()
+        begin = datetime.combine(now.replace(month=9, day=1), datetime.min.time())
+        if now < begin:
+            begin = begin.replace(year=int(now.strftime("%Y")) - 1)
+        end = datetime.combine(begin - timedelta(hours=5), datetime.max.time()).replace(
+            year=int(begin.strftime("%Y")) + 1
+        )
+        current_tempo_day = self.db.get_tempo_range(begin=begin, end=end)
+        result = self.total_tempo_days
+        for day in current_tempo_day:
+            result[day.color.lower()] -= 1
+        self.db.set_tempo_config("days", result)
         return result
 
     def fetch_day(self):

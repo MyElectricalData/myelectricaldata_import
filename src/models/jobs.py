@@ -371,8 +371,8 @@ class Job:
         try:
             title(f"Récupération des données Tempo :")
             Tempo().fetch()
-            title(f"Récupération des jours Tempo :")
-            Tempo().fetch_day()
+            title(f"Calcul des jours Tempo :")
+            Tempo().calc_day()
             title(f"Récupération des tarifs Tempo :")
             Tempo().fetch_price()
             export_finish()

@@ -13,6 +13,7 @@ jobs:
       PRE_RELEASE: true
 
   Trig-Generate-Pre-Release:
+    needs: ["Semantic-Pre-Release"]
     runs-on: ubuntu-latest
     steps:      
       - name: Repository Dispatch

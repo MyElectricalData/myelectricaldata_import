@@ -108,7 +108,7 @@ debug: init enable_debug up bootstrap down
 
 ## Start all external ressource necessary to debug (MQTT, InfluxDB,...)
 up:
-	docker compose -f dev/docker-compose.dev.yaml start
+	cd dev; docker compose up --force-recreate --detach; cd -
 
 ## Stop all external ressource necessary to debug (MQTT, InfluxDB,...)
 down:

@@ -644,6 +644,17 @@ class HomeAssistant:
             self.tempo_days_sensor(f"{color}", days)
 
     def tempo_days_sensor(self, color, days):
+        """
+        Add a sensor to Home Assistant with the given name and state.
+
+        Args:
+            color (str): The color of the tempo (e.g. blue, white, red).
+            days (int): The number of days in the tempo.
+
+        Returns:
+            None
+
+        """
         uniq_id = f"myelectricaldata_tempo_days_{color}"
         self.sensor(
             topic=f"myelectricaldata_edf/tempo_days_{color}",
