@@ -8,6 +8,8 @@ on:
         required: true
         default: false
         type: boolean
+  repository_dispatch:
+    types: [generate_release]                
   workflow_run:
     workflows: ['\[PRODUCTION\] Release']
     types:

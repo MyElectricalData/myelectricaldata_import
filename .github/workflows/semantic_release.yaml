@@ -9,3 +9,11 @@ jobs:
     uses: MyElectricalData/.github/.github/workflows/python_semantic_release_input.yaml@main
     with:
       PRE_RELEASE: false
+
+  Trig-Generate-Release:
+    runs-on: ubuntu-latest
+    steps:      
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: generate_release

@@ -8,6 +8,8 @@ on:
         required: true
         default: false
         type: boolean
+  repository_dispatch:
+    types: [generate_prerelease]
   workflow_run:
     workflows: ['\[STAGING\] Pre-Release']
     types:
