@@ -17,6 +17,7 @@ home_assistant_ws: # FOR ENERGY TAB
   ssl: true
   token: HOME_ASSISTANT_TOKEN_GENERATE_IN_PROFILE_TABS_(BOTTOM)
   url: myhomeassistant.domain.fr
+  max_date: "2021-06-01"
 ssl:
   gateway: true
   certfile: ""
