@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+
+## v0.9.3-rc.2 (2024-02-05)
+
+### Fix
+
+* fix: regenerate version ([`273d743`](https://github.com/MyElectricalData/myelectricaldata_import/commit/273d7435d309c1954e3c8f3be49c4972a7a0dd2d))
+
+
+## v0.9.3-rc.1 (2024-02-05)
+
+
 ## v0.10.0-rc.25 (2024-02-05)
 
 ### Fix
