@@ -2,6 +2,13 @@
 
 
 
+## v0.9.0 (2024-02-05)
+
+### Feature
+
+* feat: increment release ([`9830cbd`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9830cbde8f80e9ac83d5b62ec9e87b9a076fe4e2))
+
+
 ## v0.8.0 (2024-02-05)
 
 ### Feature
