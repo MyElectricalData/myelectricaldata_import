@@ -1,4 +1,4 @@
-name: "Pre-Release"
+name: "[STAGING] Pre-Release"
 
 on:
   push:

@@ -9,7 +9,7 @@ on:
         default: false
         type: boolean
   workflow_run:
-    workflows: ["Pre-Release"]
+    workflows: ["[STAGING] Pre-Release"]
     types:
       - completed
 
