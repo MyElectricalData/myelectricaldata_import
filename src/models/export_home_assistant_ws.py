@@ -143,7 +143,12 @@ class HomeAssistantWs:
             if self.usage_point_id_config.consumption_detail:
                 logging.info("Consommation")
                 measure_type = "consumption"
-                detail = DB.get_detail_all(self.usage_point_id, order_dir="desc")
+                if "max_date" in self.config:
+                    logging.warn(f"WARNING : Max date détecter {self.config['max_date']}")
+                    begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
+                    detail = DB.get_detail_all(begin=begin, usage_point_id=self.usage_point_id, order_dir="desc")
+                else:
+                    detail = DB.get_detail_all(self.usage_point_id, order_dir="desc")
 
                 cost = 0
                 last_year = None

@@ -1131,9 +1131,25 @@ class Database:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
         sort = asc("date") if order_dir == "desc" else desc("date")
-        if begin is None or end is None:
+        if begin is None and end is None:
             return self.session.scalars(
                 select(table).join(relation).where(table.usage_point_id == usage_point_id).order_by(sort)
+            ).all()
+        elif begin is not None and end is None:
+            return self.session.scalars(
+                select(table)
+                .join(relation)
+                .where(table.usage_point_id == usage_point_id)
+                .filter(table.date >= begin)
+                .order_by(sort)
+            ).all()
+        elif end is not None and begin is None:
+            return self.session.scalars(
+                select(table)
+                .join(relation)
+                .where(table.usage_point_id == usage_point_id)
+                .filter(table.date <= end)
+                .order_by(sort)
             ).all()
         else:
             return self.session.scalars(
