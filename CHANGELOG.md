@@ -2,6 +2,19 @@
 
 
 
+## v0.11.0-rc.1 (2024-02-06)
+
+### Feature
+
+* feat: add max_date to Home Assistant WS import ([`b4641af`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b4641afbf3f534adf8ddcbe2545fe0b12b12c928))
+
+### Unknown
+
+* Merge pull request #488 from MyElectricalData/feat/issues/445
+
+feat: add max_date to Home Assistant WS import ([`dec5d4e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/dec5d4ed9034450fc2f7cc7d811344db5b2e9ecc))
+
+
 ## v0.10.1-rc.2 (2024-02-05)
 
 ### Fix
