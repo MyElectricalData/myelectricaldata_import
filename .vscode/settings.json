@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "127.0.0.1",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "MED Import",
+            "group": "MED",
+            "database": "myelectricaldata",
+            "username": "myelectricaldata",
+            "password": "myelectricaldata"
+        }
+    ]
+}

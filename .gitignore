@@ -10,3 +10,4 @@ data
 .coverage
 .tox
 **/__pycache__/
+MED Import.session.sql

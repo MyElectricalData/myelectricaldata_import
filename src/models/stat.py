@@ -685,7 +685,9 @@ class Stat:
         return measure_type
 
     def generate_price(self):
-        data = self.db.get_detail_all(self.usage_point_id, self.measurement_direction)
+        data = self.db.get_detail_all(
+            usage_point_id=self.usage_point_id, measurement_direction=self.measurement_direction
+        )
         result = {}
         last_month = ""
         if data:

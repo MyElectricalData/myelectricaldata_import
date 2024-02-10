@@ -47,6 +47,7 @@ class Database:
             self.db_name = "cache.db"
             self.db_path = f"{self.path}/{self.db_name}"
             self.uri = f"sqlite:///{self.db_path}?check_same_thread=False"
+            print(self.uri)
         else:
             self.storage_type = self.config.storage_config().split(":")[0]
             if self.storage_type in available_database:
@@ -1262,7 +1263,9 @@ class Database:
         result = {"missing_data": False, "date": {}, "count": 0}
 
         for i in range(delta.days + 1):
-            query_result = self.get_detail_all(usage_point_id, begin, end, measurement_direction)
+            query_result = self.get_detail_all(
+                usage_point_id=usage_point_id, begin=begin, end=end, measurement_direction=measurement_direction
+            )
             time_delta = abs(int((begin - end).total_seconds() / 60))
             total_internal = 0
             for query in query_result:
@@ -1408,7 +1411,9 @@ class Database:
             "HC": 0,
             "HP": 0,
         }
-        detail_data = self.get_detail_all(usage_point_id, begin, end, mesure_type)
+        detail_data = self.get_detail_all(
+            usage_point_id=usage_point_id, begin=begin, end=end, measurement_direction=mesure_type
+        )
         for data in detail_data:
             result[data.measure_type] = result[data.measure_type] + data.value
         return result
