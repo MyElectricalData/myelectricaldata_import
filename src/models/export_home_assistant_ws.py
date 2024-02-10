@@ -284,7 +284,7 @@ class HomeAssistantWs:
 
             if self.usage_point_id_config.production_detail:
                 logging.info("Production")
-                measure_type = "consumption"
+                measure_type = "production"
                 if "max_date" in self.config:
                     logging.warn(f"WARNING : Max date détectée {self.config['max_date']}")
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
@@ -332,10 +332,10 @@ class HomeAssistantWs:
                     stats_kwh[statistic_id]["data"][key]["sum"] = stats_kwh[statistic_id]["sum"]
 
                     # EURO
-                    statistic_id = f"{statistic_id}_cost"
+                    statistic_id = f"{statistic_id}_revenue"
                     if statistic_id not in stats_euro:
                         stats_euro[statistic_id] = {
-                            "name": f"{name} Cost",
+                            "name": f"{name} Revenue",
                             "sum": 0,
                             "data": {},
                         }
