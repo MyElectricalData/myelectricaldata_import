@@ -2,6 +2,19 @@
 
 
 
+## v0.11.0-rc.2 (2024-02-10)
+
+### Fix
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/479 ([`7609cdd`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7609cddc53862826454e3c1bf7c04a67aab7d135))
+
+### Unknown
+
+* Merge pull request #490 from MyElectricalData/fix/issues/479
+
+fix: https://github.com/MyElectricalData/myelectricaldata_import/issu… ([`02444a7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/02444a75809afed2020f3c57f4d539f94109aa70))
+
+
 ## v0.11.0-rc.1 (2024-02-06)
 
 ### Feature
