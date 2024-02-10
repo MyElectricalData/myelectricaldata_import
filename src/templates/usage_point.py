@@ -887,8 +887,7 @@ class UsagePoint:
                     <td>HP/HC</td>
             """
             tempo_config = self.config.tempo_config()
-            if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
-                html += "<td>Tempo</td>"
+            html += "<td>Tempo</td>"
             html += "</tr>"
             if data:
                 data_value = json.loads(data.value)
@@ -897,11 +896,10 @@ class UsagePoint:
                     price_hchp = round(value["HC"]["euro"] + value["HP"]["euro"], 2)
                     tempo_config = self.config.tempo_config()
                     price_tempo = None
-                    if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
-                        value_tempo = 0
-                        for color, tempo in value["TEMPO"].items():
-                            value_tempo = value_tempo + tempo["euro"]
-                        price_tempo = round(value_tempo, 2)
+                    value_tempo = 0
+                    for color, tempo in value["TEMPO"].items():
+                        value_tempo = value_tempo + tempo["euro"]
+                    price_tempo = round(value_tempo, 2)
                     html += "<tr>"
                     html += f"<td class='table_recap_header'>{years}</td>"
                     html += generate_price_compare(

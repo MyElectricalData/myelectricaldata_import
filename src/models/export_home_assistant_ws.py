@@ -148,7 +148,7 @@ class HomeAssistantWs:
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
                     detail = DB.get_detail_all(begin=begin, usage_point_id=self.usage_point_id, order_dir="desc")
                 else:
-                    detail = DB.get_detail_all(self.usage_point_id, order_dir="desc")
+                    detail = DB.get_detail_all(usage_point_id=self.usage_point_id, order_dir="desc")
 
                 cost = 0
                 last_year = None
@@ -284,11 +284,7 @@ class HomeAssistantWs:
 
             if self.usage_point_id_config.production_detail:
                 logging.info("Production")
-                # measure_type = "production"
                 logging.error("L'import de la production n'est pas fonctionnel pour l'instant.")
-                # detail = DB.get_detail_all(self.usage_point_id, order_dir="desc", measurement_direction="production")
-                # print(detail)
-            #
         except Exception as e:
             self.ws.close()
             logging.error(e)

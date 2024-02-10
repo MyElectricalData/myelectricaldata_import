@@ -86,7 +86,9 @@ class ExportInfluxDB:
         current_month = ""
         measurement = f"{measurement_direction}_detail"
         logging.info(f'Envoi des données "{measurement.upper()}" dans influxdb')
-        get_detail_all = self.db.get_detail_all(self.usage_point_id, measurement_direction)
+        get_detail_all = self.db.get_detail_all(
+            usage_point_id=self.usage_point_id, measurement_direction=measurement_direction
+        )
         get_detail_all_count = len(get_detail_all)
         last_data = self.db.get_detail_last_date(self.usage_point_id, measurement_direction)
         first_data = self.db.get_detail_first_date(self.usage_point_id, measurement_direction)
