@@ -228,57 +228,58 @@ class UsagePoint:
                 today = datetime.combine(datetime.now(), datetime.min.time())
                 tomorow = datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time())
                 tempo = self.db.get_tempo_range(today, tomorow, "asc")
-                body += f"""
-                <table style="width:100%" class="table_recap">
-                    <tr>
-                        <td style="width:50%; text-align: center">Aujourd'hui <br> {today.strftime("%d-%m-%Y")}</td>
-                        <td style="width:50%; text-align: center">Demain <br> {tomorow.strftime("%d-%m-%Y")}</td>
-                    </tr>
-                    <tr>"""
-                tempo_template = {
-                    "?": {
-                        "color": "background-color: #000000",
-                        "text_color": "color: #FFFFFF",
-                        "text": "En attente...",
-                    },
-                    "RED": {
-                        "color": "background-color: #E74C3C",
-                        "text_color": "color: #ECF0F1",
-                        "text": f"""Rouge<br>
-                        06h00 -> 22h00 = {tempo_config['red_hp']}€ / kWh<br>
-                        22h00 -> 06h00 = {tempo_config['red_hc']}€ / kWh<br>
-                        """,
-                    },
-                    "WHITE": {
-                        "color": "background-color: #ECF0F1",
-                        "text_color": "color: #34495E",
-                        "text": f"""Blanc<br>
-                        06h00 -> 22h00 = {tempo_config['white_hp']}€ / kWh<br>
-                        22h00 -> 06h00 = {tempo_config['white_hc']}€ / kWh
-                        """,
-                    },
-                    "BLUE": {
-                        "color": "background-color: #3498DB",
-                        "text_color": "color: #ECF0F1",
-                        "text": f"""Bleu<br>
-                        06h00 -> 22h00 = {tempo_config['blue_hp']}€ / kWh<br>
-                        22h00 -> 06h00 = {tempo_config['blue_hc']}€ / kWh
-                        """,
-                    },
-                }
-                if len(tempo) > 0:
-                    color = tempo[0].color
-                else:
-                    color = "?"
-                body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
-                if len(tempo) > 1:
-                    color = tempo[1].color
-                else:
-                    color = "?"
-                body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
-                body += """</tr>
-                </table>
-                """
+                if tempo_config:
+                    body += f"""
+                    <table style="width:100%" class="table_recap">
+                        <tr>
+                            <td style="width:50%; text-align: center">Aujourd'hui <br> {today.strftime("%d-%m-%Y")}</td>
+                            <td style="width:50%; text-align: center">Demain <br> {tomorow.strftime("%d-%m-%Y")}</td>
+                        </tr>
+                        <tr>"""
+                    tempo_template = {
+                        "?": {
+                            "color": "background-color: #000000",
+                            "text_color": "color: #FFFFFF",
+                            "text": "En attente...",
+                        },
+                        "RED": {
+                            "color": "background-color: #E74C3C",
+                            "text_color": "color: #ECF0F1",
+                            "text": f"""Rouge<br>
+                            06h00 -> 22h00 = {tempo_config['red_hp']}€ / kWh<br>
+                            22h00 -> 06h00 = {tempo_config['red_hc']}€ / kWh<br>
+                            """,
+                        },
+                        "WHITE": {
+                            "color": "background-color: #ECF0F1",
+                            "text_color": "color: #34495E",
+                            "text": f"""Blanc<br>
+                            06h00 -> 22h00 = {tempo_config['white_hp']}€ / kWh<br>
+                            22h00 -> 06h00 = {tempo_config['white_hc']}€ / kWh
+                            """,
+                        },
+                        "BLUE": {
+                            "color": "background-color: #3498DB",
+                            "text_color": "color: #ECF0F1",
+                            "text": f"""Bleu<br>
+                            06h00 -> 22h00 = {tempo_config['blue_hp']}€ / kWh<br>
+                            22h00 -> 06h00 = {tempo_config['blue_hc']}€ / kWh
+                            """,
+                        },
+                    }
+                    if len(tempo) > 0:
+                        color = tempo[0].color
+                    else:
+                        color = "?"
+                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
+                    if len(tempo) > 1:
+                        color = tempo[1].color
+                    else:
+                        color = "?"
+                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
+                    body += """</tr>
+                    </table>
+                    """
 
             body += "<h1>Récapitulatif</h1>"
             # RECAP CONSUMPTION
