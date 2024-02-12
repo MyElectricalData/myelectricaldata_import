@@ -2,11 +2,14 @@ import json
 import logging
 import ssl
 from datetime import datetime, timedelta
+from pprint import pprint
 
 import pytz
 import websocket
 
 from init import CONFIG, DB
+from models.stat import Stat
+from dependencies import str2bool
 
 TZ_PARIS = pytz.timezone("Europe/Paris")
 
@@ -21,6 +24,7 @@ class HomeAssistantWs:
         self.ssl = None
         self.token = None
         self.id = 1
+        self.purge = False
         self.current_stats = []
         if self.load_config():
             if self.connect():
@@ -50,6 +54,8 @@ class HomeAssistantWs:
             else:
                 logging.critical("Le token du WebSocket Home Assistant est obligatoire")
                 return False
+            if "purge" in self.config:
+                self.purge = str2bool(self.config["purge"])
         return True
 
     def connect(self):
@@ -111,14 +117,15 @@ class HomeAssistantWs:
                 self.current_stats.append(stats["statistic_id"])
         return current_stats
 
-    def clear_data(self):
+    def clear_data(self, statistic_ids):
         logging.info("Effacement des données importées dans Energy.")
+        for key in statistic_ids:
+            logging.info(f" - {key}")
         clear_statistics = {
             "id": self.id,
             "type": "recorder/clear_statistics",
-            "statistic_ids": self.current_stats,
+            "statistic_ids": statistic_ids,
         }
-        logging.info("Clean :")
         for data in self.current_stats:
             logging.info(f" - {data}")
         clear_stat = self.send(clear_statistics)
@@ -142,7 +149,7 @@ class HomeAssistantWs:
             plan = self.usage_point_id_config.plan.upper()
             if self.usage_point_id_config.consumption_detail:
                 logging.info("Consommation")
-                measure_type = "consumption"
+                measurement_direction = "consumption"
                 if "max_date" in self.config:
                     logging.warn(f"WARNING : Max date détecter {self.config['max_date']}")
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
@@ -162,6 +169,8 @@ class HomeAssistantWs:
                 for tempo_data in DB.get_tempo():
                     tempo_color_ref[tempo_data.date] = tempo_data.color
 
+                stats = Stat(usage_point_id=self.usage_point_id, measurement_direction="consumption")
+
                 for data in detail:
                     year = int(f'{data.date.strftime("%Y")}')
                     if last_year is None or year != last_year:
@@ -176,17 +185,18 @@ class HomeAssistantWs:
                     statistic_id = f"myelectricaldata:{self.usage_point_id}"
                     value = data.value / (60 / data.interval)
                     if plan == "BASE":
-                        name = f"{name} {plan} {measure_type}"
-                        statistic_id = f"{statistic_id}_{plan.lower()}_{measure_type}"
+                        name = f"{name} {plan} {measurement_direction}"
+                        statistic_id = f"{statistic_id}_{plan.lower()}_{measurement_direction}"
                         cost = value * self.usage_point_id_config.consumption_price_base / 1000
                     elif plan == "HC/HP":
-                        if data.measure_type == "HC":
-                            name = f"{name} HC {measure_type}"
-                            statistic_id = f"{statistic_id}_hc_{measure_type}"
+                        measure_type = stats.get_mesure_type(data.date)
+                        if measure_type == "HC":
+                            name = f"{name} HC {measurement_direction}"
+                            statistic_id = f"{statistic_id}_hc_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hc / 1000
                         else:
-                            name = f"{name} HP {measure_type}"
-                            statistic_id = f"{statistic_id}_hp_{measure_type}"
+                            name = f"{name} HP {measurement_direction}"
+                            statistic_id = f"{statistic_id}_hp_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hp / 1000
                     elif plan == "TEMPO":
                         if 600 <= hour_minute < 2200:
@@ -206,8 +216,8 @@ class HomeAssistantWs:
                             tempo_color_price_key = f"{day_color.lower()}_{hour_type.lower()}"
                             tempo_price = float(db_tempo_price[tempo_color_price_key])
                             cost = value / 1000 * tempo_price
-                            name = f"{name} {tempo_color} {measure_type}"
-                            statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measure_type}"
+                            name = f"{name} {tempo_color} {measurement_direction}"
+                            statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measurement_direction}"
                     else:
                         logging.error(f"Plan {plan} inconnu.")
 
@@ -248,7 +258,16 @@ class HomeAssistantWs:
                     stats_euro[statistic_id]["sum"] += cost
                     stats_euro[statistic_id]["data"][key]["sum"] = stats_euro[statistic_id]["sum"]
 
+                # CLEAN OLD DATA
+                if self.purge:
+                    list_statistic_ids = []
+                    for statistic_id, _ in stats_kwh.items():
+                        list_statistic_ids.append(statistic_id)
+                    self.clear_data(list_statistic_ids)
+                    CONFIG.set("purge", False)
+
                 for statistic_id, data in stats_kwh.items():
+                    # self.clear_data(statistic_id)
                     metadata = {
                         "has_mean": False,
                         "has_sum": True,
@@ -266,6 +285,7 @@ class HomeAssistantWs:
                     self.send(import_statistics)
 
                 for statistic_id, data in stats_euro.items():
+                    # self.clear_data(statistic_id)
                     metadata = {
                         "has_mean": False,
                         "has_sum": True,

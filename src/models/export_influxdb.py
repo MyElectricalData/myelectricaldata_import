@@ -6,6 +6,7 @@ from dependencies import title
 from init import INFLUXDB, DB
 
 from datetime import datetime
+from models.stat import Stat
 
 
 def forceRound(x, n):
@@ -24,6 +25,7 @@ class ExportInfluxDB:
         self.usage_point_config = usage_point_config
         self.usage_point_id = self.usage_point_config.usage_point_id
         self.measurement_direction = measurement_direction
+        self.stat = Stat(self.usage_point_id, measurement_direction=measurement_direction)
         self.time_format = "%Y-%m-%dT%H:%M:%SZ"
         if "timezone" not in self.influxdb_config or self.influxdb_config["timezone"] == "UTC":
             self.tz = pytz.UTC
@@ -121,7 +123,8 @@ class ExportInfluxDB:
                     watth = watt / (60 / detail.interval)
                     kwatth = watth / 1000
                     if measurement_direction == "consumption":
-                        if detail.measure_type == "HP":
+                        measure_type = self.stat.get_mesure_type(date)
+                        if measure_type == "HP":
                             euro = kwatth * self.usage_point_config.consumption_price_hp
                         else:
                             euro = kwatth * self.usage_point_config.consumption_price_hc
@@ -135,7 +138,7 @@ class ExportInfluxDB:
                             "year": detail.date.strftime("%Y"),
                             "month": detail.date.strftime("%m"),
                             "internal": detail.interval,
-                            "measure_type": detail.measure_type,
+                            "measure_type": measure_type,
                         },
                         fields={
                             "W": float(watt),
