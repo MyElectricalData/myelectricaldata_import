@@ -2,6 +2,23 @@
 
 
 
+## v0.11.0-rc.3 (2024-02-12)
+
+### Fix
+
+* fix: display bug if not tempo ([`a36f18b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a36f18befc6ccd4521cc7a19b1e5c9195e443ed6))
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/494 ([`6af83f1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6af83f167e53754d82dfb48f32ce37c42b3703ef))
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/489 ([`c484d4b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c484d4bf14d38c26fbcacd0cbce9dcbe1a3afcfc))
+
+### Unknown
+
+* Merge pull request #495 from MyElectricalData/fix/494-489
+
+Fix/494 489 ([`ca35bff`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ca35bff3049e903f49e27678ede9c7c315871f1b))
+
+
 ## v0.11.0-rc.2 (2024-02-10)
 
 ### Fix
