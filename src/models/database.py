@@ -59,7 +59,7 @@ class Database:
 
         self.engine = create_engine(
             self.uri,
-            echo=False,
+            echo=True,
             query_cache_size=0,
             isolation_level="READ UNCOMMITTED",
             poolclass=NullPool,
@@ -1056,14 +1056,18 @@ class Database:
 
     def reset_daily(self, usage_point_id, date=None, mesure_type="consumption"):
         data = self.get_daily_date(usage_point_id, date, mesure_type)
+        if mesure_type == "consumption":
+            table = ConsumptionDaily
+        else:
+            table = ProductionDaily
         if data is not None:
             values = {
-                ConsumptionDaily.value: 0,
-                ConsumptionDaily.blacklist: 0,
-                ConsumptionDaily.fail_count: 0,
+                table.value: 0,
+                table.blacklist: 0,
+                table.fail_count: 0,
             }
             unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
-            self.session.execute(update(ConsumptionDaily, values=values).where(ConsumptionDaily.id == unique_id))
+            self.session.execute(update(table, values=values).where(table.id == unique_id))
             self.session.flush()
             return True
         else:

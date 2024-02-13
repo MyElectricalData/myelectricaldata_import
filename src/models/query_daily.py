@@ -15,6 +15,57 @@ def daterange(start_date, end_date):
 
 
 class Daily:
+    """
+    The 'Daily' class represents a daily data retrieval and manipulation process for a specific usage point. It provides methods for fetching, resetting, deleting, and blacklisting daily data.
+
+    Attributes:
+        config (dict): The configuration settings.
+        db (object): The database object.
+        url (str): The base URL for API requests.
+        max_daily (int): The maximum number of days to retrieve data for.
+        date_format (str): The format of dates.
+        date_detail_format (str): The format of detailed dates.
+        headers (dict): The headers for API requests.
+        usage_point_id (str): The ID of the usage point.
+        usage_point_config (object): The configuration settings for the usage point.
+        contract (object): The contract associated with the usage point.
+        daily_max_days (int): The maximum number of days for daily data.
+        max_days_date (datetime): The maximum date for retrieving data.
+        activation_date (datetime): The activation date for retrieving data.
+        measure_type (str): The type of measurement (consumption or production).
+        base_price (float): The base price for the measurement type.
+
+    Methods:
+        run(begin, end):
+            Retrieves and stores daily data for a specified date range.
+
+        get():
+            Retrieves and returns all available daily data for the usage point.
+
+        reset(date=None):
+            Resets the daily data for the usage point, optionally for a specific date.
+
+        delete(date=None):
+            Deletes the daily data for the usage point, optionally for a specific date.
+
+        fetch(date):
+            Fetches and returns the daily data for a specific date.
+
+        blacklist(date, action):
+            Adds or removes a date from the blacklist for the usage point.
+
+    Note:
+        The 'Daily' class relies on the 'Query' class for making API requests and the 'Stat' class for retrieving additional statistics.
+
+    Example usage:
+        headers = {"Authorization": "Bearer token"}
+        usage_point_id = "1234567890"
+        daily = Daily(headers, usage_point_id)
+        data = daily.get()
+        for item in data:
+            print(item)
+    """
+
     def __init__(self, headers, usage_point_id, measure_type="consumption"):
         self.config = CONFIG
         self.db = DB
@@ -147,6 +198,29 @@ class Daily:
             logging.error(e)
 
     def get(self):
+        """Generate a range of dates between a start date and an end date.
+
+        Parameters:
+            start_date (datetime.date): The start date of the range.
+            end_date (datetime.date): The end date of the range.
+
+        Yields:
+            datetime.date: The next date in the range.
+
+        Example:
+            >>> start_date = datetime.date(2021, 1, 1)
+            >>> end_date = datetime.date(2021, 1, 5)
+            >>> for date in daterange(start_date, end_date):
+            ...     print(date)
+            ...
+            2021-01-01
+            2021-01-02
+            2021-01-03
+            2021-01-04
+
+        Note:
+            The end date is exclusive, meaning it is not included in the range.
+        """
         end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
         begin = datetime.combine(end - relativedelta(days=self.max_daily), datetime.min.time())
         finish = True

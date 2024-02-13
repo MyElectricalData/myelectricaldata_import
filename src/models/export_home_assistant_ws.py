@@ -1,8 +1,9 @@
+"""Import data in statistique recorder of Home Assistant."""
+
 import json
 import logging
 import ssl
 from datetime import datetime, timedelta
-from pprint import pprint
 
 import pytz
 import websocket
@@ -15,7 +16,14 @@ TZ_PARIS = pytz.timezone("Europe/Paris")
 
 
 class HomeAssistantWs:
+    """Class to interact with Home Assistant WebSocket API."""
+
     def __init__(self, usage_point_id):
+        """Initialize the class with the usage point id.
+
+        Args:
+            usage_point_id (str): The usage point id
+        """
         self.ws = None
         self.usage_point_id = usage_point_id
         self.usage_point_id_config = DB.get_usage_point(self.usage_point_id)
@@ -37,6 +45,11 @@ class HomeAssistantWs:
             self.ws.close()
 
     def load_config(self):
+        """Load the Home Assistant WebSocket configuration from the configuration file.
+
+        Returns:
+            bool: True if the configuration is loaded, False otherwise
+        """
         self.config = CONFIG.home_assistant_ws()
         if self.config is not None:
             if "url" in self.config:
@@ -59,6 +72,11 @@ class HomeAssistantWs:
         return True
 
     def connect(self):
+        """Connect to the Home Assistant WebSocket server.
+
+        Returns:
+            bool: True if the connection is successful, False otherwise
+        """
         try:
             check_ssl = CONFIG.get("ssl")
             sslopt = None
@@ -75,16 +93,21 @@ class HomeAssistantWs:
                 logging.info("Authentification requise")
                 return self.authentificate()
             return True
-        except Exception as e:
+        except Exception as _e:
             self.ws.close()
-            logging.error(e)
+            logging.error(_e)
             logging.critical("Connexion impossible vers Home Assistant")
             logging.warning(
-                f" => ATTENTION, le WebSocket est également soumis au ban en cas de plusieurs échec d'authentification."
+                " => ATTENTION, le WebSocket est également soumis au ban en cas de plusieurs échec d'authentification."
             )
-            logging.warning(f" => ex: 403: Forbidden")
+            logging.warning(" => ex: 403: Forbidden")
 
     def authentificate(self):
+        """Authenticate with the Home Assistant WebSocket server.
+
+        Returns:
+            bool: True if the authentication is successful, False otherwise
+        """
         data = {"type": "auth", "access_token": self.token}
         auth_output = self.send(data)
         if auth_output["type"] == "auth_ok":
@@ -95,6 +118,13 @@ class HomeAssistantWs:
             return False
 
     def send(self, data):
+        """Send data to the Home Assistant WebSocket server.
+
+        Args:
+            data (dict): The data to send
+        Returns:
+            dict: The output from the server
+        """
         self.ws.send(json.dumps(data))
         self.id = self.id + 1
         output = json.loads(self.ws.recv())
@@ -105,6 +135,11 @@ class HomeAssistantWs:
         return output
 
     def list_data(self):
+        """List the data already cached in Home Assistant.
+
+        Returns:
+            dict: The list of data
+        """
         logging.info("Liste les données déjà en cache.")
         import_statistics = {
             "id": self.id,
@@ -118,6 +153,13 @@ class HomeAssistantWs:
         return current_stats
 
     def clear_data(self, statistic_ids):
+        """Clear the data imported into Energy.
+
+        Args:
+            statistic_ids (list): The list of statistic ids
+        Returns:
+            dict: The output from clearing the data
+        """
         logging.info("Effacement des données importées dans Energy.")
         for key in statistic_ids:
             logging.info(f" - {key}")
@@ -132,6 +174,15 @@ class HomeAssistantWs:
         return clear_stat
 
     def get_data(self, statistic_ids, begin, end):
+        """Get the data for a given period.
+
+        Args:
+            statistic_ids (list): The list of statistic ids
+            begin (datetime): The start of the period
+            end (datetime): The end of the period
+        Returns:
+            dict: The data for the period
+        """
         statistics_during_period = {
             "id": self.id,
             "type": "recorder/statistics_during_period",
@@ -144,6 +195,7 @@ class HomeAssistantWs:
         return stat_period
 
     def import_data(self):
+        """Import the data for the usage point into Home Assistant."""
         logging.info(f"Importation des données du point de livraison : {self.usage_point_id}")
         try:
             plan = self.usage_point_id_config.plan.upper()
@@ -151,7 +203,7 @@ class HomeAssistantWs:
                 logging.info("Consommation")
                 measurement_direction = "consumption"
                 if "max_date" in self.config:
-                    logging.warn(f"WARNING : Max date détecter {self.config['max_date']}")
+                    logging.warning("WARNING : Max date détecter %s", self.config["max_date"])
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
                     detail = DB.get_detail_all(begin=begin, usage_point_id=self.usage_point_id, order_dir="desc")
                 else:
@@ -267,7 +319,6 @@ class HomeAssistantWs:
                     CONFIG.set("purge", False)
 
                 for statistic_id, data in stats_kwh.items():
-                    # self.clear_data(statistic_id)
                     metadata = {
                         "has_mean": False,
                         "has_sum": True,
@@ -285,7 +336,6 @@ class HomeAssistantWs:
                     self.send(import_statistics)
 
                 for statistic_id, data in stats_euro.items():
-                    # self.clear_data(statistic_id)
                     metadata = {
                         "has_mean": False,
                         "has_sum": True,
@@ -305,7 +355,7 @@ class HomeAssistantWs:
             if self.usage_point_id_config.production_detail:
                 logging.info("Production")
                 logging.error("L'import de la production n'est pas fonctionnel pour l'instant.")
-        except Exception as e:
+        except Exception as _e:
             self.ws.close()
-            logging.error(e)
+            logging.error(_e)
             logging.critical("Erreur lors de l'export des données vers Home Assistant")
