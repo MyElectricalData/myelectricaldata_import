@@ -59,7 +59,7 @@ class Database:
 
         self.engine = create_engine(
             self.uri,
-            echo=True,
+            echo=False,
             query_cache_size=0,
             isolation_level="READ UNCOMMITTED",
             poolclass=NullPool,

@@ -14,8 +14,127 @@ now_date = datetime.now(timezone.utc)
 yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
 
 
-class Stat:
+class Stat:  # pylint: disable=R0902,R0904
+    """The 'Stat' class represents a statistical analysis tool for a usage point.
+
+    It provides various methods to calculate and retrieve statistical data related to the usage point.
+
+    Attributes:
+        - config: The configuration object for the usage point.
+        - db: The database object for accessing data related to the usage point.
+        - usage_point_id: The ID of the usage point.
+        - measurement_direction: The measurement direction for the usage point.
+        - usage_point_id_config: The configuration object for the usage point ID.
+        - usage_point_id_contract: The contract object for the usage point ID.
+        - date_format: The format string for date representation.
+        - date_format_detail: The format string for detailed date representation.
+        - value_current_week: The value of the current week.
+        - value_current_week_last_year: The value of the current week in the last year.
+        - value_last_week: The value of the last week.
+        - value_yesterday: The value of yesterday.
+        - value_yesterday_1: The value of the day before yesterday.
+        - value_last_month: The value of the last month.
+        - value_current_month: The value of the current month.
+        - value_current_month_last_year: The value of the current month in the last year.
+        - value_last_month_last_year: The value of the last month in the last year.
+        - value_current_year: The value of the current year.
+        - value_current_year_last_year: The value of the current year in the last year.
+        - value_last_year: The value of the last year.
+        - value_yesterday_hp: The value of yesterday for high peak measurement type.
+        - value_yesterday_hc: The value of yesterday for high consumption measurement type.
+        - value_peak_offpeak_percent_hp: The percentage value of peak and off-peak for high peak measurement type.
+        - value_peak_offpeak_percent_hc: The percentage value of peak and off-peak for high consumption measurement type.
+        - value_current_week_evolution: The evolution value of the current week.
+        - value_yesterday_evolution: The evolution value of yesterday.
+        - value_current_month_evolution: The evolution value of the current month.
+        - value_peak_offpeak_percent_hp_vs_hc: The percentage value of peak and off-peak for high peak and high consumption measurement types.
+        - value_monthly_evolution: The evolution value of the monthly data.
+        - value_yearly_evolution: The evolution value of the yearly data.
+
+    Methods:
+        - daily(index=0): Returns the daily data for the specified index.
+        - detail(index, measure_type=None): Returns the detailed data for the specified index and measure type.
+        - tempo(index): Returns the tempo data for the specified index.
+        - tempo_color(index=0): Returns the tempo color data for the specified index.
+        - max_power(index=0): Returns the maximum power data for the specified index.
+        - max_power_over(index=0): Returns the maximum power over data for the specified index.
+        - max_power_time(index=0): Returns the maximum power time data for the specified index.
+        - current_week_array(): Returns the current week data as an array.
+        - current_week(): Returns the current week data.
+        - last_week(): Returns the last week data.
+        - current_week_evolution(): Returns the evolution value of the current week.
+        - yesterday(): Returns the yesterday data.
+        - yesterday_1(): Returns the day before yesterday data.
+        - yesterday_evolution(): Returns the evolution value of yesterday.
+        - current_week_last_year(): Returns the current week data in the last year.
+        - last_month(): Returns the last month data.
+        - current_month(): Returns the current month data.
+        - current_month_last_year(): Returns the current month data in the last year.
+        - current_month_evolution(): Returns the evolution value of the current month.
+        - last_month_last_year(): Returns the last month data in the last year.
+        - monthly_evolution(): Returns the evolution value of the monthly data.
+        - current_year(): Returns the current year data.
+        - current_year_last_year(): Returns the current year data in the last year.
+        - last_year(): Returns the last year data.
+        - yearly_evolution(): Returns the evolution value of the yearly data.
+        - yesterday_hc_hp(): Returns the yesterday data for high consumption and high peak measurement types.
+        - peak_offpeak_percent(): Returns the percentage value of peak and off-peak.
+        - get_year(year, measure_type=None): Returns the yearly data for the specified year and measure type.
+        - get_year_linear(idx, measure_type=None): Returns the linear yearly data for the specified index and measure type.
+        - get_month(year, month=None, measure_type=None): Returns the monthly data for the specified year, month, and measure type.
+        - get_month_linear(idx, measure_type=None): Returns the linear monthly data for the specified index and measure type.
+        - get_week(year, month=None, measure_type=None): Returns the weekly data for the specified year, month, and measure type.
+        - get_week_linear(idx, measure_type=None): Returns the linear weekly data for the specified index and measure type.
+        - get_price(): Returns the price data.
+        - get_mesure_type(date): Returns the measure type for the specified date.
+        - generate_price(): Generates and saves the price data.
+        - get_daily(date, mesure_type): Returns the daily data for the specified date and measure type.
+        - delete(): Deletes the statistical data for the usage point.
+        - is_between(time, time_range): Checks if the given time is between the given time range.
+    """
+
     def __init__(self, usage_point_id, measurement_direction=None):
+        """Initializes a new instance of the 'Stat' class.
+
+        Parameters:
+            usage_point_id (int): The ID of the usage point.
+            measurement_direction (str, optional): The measurement direction for the usage point. Defaults to None.
+
+        Attributes:
+            config (object): The configuration object for the usage point.
+            db (object): The database object for accessing data related to the usage point.
+            usage_point_id (int): The ID of the usage point.
+            measurement_direction (str): The measurement direction for the usage point.
+            usage_point_id_config (object): The configuration object for the usage point ID.
+            usage_point_id_contract (object): The contract object for the usage point ID.
+            date_format (str): The format string for date representation.
+            date_format_detail (str): The format string for detailed date representation.
+            value_current_week (int): The value of the current week.
+            value_current_week_last_year (int): The value of the current week in the last year.
+            value_last_week (int): The value of the last week.
+            value_yesterday (int): The value of yesterday.
+            value_yesterday_1 (int): The value of the day before yesterday.
+            value_last_month (int): The value of the last month.
+            value_current_month (int): The value of the current month.
+            value_current_month_last_year (int): The value of the current month in the last year.
+            value_last_month_last_year (int): The value of the last month in the last year.
+            value_current_year (int): The value of the current year.
+            value_current_year_last_year (int): The value of the current year in the last year.
+            value_last_year (int): The value of the last year.
+            value_yesterday_hp (int): The value of yesterday for high peak measurement type.
+            value_yesterday_hc (int): The value of yesterday for high consumption measurement type.
+            value_peak_offpeak_percent_hp (int): The percentage value of peak and off-peak for high peak measurement type.
+            value_peak_offpeak_percent_hc (int): The percentage value of peak and off-peak for high consumption measurement type.
+            value_current_week_evolution (int): The evolution value of the current week.
+            value_yesterday_evolution (int): The evolution value of yesterday.
+            value_current_month_evolution (int): The evolution value of the current month.
+            value_peak_offpeak_percent_hp_vs_hc (int): The percentage value of peak and off-peak for high peak and high consumption measurement types.
+            value_monthly_evolution (int): The evolution value of the monthly data.
+            value_yearly_evolution (int): The evolution value of the yearly data.
+
+        Returns:
+            None
+        """
         self.config = CONFIG
         self.db = DB
         self.usage_point_id = usage_point_id

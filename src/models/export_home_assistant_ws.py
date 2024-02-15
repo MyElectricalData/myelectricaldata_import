@@ -33,6 +33,7 @@ class HomeAssistantWs:
         self.token = None
         self.id = 1
         self.purge = False
+        self.purge_force = True
         self.current_stats = []
         if self.load_config():
             if self.connect():
@@ -194,7 +195,7 @@ class HomeAssistantWs:
         stat_period = self.send(statistics_during_period)
         return stat_period
 
-    def import_data(self):
+    def import_data(self):  # noqa: C901
         """Import the data for the usage point into Home Assistant."""
         logging.info(f"Importation des données du point de livraison : {self.usage_point_id}")
         try:
@@ -311,7 +312,7 @@ class HomeAssistantWs:
                     stats_euro[statistic_id]["data"][key]["sum"] = stats_euro[statistic_id]["sum"]
 
                 # CLEAN OLD DATA
-                if self.purge:
+                if self.purge or self.purge_force:
                     list_statistic_ids = []
                     for statistic_id, _ in stats_kwh.items():
                         list_statistic_ids.append(statistic_id)
@@ -354,7 +355,118 @@ class HomeAssistantWs:
 
             if self.usage_point_id_config.production_detail:
                 logging.info("Production")
-                logging.error("L'import de la production n'est pas fonctionnel pour l'instant.")
+                measure_type = "production"
+                if "max_date" in self.config:
+                    logging.warning("WARNING : Max date détectée %s", self.config["max_date"])
+                    begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
+                    detail = DB.get_detail_all(
+                        begin=begin,
+                        usage_point_id=self.usage_point_id,
+                        measurement_direction="production",
+                        order_dir="desc",
+                    )
+                else:
+                    detail = DB.get_detail_all(
+                        usage_point_id=self.usage_point_id, measurement_direction="production", order_dir="desc"
+                    )
+
+                cost = 0
+                last_year = None
+                last_month = None
+
+                stats_kwh = {}
+                stats_euro = {}
+                for data in detail:
+                    year = int(f'{data.date.strftime("%Y")}')
+                    if last_year is None or year != last_year:
+                        logging.info(f"{year} :")
+                    month = int(f'{data.date.strftime("%m")}')
+                    if last_month is None or month != last_month:
+                        logging.info(f"- {month}")
+                    last_year = year
+                    last_month = month
+                    hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
+                    name = f"MyElectricalData - {self.usage_point_id} {measure_type}"
+                    statistic_id = f"myelectricaldata:{self.usage_point_id}_{measure_type}"
+                    value = data.value / (60 / data.interval)
+                    cost = value * self.usage_point_id_config.production_price / 1000
+                    date = TZ_PARIS.localize(data.date, "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0, microsecond=0)
+                    key = date.strftime("%Y-%m-%d %H:%M:%S")
+
+                    # KWH
+                    if statistic_id not in stats_kwh:
+                        stats_kwh[statistic_id] = {"name": name, "sum": 0, "data": {}}
+                    if key not in stats_kwh[statistic_id]["data"]:
+                        stats_kwh[statistic_id]["data"][key] = {
+                            "start": date.isoformat(),
+                            "state": 0,
+                            "sum": 0,
+                        }
+                    value = value / 1000
+                    stats_kwh[statistic_id]["data"][key]["state"] = (
+                        stats_kwh[statistic_id]["data"][key]["state"] + value
+                    )
+                    stats_kwh[statistic_id]["sum"] += value
+                    stats_kwh[statistic_id]["data"][key]["sum"] = stats_kwh[statistic_id]["sum"]
+
+                    # EURO
+                    statistic_id = f"{statistic_id}_revenue"
+                    if statistic_id not in stats_euro:
+                        stats_euro[statistic_id] = {
+                            "name": f"{name} Revenue",
+                            "sum": 0,
+                            "data": {},
+                        }
+                    if key not in stats_euro[statistic_id]["data"]:
+                        stats_euro[statistic_id]["data"][key] = {
+                            "start": date.isoformat(),
+                            "state": 0,
+                            "sum": 0,
+                        }
+                    stats_euro[statistic_id]["data"][key]["state"] += cost
+                    stats_euro[statistic_id]["sum"] += cost
+                    stats_euro[statistic_id]["data"][key]["sum"] = stats_euro[statistic_id]["sum"]
+
+                if self.purge or self.purge_force:
+                    list_statistic_ids = []
+                    for statistic_id, _ in stats_kwh.items():
+                        list_statistic_ids.append(statistic_id)
+                    self.clear_data(list_statistic_ids)
+                    CONFIG.set("purge", False)
+
+                for statistic_id, data in stats_kwh.items():
+                    metadata = {
+                        "has_mean": False,
+                        "has_sum": True,
+                        "name": data["name"],
+                        "source": "myelectricaldata",
+                        "statistic_id": statistic_id,
+                        "unit_of_measurement": "kWh",
+                    }
+                    import_statistics = {
+                        "id": self.id,
+                        "type": "recorder/import_statistics",
+                        "metadata": metadata,
+                        "stats": list(data["data"].values()),
+                    }
+                    self.send(import_statistics)
+
+                for statistic_id, data in stats_euro.items():
+                    metadata = {
+                        "has_mean": False,
+                        "has_sum": True,
+                        "name": data["name"],
+                        "source": "myelectricaldata",
+                        "statistic_id": statistic_id,
+                        "unit_of_measurement": "EURO",
+                    }
+                    import_statistics = {
+                        "id": self.id,
+                        "type": "recorder/import_statistics",
+                        "metadata": metadata,
+                        "stats": list(data["data"].values()),
+                    }
+                    self.send(import_statistics)
         except Exception as _e:
             self.ws.close()
             logging.error(_e)
