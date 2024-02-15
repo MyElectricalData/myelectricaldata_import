@@ -224,7 +224,7 @@ class UsagePoint:
             tempo_config = None
             if self.usage_point_config.plan == "Tempo":
                 tempo_config = self.db.get_tempo_config("price")
-                body += f"<h1>Tempo</h1>"
+                body += "<h1>Tempo</h1>"
                 today = datetime.combine(datetime.now(), datetime.min.time())
                 tomorow = datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time())
                 tempo = self.db.get_tempo_range(today, tomorow, "asc")
@@ -301,7 +301,7 @@ class UsagePoint:
                 body += "</tr></table>"
 
             # TARIFICATION
-            body += f"<h2>Comparatif abonnements</h2>"
+            body += "<h2>Comparatif abonnements</h2>"
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 datatable = str(self.get_price("consumption"))
                 if datatable:
@@ -330,7 +330,7 @@ class UsagePoint:
                 self.generate_data("production")
                 self.production()
                 recap_production = self.recap(data=self.recap_production_data)
-                body += f"<h2>Production</h2>"
+                body += "<h2>Production</h2>"
                 body += str(recap_production)
                 body += '<div id="chart_daily_production"></div>'
 
@@ -352,18 +352,18 @@ class UsagePoint:
             body += "<h1>Mes données</h1>"
             # CONSUMPTION DATATABLE
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-                body += f"<h2>Consommation</h2>"
-                body += f"<h3>Journalière</h2>"
-                body += f"""
+                body += "<h2>Consommation</h2>"
+                body += "<h3>Journalière</h2>"
+                body += """
                 <table id="dataTableConsommation" class="display">
                     <thead>
                         <tr>
                             <th class="title">Date</th>
                             <th class="title">Consommation (Wh)</th>
                             <th class="title">Consommation (kWh)</th>
-                            <th class="title">HC (kWh)</th> 
-                            <th class="title">HP (kWh)</th> 
-                            <th class="title">Tempo</th>                                                           
+                            <th class="title">HC (kWh)</th>
+                            <th class="title">HP (kWh)</th>
+                            <th class="title">Tempo</th>
                             <th class="title">Échec</th>
                             <th class="title">En&nbsp;cache</th>
                             <th class="title">Cache</th>
@@ -375,9 +375,9 @@ class UsagePoint:
                             <th class="title">Date</th>
                             <th class="title">Consommation (Wh)</th>
                             <th class="title">Consommation (kWh)</th>
-                            <th class="title">HC (kWh)</th> 
-                            <th class="title">HP (kWh)</th> 
-                            <th class="title">Tempo</th>                                                    
+                            <th class="title">HC (kWh)</th>
+                            <th class="title">HP (kWh)</th>
+                            <th class="title">Tempo</th>
                             <th class="title">Échec</th>
                             <th class="title">En&nbsp;cache</th>
                             <th class="title">Cache</th>
@@ -387,9 +387,9 @@ class UsagePoint:
                 </table>
                 """
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                body += f"<h3>Horaires</h2>"
-                body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
-                body += f"""
+                body += "<h3>Horaires</h2>"
+                body += "<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
+                body += """
                 <table id="dataTableConsommationDetail" class="display">
                     <thead>
                         <tr>
@@ -422,14 +422,14 @@ class UsagePoint:
                 hasattr(self.usage_point_config, "consumption_max_power")
                 and self.usage_point_config.consumption_max_power
             ):
-                body += f"<h2>Puissance Maximale</h2>"
+                body += "<h2>Puissance Maximale</h2>"
                 if hasattr(self.contract, "subscribed_power") and self.contract.subscribed_power is not None:
                     max_power = self.contract.subscribed_power.split(" ")[0]
                 else:
                     max_power = 0
                 body += f"Votre abonnement : <b>{max_power}kVA</b>"
                 body += f"<input style='display: none' type='text' value='{max_power}' id='consumption_max_power'>"
-                body += f"""
+                body += """
                 <table style='border: none;'>
                     <tr>
                         <td style='width: 30px; background-color: #FFB600'>&nbsp;</td>
@@ -452,7 +452,7 @@ class UsagePoint:
                         <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Lien vers la documentation officielle d’Enedis.</a> (cf. chapitre 7)</td>
                     </tr>
                 </table>"""
-                body += f"""
+                body += """
                 <table id="dataTablePuissance" class="display">
                     <thead>
                         <tr>
@@ -485,9 +485,9 @@ class UsagePoint:
 
             # PRODUCTION DATATABLE
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-                body += f"<h2>Production</h2>"
-                body += f"<h3>Journalière</h2>"
-                body += f"""
+                body += "<h2>Production</h2>"
+                body += "<h3>Journalière</h2>"
+                body += """
                 <table id="dataTableProduction" class="display">
                     <thead>
                         <tr>
@@ -514,9 +514,9 @@ class UsagePoint:
                 </table>
                 """
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                body += f"<h3>Horaires</h2>"
-                body += f"<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
-                body += f"""
+                body += "<h3>Horaires</h2>"
+                body += "<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
+                body += """
                 <table id="dataTableProductionDetail" class="display">
                     <thead>
                         <tr>

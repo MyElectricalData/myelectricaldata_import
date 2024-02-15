@@ -667,18 +667,29 @@ class Ajax:
                     hp = hp / 1000
                 hc_kw = f'<div id="{measurement_direction}_hc_{target}_{date_text}" class="">{hc}</div>'
                 hp_kw = f'<div id="{measurement_direction}_hp_{target}_{date_text}" class="">{hp}</div>'
-                day_data = [
-                    date_text,
-                    conso_w,
-                    conso_kw,
-                    hc_kw,
-                    hp_kw,
-                    temp_color,
-                    fail_count,
-                    cache_state,
-                    self.datatable_button(measurement_direction, db_data)["cache"],
-                    self.datatable_button(measurement_direction, db_data)["blacklist"],
-                ]
+                if measurement_direction == "consumption":
+                    day_data = [
+                        date_text,
+                        conso_w,
+                        conso_kw,
+                        hc_kw,
+                        hp_kw,
+                        temp_color,
+                        fail_count,
+                        cache_state,
+                        self.datatable_button(measurement_direction, db_data)["cache"],
+                        self.datatable_button(measurement_direction, db_data)["blacklist"],
+                    ]
+                else:
+                    day_data = [
+                        date_text,
+                        conso_w,
+                        conso_kw,
+                        fail_count,
+                        cache_state,
+                        self.datatable_button(measurement_direction, db_data)["cache"],
+                        self.datatable_button(measurement_direction, db_data)["blacklist"],
+                    ]
                 result.append(day_data)
             index = index + 1
         return result
