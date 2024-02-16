@@ -43,6 +43,7 @@
             ]
         },
         "settings": {
+            "terminal.integrated.defaultProfile.linux": "zsh",
             "python.testing.pytestEnabled": true,
             "black-formatter.args": [
                 "--line-height 119"

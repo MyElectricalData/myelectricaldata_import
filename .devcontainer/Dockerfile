@@ -8,7 +8,7 @@ RUN apt-get update \
     && curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
     && apt-get update \
-    && apt-get install -y docker-ce-cli git
+    && apt-get install -y docker-ce-cli zsh git software-properties-common grc wget curl
 
 # make the LOCAL variable and install it
 ARG LOCAL=fr_FR.UTF-8
@@ -20,7 +20,3 @@ RUN docker context use default
 RUN docker buildx use default
 
 WORKDIR /workspace
-# RUN ln -s /workspace/app /app
-# RUN ln -s /workspace/data /data
-
-# RUN apt-get update && apt-get install gnupg2 -y
