@@ -16,16 +16,6 @@ RUN apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
     && localedef -i $(echo ${LOCAL} | cut -d "." -f1) -c -f $(echo ${LOCAL} | cut -d "." -f2) -A /usr/share/locale/locale.alias ${LOCAL}
 ENV LANG ${LOCAL}
 
-# # Install ASDF
-# RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf
-# RUN echo '. "$HOME/.asdf/asdf.sh"'  >> ~/.bashrc
-# RUN echo '. "$HOME/.asdf/completions/asdf.bash"'  >> ~/.bashrc
-
-# COPY ./ .
-
-# SHELL ["/bin/bash", "-lc"]
-# RUN make install
-
 WORKDIR /workspace
 RUN ln -s /workspace/app /app
 RUN ln -s /workspace/data /data
