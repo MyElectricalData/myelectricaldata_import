@@ -16,9 +16,11 @@ RUN apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
     && localedef -i $(echo ${LOCAL} | cut -d "." -f1) -c -f $(echo ${LOCAL} | cut -d "." -f2) -A /usr/share/locale/locale.alias ${LOCAL}
 ENV LANG ${LOCAL}
 
-WORKDIR /workspace
-RUN ln -s /workspace/app /app
-RUN ln -s /workspace/data /data
-
 RUN docker context use default
 RUN docker buildx use default
+
+WORKDIR /workspace
+# RUN ln -s /workspace/app /app
+# RUN ln -s /workspace/data /data
+
+# RUN apt-get update && apt-get install gnupg2 -y

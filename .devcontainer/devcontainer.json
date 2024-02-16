@@ -4,7 +4,8 @@
 		"docker-compose.yaml"
 	],
     "shutdownAction": "stopCompose",
-    "postCreateCommand": "/bin/bash ./.devcontainer/post-install.sh",
+    "postCreateCommand": "/bin/bash -lc ./.devcontainer/post-install.sh",
+    // "postCreateCommand": "make init-devcontainer",
     "postStartCommand": "make dev",
 	"service": "workspace",
 	"workspaceFolder": "/workspace",
