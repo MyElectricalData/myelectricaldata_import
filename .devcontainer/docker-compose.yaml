@@ -14,7 +14,7 @@ services:
     ports:
       - 8080:8080    
     volumes:
-      # - /etc/ssl/certs:/etc/ssl/certs
+      - ${HOME}/.ssh:/home/vscode/.ssh
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ..:/workspace:cached

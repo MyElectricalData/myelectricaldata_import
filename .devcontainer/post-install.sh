@@ -13,7 +13,7 @@ export PATH=~/.asdf/installs/poetry/$POETRY_VERSION/bin:$PATH
 echo ""
 echo "Disable SSL check in Curl (DKT Fix)"
 echo "insecure" >> ${HOME}/.curlrc
-echo ""
+# echo ""
 # echo "Update SSL certificates"
 # update-ca-certificates
 echo ""
