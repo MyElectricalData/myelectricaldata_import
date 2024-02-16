@@ -30,7 +30,7 @@ generate-dependencies:
 	poetry export --without-hashes --output src/requirements.txt
 
 ## Install dev environment
-install: install-libdev install-asdf upgrade-pip configure-poetry
+install: install-libdev install-asdf configure-poetry upgrade-pip
 
 ## Minimun install to speed run on Github
 install-github:
@@ -107,10 +107,10 @@ disable-dev:
 run: init disable-debug bootstrap
 
 ## Run local dev (without debug)
-dev: init disable-debug enable-dev up bootstrap
+dev: init disable-debug enable-dev bootstrap
 
 ## Run in local in debug
-debug: init enable-debug up bootstrap down
+debug: init enable-debug bootstrap down
 
 ## Start all external ressource necessary to debug (MQTT, InfluxDB,...)
 up:

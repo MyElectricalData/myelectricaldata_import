@@ -1,25 +1,27 @@
 version: "3.9"
 services:
-#  myelectricaldata_import:
-#    build: ./../
-##    image: m4dm4rtig4n/myelectricaldata:0.8.13-beta2
-#    environment:
-#      TZ: Europe/Paris
-#    ports:
-#      - '5000:5000'
-#    links:
-#      - influxdb
-#      - mosquitto
-#      - postgres
-#    volumes:
-#      - ./../data/cache:/data
-#      - ./../data/log:/log
-#      - ./../app:/app
+  workspace:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        # 3, 3.10, 3.9, 3.8, 3.7, 3.6, 3-bullseye, 3.10-bullseye, 3.9-bullseye, 3.8-bullseye,
+        # 3.7-bullseye, 3.6-bullseye, 3-buster, 3.10-buster, 3.9-buster, 3.8-buster, 3.7-buster, 3.6-buster
+        VARIANT: 3.10-bullseye
+        LOCAL: fr_FR.UTF-8
+    ports:
+      - 8080:8080
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ..:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: sleep infinity
       
   influxdb:
     image: influxdb:2.4
     ports:
-      - '8086:8086'
+      - '8086'
     volumes:
       - ./../data/influxdb:/var/lib/influxdb2
     healthcheck:
@@ -46,8 +48,8 @@ services:
       - ./../data/mosquitto:/data
       - ./../mosquitto:/mosquitto/config/
     ports:
-      - 1883:1883
-      - 9001:9001
+      - 1883
+      - 9001
 
   mqtt_explorer:
     image: smeagolworms4/mqtt-explorer
@@ -60,7 +62,7 @@ services:
     ports:
       - 4000:4000
 
-# ----------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------
 # DATABASE
   postgres:
     image: postgres
@@ -71,23 +73,10 @@ services:
       POSTGRES_DB: myelectricaldata
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - 5432
     volumes:
       - ./../data/postgresql/data:/var/lib/postgresql/data
       - ./../init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  mysql:
-    image: mariadb
-    restart: always
-    environment:
-      MARIADB_USER: myelectricaldata
-      MARIADB_PASSWORD: myelectricaldata
-      MARIADB_ROOT_PASSWORD: myelectricaldata
-      MARIADB_DATABASE : myelectricaldata
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./../data/mysql/data:/var/lib/mysql
 
 volumes:
   mydata:

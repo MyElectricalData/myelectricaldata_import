@@ -1,72 +1,73 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.224.2/containers/docker-existing-docker-compose
-// If you want to run as a non-root user in the container, see .devcontainer/docker-compose.yml.
 {
-    "name": "enedisgateway2mqtt development",
-	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
-	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
+    "name": "MyElectricalData development",
 	"dockerComposeFile": [
-		"docker-compose.dev.yml",
+		"docker-compose.yaml"
 	],
     "shutdownAction": "stopCompose",
-
-    // Set *default* container specific settings.json values on container create.
-    "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
-        "python.linting.enabled": true,
-        "python.linting.pylintEnabled": true,
-        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-        "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
-        "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
-        "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
-        "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
-        "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
-        "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
-        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
-        "terminal.integrated.profiles.linux": {
-            "zsh": {
-                "path": "/usr/bin/zsh"
-            }
-        },
-        "terminal.integrated.defaultProfile.linux": "zsh",
-        "editor.formatOnPaste": false,
-        "editor.formatOnSave": true,
-        "editor.formatOnType": true,
-        "files.trimTrailingWhitespace": true
-    },
-
-    // The 'service' property is the name of the service for the container that VS Code should
-	// use. Update this value and .devcontainer/docker-compose.yml to the real service name.
+    "postCreateCommand": "/bin/bash ./.devcontainer/post-install.sh",
+    "postStartCommand": "make dev",
 	"service": "workspace",
-
-	// The optional 'workspaceFolder' property is the path VS Code should open by default when
-	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
 	"workspaceFolder": "/workspace",
-
-	"extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-azuretools.vscode-docker",
-        "timonwong.shellcheck",
-        "esbenp.prettier-vscode"
-    ],
-
-    // Use 'forwardPorts' to make a list of ports inside the container available locally.
     "forwardPorts": [
         "1883:1883",
         "4000:4000"
     ],
-
-	// Uncomment the next line if you want start specific services in your Docker Compose config.
-	// "runServices": [],
-
-	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
-	// "shutdownAction": "none",
-
-	// Uncomment the next line to run commands after the container is created - for example installing curl.
-	// "postCreateCommand": "apt-get update && apt-get install -y curl",
-
-	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "mikoz.black-py",
+                "ms-python.black-formatter",
+                "genuitecllc.codetogether",
+                "Codium.codium",
+                "tamasfe.even-better-toml",
+                "ms-azuretools.vscode-docker",
+                "ms-python.flake8",
+                "mhutchie.git-graph",
+                "donjayamanne.githistory",
+                "huizhou.githd",
+                "github.vscode-github-actions",
+                "ecmel.vscode-html-css",
+                "ms-python.isort",
+                "elagil.pre-commit-helper",
+                "MarkLarah.pre-commit-vscode",
+                "ms-python.vscode-pylance",
+                "ms-python.pylint",
+                "zeshuaro.vscode-python-poetry",
+                "the-compiler.python-tox",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "aaron-bond.better-comments",
+                "ms-vscode-remote.remote-containers",
+                "ms-vscode.makefile-tools"
+            ]
+        },
+        "settings": {
+            "python.testing.pytestEnabled": true,
+            "black-formatter.args": [
+                "--line-height 119"
+            ],
+            "editor.wordWrapColumn": 119,
+            "black-py.useIntegratedTerminal": true,
+            "git.enableSmartCommit": true,
+            "[python]": {
+                "editor.defaultFormatter": "ms-python.black-formatter"
+            },
+            "editor.defaultFormatter": "ms-python.black-formatter",
+            "pylint.cwd": "${workspaceFolder}/src",
+            "pylint.importStrategy": "fromEnvironment",
+            "flake8.cwd": "${workspaceFolder}/src",
+            "flake8.importStrategy": "fromEnvironment",
+            "editor.wordWrap": "wordWrapColumn",
+            "python.analysis.autoImportCompletions": false,
+            "python.analysis.typeCheckingMode": "off",
+            "python.analysis.extraPaths": [
+                "./src"
+            ],
+            "editor.rulers": [ 119 ],
+            "better-comments.highlightPlainText": true,
+            "black-formatter.importStrategy": "fromEnvironment",
+            "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
+            "editor.renderWhitespace": "all"
+        } 
+    }
 }

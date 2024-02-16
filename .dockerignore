@@ -1,0 +1,6 @@
+data
+tmp
+.venv
+.tox
+.idea
+**/__pycache__
