@@ -1,8 +1,10 @@
-version: "3.9"
+# version: "3.9"
 services:
   workspace:
     build:
       context: ..
+      ssh:
+        - default
       dockerfile: .devcontainer/Dockerfile
       args:
         # 3, 3.10, 3.9, 3.8, 3.7, 3.6, 3-bullseye, 3.10-bullseye, 3.9-bullseye, 3.8-bullseye,
@@ -11,7 +13,7 @@ services:
         LOCAL: fr_FR.UTF-8
     ports:
       - 8080:8080
-    volumes:
+    environment: 
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ..:/workspace:cached
