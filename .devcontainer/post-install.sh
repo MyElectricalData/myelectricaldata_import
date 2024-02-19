@@ -19,6 +19,7 @@ export PATH=~/.asdf/installs/poetry/$POETRY_VERSION/bin:$PATH
 echo ""
 echo "Disable SSL check in Curl"
 echo "insecure" >> ${HOME}/.curlrc
+sudo update-ca-certificates --fresh
 echo ""
 echo "Install environment"
 make install
