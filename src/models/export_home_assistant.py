@@ -17,7 +17,7 @@ def convert_kw(value):
 
 
 def convert_kw_to_euro(value, price):
-    if type(price) == str:
+    if isinstance(price, str):
         price = float(price.replace(",", "."))
     return round(value / 1000 * price, 1)
 
@@ -107,13 +107,13 @@ class HomeAssistant:
             self.last_x_day(5, "production")
             self.history_usage_point_id("production")
 
-        tempo_config = CONFIG.tempo_config()
-        if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
-            self.tempo()
-            self.tempo_info()
-            self.tempo_days()
-            self.tempo_price()
-            self.ecowatt()
+        # tempo_config = CONFIG.tempo_config()
+        # if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
+        self.tempo()
+        self.tempo_info()
+        self.tempo_days()
+        self.tempo_price()
+        self.ecowatt()
 
     def sensor(self, **kwargs):
         logging.info(

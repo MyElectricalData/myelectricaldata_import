@@ -4,6 +4,9 @@ PY = python3
 VENV = .venv
 BIN=$(VENV)/bin
 
+PYTHON_VERSION=$(shell cat .tool-versions|grep 'python' | cut -d " " -f 2)
+POETRY_VERSION=$(shell cat .tool-versions|grep 'poetry' | cut -d " " -f 2)
+
 define title
 @/bin/echo -e "\n------------------------------------------------\n${1}\n------------------------------------------------\n"
 endef
@@ -30,7 +33,7 @@ generate-dependencies:
 	poetry export --without-hashes --output src/requirements.txt
 
 ## Install dev environment
-install: install-libdev install-asdf upgrade-pip configure-poetry
+install: install-libdev install-asdf configure-poetry upgrade-pip
 
 ## Minimun install to speed run on Github
 install-github:
@@ -58,14 +61,21 @@ upgrade-pip:
 
 configure-poetry:
 	@$(call title,"Poetry set python version")
-	sed -i 's/python = .*/python = "$(shell cat .tool-versions|grep 'python' | cut -d " " -f 2)"/g' pyproject.toml
-	sed -i 's/FROM python:.*/FROM python:'$(shell cat .tool-versions|grep 'python' | cut -d " " -f 2)'-slim/g' Dockerfile
-	poetry env use ~/.asdf/installs/python/$(shell cat .tool-versions|grep 'python' | cut -d " " -f 2)/bin/python
+	@echo "Update python version $(PYTHON_VERSION) in pyproject.toml"
+	sed -i 's/python = .*/python = "$(PYTHON_VERSION)"/g' pyproject.toml
+	@echo "Update python version $(PYTHON_VERSION) in Dockerfile"
+	sed -i 's/FROM python:.*/FROM python:$(PYTHON_VERSION)-slim/g' Dockerfile
+	@echo "Update python version $(PYTHON_VERSION) in tox.ini"
+	sed -i 's/min_python_version.*/min_python_version = $(PYTHON_VERSION)/g' tox.ini
+	sed -i 's/FROM python:.*/FROM python:$(PYTHON_VERSION)-slim/g' Dockerfile
+	@$(call title,"Switch venv to $(PYTHON_VERSION)")
+	poetry env use ~/.asdf/installs/python/$(PYTHON_VERSION)/bin/python
 	@$(call title,"Poetry self plugin")
 	poetry self add poetry-plugin-export poetry-dotenv-plugin
+	poetry self update
 	@$(call title,"Poetry install")
 	poetry install
-	poetry lock
+	poetry update
 
 
 clean: python-clean
@@ -107,10 +117,10 @@ disable-dev:
 run: init disable-debug bootstrap
 
 ## Run local dev (without debug)
-dev: init disable-debug enable-dev up bootstrap
+dev: init disable-debug enable-dev bootstrap
 
 ## Run in local in debug
-debug: init enable-debug up bootstrap down
+debug: init enable-debug bootstrap down
 
 ## Start all external ressource necessary to debug (MQTT, InfluxDB,...)
 up:
