@@ -14,6 +14,7 @@ services:
     ports:
       - 8080:8080    
     volumes:
+      - /usr/local/share/ca-certificates/:/usr/local/share/ca-certificates/
       - ${HOME}/.ssh:/home/vscode/.ssh
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro

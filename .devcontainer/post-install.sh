@@ -17,7 +17,7 @@ export PATH=~/.asdf/bin:~/.asdf/shims:$PATH
 POETRY_VERSION=$(cat .tool-versions|grep 'poetry' | cut -d " " -f 2)
 export PATH=~/.asdf/installs/poetry/$POETRY_VERSION/bin:$PATH
 echo ""
-echo "Disable SSL check in Curl (DKT Fix)"
+echo "Disable SSL check in Curl"
 echo "insecure" >> ${HOME}/.curlrc
 echo ""
 echo "Install environment"

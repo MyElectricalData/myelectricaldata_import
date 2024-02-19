@@ -9,10 +9,7 @@
     "postStartCommand": "make dev",
 	"service": "workspace",
 	"workspaceFolder": "/workspace",
-    "forwardPorts": [
-        "1883:1883",
-        "4000:4000"
-    ],
+    "forwardPorts": [],
     "customizations": {
         "vscode": {
             "extensions": [
