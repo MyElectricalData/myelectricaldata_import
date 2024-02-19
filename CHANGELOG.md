@@ -2,6 +2,108 @@
 
 
 
+## v0.11.0 (2024-02-15)
+
+
+## v0.11.0-rc.3 (2024-02-12)
+
+### Fix
+
+* fix: display bug if not tempo ([`a36f18b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a36f18befc6ccd4521cc7a19b1e5c9195e443ed6))
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/494 ([`6af83f1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6af83f167e53754d82dfb48f32ce37c42b3703ef))
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/489 ([`c484d4b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c484d4bf14d38c26fbcacd0cbce9dcbe1a3afcfc))
+
+### Unknown
+
+* Merge pull request #495 from MyElectricalData/fix/494-489
+
+Fix/494 489 ([`ca35bff`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ca35bff3049e903f49e27678ede9c7c315871f1b))
+
+
+## v0.11.0-rc.2 (2024-02-10)
+
+### Fix
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/479 ([`7609cdd`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7609cddc53862826454e3c1bf7c04a67aab7d135))
+
+### Unknown
+
+* Merge pull request #490 from MyElectricalData/fix/issues/479
+
+fix: https://github.com/MyElectricalData/myelectricaldata_import/issu… ([`02444a7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/02444a75809afed2020f3c57f4d539f94109aa70))
+
+
+## v0.11.0-rc.1 (2024-02-06)
+
+### Feature
+
+* feat: add max_date to Home Assistant WS import ([`b4641af`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b4641afbf3f534adf8ddcbe2545fe0b12b12c928))
+
+### Unknown
+
+* Merge pull request #488 from MyElectricalData/feat/issues/445
+
+feat: add max_date to Home Assistant WS import ([`dec5d4e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/dec5d4ed9034450fc2f7cc7d811344db5b2e9ecc))
+
+
+## v0.10.1-rc.2 (2024-02-05)
+
+### Fix
+
+* fix: add install-github ([`7276830`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7276830bd71103362af87ff4d485e3a5e60c9661))
+
+### Unknown
+
+* Merge pull request #487 from MyElectricalData/fix/tempo_days
+
+fix: add install-github ([`23ac718`](https://github.com/MyElectricalData/myelectricaldata_import/commit/23ac718143a088f1df453fb00c0c2a930aefc9f6))
+
+
+## v0.10.1-rc.1 (2024-02-05)
+
+### Ci
+
+* ci: clean ([`ca54fa6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ca54fa6ae2c51c4ad8acf6b11d3b11e0d1843449))
+
+* ci: fix ([`48a4aed`](https://github.com/MyElectricalData/myelectricaldata_import/commit/48a4aed734f43e1a57112f225ad7c5f9d0e244f3))
+
+* ci: clean workflow ([`40b51e3`](https://github.com/MyElectricalData/myelectricaldata_import/commit/40b51e39f1a177a6b14bab0114512a22e54c58e5))
+
+* ci: test ([`3661dff`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3661dff643ce1d042f8e8a96545399d3b5be4892))
+
+* ci: test ([`1106e25`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1106e25b45ebb4bd0e48e54e2cea4fe166eca58b))
+
+* ci: test ([`5d64ddc`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5d64ddc5ab17d0ba19b93788047af42599a5a140))
+
+* ci: test ([`91a5df6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/91a5df649908e5d3e9b572a1bb49b256f9ce20b2))
+
+* ci: test ([`9460710`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9460710cc45816b1b30492c013584fa0bb0a4a60))
+
+* ci: test ([`0bf182a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0bf182a35fc39e4de8d0c2bb7ebdc6d808f55a2a))
+
+* ci: test ([`99ae339`](https://github.com/MyElectricalData/myelectricaldata_import/commit/99ae3394e6cdbe4e574685526186ad73d90357c1))
+
+### Fix
+
+* fix: tempo days color ([`bdee3e1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/bdee3e1796f3cadeea4dd998cce9433e6955b63a))
+
+### Unknown
+
+* Merge pull request #486 from MyElectricalData/fix/tempo_days
+
+Fix/tempo days ([`2ed1ca6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2ed1ca6668e893116e881e84867cefde332280c6))
+
+* Merge pull request #484 from MyElectricalData/ci/test
+
+ci: test ([`a2562d7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a2562d78e406ae1d216fa00f66f0b92e4a260fc3))
+
+* Merge pull request #483 from MyElectricalData/ci/test
+
+ci: test ([`f64dc29`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f64dc293e42292cc56f0583906e237524a03cef8))
+
+
 ## v0.10.0 (2024-02-05)
 
 ### Feature
