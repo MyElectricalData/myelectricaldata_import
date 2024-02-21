@@ -60,14 +60,23 @@ upgrade-pip:
 	@$(call poetry, pip install --upgrade pip, "Upgrade pip")
 
 configure-poetry:
+configure-poetry:
 	@$(call title,"Poetry set python version")
-	@echo "Update python version $(PYTHON_VERSION) in pyproject.toml"
-	sed -i 's/python = .*/python = "$(PYTHON_VERSION)"/g' pyproject.toml
-	@echo "Update python version $(PYTHON_VERSION) in Dockerfile"
-	sed -i 's/FROM python:.*/FROM python:$(PYTHON_VERSION)-slim/g' Dockerfile
-	@echo "Update python version $(PYTHON_VERSION) in tox.ini"
-	sed -i 's/min_python_version.*/min_python_version = $(PYTHON_VERSION)/g' tox.ini
-	sed -i 's/FROM python:.*/FROM python:$(PYTHON_VERSION)-slim/g' Dockerfile
+	if [ "$(shell uname)" == "Darwin" ]; then \
+		echo "Update python version $(PYTHON_VERSION) in pyproject.toml"
+		sed -i '' 's/python = .*/python = "$(PYTHON_VERSION)"/g' pyproject.toml
+		echo "Update python version $(PYTHON_VERSION) in Dockerfile"
+		sed -i '' 's/FROM python:.*/FROM python:$(PYTHON_VERSION)-slim/g' Dockerfile
+		echo "Update python version $(PYTHON_VERSION) in tox.ini"
+		sed -i '' 's/min_python_version.*/min_python_version = $(PYTHON_VERSION)/g' tox.ini
+	else\
+		echo "Update python version $(PYTHON_VERSION) in pyproject.toml"
+		sed -i 's/python = .*/python = "$(PYTHON_VERSION)"/g' pyproject.toml
+		echo "Update python version $(PYTHON_VERSION) in Dockerfile"
+		sed -i 's/FROM python:.*/FROM python:$(PYTHON_VERSION)-slim/g' Dockerfile
+		echo "Update python version $(PYTHON_VERSION) in tox.ini"
+		sed -i 's/min_python_version.*/min_python_version = $(PYTHON_VERSION)/g' tox.ini
+	fi
 	@$(call title,"Switch venv to $(PYTHON_VERSION)")
 	poetry env use ~/.asdf/installs/python/$(PYTHON_VERSION)/bin/python
 	@$(call title,"Poetry self plugin")

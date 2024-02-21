@@ -10,7 +10,8 @@ import websocket
 
 from init import CONFIG, DB
 from models.stat import Stat
-from dependencies import str2bool
+from models.export_home_assistant import HomeAssistant
+from dependencies import str2bool, truncate
 
 TZ_PARIS = pytz.timezone("Europe/Paris")
 
@@ -241,16 +242,19 @@ class HomeAssistantWs:
                         name = f"{name} {plan} {measurement_direction}"
                         statistic_id = f"{statistic_id}_{plan.lower()}_{measurement_direction}"
                         cost = value * self.usage_point_id_config.consumption_price_base / 1000
+                        tag = "base"
                     elif plan == "HC/HP":
                         measure_type = stats.get_mesure_type(data.date)
                         if measure_type == "HC":
                             name = f"{name} HC {measurement_direction}"
                             statistic_id = f"{statistic_id}_hc_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hc / 1000
+                            tag = "hc"
                         else:
                             name = f"{name} HP {measurement_direction}"
                             statistic_id = f"{statistic_id}_hp_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hp / 1000
+                            tag = "hp"
                     elif plan == "TEMPO":
                         if 600 <= hour_minute < 2200:
                             hour_type = "HP"
@@ -271,6 +275,7 @@ class HomeAssistantWs:
                             cost = value / 1000 * tempo_price
                             name = f"{name} {tempo_color} {measurement_direction}"
                             statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measurement_direction}"
+                            tag = tempo_color.lower()
                     else:
                         logging.error(f"Plan {plan} inconnu.")
 
@@ -290,6 +295,7 @@ class HomeAssistantWs:
                     stats_kwh[statistic_id]["data"][key]["state"] = (
                         stats_kwh[statistic_id]["data"][key]["state"] + value
                     )
+                    stats_kwh[statistic_id]["tag"] = tag
                     stats_kwh[statistic_id]["sum"] += value
                     stats_kwh[statistic_id]["data"][key]["sum"] = stats_kwh[statistic_id]["sum"]
 
@@ -307,6 +313,7 @@ class HomeAssistantWs:
                             "state": 0,
                             "sum": 0,
                         }
+                    stats_euro[statistic_id]["tag"] = tag
                     stats_euro[statistic_id]["data"][key]["state"] += cost
                     stats_euro[statistic_id]["sum"] += cost
                     stats_euro[statistic_id]["data"][key]["sum"] = stats_euro[statistic_id]["sum"]
@@ -335,6 +342,18 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
+                    HomeAssistant(self.usage_point_id).sensor(
+                        topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_energy",
+                        name=f"{data["tag"]} {measurement_direction}",
+                        device_name=f"Linky {self.usage_point_id}",
+                        device_model=f"linky {self.usage_point_id}",
+                        device_identifiers=f"{self.usage_point_id}",
+                        uniq_id=statistic_id,
+                        unit_of_measurement="kWh",
+                        state=truncate(data["sum"]),
+                        device_class="energy",
+                        numPDL=self.usage_point_id,
+                    )
 
                 for statistic_id, data in stats_euro.items():
                     metadata = {
@@ -352,10 +371,22 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
+                    HomeAssistant(self.usage_point_id).sensor(
+                        topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_cost",
+                        name=f"{data["tag"]} {measurement_direction} cost",
+                        device_name=f"Linky {self.usage_point_id}",
+                        device_model=f"linky {self.usage_point_id}",
+                        device_identifiers=f"{self.usage_point_id}",
+                        uniq_id=statistic_id,
+                        unit_of_measurement="EURO",
+                        state=truncate(data["sum"]),
+                        device_class="energy",
+                        numPDL=self.usage_point_id,
+                    )
 
             if self.usage_point_id_config.production_detail:
                 logging.info("Production")
-                measure_type = "production"
+                measurement_direction = "production"
                 if "max_date" in self.config:
                     logging.warning("WARNING : Max date détectée %s", self.config["max_date"])
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
@@ -386,8 +417,8 @@ class HomeAssistantWs:
                     last_year = year
                     last_month = month
                     hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
-                    name = f"MyElectricalData - {self.usage_point_id} {measure_type}"
-                    statistic_id = f"myelectricaldata:{self.usage_point_id}_{measure_type}"
+                    name = f"MyElectricalData - {self.usage_point_id} {measurement_direction}"
+                    statistic_id = f"myelectricaldata:{self.usage_point_id}_{measurement_direction}"
                     value = data.value / (60 / data.interval)
                     cost = value * self.usage_point_id_config.production_price / 1000
                     date = TZ_PARIS.localize(data.date, "%Y-%m-%d %H:%M:%S").replace(minute=0, second=0, microsecond=0)
@@ -450,7 +481,18 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
-
+                    HomeAssistant(self.usage_point_id).sensor(
+                        topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_energy",
+                        name=f"{measurement_direction} energy",
+                        device_name=f"Linky {self.usage_point_id}",
+                        device_model=f"linky {self.usage_point_id}",
+                        device_identifiers=f"{self.usage_point_id}",
+                        uniq_id=statistic_id,
+                        unit_of_measurement="kWh",
+                        state=truncate(data["sum"]),
+                        device_class="energy",
+                        numPDL=self.usage_point_id,
+                    )
                 for statistic_id, data in stats_euro.items():
                     metadata = {
                         "has_mean": False,
@@ -467,6 +509,18 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
+                    HomeAssistant(self.usage_point_id).sensor(
+                        topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_cost",
+                        name=f"{measurement_direction} cost",
+                        device_name=f"Linky {self.usage_point_id}",
+                        device_model=f"linky {self.usage_point_id}",
+                        device_identifiers=f"{self.usage_point_id}",
+                        uniq_id=statistic_id,
+                        unit_of_measurement="EURO",
+                        state=truncate(data["sum"]),
+                        device_class="energy",
+                        numPDL=self.usage_point_id,
+                    )
         except Exception as _e:
             self.ws.close()
             logging.error(_e)
