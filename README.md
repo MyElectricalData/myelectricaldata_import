@@ -38,7 +38,6 @@ Tout est disponible directement sur le [Wiki](https://github.com/m4dm4rtig4n/mye
 
 [![https://discord.gg/DfVJZme](ressources/discord.png 'Vous recherchez un Discord Francais autour de la "Domotique & Diy" ?')](https://discord.gg/DfVJZme)
 
-
 ****
 ****
 
