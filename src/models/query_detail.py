@@ -3,7 +3,6 @@ import logging
 import re
 from datetime import datetime, timedelta
 
-from dependencies import title
 from models.database import ConsumptionDetail, ProductionDetail
 from models.query import Query
 from init import DB, CONFIG

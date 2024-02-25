@@ -16,7 +16,6 @@
                 "mikoz.black-py",
                 "ms-python.black-formatter",
                 "genuitecllc.codetogether",
-                "Codium.codium",
                 "tamasfe.even-better-toml",
                 "ms-azuretools.vscode-docker",
                 "ms-python.flake8",
@@ -36,7 +35,8 @@
                 "ms-python.debugpy",
                 "aaron-bond.better-comments",
                 "ms-vscode-remote.remote-containers",
-                "ms-vscode.makefile-tools"
+                "ms-vscode.makefile-tools",
+                "GitHub.copilot"
             ]
         },
         "settings": {

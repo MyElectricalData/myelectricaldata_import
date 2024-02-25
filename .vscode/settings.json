@@ -12,5 +12,6 @@
             "password": "myelectricaldata"
         }
     ],
-    "github-actions.workflows.pinned.workflows": []
+    "github-actions.workflows.pinned.workflows": [],
+    "GitHooks.hooksDirectory": "/home/cvalentin/git/myelectricaldata/myelectricaldata_import/.git/hooks"
 }

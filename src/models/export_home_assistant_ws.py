@@ -85,7 +85,7 @@ class HomeAssistantWs:
             if check_ssl and "gateway" in check_ssl:
                 sslopt = {"cert_reqs": ssl.CERT_NONE}
             self.ws = websocket.WebSocket(sslopt=sslopt)
-            logging.info(f"Connexion au WebSocket Home Assistant {self.url}")
+            logging.info(f"Connexion au WebSocket Home Assistant %s", self.url)
             self.ws.connect(
                 self.url,
                 timeout=5,
@@ -200,7 +200,7 @@ class HomeAssistantWs:
         """Import the data for the usage point into Home Assistant."""
         logging.info(f"Importation des données du point de livraison : {self.usage_point_id}")
         try:
-            plan = self.usage_point_id_config.plan.upper()
+            plan = DB.get_usage_point_plan(self.usage_point_id)
             if self.usage_point_id_config.consumption_detail:
                 logging.info("Consommation")
                 measurement_direction = "consumption"
