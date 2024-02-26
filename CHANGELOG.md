@@ -2,6 +2,47 @@
 
 
 
+## v0.13.0-rc.1 (2024-02-26)
+
+### Feature
+
+* feat: add sensor create in energy dasboard + fix: HP/HD ([`5ed9171`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5ed9171ef952737e46a6a7f8a0c2e4c9aac764cc))
+
+### Fix
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/491 ([`6b19700`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6b19700306e0b608f026459ba258722cf3751617))
+
+* fix: isort ([`9dc054c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9dc054c9d6544888148c1580ef7ad105ec974a41))
+
+* fix: divers ([`bfc149a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/bfc149a791990e539fc758de44c76b67dc2a7be7))
+
+* fix: update python lib ([`962112f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/962112f97e3b63543e200ea346f78b7da132f2e3))
+
+* fix: remove tempo from exemple ([`e43676f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e43676f90b5050d565240d16392a2dcdf196a8b4))
+
+* fix: fix type in config.yaml when change config ([`17ae37f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/17ae37f8c33efe3ea2eaa5c52efe6e53fa907fdd))
+
+* fix: create ha sensor create by home_assistant_ws ([`7380db0`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7380db0c917fc5d34c85546174ecfc7fc9702bf3))
+
+### Unknown
+
+* Merge pull request #503 from MyElectricalData/fix/isort_491
+
+Fix/isort 491 ([`fcae211`](https://github.com/MyElectricalData/myelectricaldata_import/commit/fcae211116134fa9375b16a0561ab47f835f26e2))
+
+* Merge pull request #502 from MyElectricalData/feat/ha_sensor_from_energy
+
+Feat/ha sensor from energy ([`0d431a3`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0d431a3e50881bb6559e17f0d56aa398c081b989))
+
+* dev: add dev standart ([`d57f9ff`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d57f9ff7590714d8e4a933db60119258607cd021))
+
+* Merge pull request #500 from MyElectricalData/feat/devcontainer
+
+type: change image ([`41fadc9`](https://github.com/MyElectricalData/myelectricaldata_import/commit/41fadc9bec6663e2ec66003c86d380b3f739a60c))
+
+* type: change image ([`c38e73c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c38e73cb74828ef9da6d059921c21cb72e827ab1))
+
+
 ## v0.12.0 (2024-02-19)
 
 
