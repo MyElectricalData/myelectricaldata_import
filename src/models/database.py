@@ -43,7 +43,9 @@ class Database:
         self.config = config
         self.path = path
 
-        if not self.config.storage_config() or self.config.storage_config().startswith("sqlite"):
+        if not self.config.storage_config() or self.config.storage_config().startswith(
+            "sqlite"
+        ):
             self.db_name = "cache.db"
             self.db_path = f"{self.path}/{self.db_name}"
             self.uri = f"sqlite:///{self.db_path}?check_same_thread=False"
@@ -53,7 +55,9 @@ class Database:
             if self.storage_type in available_database:
                 self.uri = self.config.storage_config()
             else:
-                logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
+                logging.critical(
+                    f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)"
+                )
 
         os.system(f"cd {APPLICATION_PATH}; DB_URL='{self.uri}' alembic upgrade head ")
 
@@ -64,14 +68,18 @@ class Database:
             isolation_level="READ UNCOMMITTED",
             poolclass=NullPool,
         )
-        self.session = scoped_session(sessionmaker(self.engine, autocommit=True, autoflush=True))
+        self.session = scoped_session(
+            sessionmaker(self.engine, autocommit=True, autoflush=True)
+        )
         self.inspector = inspect(self.engine)
 
         self.lock_file = f"{self.path}/.lock"
 
         # MIGRATE v7 to v8
         if os.path.isfile(f"{self.path}/enedisgateway.db"):
-            title_warning("=> Migration de l'ancienne base de données vers la nouvelle structure.")
+            title_warning(
+                "=> Migration de l'ancienne base de données vers la nouvelle structure."
+            )
             self.migratev7tov8()
 
     def migratev7tov8(self):
@@ -85,7 +93,9 @@ class Database:
                 table = ConsumptionDaily
             else:
                 table = ProductionDaily
-            daily_data = session.execute(f"select * from {measurement_direction}_daily order by date").all()
+            daily_data = session.execute(
+                f"select * from {measurement_direction}_daily order by date"
+            ).all()
             current_date = ""
             year_value = 0
             bulk_insert = []
@@ -104,7 +114,9 @@ class Database:
                     )
                 )
                 if current_date != date.strftime("%Y"):
-                    logging.warning(f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW")
+                    logging.warning(
+                        f" - {date.strftime('%Y')} => {round(year_value / 1000, 2)}kW"
+                    )
                     current_date = date.strftime("%Y")
                     year_value = 0
             self.session.add_all(bulk_insert)
@@ -114,13 +126,17 @@ class Database:
                 table = ConsumptionDetail
             else:
                 table = ProductionDetail
-            detail_data = session.execute(f"select * from {measurement_direction}_detail order by date").all()
+            detail_data = session.execute(
+                f"select * from {measurement_direction}_detail order by date"
+            ).all()
             current_date = ""
             day_value = 0
             bulk_insert = []
             for detail in detail_data:
                 usage_point_id = detail[0]
-                date = datetime.strptime(detail[1], "%Y-%m-%d %H:%M:%S") - timedelta(minutes=30)
+                date = datetime.strptime(detail[1], "%Y-%m-%d %H:%M:%S") - timedelta(
+                    minutes=30
+                )
                 value = detail[2]
                 interval = detail[3]
                 measure_type = detail[4]
@@ -137,11 +153,15 @@ class Database:
                     )
                 )
                 if current_date != date.strftime("%m"):
-                    logging.warning(f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW")
+                    logging.warning(
+                        f" - {date.strftime('%Y-%m')} => {round(day_value / 1000, 2)}kW"
+                    )
                     current_date = date.strftime("%m")
                     day_value = 0
             self.session.add_all(bulk_insert)
-        os.replace(f"{self.path}/enedisgateway.db", f"{self.path}/enedisgateway.db.migrate")
+        os.replace(
+            f"{self.path}/enedisgateway.db", f"{self.path}/enedisgateway.db.migrate"
+        )
 
     def init_database(self):
         try:
@@ -151,7 +171,9 @@ class Database:
             if day:
                 day.value = datetime.now().strftime("%Y-%m-%d")
             else:
-                self.session.add(Config(key="day", value=datetime.now().strftime("%Y-%m-%d")))
+                self.session.add(
+                    Config(key="day", value=datetime.now().strftime("%Y-%m-%d"))
+                )
             logging.info(" => day")
             query = select(Config).where(Config.key == "call_number")
             if not self.session.scalars(query).one_or_none():
@@ -177,9 +199,10 @@ class Database:
                 self.session.add(Config(key="lastUpdate", value=str(datetime.now())))
             logging.info(" => lastUpdate")
             logging.info(" Success")
-        except:
+        except Exception as e:
             traceback.print_exc()
-            logging.critical(f"Database initialize failed!")
+            logging.error(e)
+            logging.critical("Database initialize failed!")
 
     def purge_database(self):
         logging.separator_warning()
@@ -218,7 +241,9 @@ class Database:
     def clean_database(self, current_usage_point_id):
         for usage_point in self.get_usage_point_all():
             if usage_point.usage_point_id not in current_usage_point_id:
-                logging.warning(f"- Suppression du point de livraison {usage_point.usage_point_id}")
+                logging.warning(
+                    f"- Suppression du point de livraison {usage_point.usage_point_id}"
+                )
                 self.delete_usage_point(usage_point.usage_point_id)
                 self.delete_addresse(usage_point.usage_point_id)
                 self.delete_daily(usage_point.usage_point_id)
@@ -265,6 +290,12 @@ class Database:
         self.session.close()
         return data
 
+    def get_usage_point_plan(self, usage_point):
+        data = self.get_usage_point(usage_point)
+        if data.plan in ["HP/HC"]:
+            return "HC/HP"
+        return data.plan
+
     def set_usage_point(self, usage_point_id, data):
         query = select(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id)
         usage_points = self.session.scalars(query).one_or_none()
@@ -280,19 +311,33 @@ class Database:
                 usage_points.consumption = str2bool(data["consumption"])
             if "consumption_detail" in data and data["consumption_detail"] is not None:
                 usage_points.consumption_detail = str2bool(data["consumption_detail"])
-            if "consumption_max_power" in data and data["consumption_max_power"] is not None:
-                usage_points.consumption_max_power = str2bool(data["consumption_max_power"])
+            if (
+                "consumption_max_power" in data
+                and data["consumption_max_power"] is not None
+            ):
+                usage_points.consumption_max_power = str2bool(
+                    data["consumption_max_power"]
+                )
             if "production" in data and data["production"] is not None:
                 usage_points.production = str2bool(data["production"])
             if "production_detail" in data and data["production_detail"] is not None:
                 usage_points.production_detail = str2bool(data["production_detail"])
             if "production_price" in data and data["production_price"] is not None:
                 usage_points.production_price = data["production_price"]
-            if "consumption_price_base" in data and data["consumption_price_base"] is not None:
+            if (
+                "consumption_price_base" in data
+                and data["consumption_price_base"] is not None
+            ):
                 usage_points.consumption_price_base = data["consumption_price_base"]
-            if "consumption_price_hc" in data and data["consumption_price_hc"] is not None:
+            if (
+                "consumption_price_hc" in data
+                and data["consumption_price_hc"] is not None
+            ):
                 usage_points.consumption_price_hc = data["consumption_price_hc"]
-            if "consumption_price_hp" in data and data["consumption_price_hp"] is not None:
+            if (
+                "consumption_price_hp" in data
+                and data["consumption_price_hp"] is not None
+            ):
                 usage_points.consumption_price_hp = data["consumption_price_hp"]
             if "offpeak_hours_0" in data and data["offpeak_hours_0"] is not None:
                 usage_points.offpeak_hours_0 = data["offpeak_hours_0"]
@@ -323,33 +368,53 @@ class Database:
             if "progress_status" in data and data["progress_status"] is not None:
                 usage_points.progress_status = data["progress_status"]
             if "consumption_max_date" in data:
-                if data["consumption_max_date"] and data["consumption_max_date"] is not None:
+                if (
+                    data["consumption_max_date"]
+                    and data["consumption_max_date"] is not None
+                ):
                     consumption_max_date = data["consumption_max_date"]
                     if isinstance(consumption_max_date, datetime):
                         usage_points.consumption_max_date = consumption_max_date
                     else:
-                        usage_points.consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
+                        usage_points.consumption_max_date = datetime.strptime(
+                            consumption_max_date, "%Y-%m-%d"
+                        )
             if "consumption_detail_max_date" in data:
-                if data["consumption_detail_max_date"] and data["consumption_detail_max_date"] is not None:
+                if (
+                    data["consumption_detail_max_date"]
+                    and data["consumption_detail_max_date"] is not None
+                ):
                     consumption_detail_max_date = data["consumption_detail_max_date"]
                     if isinstance(consumption_detail_max_date, datetime):
-                        usage_points.consumption_detail_max_date = consumption_detail_max_date
+                        usage_points.consumption_detail_max_date = (
+                            consumption_detail_max_date
+                        )
                     else:
                         usage_points.consumption_detail_max_date = datetime.strptime(
                             consumption_detail_max_date, "%Y-%m-%d"
                         )
             if "production_max_date" in data:
-                if data["production_max_date"] and data["production_max_date"] is not None:
+                if (
+                    data["production_max_date"]
+                    and data["production_max_date"] is not None
+                ):
                     production_max_date = data["production_max_date"]
                     if isinstance(production_max_date, datetime):
                         usage_points.production_max_date = production_max_date
                     else:
-                        usage_points.production_max_date = datetime.strptime(production_max_date, "%Y-%m-%d")
+                        usage_points.production_max_date = datetime.strptime(
+                            production_max_date, "%Y-%m-%d"
+                        )
             if "production_detail_max_date" in data:
-                if data["production_detail_max_date"] and data["production_detail_max_date"] is not None:
+                if (
+                    data["production_detail_max_date"]
+                    and data["production_detail_max_date"] is not None
+                ):
                     production_detail_max_date = data["production_detail_max_date"]
                     if isinstance(production_detail_max_date, datetime):
-                        usage_points.production_detail_max_date = production_detail_max_date
+                        usage_points.production_detail_max_date = (
+                            production_detail_max_date
+                        )
                     else:
                         usage_points.production_detail_max_date = datetime.strptime(
                             production_detail_max_date, "%Y-%m-%d"
@@ -366,7 +431,10 @@ class Database:
                 usage_points.last_call = data["last_call"]
             if "ban" in data and data["ban"] is not None:
                 usage_points.ban = str2bool(data["ban"])
-            if "consentement_expiration" in data and data["consentement_expiration"] is not None:
+            if (
+                "consentement_expiration" in data
+                and data["consentement_expiration"] is not None
+            ):
                 usage_points.consentement_expiration = data["consentement_expiration"]
         else:
             if "enable" in data and data["enable"] is not None:
@@ -385,7 +453,10 @@ class Database:
                 consumption = data["consumption"]
             else:
                 consumption = True
-            if "consumption_max_power" in data and data["consumption_max_power"] is not None:
+            if (
+                "consumption_max_power" in data
+                and data["consumption_max_power"] is not None
+            ):
                 consumption_max_power = data["consumption_max_power"]
             else:
                 consumption_max_power = True
@@ -481,39 +552,64 @@ class Database:
                 progress_status = data["progress_status"]
             consumption_max_date = None
             if "consumption_max_date" in data:
-                if not data["consumption_max_date"] or data["consumption_max_date"] is None:
+                if (
+                    not data["consumption_max_date"]
+                    or data["consumption_max_date"] is None
+                ):
                     consumption_max_date = None
                 else:
                     consumption_max_date = data["consumption_max_date"]
                     if not isinstance(consumption_max_date, datetime):
-                        consumption_max_date = datetime.strptime(consumption_max_date, "%Y-%m-%d")
+                        consumption_max_date = datetime.strptime(
+                            consumption_max_date, "%Y-%m-%d"
+                        )
             consumption_detail_max_date = None
             if "consumption_detail_max_date" in data:
-                if "consumption_detail_max_date" in data or data["consumption_detail_max_date"] is None:
-                    if not data["consumption_detail_max_date"] or data["consumption_detail_max_date"] is None:
+                if (
+                    "consumption_detail_max_date" in data
+                    or data["consumption_detail_max_date"] is None
+                ):
+                    if (
+                        not data["consumption_detail_max_date"]
+                        or data["consumption_detail_max_date"] is None
+                    ):
                         consumption_detail_max_date = None
                     else:
-                        consumption_detail_max_date = data["consumption_detail_max_date"]
+                        consumption_detail_max_date = data[
+                            "consumption_detail_max_date"
+                        ]
                         if not isinstance(consumption_detail_max_date, datetime):
-                            consumption_detail_max_date = datetime.strptime(consumption_detail_max_date, "%Y-%m-%d")
+                            consumption_detail_max_date = datetime.strptime(
+                                consumption_detail_max_date, "%Y-%m-%d"
+                            )
             production_max_date = None
             if "production_max_date" in data:
-                if not data["production_max_date"] or data["production_max_date"] is None:
+                if (
+                    not data["production_max_date"]
+                    or data["production_max_date"] is None
+                ):
                     production_max_date = None
                 else:
                     production_max_date = data["production_max_date"]
                     if not isinstance(production_max_date, datetime):
-                        production_max_date = datetime.strptime(production_max_date, "%Y-%m-%d")
+                        production_max_date = datetime.strptime(
+                            production_max_date, "%Y-%m-%d"
+                        )
             production_detail_max_date = None
             if "production_detail_max_date" in data:
-                if not data["production_detail_max_date"] or data["production_detail_max_date"] is None:
+                if (
+                    not data["production_detail_max_date"]
+                    or data["production_detail_max_date"] is None
+                ):
                     production_detail_max_date = None
                 else:
                     production_detail_max_date = data["production_detail_max_date"]
                     if isinstance(production_detail_max_date, datetime):
                         production_detail_max_date = production_detail_max_date
                     else:
-                        production_detail_max_date = datetime.strptime(production_detail_max_date, "%Y-%m-%d")
+                        production_detail_max_date = datetime.strptime(
+                            production_detail_max_date, "%Y-%m-%d"
+                        )
 
             if "call_number" in data and data["call_number"] is not None:
                 call_number = data["call_number"]
@@ -539,7 +635,10 @@ class Database:
                 ban = str2bool(data["ban"])
             else:
                 ban = False
-            if "consentement_expiration" in data and data["consentement_expiration"] is not None:
+            if (
+                "consentement_expiration" in data
+                and data["consentement_expiration"] is not None
+            ):
                 consentement_expiration = data["consentement_expiration"]
             else:
                 consentement_expiration = None
@@ -632,16 +731,40 @@ class Database:
         self.session.close()
 
     def delete_usage_point(self, usage_point_id):
-        self.session.execute(delete(Addresses).where(Addresses.usage_point_id == usage_point_id))
-        self.session.execute(delete(Contracts).where(Contracts.usage_point_id == usage_point_id))
         self.session.execute(
-            delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id)
+            delete(Addresses).where(Addresses.usage_point_id == usage_point_id)
         )
-        self.session.execute(delete(ConsumptionDetail).where(ConsumptionDetail.usage_point_id == usage_point_id))
-        self.session.execute(delete(ConsumptionDaily).where(ConsumptionDaily.usage_point_id == usage_point_id))
-        self.session.execute(delete(ProductionDetail).where(ProductionDetail.usage_point_id == usage_point_id))
-        self.session.execute(delete(ProductionDaily).where(ProductionDaily.usage_point_id == usage_point_id))
-        self.session.execute(delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id))
+        self.session.execute(
+            delete(Contracts).where(Contracts.usage_point_id == usage_point_id)
+        )
+        self.session.execute(
+            delete(ConsumptionDailyMaxPower).where(
+                ConsumptionDailyMaxPower.usage_point_id == usage_point_id
+            )
+        )
+        self.session.execute(
+            delete(ConsumptionDetail).where(
+                ConsumptionDetail.usage_point_id == usage_point_id
+            )
+        )
+        self.session.execute(
+            delete(ConsumptionDaily).where(
+                ConsumptionDaily.usage_point_id == usage_point_id
+            )
+        )
+        self.session.execute(
+            delete(ProductionDetail).where(
+                ProductionDetail.usage_point_id == usage_point_id
+            )
+        )
+        self.session.execute(
+            delete(ProductionDaily).where(
+                ProductionDaily.usage_point_id == usage_point_id
+            )
+        )
+        self.session.execute(
+            delete(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id)
+        )
         self.session.flush()
         self.session.close()
         return True
@@ -652,7 +775,11 @@ class Database:
 
     def set_error_log(self, usage_point_id, message):
         values = {UsagePoints.last_error: message}
-        self.session.execute(update(UsagePoints, values=values).where(UsagePoints.usage_point_id == usage_point_id))
+        self.session.execute(
+            update(UsagePoints, values=values).where(
+                UsagePoints.usage_point_id == usage_point_id
+            )
+        )
         self.session.flush()
         return True
 
@@ -661,7 +788,9 @@ class Database:
     ## ----------------------------------------------------------------------------------------------------------------
     def get_addresse(self, usage_point_id):
         query = (
-            select(Addresses).join(UsagePoints.relation_addressess).where(UsagePoints.usage_point_id == usage_point_id)
+            select(Addresses)
+            .join(UsagePoints.relation_addressess)
+            .where(UsagePoints.usage_point_id == usage_point_id)
         )
         data = self.session.scalars(query).one_or_none()
         self.session.close()
@@ -669,7 +798,9 @@ class Database:
 
     def set_addresse(self, usage_point_id, data, count=0):
         query = (
-            select(Addresses).join(UsagePoints.relation_addressess).where(Addresses.usage_point_id == usage_point_id)
+            select(Addresses)
+            .join(UsagePoints.relation_addressess)
+            .where(Addresses.usage_point_id == usage_point_id)
         )
         addresses = self.session.scalars(query).one_or_none()
         if addresses is not None:
@@ -699,7 +830,9 @@ class Database:
         self.session.close()
 
     def delete_addresse(self, usage_point_id):
-        self.session.execute(delete(Addresses).where(Addresses.usage_point_id == usage_point_id))
+        self.session.execute(
+            delete(Addresses).where(Addresses.usage_point_id == usage_point_id)
+        )
         self.session.flush()
         self.session.close()
         return True
@@ -709,7 +842,9 @@ class Database:
     ## ----------------------------------------------------------------------------------------------------------------
     def get_contract(self, usage_point_id):
         query = (
-            select(Contracts).join(UsagePoints.relation_contract).where(UsagePoints.usage_point_id == usage_point_id)
+            select(Contracts)
+            .join(UsagePoints.relation_contract)
+            .where(UsagePoints.usage_point_id == usage_point_id)
         )
         data = self.session.scalars(query).one_or_none()
         self.session.close()
@@ -722,7 +857,9 @@ class Database:
         count=0,
     ):
         query = (
-            select(Contracts).join(UsagePoints.relation_contract).where(UsagePoints.usage_point_id == usage_point_id)
+            select(Contracts)
+            .join(UsagePoints.relation_contract)
+            .where(UsagePoints.usage_point_id == usage_point_id)
         )
         contract = self.session.scalars(query).one_or_none()
         if contract is not None:
@@ -740,7 +877,9 @@ class Database:
             contract.offpeak_hours_5 = data["offpeak_hours_5"]
             contract.offpeak_hours_6 = data["offpeak_hours_6"]
             contract.contract_status = data["contract_status"]
-            contract.last_distribution_tariff_change_date = data["last_distribution_tariff_change_date"]
+            contract.last_distribution_tariff_change_date = data[
+                "last_distribution_tariff_change_date"
+            ]
             contract.count = count
         else:
             self.session.add(
@@ -760,7 +899,9 @@ class Database:
                     offpeak_hours_5=data["offpeak_hours_5"],
                     offpeak_hours_6=data["offpeak_hours_6"],
                     contract_status=data["contract_status"],
-                    last_distribution_tariff_change_date=data["last_distribution_tariff_change_date"],
+                    last_distribution_tariff_change_date=data[
+                        "last_distribution_tariff_change_date"
+                    ],
                     count=count,
                 )
             )
@@ -803,13 +944,17 @@ class Database:
 
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
 
-        yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
+        yesterday = datetime.combine(
+            datetime.now() - timedelta(days=1), datetime.max.time()
+        )
         if search is not None and search != "":
             result = self.session.scalars(
                 select(table)
                 .join(relation)
                 .where(UsagePoints.usage_point_id == usage_point_id)
-                .where((table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%")))
+                .where(
+                    (table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%"))
+                )
                 .where(table.date <= yesterday)
                 .order_by(sort)
             )
@@ -847,12 +992,16 @@ class Database:
         else:
             table = ProductionDaily
             relation = UsagePoints.relation_production_daily
-        data = self.session.scalars(select(table).join(relation).where(table.id == unique_id)).first()
+        data = self.session.scalars(
+            select(table).join(relation).where(table.id == unique_id)
+        ).first()
         self.session.flush()
         self.session.close()
         return data
 
-    def get_daily_state(self, usage_point_id, date, measurement_direction="consumption"):
+    def get_daily_state(
+        self, usage_point_id, date, measurement_direction="consumption"
+    ):
         if self.get_daily_date(usage_point_id, date, measurement_direction) is not None:
             return True
         else:
@@ -866,7 +1015,10 @@ class Database:
             table = ProductionDaily
             relation = UsagePoints.relation_production_daily
         current_data = self.session.scalars(
-            select(table).join(relation).where(table.usage_point_id == usage_point_id).order_by(table.date)
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .order_by(table.date)
         ).first()
         self.session.flush()
         self.session.close()
@@ -903,7 +1055,12 @@ class Database:
         else:
             table = ProductionDaily
             relation = UsagePoints.relation_production_daily
-        query = select(table).join(relation).where(table.usage_point_id == usage_point_id).order_by(table.date.desc())
+        query = (
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .order_by(table.date.desc())
+        )
         logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).first()
         if current_data is None:
@@ -911,14 +1068,18 @@ class Database:
         else:
             return current_data.date
 
-    def get_daily_fail_count(self, usage_point_id, date, measurement_direction="consumption"):
+    def get_daily_fail_count(
+        self, usage_point_id, date, measurement_direction="consumption"
+    ):
         result = self.get_daily_date(usage_point_id, date, measurement_direction)
         if hasattr(result, "fail_count"):
             return result.fail_count
         else:
             return 0
 
-    def daily_fail_increment(self, usage_point_id, date, measurement_direction="consumption"):
+    def daily_fail_increment(
+        self, usage_point_id, date, measurement_direction="consumption"
+    ):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
@@ -957,7 +1118,9 @@ class Database:
         self.session.flush()
         return fail_count
 
-    def get_daily_range(self, usage_point_id, begin, end, measurement_direction="consumption"):
+    def get_daily_range(
+        self, usage_point_id, begin, end, measurement_direction="consumption"
+    ):
         if measurement_direction == "consumption":
             table = ConsumptionDaily
             relation = UsagePoints.relation_consumption_daily
@@ -979,13 +1142,17 @@ class Database:
         else:
             return current_data
 
-    def get_daily(self, usage_point_id, begin, end, measurement_direction="consumption"):
+    def get_daily(
+        self, usage_point_id, begin, end, measurement_direction="consumption"
+    ):
         delta = end - begin
         result = {"missing_data": False, "date": {}, "count": 0}
         for i in range(delta.days + 1):
             checkDate = begin + timedelta(days=i)
             checkDate = datetime.combine(checkDate, datetime.min.time())
-            query_result = self.get_daily_date(usage_point_id, checkDate, measurement_direction)
+            query_result = self.get_daily_date(
+                usage_point_id, checkDate, measurement_direction
+            )
             checkDate = checkDate.strftime("%Y-%m-%d")
             if query_result is None:
                 # NEVER QUERY
@@ -1066,27 +1233,39 @@ class Database:
                 table.blacklist: 0,
                 table.fail_count: 0,
             }
-            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
-            self.session.execute(update(table, values=values).where(table.id == unique_id))
+            unique_id = hashlib.md5(
+                f"{usage_point_id}/{date}".encode("utf-8")
+            ).hexdigest()
+            self.session.execute(
+                update(table, values=values).where(table.id == unique_id)
+            )
             self.session.flush()
             return True
         else:
             return False
 
-    def delete_daily(self, usage_point_id, date=None, measurement_direction="consumption"):
+    def delete_daily(
+        self, usage_point_id, date=None, measurement_direction="consumption"
+    ):
         if measurement_direction == "consumption":
             table = ConsumptionDaily
         else:
             table = ProductionDaily
         if date is not None:
-            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
+            unique_id = hashlib.md5(
+                f"{usage_point_id}/{date}".encode("utf-8")
+            ).hexdigest()
             self.session.execute(delete(table).where(table.id == unique_id))
         else:
-            self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
+            self.session.execute(
+                delete(table).where(table.usage_point_id == usage_point_id)
+            )
         self.session.flush()
         return True
 
-    def blacklist_daily(self, usage_point_id, date, action=True, measurement_direction="consumption"):
+    def blacklist_daily(
+        self, usage_point_id, date, action=True, measurement_direction="consumption"
+    ):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDaily
@@ -1138,7 +1317,10 @@ class Database:
         sort = asc("date") if order_dir == "desc" else desc("date")
         if begin is None and end is None:
             return self.session.scalars(
-                select(table).join(relation).where(table.usage_point_id == usage_point_id).order_by(sort)
+                select(table)
+                .join(relation)
+                .where(table.usage_point_id == usage_point_id)
+                .order_by(sort)
             ).all()
         elif begin is not None and end is None:
             return self.session.scalars(
@@ -1180,14 +1362,18 @@ class Database:
         else:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
-        yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
+        yesterday = datetime.combine(
+            datetime.now() - timedelta(days=1), datetime.max.time()
+        )
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
         if search is not None and search != "":
             result = self.session.scalars(
                 select(table)
                 .join(relation)
                 .where(UsagePoints.usage_point_id == usage_point_id)
-                .where((table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%")))
+                .where(
+                    (table.date.like(f"%{search}%")) | (table.value.like(f"%{search}%"))
+                )
                 .where(table.date <= yesterday)
                 .order_by(sort)
             )
@@ -1215,7 +1401,9 @@ class Database:
             .where(UsagePoints.usage_point_id == usage_point_id)
         ).one_or_none()
 
-    def get_detail_date(self, usage_point_id, date, measurement_direction="consumption"):
+    def get_detail_date(
+        self, usage_point_id, date, measurement_direction="consumption"
+    ):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDetail
@@ -1223,7 +1411,9 @@ class Database:
         else:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
-        return self.session.scalars(select(table).join(relation).where(table.id == unique_id)).first()
+        return self.session.scalars(
+            select(table).join(relation).where(table.id == unique_id)
+        ).first()
 
     def get_detail_range(
         self,
@@ -1258,7 +1448,9 @@ class Database:
         else:
             return current_data
 
-    def get_detail(self, usage_point_id, begin, end, measurement_direction="consumption"):
+    def get_detail(
+        self, usage_point_id, begin, end, measurement_direction="consumption"
+    ):
         # begin = datetime.combine(begin, datetime.min.time())
         # end = datetime.combine(end, datetime.max.time())
 
@@ -1268,7 +1460,10 @@ class Database:
 
         for i in range(delta.days + 1):
             query_result = self.get_detail_all(
-                usage_point_id=usage_point_id, begin=begin, end=end, measurement_direction=measurement_direction
+                usage_point_id=usage_point_id,
+                begin=begin,
+                end=end,
+                measurement_direction=measurement_direction,
             )
             time_delta = abs(int((begin - end).total_seconds() / 60))
             total_internal = 0
@@ -1288,7 +1483,9 @@ class Database:
                     }
             return result
 
-    def get_detail_state(self, usage_point_id, date, measurement_direction="consumption"):
+    def get_detail_state(
+        self, usage_point_id, date, measurement_direction="consumption"
+    ):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
         if measurement_direction == "consumption":
             table = ConsumptionDetail
@@ -1296,7 +1493,9 @@ class Database:
         else:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
-        current_data = self.session.scalars(select(table).join(relation).where(table.id == unique_id)).one_or_none()
+        current_data = self.session.scalars(
+            select(table).join(relation).where(table.id == unique_id)
+        ).one_or_none()
         if current_data is None:
             return False
         else:
@@ -1390,10 +1589,14 @@ class Database:
         else:
             table = ProductionDetail
         if date is not None:
-            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
+            unique_id = hashlib.md5(
+                f"{usage_point_id}/{date}".encode("utf-8")
+            ).hexdigest()
             self.session.execute(delete(table).where(table.id == unique_id))
         else:
-            self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
+            self.session.execute(
+                delete(table).where(table.usage_point_id == usage_point_id)
+            )
         self.session.flush()
         return True
 
@@ -1403,10 +1606,14 @@ class Database:
         else:
             table = ProductionDetail
         if date is not None:
-            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
+            unique_id = hashlib.md5(
+                f"{usage_point_id}/{date}".encode("utf-8")
+            ).hexdigest()
             self.session.execute(delete(table).where(table.id == unique_id))
         else:
-            self.session.execute(delete(table).where(table.usage_point_id == usage_point_id))
+            self.session.execute(
+                delete(table).where(table.usage_point_id == usage_point_id)
+            )
         self.session.flush()
         return True
 
@@ -1416,7 +1623,10 @@ class Database:
             "HP": 0,
         }
         detail_data = self.get_detail_all(
-            usage_point_id=usage_point_id, begin=begin, end=end, measurement_direction=mesure_type
+            usage_point_id=usage_point_id,
+            begin=begin,
+            end=end,
+            measurement_direction=mesure_type,
         )
         for data in detail_data:
             result[data.measure_type] = result[data.measure_type] + data.value
@@ -1474,7 +1684,10 @@ class Database:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
         current_data = self.session.scalars(
-            select(table).join(relation).where(table.usage_point_id == usage_point_id).order_by(table.date)
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .order_by(table.date)
         ).first()
         if current_data is None:
             return False
@@ -1488,7 +1701,12 @@ class Database:
         else:
             table = ProductionDetail
             relation = UsagePoints.relation_production_detail
-        query = select(table).join(relation).where(table.usage_point_id == usage_point_id).order_by(table.date.desc())
+        query = (
+            select(table)
+            .join(relation)
+            .where(table.usage_point_id == usage_point_id)
+            .order_by(table.date.desc())
+        )
         logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
         current_data = self.session.scalars(query).first()
         if current_data is None:
@@ -1589,7 +1807,9 @@ class Database:
             .where(ConsumptionDailyMaxPower.id == unique_id)
         ).one_or_none()
 
-    def insert_daily_max_power(self, usage_point_id, date, event_date, value, blacklist=0, fail_count=0):
+    def insert_daily_max_power(
+        self, usage_point_id, date, event_date, value, blacklist=0, fail_count=0
+    ):
         unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
         daily = self.get_daily_max_power_date(usage_point_id, date)
         if daily is not None:
@@ -1622,8 +1842,12 @@ class Database:
             .where(UsagePoints.usage_point_id == usage_point_id)
         ).one_or_none()
 
-    def get_daily_max_power_datatable(self, usage_point_id, order_column="date", order_dir="asc", search=None):
-        yesterday = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
+    def get_daily_max_power_datatable(
+        self, usage_point_id, order_column="date", order_dir="asc", search=None
+    ):
+        yesterday = datetime.combine(
+            datetime.now() - timedelta(days=1), datetime.max.time()
+        )
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
         if search is not None and search != "":
             result = self.session.scalars(
@@ -1694,11 +1918,19 @@ class Database:
 
     def delete_daily_max_power(self, usage_point_id, date=None):
         if date is not None:
-            unique_id = hashlib.md5(f"{usage_point_id}/{date}".encode("utf-8")).hexdigest()
-            self.session.execute(delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.id == unique_id))
+            unique_id = hashlib.md5(
+                f"{usage_point_id}/{date}".encode("utf-8")
+            ).hexdigest()
+            self.session.execute(
+                delete(ConsumptionDailyMaxPower).where(
+                    ConsumptionDailyMaxPower.id == unique_id
+                )
+            )
         else:
             self.session.execute(
-                delete(ConsumptionDailyMaxPower).where(ConsumptionDailyMaxPower.usage_point_id == usage_point_id)
+                delete(ConsumptionDailyMaxPower).where(
+                    ConsumptionDailyMaxPower.usage_point_id == usage_point_id
+                )
             )
         self.session.flush()
         return True
@@ -1745,7 +1977,10 @@ class Database:
         else:
             order = Tempo.date.asc()
         return self.session.scalars(
-            select(Tempo).where(Tempo.date >= begin).where(Tempo.date <= end).order_by(order)
+            select(Tempo)
+            .where(Tempo.date >= begin)
+            .where(Tempo.date <= end)
+            .order_by(order)
         ).all()
 
     def set_tempo(self, date, color):
@@ -1796,7 +2031,10 @@ class Database:
         else:
             order = Ecowatt.date.asc()
         return self.session.scalars(
-            select(Ecowatt).where(Ecowatt.date >= begin).where(Ecowatt.date <= end).order_by(order)
+            select(Ecowatt)
+            .where(Ecowatt.date >= begin)
+            .where(Ecowatt.date <= end)
+            .order_by(order)
         ).all()
 
     def set_ecowatt(self, date, value, message, detail):
@@ -1808,7 +2046,9 @@ class Database:
                 item.message = message
                 item.detail = detail
         else:
-            self.session.add(Ecowatt(date=date, value=value, message=message, detail=detail))
+            self.session.add(
+                Ecowatt(date=date, value=value, message=message, detail=detail)
+            )
         self.session.flush()
         return True
 
@@ -1829,9 +2069,13 @@ class Database:
             for item in current_value:
                 item.value = value
         else:
-            self.session.add(Statistique(usage_point_id=usage_point_id, key=key, value=value))
+            self.session.add(
+                Statistique(usage_point_id=usage_point_id, key=key, value=value)
+            )
         self.session.flush()
         return True
 
     def del_stat(self, usage_point_id):
-        self.session.execute(delete(Statistique).where(Statistique.usage_point_id == usage_point_id))
+        self.session.execute(
+            delete(Statistique).where(Statistique.usage_point_id == usage_point_id)
+        )

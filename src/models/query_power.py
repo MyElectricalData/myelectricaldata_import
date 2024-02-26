@@ -1,7 +1,6 @@
 import json
 import logging
 from datetime import datetime, timedelta
-from dependencies import title
 
 from config import DAILY_MAX_DAYS, URL
 from models.query import Query
@@ -58,17 +57,25 @@ class Power:
                     output.append({"date": date, "value": data["value"]})
                 return output
             else:
-                logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
-                data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
+                logging.info(
+                    f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}"
+                )
+                data = Query(
+                    endpoint=f"{self.url}/{endpoint}/", headers=self.headers
+                ).get()
                 blacklist = 0
-                max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
+                max_histo = datetime.combine(
+                    datetime.now(), datetime.max.time()
+                ) - timedelta(days=1)
                 if hasattr(data, "status_code"):
                     if data.status_code == 200:
                         meter_reading = json.loads(data.text)["meter_reading"]
                         interval_reading = meter_reading["interval_reading"]
                         interval_reading_tmp = {}
                         for interval_reading_data in interval_reading:
-                            date = datetime.strptime(interval_reading_data["date"], self.date_format_detail)
+                            date = datetime.strptime(
+                                interval_reading_data["date"], self.date_format_detail
+                            )
                             date = datetime.combine(date, datetime.min.time())
                             interval_reading_tmp[date.strftime(self.date_format)] = {
                                 "date": datetime.strptime(
@@ -79,12 +86,19 @@ class Power:
                             }
                         for single_date in daterange(begin, end):
                             if single_date < max_histo:
-                                if single_date.strftime(self.date_format) in interval_reading_tmp:
+                                if (
+                                    single_date.strftime(self.date_format)
+                                    in interval_reading_tmp
+                                ):
                                     # FOUND
-                                    single_date_value = interval_reading_tmp[single_date.strftime(self.date_format)]
+                                    single_date_value = interval_reading_tmp[
+                                        single_date.strftime(self.date_format)
+                                    ]
                                     self.db.insert_daily_max_power(
                                         usage_point_id=self.usage_point_id,
-                                        date=datetime.combine(single_date, datetime.min.time()),
+                                        date=datetime.combine(
+                                            single_date, datetime.min.time()
+                                        ),
                                         event_date=single_date_value["date"],
                                         value=single_date_value["value"],
                                         blacklist=blacklist,
@@ -93,7 +107,9 @@ class Power:
                                     # NOT FOUND
                                     self.db.daily_max_power_fail_increment(
                                         usage_point_id=self.usage_point_id,
-                                        date=datetime.combine(single_date, datetime.min.time()),
+                                        date=datetime.combine(
+                                            single_date, datetime.min.time()
+                                        ),
                                     )
                         return interval_reading
                     else:
@@ -129,8 +145,12 @@ class Power:
             logging.error(e)
 
     def get(self):
-        end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
-        begin = datetime.combine(end - timedelta(days=self.max_daily), datetime.min.time())
+        end = datetime.combine(
+            (datetime.now() + timedelta(days=2)), datetime.max.time()
+        )
+        begin = datetime.combine(
+            end - timedelta(days=self.max_daily), datetime.min.time()
+        )
         finish = True
         result = []
         while finish:
@@ -158,11 +178,19 @@ class Power:
             if "error" in response and response["error"]:
                 logging.error("Echec de la récupération des données.")
                 logging.error(f' => {response["description"]}')
-                logging.error(f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
-            if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
+                logging.error(
+                    f" => {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}"
+                )
+            if "status_code" in response and (
+                response["status_code"] == 409 or response["status_code"] == 400
+            ):
                 finish = False
-                logging.error("Arrêt de la récupération des données suite à une erreur.")
-                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=CONFIG.get('cycle'))}")
+                logging.error(
+                    "Arrêt de la récupération des données suite à une erreur."
+                )
+                logging.error(
+                    f"Prochain lancement à {datetime.now() + timedelta(seconds=CONFIG.get('cycle'))}"
+                )
         return result
 
     def reset(self, date=None):
@@ -194,11 +222,17 @@ class Power:
             return {
                 "error": True,
                 "notif": result["description"],
-                "fail_count": self.db.get_daily_max_power_fail_count(self.usage_point_id, date),
+                "fail_count": self.db.get_daily_max_power_fail_count(
+                    self.usage_point_id, date
+                ),
             }
         for item in result:
-            target_date = datetime.strptime(item["date"], self.date_format_detail).strftime(self.date_format)
-            event_date = datetime.strptime(item["date"], self.date_format_detail).strftime("%H:%M:%S")
+            target_date = datetime.strptime(
+                item["date"], self.date_format_detail
+            ).strftime(self.date_format)
+            event_date = datetime.strptime(
+                item["date"], self.date_format_detail
+            ).strftime("%H:%M:%S")
             if date.strftime(self.date_format) == target_date:
                 item["date"] = target_date
                 item["event_date"] = event_date
@@ -206,5 +240,7 @@ class Power:
         return {
             "error": True,
             "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({date})",
-            "fail_count": self.db.get_daily_max_power_fail_count(self.usage_point_id, date),
+            "fail_count": self.db.get_daily_max_power_fail_count(
+                self.usage_point_id, date
+            ),
         }

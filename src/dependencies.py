@@ -75,7 +75,7 @@ def reformat_json(yaml):
     return result
 
 
-def truncate(f, n):
+def truncate(f, n=2):
     return floor(f * 10**n) / 10**n
 
 
