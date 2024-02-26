@@ -4,7 +4,7 @@ import re
 
 import yaml
 
-from dependencies import title, separator, APPLICATION_PATH_DATA
+from dependencies import title, separator, APPLICATION_PATH_DATA, is_bool, str2bool, is_float
 
 
 class Config:
@@ -291,9 +291,15 @@ class Config:
         if "myelectricaldata" in self.config:
             if usage_point_id not in self.config["myelectricaldata"]:
                 self.config["myelectricaldata"][usage_point_id] = {}
-            if value is None or value == "None":
+            if is_bool(value):
+                value = str2bool(value)
+            elif value is None or value == "None":
                 value = ""
-            self.config["myelectricaldata"][usage_point_id][key] = str(value)
+            elif is_float(value):
+                value = float(value)
+            else:
+                value = str(value)
+            self.config["myelectricaldata"][usage_point_id][key] = value
             with open(self.path_file, "w") as outfile:
                 yaml.dump(self.config, outfile, default_flow_style=False)
         else:
