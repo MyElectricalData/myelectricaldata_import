@@ -1,3 +1,5 @@
+from config import MAX_IMPORT_TRY
+
 import hashlib
 import json
 import logging
@@ -9,7 +11,6 @@ from os.path import exists
 from sqlalchemy import create_engine, delete, inspect, update, select, func, desc, asc
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.pool import NullPool
-from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
     Contracts,
