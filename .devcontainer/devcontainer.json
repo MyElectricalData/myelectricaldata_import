@@ -1,72 +1,93 @@
 {
-    "name": "MyElectricalData development",
-	"dockerComposeFile": [
-		"docker-compose.yaml"
-	],
-    "shutdownAction": "stopCompose",
-    "postCreateCommand": "/bin/bash -lc ./.devcontainer/post-install.sh",
-    // "postCreateCommand": "make init-devcontainer",
-    "postStartCommand": "make dev",
-	"service": "workspace",
-	"workspaceFolder": "/workspace",
-    "forwardPorts": [],
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "mikoz.black-py",
-                "ms-python.black-formatter",
-                "genuitecllc.codetogether",
-                "tamasfe.even-better-toml",
-                "ms-azuretools.vscode-docker",
-                "ms-python.flake8",
-                "mhutchie.git-graph",
-                "donjayamanne.githistory",
-                "huizhou.githd",
-                "github.vscode-github-actions",
-                "ecmel.vscode-html-css",
-                "ms-python.isort",
-                "elagil.pre-commit-helper",
-                "MarkLarah.pre-commit-vscode",
-                "ms-python.vscode-pylance",
-                "ms-python.pylint",
-                "zeshuaro.vscode-python-poetry",
-                "the-compiler.python-tox",
-                "ms-python.python",
-                "ms-python.debugpy",
-                "aaron-bond.better-comments",
-                "ms-vscode-remote.remote-containers",
-                "ms-vscode.makefile-tools",
-                "GitHub.copilot"
-            ]
-        },
-        "settings": {
-            "terminal.integrated.defaultProfile.linux": "zsh",
-            "python.testing.pytestEnabled": true,
-            "black-formatter.args": [
-                "--line-height 119"
-            ],
-            "editor.wordWrapColumn": 119,
-            "black-py.useIntegratedTerminal": true,
-            "git.enableSmartCommit": true,
-            "[python]": {
-                "editor.defaultFormatter": "ms-python.black-formatter"
-            },
-            "editor.defaultFormatter": "ms-python.black-formatter",
-            "pylint.cwd": "${workspaceFolder}/src",
-            "pylint.importStrategy": "fromEnvironment",
-            "flake8.cwd": "${workspaceFolder}/src",
-            "flake8.importStrategy": "fromEnvironment",
-            "editor.wordWrap": "wordWrapColumn",
-            "python.analysis.autoImportCompletions": false,
-            "python.analysis.typeCheckingMode": "off",
-            "python.analysis.extraPaths": [
-                "./src"
-            ],
-            "editor.rulers": [ 119 ],
-            "better-comments.highlightPlainText": true,
-            "black-formatter.importStrategy": "fromEnvironment",
-            "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
-            "editor.renderWhitespace": "all"
-        } 
+  "name": "MyElectricalData development",
+  "dockerComposeFile": ["docker-compose.yaml"],
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "/bin/bash -lc ./.devcontainer/post-install.sh",
+  // "postCreateCommand": "make init-devcontainer",
+  "postStartCommand": "make dev",
+  "service": "workspace",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mikoz.black-py",
+        "ms-python.black-formatter",
+        "genuitecllc.codetogether",
+        "tamasfe.even-better-toml",
+        "ms-azuretools.vscode-docker",
+        "ms-python.flake8",
+        "mhutchie.git-graph",
+        "donjayamanne.githistory",
+        "huizhou.githd",
+        "github.vscode-github-actions",
+        "ecmel.vscode-html-css",
+        "ms-python.isort",
+        "elagil.pre-commit-helper",
+        "MarkLarah.pre-commit-vscode",
+        "ms-python.vscode-pylance",
+        "ms-python.pylint",
+        "zeshuaro.vscode-python-poetry",
+        "the-compiler.python-tox",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "aaron-bond.better-comments",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode.makefile-tools",
+        "GitHub.copilot",
+        "ukoloff.win-ca",
+        "esbenp.prettier-vscode",
+        "charliermarsh.ruff",
+        "Gruntfuggly.todo-tree",
+        "redhat.vscode-yaml"
+      ]
+    },
+    "settings": {
+      "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
+      "editor.renderWhitespace": "all",
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.wordWrapColumn": 119,
+      "editor.rulers": [119],
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true, // CAN SLOWLY VSCODE
+      "editor.formatOnType": true,
+      "files.autoSave": "onFocusChange",
+      "git.enableSmartCommit": true,
+      "git.autofetch": true,
+      "window.title": "${rootName}${dirty}${activeEditorShort}${separator}${separator}${profileName}${separator}${appName}",
+      "http.proxyStrictSSL": false,
+      // PYTHON
+      "python.testing.pytestEnabled": true,
+      "python.analysis.autoImportCompletions": false,
+      "python.analysis.typeCheckingMode": "off",
+      "python.analysis.extraPaths": ["./src"],
+      "python.poetryPath": "/home/cvalentin/.asdf/shims/poetry",
+      "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python3",
+      "GitHooks.hooksDirectory": "${workspaceFolder}/.git/hooks",
+      "todo-tree.tree.scanMode": "workspace only",
+      // PYLINT
+      "pylint.cwd": "${workspaceFolder}/src",
+      "pylint.importStrategy": "fromEnvironment",
+      // FLAKE8
+      "flake8.cwd": "${workspaceFolder}/src",
+      "flake8.importStrategy": "fromEnvironment",
+      // ISORT
+      "isort.importStrategy": "fromEnvironment",
+      "isort.check": true,
+      // BLACK
+      "black-py.useIntegratedTerminal": true,
+      "black-formatter.importStrategy": "fromEnvironment",
+      "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+      },
+      "python.formatting.provider": "none",
+      // BETTER COMMENT
+      "better-comments.highlightPlainText": true,
+      "remote.autoForwardPortsSource": "hybrid",
+      "github.copilot.advanced": {
+        "debug.useNodeFetcher": true
+      }
     }
+  }
 }

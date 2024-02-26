@@ -1,26 +1,80 @@
+minimum_pre_commit_version: 3.6.0
+fail_fast: true
+default_install_hook_types: [pre-commit, commit-msg]
 repos:
+  - repo: https://github.com/espressif/conventional-precommit-linter
+    rev: v1.3.0 # The version tag you wish to use
+    hooks:
+      - id: conventional-precommit-linter
+        stages: [commit-msg]
+        args:
+          - --types=breaking_change,core,build,chore,ci,docs,feat,fix,perf,style,refactor,test, clean
+          - --subject-min-length=4
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace # Trims trailing whitespace
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: check-yaml # Validates YAML files
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: check-json # Validates JSON files
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: check-added-large-files # Checks for files that are added to the repository that are larger than a threshold
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: check-case-conflict # Checks for files that would conflict in case-insensitive filesystems
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: check-merge-conflict # Checks for files that contain merge conflict strings
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: detect-private-key # Check for the existence of private keys
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: check-executables-have-shebangs # Checks that executables have shebangs
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+      - id: end-of-file-fixer # Makes sure files end in a newline and only a newline
+        stages: [pre-commit]
+        exclude: ^src/docapi/.*|^tests/templates/.*|^src/templates/.*|
+
   - repo: local
     hooks:
-      - id: black
-        name: black
+      - id: flake8
+        stages: [pre-commit]
+        name: flake8
         always_run: true
-        entry: bash -c 'make black'
+        entry: poetry run flake8 .
         language: system
         types: [python]
         pass_filenames: false
 
-#      - id: flake8
-#        name: flake8
-#        always_run: true
-#        entry: bash -c 'make flake8'
-#        language: system
-#        types: [python]
-#        pass_filenames: false
+      - id: black
+        stages: [pre-commit]
+        name: black
+        always_run: true
+        entry: poetry run black .
+        language: system
+        types: [python]
+        pass_filenames: false
 
-#      - id: pylint
-#        name: pylint
-#        always_run: true
-#        entry: bash -c 'make pylint'
-#        language: system
-#        types: [python]
-#        pass_filenames: false
+      - id: pylint
+        stages: [pre-commit]
+        name: pylint
+        entry: poetry run pylint .
+        require_serial: true
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: ruff
+        name: Check python rules enforced with Ruff
+        entry: poetry run ruff .
+        require_serial: true
+        language: system
+        types: [python]
+        pass_filenames: false
