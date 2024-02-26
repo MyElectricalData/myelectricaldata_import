@@ -1,14 +1,13 @@
 import datetime
 import json
+import logging
 import re
 import traceback
-import logging
-
-from dependencies import title
-from models.query import Query
-from init import DB
 
 from config import URL
+from dependencies import title
+from init import DB
+from models.query import Query
 
 
 class Contract:

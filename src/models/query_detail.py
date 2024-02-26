@@ -3,11 +3,10 @@ import logging
 import re
 from datetime import datetime, timedelta
 
+from config import DETAIL_MAX_DAYS, URL
+from init import CONFIG, DB
 from models.database import ConsumptionDetail, ProductionDetail
 from models.query import Query
-from init import DB, CONFIG
-
-from config import DETAIL_MAX_DAYS, URL
 
 
 def daterange(start_date, end_date):

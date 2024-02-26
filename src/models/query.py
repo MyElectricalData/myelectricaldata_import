@@ -1,5 +1,6 @@
-import requests
 import logging
+
+import requests
 
 from dependencies import str2bool
 from init import CONFIG

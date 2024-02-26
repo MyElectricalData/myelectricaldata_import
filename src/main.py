@@ -1,21 +1,17 @@
 import logging
-from os import getenv, environ
+from os import environ, getenv
 
 import uvicorn
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 
 from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
-from dependencies import APPLICATION_PATH, title, get_version, title_warning, logo, str2bool
+from dependencies import APPLICATION_PATH, get_version, logo, str2bool, title, title_warning
 from init import CONFIG, DB
 from models.jobs import Job
-from routers import account
-from routers import action
-from routers import data
-from routers import html
-from routers import info
+from routers import account, action, data, html, info
 
 if "DEV" in environ or "DEBUG" in environ:
     title_warning("Run in Development mode")

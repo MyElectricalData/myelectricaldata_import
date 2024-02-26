@@ -1,11 +1,13 @@
 import json
 import logging
 from datetime import datetime, timedelta
+
 from dateutil.relativedelta import relativedelta
+
 from config import DAILY_MAX_DAYS, URL
+from init import CONFIG, DB
 from models.query import Query
 from models.stat import Stat
-from init import CONFIG, DB
 
 
 def daterange(start_date, end_date):

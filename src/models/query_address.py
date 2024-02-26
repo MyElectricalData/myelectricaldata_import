@@ -1,12 +1,11 @@
 import json
-import traceback
 import logging
-
-from dependencies import title
-from models.query import Query
-from init import CONFIG, DB
+import traceback
 
 from config import URL
+from dependencies import title
+from init import CONFIG, DB
+from models.query import Query
 
 
 class Address:

@@ -6,7 +6,7 @@ import pytz
 from dateutil.relativedelta import relativedelta
 
 from dependencies import get_version, truncate
-from init import MQTT, DB, CONFIG
+from init import CONFIG, DB, MQTT
 from models.stat import Stat
 
 utc = pytz.UTC
@@ -75,9 +75,7 @@ class HomeAssistant:
             self.hourly = self.config_ha_config["hourly"]
         self.contract = self.db.get_contract(self.usage_point_id)
         if hasattr(self.contract, "last_activation_date"):
-            self.activation_date = self.contract.last_activation_date.strftime(
-                self.date_format_detail
-            )
+            self.activation_date = self.contract.last_activation_date.strftime(self.date_format_detail)
         else:
             self.activation_date = None
         if hasattr(self.contract, "subscribed_power"):
@@ -92,10 +90,7 @@ class HomeAssistant:
         if (
             hasattr(self.config, "consumption")
             and self.config.consumption
-            or (
-                hasattr(self.config, "consumption_detail")
-                and self.config.consumption_detail
-            )
+            or (hasattr(self.config, "consumption_detail") and self.config.consumption_detail)
         ):
             logging.info("Consommation :")
             self.myelectricaldata_usage_point_id("consumption")
@@ -105,10 +100,7 @@ class HomeAssistant:
         if (
             hasattr(self.config, "production")
             and self.config.production
-            or (
-                hasattr(self.config, "production_detail")
-                and self.config.production_detail
-            )
+            or (hasattr(self.config, "production_detail") and self.config.production_detail)
         ):
             logging.info("Production :")
             self.myelectricaldata_usage_point_id("production")
@@ -174,9 +166,7 @@ class HomeAssistant:
         uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_last{days}day"
         end = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
-        range = self.db.get_detail_range(
-            self.usage_point_id, begin, end, measurement_direction
-        )
+        range = self.db.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
         attributes = {"time": [], measurement_direction: []}
         for data in range:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
@@ -267,21 +257,15 @@ class HomeAssistant:
                         ]
                     )
                 else:
-                    for offpeak_hours_data in getattr(
-                        self.usage_point, f"offpeak_hours_{idx}"
-                    ).split(";"):
+                    for offpeak_hours_data in getattr(self.usage_point, f"offpeak_hours_{idx}").split(";"):
                         if type(offpeak_hours_data) == str:
                             _offpeak_hours.append(offpeak_hours_data.split("-"))
 
                 offpeak_hours.append(_offpeak_hours)
                 idx = idx + 1
 
-        yesterday = datetime.combine(
-            datetime.now() - relativedelta(days=1), datetime.max.time()
-        )
-        previous_week = datetime.combine(
-            yesterday - relativedelta(days=7), datetime.min.time()
-        )
+        yesterday = datetime.combine(datetime.now() - relativedelta(days=1), datetime.max.time())
+        previous_week = datetime.combine(yesterday - relativedelta(days=7), datetime.min.time())
         yesterday_last_year = yesterday - relativedelta(years=1)
 
         info = {
@@ -400,24 +384,14 @@ class HomeAssistant:
                     if i == 0:
                         daily_cost = value
                     elif i == 1:
-                        yesterday_hp_value_cost = convert_kw_to_euro(
-                            hp, self.consumption_price_hp
-                        )
+                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.consumption_price_hp)
                     dailyweek_cost.append(round(value, 1))
             elif plan == "TEMPO":
                 tempo_config = self.db.get_tempo_config("price")
                 for i in range(7):
                     tempo_data = stats.tempo(i)["value"]
-                    hp = (
-                        tempo_data["blue_hp"]
-                        + tempo_data["white_hp"]
-                        + tempo_data["red_hp"]
-                    )
-                    hc = (
-                        tempo_data["blue_hc"]
-                        + tempo_data["white_hc"]
-                        + tempo_data["red_hc"]
-                    )
+                    hp = tempo_data["blue_hp"] + tempo_data["white_hp"] + tempo_data["red_hp"]
+                    hc = tempo_data["blue_hc"] + tempo_data["white_hc"] + tempo_data["red_hc"]
                     dailyweek_HP.append(convert_kw(hp))
                     dailyweek_HC.append(convert_kw(hc))
                     cost_hp = (
@@ -429,9 +403,7 @@ class HomeAssistant:
                             tempo_data["white_hp"],
                             convert_price(tempo_config["white_hp"]),
                         )
-                        + convert_kw_to_euro(
-                            tempo_data["red_hp"], convert_price(tempo_config["red_hp"])
-                        )
+                        + convert_kw_to_euro(tempo_data["red_hp"], convert_price(tempo_config["red_hp"]))
                     )
                     cost_hc = (
                         convert_kw_to_euro(
@@ -442,9 +414,7 @@ class HomeAssistant:
                             tempo_data["white_hc"],
                             convert_price(tempo_config["white_hc"]),
                         )
-                        + convert_kw_to_euro(
-                            tempo_data["red_hc"], convert_price(tempo_config["red_hc"])
-                        )
+                        + convert_kw_to_euro(tempo_data["red_hc"], convert_price(tempo_config["red_hc"]))
                     )
                     dailyweek_costHP.append(cost_hp)
                     dailyweek_costHC.append(cost_hc)
@@ -460,33 +430,17 @@ class HomeAssistant:
                     hc = stats.detail(i, "HC")["value"]
                     dailyweek_HP.append(convert_kw(hp))
                     dailyweek_HC.append(convert_kw(hc))
-                    dailyweek_costHP.append(
-                        convert_kw_to_euro(hp, self.consumption_price_base)
-                    )
-                    dailyweek_costHC.append(
-                        convert_kw_to_euro(hc, self.consumption_price_base)
-                    )
-                    dailyweek_cost.append(
-                        convert_kw_to_euro(
-                            stats.daily(i)["value"], self.consumption_price_base
-                        )
-                    )
+                    dailyweek_costHP.append(convert_kw_to_euro(hp, self.consumption_price_base))
+                    dailyweek_costHC.append(convert_kw_to_euro(hc, self.consumption_price_base))
+                    dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.consumption_price_base))
                     if i == 0:
-                        daily_cost = convert_kw_to_euro(
-                            stats.daily(0)["value"], self.consumption_price_base
-                        )
+                        daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.consumption_price_base)
                     elif i == 1:
-                        yesterday_hp_value_cost = convert_kw_to_euro(
-                            hp, self.consumption_price_base
-                        )
+                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.consumption_price_base)
         else:
-            daily_cost = convert_kw_to_euro(
-                stats.daily(0)["value"], self.production_price
-            )
+            daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.production_price)
             for i in range(7):
-                dailyweek_cost.append(
-                    convert_kw_to_euro(stats.daily(i)["value"], self.production_price)
-                )
+                dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.production_price))
 
         if not dailyweek_HP:
             dailyweek_HP = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -498,10 +452,7 @@ class HomeAssistant:
             dailyweek_costHC = [0, 0, 0, 0, 0, 0, 0, 0]
 
         yesterday_consumption_max_power = 0
-        if (
-            hasattr(self.config, "consumption_max_power")
-            and self.config.consumption_max_power
-        ):
+        if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
             yesterday_consumption_max_power = stats.max_power(0)["value"]
 
         error_last_call = self.db.get_error_log(self.usage_point_id)
@@ -512,12 +463,8 @@ class HomeAssistant:
             "yesterdayDate": stats.daily(0)["begin"],
             "yesterday": convert_kw(stats.daily(0)["value"]),
             "serviceEnedis": "myElectricalData",
-            "yesterdayLastYearDate": (datetime.now() - relativedelta(years=1)).strftime(
-                self.date_format
-            ),
-            "yesterdayLastYear": convert_kw(yesterday_last_year.value)
-            if hasattr(yesterday_last_year, "value")
-            else 0,
+            "yesterdayLastYearDate": (datetime.now() - relativedelta(years=1)).strftime(self.date_format),
+            "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year, "value") else 0,
             "daily": [
                 convert_kw(stats.daily(0)["value"]),
                 convert_kw(stats.daily(1)["value"]),
@@ -569,9 +516,7 @@ class HomeAssistant:
             "day_5_HP": stats.detail(4, "HP")["value"],
             "day_6_HP": stats.detail(5, "HP")["value"],
             "day_7_HP": stats.detail(6, "HP")["value"],
-            "yesterday_HC_cost": convert_kw_to_euro(
-                yesterday_hc_value, self.consumption_price_hc
-            ),
+            "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.consumption_price_hc),
             "yesterday_HC": convert_kw(yesterday_hc_value),
             "day_1_HC": stats.detail(0, "HC")["value"],
             "day_2_HC": stats.detail(1, "HC")["value"],
@@ -633,9 +578,7 @@ class HomeAssistant:
             # "info": info
         }
 
-        uniq_id = (
-            f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}"
-        )
+        uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}"
         self.sensor(
             topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}",
             name=f"{measurement_direction}",
@@ -734,11 +677,7 @@ class HomeAssistant:
             measure_type = "hp"
         current_price = None
         if self.tempo_color.lower() in ["blue", "white", "red"]:
-            current_price = convert_price(
-                tempo_price[f"{self.tempo_color.lower()}_{measure_type}"].replace(
-                    ",", "."
-                )
-            )
+            current_price = convert_price(tempo_price[f"{self.tempo_color.lower()}_{measure_type}"].replace(",", "."))
         attributes = {
             "days_blue": f'{tempo_days["blue"]} / 300',
             "days_white": f'{tempo_days["white"]} / 43',
@@ -792,9 +731,7 @@ class HomeAssistant:
 
     def ecowatt_delta(self, name, delta):
         uniq_id = f"myelectricaldata_ecowatt_{name}"
-        current_date = datetime.combine(
-            datetime.now(), datetime.min.time()
-        ) + timedelta(days=delta)
+        current_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
         fetch_date = current_date - timedelta(days=1)
         ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")
         dayValue = 0

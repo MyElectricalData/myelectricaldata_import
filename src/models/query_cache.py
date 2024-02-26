@@ -1,10 +1,9 @@
 import json
 import logging
 
+from config import URL
 from dependencies import get_version
 from models.query import Query
-
-from config import URL
 
 
 class Cache:

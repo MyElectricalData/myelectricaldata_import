@@ -1,7 +1,8 @@
 import json
 
-from dependencies import APPLICATION_PATH
 from jinja2 import Template
+
+from dependencies import APPLICATION_PATH
 
 
 class UsagePointSelect:

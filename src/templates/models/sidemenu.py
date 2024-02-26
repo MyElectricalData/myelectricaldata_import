@@ -1,5 +1,6 @@
-from config import URL
 from jinja2 import Template
+
+from config import URL
 from dependencies import APPLICATION_PATH
 
 

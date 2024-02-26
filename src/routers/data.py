@@ -1,7 +1,7 @@
 import ast
 from datetime import datetime
 
-from fastapi import APIRouter, Request, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Request
 from fastapi.responses import HTMLResponse
 
 from doc import DOCUMENTATION

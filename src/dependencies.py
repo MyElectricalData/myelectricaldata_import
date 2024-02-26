@@ -51,6 +51,7 @@ def is_bool(v):
         return True
     return False
 
+
 def str2bool(v):
     if type(v) != bool:
         return v and v.lower() in ("yes", "true", "t", "1")

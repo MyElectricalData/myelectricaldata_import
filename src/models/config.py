@@ -4,7 +4,7 @@ import re
 
 import yaml
 
-from dependencies import title, separator, APPLICATION_PATH_DATA, is_bool, str2bool, is_float
+from dependencies import APPLICATION_PATH_DATA, is_bool, is_float, separator, str2bool, title
 
 
 class Config:
