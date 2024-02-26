@@ -1,6 +1,7 @@
 import pytest
-from db_schema import UsagePoints
 from conftest import setenv
+
+from db_schema import UsagePoints
 
 EXPORT_METHODS = ["export_influxdb", "export_home_assistant_ws", "export_home_assistant", "export_mqtt"]
 PER_USAGE_POINT_METHODS = [

@@ -1,11 +1,11 @@
 import ast
-import pytz
 import logging
-from dependencies import title
-
-from init import INFLUXDB, DB
-
 from datetime import datetime
+
+import pytz
+
+from dependencies import title
+from init import DB, INFLUXDB
 from models.stat import Stat
 
 

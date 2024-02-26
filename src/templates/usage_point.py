@@ -4,10 +4,11 @@ import logging
 from datetime import datetime, timedelta
 
 import markdown
-from dependencies import APPLICATION_PATH, get_version
-from init import CONFIG, DB
 from jinja2 import Template
 from mergedeep import Strategy, merge
+
+from dependencies import APPLICATION_PATH, get_version
+from init import CONFIG, DB
 from models.stat import Stat
 from templates.models.configuration import Configuration
 from templates.models.menu import Menu

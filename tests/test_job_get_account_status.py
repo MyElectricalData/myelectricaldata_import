@@ -1,7 +1,7 @@
 import pytest
+from test_jobs import job
 
 from db_schema import UsagePoints
-from test_jobs import job
 
 
 @pytest.mark.parametrize(

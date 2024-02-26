@@ -1,11 +1,11 @@
-from fastapi import Request, APIRouter
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import APIRouter, Request
+from fastapi.responses import FileResponse, HTMLResponse
 
+from dependencies import APPLICATION_PATH
 from init import CONFIG, DB
 from models.ajax import Ajax
 from templates.index import Index
 from templates.usage_point import UsagePoint
-from dependencies import APPLICATION_PATH
 
 ROUTER = APIRouter(tags=["HTML"], include_in_schema=False)
 

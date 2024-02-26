@@ -6,8 +6,6 @@ wipe_influxdb: false # Work only with influxdb > 2.X
 # Mais il est possible de basculer sur une base de données externe de type SQLite ou PostgreSQL
 # Exemple pour Postgres :
 #storage_uri: postgresql://myelectricaldata:myelectricaldata@postgres:5432/myelectricaldata
-tempo:
-  enable: false
 home_assistant: # WITH MQTT DISCOVERY
   enable: true
   discovery: true

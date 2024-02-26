@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Path
+
 from doc import DOCUMENTATION
 from models.ajax import Ajax
 

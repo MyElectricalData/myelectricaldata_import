@@ -1,7 +1,7 @@
 import calendar
 import json
 import logging
-from datetime import datetime, timezone, timedelta, date
+from datetime import date, datetime, timedelta, timezone
 
 import pytz
 from dateutil.relativedelta import relativedelta
@@ -778,13 +778,21 @@ class Stat:  # pylint: disable=R0902,R0904
         return json.loads(data[0].value)
         # return ast.literal_eval()
 
-    def get_mesure_type(self, date):
+    def get_mesure_type(self, measurement_date):
+        """Determine the measurement type (HP or HC) based on the given date and off-peak hours.
+
+        Args:
+            measurement_date (datetime): The date for which to determine the measurement type.
+
+        Returns:
+            str: The measurement type, either "HP" (high peak) or "HC" (off-peak).
+        """
         offpeak_hours = {}
         for i in range(0, 7):
             offpeak_hours[i] = getattr(self.usage_point_id_config, f"offpeak_hours_{i}")
         # GET WEEKDAY
-        date_days = date.weekday()
-        date_hour_minute = date.strftime("%H:%M")
+        date_days = measurement_date.weekday()
+        date_hour_minute = measurement_date.strftime("%H:%M")
         measure_type = "HP"
         day_offpeak_hours = offpeak_hours[date_days]
         if day_offpeak_hours is not None:
@@ -904,19 +912,37 @@ class Stat:  # pylint: disable=R0902,R0904
             )
         return json.dumps(result)
 
-    def get_daily(self, date, mesure_type):
-        begin = datetime.combine(date, datetime.min.time())
-        end = datetime.combine(date, datetime.max.time())
+    def get_daily(self, specific_date, mesure_type):
+        """Get the daily value for a specific date and measurement type.
+
+        Args:
+            specific_date (datetime.date): The date for which to retrieve the daily value.
+            mesure_type (str): The measurement type.
+
+        Returns:
+            float: The daily value.
+        """
+        begin = datetime.combine(specific_date, datetime.min.time())
+        end = datetime.combine(specific_date, datetime.max.time())
         value = 0
         for item in self.db.get_detail_range(self.usage_point_id, begin, end):
             if self.get_mesure_type(item.date).upper() == mesure_type.upper():
                 value += item.value / (60 / item.interval)
         return value
 
-    def delete(self):
-        self.db.del_stat(self.usage_point_id)
-
     def is_between(self, time, time_range):
-        if time_range[1] < time_range[0]:
-            return time >= time_range[0] or time < time_range[1]
-        return time_range[0] < time <= time_range[1]
+        """Check if a given time is between a specified time range.
+
+        Args:
+            time (datetime): The time to check.
+            time_range (tuple): The time range represented by a tuple of two datetime objects.
+
+        Returns:
+            bool: True if the time is between the time range, False otherwise.
+        """
+        datetime_time = datetime.strptime(time, "%H:%M").replace(tzinfo=utc)
+        datetime_start = datetime.strptime(time_range[0], "%H:%M").replace(tzinfo=utc)
+        datetime_end = datetime.strptime(time_range[1], "%H:%M").replace(tzinfo=utc)
+        if datetime_end < datetime_start:
+            return datetime_time >= datetime_start or datetime_time < datetime_end
+        return datetime_start <= datetime_time < datetime_end

@@ -6,13 +6,14 @@ Create Date: 2022-12-30 16:29:42.282094
 
 """
 import sys
+from datetime import datetime
 
 import sqlalchemy as sa
-from datetime import datetime
-from alembic import op
+from sqlalchemy import Date, DateTime, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import table, column
-from sqlalchemy import String, Integer, Date, DateTime, Text
+from sqlalchemy.sql import column, table
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0b59c59dad3c"

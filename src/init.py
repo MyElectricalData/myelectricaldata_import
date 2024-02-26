@@ -2,7 +2,7 @@ import locale
 import logging
 import time
 import typing as t
-from os import getenv, environ, path
+from os import environ, getenv, path
 
 import yaml
 

@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 import pytz
 import websocket
 
-from init import CONFIG, DB
-from models.stat import Stat
-from models.export_home_assistant import HomeAssistant
 from dependencies import str2bool, truncate
+from init import CONFIG, DB
+from models.export_home_assistant import HomeAssistant
+from models.stat import Stat
 
 TZ_PARIS = pytz.timezone("Europe/Paris")
 
@@ -207,6 +207,7 @@ class HomeAssistantWs:
                 if "max_date" in self.config:
                     logging.warning("WARNING : Max date détecter %s", self.config["max_date"])
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
+                    # begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d").replace(tzinfo=TZ_PARIS)
                     detail = DB.get_detail_all(begin=begin, usage_point_id=self.usage_point_id, order_dir="desc")
                 else:
                     detail = DB.get_detail_all(usage_point_id=self.usage_point_id, order_dir="desc")
@@ -245,6 +246,7 @@ class HomeAssistantWs:
                         tag = "base"
                     elif plan == "HC/HP":
                         measure_type = stats.get_mesure_type(data.date)
+                        print(data.date, "=>", measure_type)
                         if measure_type == "HC":
                             name = f"{name} HC {measurement_direction}"
                             statistic_id = f"{statistic_id}_hc_{measurement_direction}"

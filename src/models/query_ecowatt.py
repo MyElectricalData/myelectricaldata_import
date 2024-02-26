@@ -1,15 +1,15 @@
+import ast
 import json
 import logging
 import traceback
 from datetime import datetime
-import ast
+
 from dateutil.relativedelta import relativedelta
 
-from dependencies import title
-
 from config import URL
+from dependencies import title
+from init import CONFIG, DB
 from models.query import Query
-from init import DB, CONFIG
 
 
 class Ecowatt:

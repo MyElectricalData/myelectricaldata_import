@@ -46,6 +46,12 @@ def daterange(start_date, end_date):
         yield start_date + datetime.timedelta(n)
 
 
+def is_bool(v):
+    if v in ["true", "false", "yes, no", "t, f", "y, n", 1, 0]:
+        return True
+    return False
+
+
 def str2bool(v):
     if type(v) != bool:
         return v and v.lower() in ("yes", "true", "t", "1")

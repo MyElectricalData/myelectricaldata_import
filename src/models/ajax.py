@@ -4,7 +4,7 @@ from datetime import datetime
 import pytz
 
 from dependencies import APPLICATION_PATH, get_version, title
-from models.stat import Stat
+from init import CONFIG, DB
 from models.jobs import Job
 from models.query_cache import Cache
 from models.query_daily import Daily
@@ -13,7 +13,7 @@ from models.query_ecowatt import Ecowatt
 from models.query_power import Power
 from models.query_status import Status
 from models.query_tempo import Tempo
-from init import DB, CONFIG
+from models.stat import Stat
 
 utc = pytz.UTC
 

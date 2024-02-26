@@ -1,0 +1,43 @@
+# Flake8 Configuration
+[flake8]
+# Ignore some flake8-import-order errors
+ignore =
+  # Import statements are in the wrong order.
+  I100,
+  # Imported names are in the wrong order.
+  I101,
+  # Missing newline between import groups.
+  I201,
+  # Additional newline in a group of imports.
+  I202,
+  # line break before binary operator
+  W503,
+  # line too long
+  E501,
+  # Missing docstring in __init__
+  D107,
+  # Whitespace before ':'
+  E203,
+  # Do not perform function calls in argument defaults.
+  B008,
+
+exclude =
+    .tox,
+    .git,
+    .venv,
+    __pycache__,
+    docs/source/conf.py,
+    build,
+    dist,
+    tests/fixtures/*,
+    *.pyc,
+    *.egg-info,
+    .cache,
+    .eggs
+    src/docapi,
+    tmp
+
+max-complexity = 15
+import-order-style = google
+application-import-names = flake8
+min_python_version = 3.12.2
