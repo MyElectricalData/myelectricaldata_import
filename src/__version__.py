@@ -1,3 +1,3 @@
 """Application version update by Semantic Release."""
 
-VERSION = "0.13.0-rc.3"
+VERSION = "0.13.0-rc.4"

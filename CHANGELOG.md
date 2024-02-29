@@ -2,6 +2,19 @@
 
 
 
+## v0.13.0-rc.4 (2024-02-29)
+
+### Fix
+
+* fix: mqtt connect ([`4d3e919`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4d3e919c0d088f9a4b64d5990cc3c2448cc7cf03))
+
+### Unknown
+
+* Merge pull request #509 from MyElectricalData/fix/ha_sensor_rework_ha
+
+fix: mqtt connect ([`5845a77`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5845a77bd93f774aec5f7316a3f9c7df86150a46))
+
+
 ## v0.13.0-rc.3 (2024-02-29)
 
 ### Fix
