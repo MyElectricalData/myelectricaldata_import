@@ -145,15 +145,18 @@ python-clean:
 ######################################
 ## TESTS
 ######################################
-## Run PyTest only
-test: pytest
-
 ## Run PyTest
 pytest: init
-	poetry run python -c "$$select_env"
 	if [ ! $$? -ne 0 ]; then \
 		$(call poetry, tox -e pytest, "Run PyTest"); \
 	fi
+
+pytest-mock:
+pytest-sandbox:
+pytest-staging:
+pytest-production:
+pytest-%: 
+	$(call poetry, tox -e pytest, "Run PyTest");
 
 ######################################
 ## CODE QUALITY
@@ -168,31 +171,31 @@ code-format: black flake8 pylint ruff
 
 ## Run black
 black: init
-	@$(call poetry, tox -e black, "Run Black")
+	@$(call poetry, task black, "Run Black")
 
 ## Run Black formater
 black-format: init
-	@$(call poetry, black --line-length 119 --color ., "Run Black formater")
+	@$(call poetry, task black-style, "Run Black formater")
 
 ##Run flake8
 flake8: init
-	@$(call poetry, tox -e flake8, "Run Flake8")
+	@$(call poetry, task flake8, "Run Flake8")
 
 ##Run pylint
 pylint: init
-	@$(call poetry, tox -e pylint, "Run pylint")
+	@$(call poetry, task pylint, "Run pylint")
 
 ##Run Ruff
 ruff: init
-	@$(call poetry, tox -e ruff, "Run Ruff")
+	@$(call poetry, task ruff, "Run Ruff")
 
 ##Run Ruff fixe
 ruff-fixe: init
-	@$(call poetry, poetry run ruff ./ --fix, "Run Ruff fix code")
+	@$(call poetry, task ruff-fix, "Run Ruff fix code")
 
 ##Run Vulture
 vulture: init
-	@$(call poetry, tox -e vulture, "Run Vulture")	
+	@$(call poetry, task vulture, "Run Vulture")	
 
 ######################################
 ## DOCKER
@@ -213,29 +216,3 @@ $(call title, ${2})
 touch .env
 poetry run -v ${1}
 endef
-
-######################################
-## PYTHON SCRIPTS
-######################################
-define set_env
-from sys import argv
-KEY = argv[1]
-VALUE = argv[2]
-found = False
-new_file = []
-with open(f".env", 'r') as file:
-	env = file.read().splitlines()
-for line in env:
-	if line.startswith(f"{KEY}="):
-		new_file.append(f"{KEY}={VALUE}")
-		found = True
-	else:
-		new_file.append(line)
-if not found:
-	env.append(f"{KEY}={VALUE}")
-else:
-	env = new_file
-with open(f".env", 'w') as file:
-	file.write("\n".join(env))
-endef
-export set_env
