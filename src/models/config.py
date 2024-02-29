@@ -1,6 +1,8 @@
+"""Configuration class loader and checker."""
+
 import logging
-import os
 import re
+from pathlib import Path
 
 import yaml
 
@@ -8,6 +10,19 @@ from dependencies import APPLICATION_PATH_DATA, is_bool, is_float, separator, st
 
 
 class Config:
+    """Represent the configuration settings for the application.
+
+    Attributes:
+        path (str): The path to the configuration file.
+        db: The database connection object.
+        file (str): The name of the configuration file.
+        path_file (str): The full path to the configuration file.
+        config (dict): The loaded configuration settings.
+        default_port (int): The default port number.
+        mandatory_parameters (dict): The mandatory parameters for the configuration.
+        default (dict): The default configuration settings.
+    """
+
     def __init__(self, path=APPLICATION_PATH_DATA):
         self.path = path
         self.db = None
@@ -16,35 +31,6 @@ class Config:
         self.config = {}
         self.default_port = 5000
         self.mandatory_parameters = {}
-        #     "myelectricaldata": {
-        #         "pdl": {
-        #             "enable": True,
-        #             "name": "",
-        #             "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        #             "cache": True,
-        #             "plan": "BASE",
-        #             "consumption": True,
-        #             "consumption_detail": True,
-        #             "consumption_price_hc": 0,
-        #             "consumption_price_hp": 0,
-        #             "consumption_price_base": 0,
-        #             "consumption_max_date": "",
-        #             "consumption_detail_max_date": "",
-        #             "production": False,
-        #             "production_detail": False,
-        #             "production_max_date": "",
-        #             "production_detail_max_date": "",
-        #             "production_price": 0,
-        #             "offpeak_hours_0": '',
-        #             "offpeak_hours_1": '',
-        #             "offpeak_hours_2": '',
-        #             "offpeak_hours_3": '',
-        #             "offpeak_hours_4": '',
-        #             "offpeak_hours_5": '',
-        #             "offpeak_hours_6": '',
-        #         }
-        #     }
-        # }
         self.default = {
             "cycle": 14400,
             "debug": False,
@@ -117,20 +103,21 @@ class Config:
         }
 
     def set_db(self, db):
+        """Set the database."""
         self.db = db
 
     def load(self):
+        """Load the configuration."""
         config_file = f"{self.path_file}"
-        if os.path.exists(config_file):
-            with open(config_file) as file:
-                self.config = yaml.load(file, Loader=yaml.FullLoader)
+        if Path(config_file).exists():
+            with Path(config_file).open(encoding="utf-8") as file:
+                self.config = yaml.safe_load(file)
 
         else:
-            f = open(config_file, "a")
-            f.write(yaml.dump(self.default))
-            f.close()
-            with open(config_file) as file:
-                self.config = yaml.load(file, Loader=yaml.FullLoader)
+            with Path(config_file).open(mode="a", encoding="utf-8") as file:
+                file.write(yaml.dump(self.default))
+            with Path(config_file).open(encoding="utf-8") as file:
+                self.config = yaml.safe_load(file)
 
         if self.config is None:
             return {
@@ -144,6 +131,7 @@ class Config:
             }
 
     def check(self):
+        """Check the configuration for missing mandatory parameters."""
         separator()
         logging.info(f"Check {self.file} :")
         lost_params = []
@@ -155,32 +143,8 @@ class Config:
                 mandatory = True
             if mandatory and key not in self.config[config_name]:
                 lost_params.append(f"{config_name}.{key.upper()}")
-            else:
-                if key not in self.config[config_name]:
-                    self.config[config_name][key] = data
-
-        # CHECK ENEDIS GATEWAY CONFIGURATION
-        # if "myelectricaldata" not in self.config:
-        #     lost_params.append("myelectricaldata")
-        # else:
-        #     if not isinstance(self.config["myelectricaldata"], dict):
-        #         lost_params.append("myelectricaldata.PDL")
-        #     else:
-        #         for pdl, pdl_data in self.config["myelectricaldata"].items():
-        #             if len(str(pdl)) != 14:
-        #                 lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
-        #             if not isinstance(self.config["myelectricaldata"][pdl], dict):
-        #                 lost_params.append(f"myelectricaldata.{pdl}.TOKEN")
-        #             else:
-        #                 for key, data in self.default['myelectricaldata']['pdl'].items():
-        #                     mandatory = False
-        #                     if key in self.mandatory_parameters:
-        #                         mandatory = True
-        #                     if mandatory and not key in self.config["myelectricaldata"][pdl]:
-        #                         lost_params.append(f"myelectricaldata.{pdl}.{key.upper()}")
-        #                     else:
-        #                         if key not in self.config["myelectricaldata"][pdl]:
-        #                             self.config["myelectricaldata"][pdl][key] = data
+            elif key not in self.config[config_name]:
+                self.config[config_name][key] = data
 
         if lost_params:
             msg = [
@@ -190,7 +154,7 @@ class Config:
                 msg.append(f"- {param}")
             msg.append("")
             msg.append("You can get list of parameters here :")
-            msg.append(f" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
+            msg.append(" => https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file")
             logging.critical(msg)
         else:
             title("Config valid")
@@ -198,96 +162,171 @@ class Config:
         return lost_params
 
     def display(self):
+        """Display the configuration settings.
+
+        This method logs the configuration settings to the console, hiding sensitive information such as passwords
+        and tokens.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         logging.info("Display configuration :")
         for key, value in self.config.items():
-            if type(value) is dict:
+            if isinstance(value, dict):
                 logging.info(f"  {key}:")
                 for dic_key, dic_value in value.items():
-                    if type(dic_value) is dict:
+                    if isinstance(dic_value, dict):
                         logging.info(f"    {dic_key}:")
                         for dic1_key, dic1_value in dic_value.items():
-                            if dic1_key == "password" or dic1_key == "token":
-                                dic1_value = "** hidden **"
-                            if dic1_value is None or dic1_value == "None":
-                                dic1_value = "''"
-                            logging.info(f"      {dic1_key}: {dic1_value}")
+                            if dic1_key in {"password", "token"}:
+                                hidden_value = "** hidden **"
+                            else:
+                                hidden_value = dic1_value
+                            if hidden_value is None or hidden_value == "None":
+                                hidden_value = "''"
+                            logging.info(f"      {dic1_key}: {hidden_value}")
                     else:
-                        if dic_key == "password" or dic_key == "token":
-                            dic_value = "** hidden **"
-                        if dic_value is None or dic_value == "None":
-                            dic_value = "''"
-                        logging.info(f"    {dic_key}: {dic_value}")
+                        if dic_key in {"password", "token"}:
+                            hidden_value = "** hidden **"
+                        else:
+                            hidden_value = dic_value
+                        if hidden_value is None or hidden_value == "None":
+                            hidden_value = "''"
+                        logging.info(f"    {dic_key}: {hidden_value}")
             else:
-                if key == "password" or key == "token":
-                    value = "** hidden **"
-                logging.info(f"  {key}: {value}")
+                if key in {"password", "token"}:
+                    hidden_value = "** hidden **"
+                else:
+                    hidden_value = value
+                logging.info(f"  {key}: {hidden_value}")
 
     def get(self, path=None):
+        """Get the value of a configuration parameter.
+
+        Args:
+            path (str, optional): The path of the configuration parameter. Defaults to None.
+
+        Returns:
+            Union[bool, Any]: The value of the configuration parameter if found, False otherwise.
+        """
         if path:
             if path in self.config:
                 return self.config[path]
-            else:
-                return False
-        else:
-            return self.config
+            return False
+        return self.config
 
     def set(self, path, value):
+        """Set the value of a configuration parameter.
+
+        Args:
+            path (str): The path of the configuration parameter.
+            value: The value to set.
+
+        Returns:
+            None
+        """
         title(f"Switch {path} to {value}")
-        with open(f"{self.path_file}", "r+") as f:
-            text = f.read()
+        with Path(self.path_file).open(mode="r+", encoding="utf-8") as file:
+            text = file.read()
             text = re.sub(rf"(?<={path}: ).*", str(value).lower(), text)
-            f.seek(0)
-            f.write(text)
-            f.truncate()
-        self.config = yaml.load(text, Loader=yaml.FullLoader)
+            file.seek(0)
+            file.write(text)
+            file.truncate()
+        self.config = yaml.safe_load(text)
         self.db.set_config(path, value)
 
     def tempo_config(self):
+        """Return the configuration for tempo.
+
+        Returns:
+            dict: A dictionary containing the tempo configuration.
+        """
         if "tempo" in self.config:
             return self.config["tempo"]
-        else:
-            return False
+        return False
 
     def storage_config(self):
+        """Return the configuration for storage.
+
+        Returns:
+            str: The storage URI.
+        """
         if "storage_uri" in self.config:
             return self.config["storage_uri"]
-        else:
-            return False
+        return False
 
     def mqtt_config(self):
+        """Return the configuration for MQTT.
+
+        Returns:
+            dict: A dictionary containing the MQTT configuration.
+        """
         if "mqtt" in self.config:
             return self.config["mqtt"]
-        else:
-            return False
+        return False
 
     def home_assistant_config(self):
+        """Return the configuration for Home Assistant.
+
+        Returns:
+            dict: A dictionary containing the Home Assistant configuration.
+        """
         if "home_assistant" in self.config:
             return self.config["home_assistant"]
-        else:
-            return False
+        return False
 
     def home_assistant_ws_config(self):
+        """Return the configuration for Home Assistant WebSocket.
+
+        Returns:
+            dict: A dictionary containing the Home Assistant WebSocket configuration.
+        """
         if "home_assistant_ws" in self.config:
             return self.config["home_assistant_ws"]
-        else:
-            return False
+        return False
 
     def influxdb_config(self):
+        """Return the configuration for InfluxDB.
+
+        Returns:
+            dict: A dictionary containing the InfluxDB configuration.
+        """
         if "influxdb" in self.config:
             return self.config["influxdb"]
-        else:
-            return False
+        return False
 
     def usage_point_id_config(self, usage_point_id):
+        """Return the configuration for a specific usage point.
+
+        Args:
+            usage_point_id (str): The ID of the usage point.
+
+        Returns:
+            dict: A dictionary containing the configuration for the specified usage point.
+        """
         if "myelectricaldata" in self.config and usage_point_id in self.config["myelectricaldata"]:
             return self.config["myelectricaldata"][usage_point_id]
-        else:
-            return False
+        return False
 
     def list_usage_point(self):
+        """Return the list of usage points in the configuration.
+
+        Returns:
+            dict: A dictionary containing the usage points.
+        """
         return self.config["myelectricaldata"]
 
     def set_usage_point_config(self, usage_point_id, key, value):
+        """Set the configuration for a specific usage point.
+
+        Args:
+            usage_point_id (str): The ID of the usage point.
+            key (str): The configuration key.
+            value (str): The configuration value.
+        """
         if "myelectricaldata" in self.config:
             if usage_point_id not in self.config["myelectricaldata"]:
                 self.config["myelectricaldata"][usage_point_id] = {}
@@ -300,18 +339,19 @@ class Config:
             else:
                 value = str(value)
             self.config["myelectricaldata"][usage_point_id][key] = value
-            with open(self.path_file, "w") as outfile:
+            with Path(self.path_file).open(mode="w", encoding="utf-8") as outfile:
                 yaml.dump(self.config, outfile, default_flow_style=False)
         else:
             return False
 
     def port(self):
+        """Return the port configuration if it exists, otherwise returns the default port."""
         if "port" in self.config:
             return self.config["port"]
-        else:
-            return self.default_port
+        return self.default_port
 
     def ssl_config(self):
+        """Return the SSL configuration if it exists, otherwise returns an empty dictionary."""
         if "ssl" in self.config:
             if "keyfile" in self.config["ssl"] and "certfile" in self.config["ssl"]:
                 if (
@@ -324,17 +364,8 @@ class Config:
                         "ssl_keyfile": self.config["ssl"]["keyfile"],
                         "ssl_certfile": self.config["ssl"]["certfile"],
                     }
-                else:
-                    logging.error("La configuration SSL est erronée.")
-                    return {}
-            else:
                 logging.error("La configuration SSL est erronée.")
                 return {}
-        else:
+            logging.error("La configuration SSL est erronée.")
             return {}
-
-    def home_assistant_ws(self):
-        if "home_assistant_ws" in self.config:
-            return self.config["home_assistant_ws"]
-        else:
-            return None
+        return {}

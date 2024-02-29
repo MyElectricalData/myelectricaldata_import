@@ -3,6 +3,7 @@
 import json
 import logging
 import ssl
+import traceback
 from datetime import datetime, timedelta
 
 import pytz
@@ -25,7 +26,7 @@ class HomeAssistantWs:
         Args:
             usage_point_id (str): The usage point id
         """
-        self.ws = None
+        self.websocket = None
         self.usage_point_id = usage_point_id
         self.usage_point_id_config = DB.get_usage_point(self.usage_point_id)
         self.config = None
@@ -38,13 +39,13 @@ class HomeAssistantWs:
         self.current_stats = []
         if self.load_config():
             if self.connect():
-                # self.list_data()
-                # self.clear_data()
                 self.import_data()
         else:
             logging.critical("La configuration Home Assistant WebSocket est erronée")
-        if self.ws.connected:
-            self.ws.close()
+        if self.websocket.connected:
+            self.websocket.close()
+
+        self.mqtt = CONFIG.mqtt_config()
 
     def load_config(self):
         """Load the Home Assistant WebSocket configuration from the configuration file.
@@ -52,7 +53,7 @@ class HomeAssistantWs:
         Returns:
             bool: True if the configuration is loaded, False otherwise
         """
-        self.config = CONFIG.home_assistant_ws()
+        self.config = CONFIG.home_assistant_ws_config()
         if self.config is not None:
             if "url" in self.config:
                 self.url = self.config["url"]
@@ -84,19 +85,19 @@ class HomeAssistantWs:
             sslopt = None
             if check_ssl and "gateway" in check_ssl:
                 sslopt = {"cert_reqs": ssl.CERT_NONE}
-            self.ws = websocket.WebSocket(sslopt=sslopt)
+            self.websocket = websocket.WebSocket(sslopt=sslopt)
             logging.info("Connexion au WebSocket Home Assistant %s", self.url)
-            self.ws.connect(
+            self.websocket.connect(
                 self.url,
                 timeout=5,
             )
-            output = json.loads(self.ws.recv())
+            output = json.loads(self.websocket.recv())
             if "type" in output and output["type"] == "auth_required":
                 logging.info("Authentification requise")
                 return self.authentificate()
             return True
         except Exception as _e:
-            self.ws.close()
+            self.websocket.close()
             logging.error(_e)
             logging.critical("Connexion impossible vers Home Assistant")
             logging.warning(
@@ -115,9 +116,8 @@ class HomeAssistantWs:
         if auth_output["type"] == "auth_ok":
             logging.info(" => OK")
             return True
-        else:
-            logging.error(" => Authentification impossible, merci de vérifier votre url & token.")
-            return False
+        logging.error(" => Authentification impossible, merci de vérifier votre url & token.")
+        return False
 
     def send(self, data):
         """Send data to the Home Assistant WebSocket server.
@@ -127,9 +127,9 @@ class HomeAssistantWs:
         Returns:
             dict: The output from the server
         """
-        self.ws.send(json.dumps(data))
+        self.websocket.send(json.dumps(data))
         self.id = self.id + 1
-        output = json.loads(self.ws.recv())
+        output = json.loads(self.websocket.recv())
         if "type" in output and output["type"] == "result":
             if not output["success"]:
                 logging.error(f"Erreur d'envoie : {data}")
@@ -344,18 +344,19 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
-                    HomeAssistant(self.usage_point_id).sensor(
-                        topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_energy",
-                        name=f"{data["tag"]} {measurement_direction}",
-                        device_name=f"Linky {self.usage_point_id}",
-                        device_model=f"linky {self.usage_point_id}",
-                        device_identifiers=f"{self.usage_point_id}",
-                        uniq_id=statistic_id,
-                        unit_of_measurement="kWh",
-                        state=truncate(data["sum"]),
-                        device_class="energy",
-                        numPDL=self.usage_point_id,
-                    )
+                    if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
+                        HomeAssistant(self.usage_point_id).sensor(
+                            topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_energy",
+                            name=f"{data["tag"]} {measurement_direction}",
+                            device_name=f"Linky {self.usage_point_id}",
+                            device_model=f"linky {self.usage_point_id}",
+                            device_identifiers=f"{self.usage_point_id}",
+                            uniq_id=statistic_id,
+                            unit_of_measurement="kWh",
+                            state=truncate(data["sum"]),
+                            device_class="energy",
+                            numPDL=self.usage_point_id,
+                        )
 
                 for statistic_id, data in stats_euro.items():
                     metadata = {
@@ -373,18 +374,19 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
-                    HomeAssistant(self.usage_point_id).sensor(
-                        topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_cost",
-                        name=f"{data["tag"]} {measurement_direction} cost",
-                        device_name=f"Linky {self.usage_point_id}",
-                        device_model=f"linky {self.usage_point_id}",
-                        device_identifiers=f"{self.usage_point_id}",
-                        uniq_id=statistic_id,
-                        unit_of_measurement="EURO",
-                        state=truncate(data["sum"]),
-                        device_class="monetary",
-                        numPDL=self.usage_point_id,
-                    )
+                    if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
+                        HomeAssistant(self.usage_point_id).sensor(
+                            topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_cost",
+                            name=f"{data["tag"]} {measurement_direction} cost",
+                            device_name=f"Linky {self.usage_point_id}",
+                            device_model=f"linky {self.usage_point_id}",
+                            device_identifiers=f"{self.usage_point_id}",
+                            uniq_id=statistic_id,
+                            unit_of_measurement="EURO",
+                            state=truncate(data["sum"]),
+                            device_class="monetary",
+                            numPDL=self.usage_point_id,
+                        )
 
             if self.usage_point_id_config.production_detail:
                 logging.info("Production")
@@ -483,18 +485,19 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
-                    HomeAssistant(self.usage_point_id).sensor(
-                        topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_energy",
-                        name=f"{measurement_direction} energy",
-                        device_name=f"Linky {self.usage_point_id}",
-                        device_model=f"linky {self.usage_point_id}",
-                        device_identifiers=f"{self.usage_point_id}",
-                        uniq_id=statistic_id,
-                        unit_of_measurement="kWh",
-                        state=truncate(data["sum"]),
-                        device_class="energy",
-                        numPDL=self.usage_point_id,
-                    )
+                    if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
+                        HomeAssistant(self.usage_point_id).sensor(
+                            topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_energy",
+                            name=f"{measurement_direction} energy",
+                            device_name=f"Linky {self.usage_point_id}",
+                            device_model=f"linky {self.usage_point_id}",
+                            device_identifiers=f"{self.usage_point_id}",
+                            uniq_id=statistic_id,
+                            unit_of_measurement="kWh",
+                            state=truncate(data["sum"]),
+                            device_class="energy",
+                            numPDL=self.usage_point_id,
+                        )
                 for statistic_id, data in stats_euro.items():
                     metadata = {
                         "has_mean": False,
@@ -511,19 +514,21 @@ class HomeAssistantWs:
                         "stats": list(data["data"].values()),
                     }
                     self.send(import_statistics)
-                    HomeAssistant(self.usage_point_id).sensor(
-                        topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_cost",
-                        name=f"{measurement_direction} cost",
-                        device_name=f"Linky {self.usage_point_id}",
-                        device_model=f"linky {self.usage_point_id}",
-                        device_identifiers=f"{self.usage_point_id}",
-                        uniq_id=statistic_id,
-                        unit_of_measurement="EURO",
-                        state=truncate(data["sum"]),
-                        device_class="monetary",
-                        numPDL=self.usage_point_id,
-                    )
+                    if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
+                        HomeAssistant(self.usage_point_id).sensor(
+                            topic=f"myelectricaldata_{measurement_direction}/{self.usage_point_id}_cost",
+                            name=f"{measurement_direction} cost",
+                            device_name=f"Linky {self.usage_point_id}",
+                            device_model=f"linky {self.usage_point_id}",
+                            device_identifiers=f"{self.usage_point_id}",
+                            uniq_id=statistic_id,
+                            unit_of_measurement="EURO",
+                            state=truncate(data["sum"]),
+                            device_class="monetary",
+                            numPDL=self.usage_point_id,
+                        )
         except Exception as _e:
-            self.ws.close()
+            self.websocket.close()
+            traceback.print_exc()
             logging.error(_e)
             logging.critical("Erreur lors de l'export des données vers Home Assistant")
