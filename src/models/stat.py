@@ -807,7 +807,6 @@ class Stat:  # pylint: disable=R0902,R0904
                     offpeak_stop = datetime.strptime(offpeak_stop, "%H:%M")
                     offpeak_stop = datetime.strftime(offpeak_stop, "%H:%M")
                     result = self.is_between(date_hour_minute, (offpeak_begin, offpeak_stop))
-                    print(date_hour_minute, (offpeak_begin, offpeak_stop), result)
                     if result:
                         measure_type = "HC"
         return measure_type
