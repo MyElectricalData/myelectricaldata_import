@@ -56,7 +56,7 @@ class HomeAssistantWs:
         if self.config is not None:
             if "url" in self.config:
                 self.url = self.config["url"]
-                if "ssl" in self.config and self.config["ssl"]:
+                if self.config.get("ssl"):
                     url_prefix = "wss"
                 else:
                     url_prefix = "ws"
@@ -85,7 +85,7 @@ class HomeAssistantWs:
             if check_ssl and "gateway" in check_ssl:
                 sslopt = {"cert_reqs": ssl.CERT_NONE}
             self.ws = websocket.WebSocket(sslopt=sslopt)
-            logging.info(f"Connexion au WebSocket Home Assistant %s", self.url)
+            logging.info("Connexion au WebSocket Home Assistant %s", self.url)
             self.ws.connect(
                 self.url,
                 timeout=5,
@@ -257,7 +257,7 @@ class HomeAssistantWs:
                             statistic_id = f"{statistic_id}_hp_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hp / 1000
                             tag = "hp"
-                    elif plan == "TEMPO":
+                    elif plan.upper() == "TEMPO":
                         if 600 <= hour_minute < 2200:
                             hour_type = "HP"
                         else:
@@ -382,7 +382,7 @@ class HomeAssistantWs:
                         uniq_id=statistic_id,
                         unit_of_measurement="EURO",
                         state=truncate(data["sum"]),
-                        device_class="energy",
+                        device_class="monetary",
                         numPDL=self.usage_point_id,
                     )
 
@@ -520,7 +520,7 @@ class HomeAssistantWs:
                         uniq_id=statistic_id,
                         unit_of_measurement="EURO",
                         state=truncate(data["sum"]),
-                        device_class="energy",
+                        device_class="monetary",
                         numPDL=self.usage_point_id,
                     )
         except Exception as _e:

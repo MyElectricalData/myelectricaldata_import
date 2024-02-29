@@ -1,3 +1,5 @@
+"""This module contains the code for exporting data to Home Assistant."""
+
 import json
 import logging
 from datetime import datetime, timedelta
@@ -9,106 +11,149 @@ from dependencies import get_version, truncate
 from init import CONFIG, DB, MQTT
 from models.stat import Stat
 
-utc = pytz.UTC
+UTC = pytz.UTC
 
 
 def convert_kw(value):
+    """Convert a value from kilowatts to watts.
+
+    Args:
+        value (float): The value in kilowatts.
+
+    Returns:
+        float: The value in watts.
+    """
     return truncate(value / 1000, 2)
 
 
 def convert_kw_to_euro(value, price):
+    """Convert a value from kilowatts to euros.
+
+    Args:
+        value (float): The value in kilowatts.
+        price (float): The price per kilowatt-hour.
+
+    Returns:
+        float: The value in euros.
+    """
     if isinstance(price, str):
         price = float(price.replace(",", "."))
     return round(value / 1000 * price, 1)
 
 
 def convert_price(price):
-    if type(price) == str:
+    """Convert a price from string to float.
+
+    Args:
+        price (str): The price as a string.
+
+    Returns:
+        float: The price as a float.
+    """
+    if isinstance(price, str):
         price = price.replace(",", ".")
     return float(price)
 
 
-class HomeAssistant:
+class HomeAssistant:  # pylint: disable=R0902
+    """Represents a Home Assistant instance."""
+
+    class Config:  # pylint: disable=R0902
+        """Default configuration for Home Assistant."""
+
+        def __init__(self) -> None:
+            """Initialize the ExportHomeAssistant object.
+
+            Attributes:
+            - consumption (bool): Flag indicating if consumption data is enabled.
+            - consumption_detail (bool): Flag indicating if detailed consumption data is enabled.
+            - production (bool): Flag indicating if production data is enabled.
+            - production_detail (bool): Flag indicating if detailed production data is enabled.
+            - consumption_price_base (float): The base consumption price.
+            - consumption_price_hp (float): The consumption price for high peak hours.
+            - consumption_price_hc (float): The consumption price for low peak hours.
+            - production_price (float): The production price.
+            - discovery_prefix (str): The prefix for Home Assistant discovery.
+            - activation_date (datetime): The date of the last activation.
+            - subscribed_power (str): The subscribed power value.
+            - consumption_max_power (bool): Flag indicating if maximum power consumption is enabled.
+            - offpeak_hours_0 (str): Off-peak hours for day 0 - Monday.
+            - offpeak_hours_1 (str): Off-peak hours for day 1 - Tuesday.
+            - offpeak_hours_2 (str): Off-peak hours for day 2 - Wednesday.
+            - offpeak_hours_3 (str): Off-peak hours for day 3 - Thursday.
+            - offpeak_hours_4 (str): Off-peak hours for day 4 - Friday.
+            - offpeak_hours_5 (str): Off-peak hours for day 5 - Saturday.
+            - offpeak_hours_6 (str): Off-peak hours for day 6 - Sunday.
+            """
+            self.consumption: bool = True
+            self.consumption_detail: bool = True
+            self.production: bool = False
+            self.production_detail: bool = False
+            self.consumption_price_base: float = 0
+            self.consumption_price_hp: float = 0
+            self.consumption_price_hc: float = 0
+            self.production_price: float = 0
+            self.discovery_prefix: str = "home_assistant"
+            self.activation_date: datetime = None
+            self.subscribed_power: str = None
+            self.consumption_max_power: bool = True
+            self.offpeak_hours_0: str = None
+            self.offpeak_hours_1: str = None
+            self.offpeak_hours_2: str = None
+            self.offpeak_hours_3: str = None
+            self.offpeak_hours_4: str = None
+            self.offpeak_hours_5: str = None
+            self.offpeak_hours_6: str = None
+
     def __init__(self, usage_point_id):
-        self.db = DB
-        # self.mqtt_config = mqtt_config
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
-        self.config = self.db.get_usage_point(self.usage_point_id)
-        if hasattr(self.config, "consumption_price_base"):
-            self.consumption_price_base = self.config.consumption_price_base
-        else:
-            self.consumption_price_base = 0
-        if hasattr(self.config, "consumption_price_hp"):
-            self.consumption_price_hp = self.config.consumption_price_hp
-        else:
-            self.consumption_price_hp = 0
-        if hasattr(self.config, "consumption_price_hc"):
-            self.consumption_price_hc = self.config.consumption_price_hc
-        else:
-            self.consumption_price_hc = 0
-        if hasattr(self.config, "production_price"):
-            self.production_price = self.config.production_price
-        else:
-            self.production_price = 0
-        self.config_ha_config = CONFIG.home_assistant_config()
-        if "card_myenedis" not in self.config_ha_config:
-            self.card_myenedis = False
-        else:
-            self.card_myenedis = self.config_ha_config["card_myenedis"]
-        if "discovery" not in self.config_ha_config:
-            self.discovery = False
-        else:
-            self.discovery = self.config_ha_config["discovery"]
-        if "discovery_prefix" not in self.config_ha_config:
-            self.discovery_prefix = "home_assistant"
-        else:
-            self.discovery_prefix = self.config_ha_config["discovery_prefix"]
-        if "enable" not in self.config_ha_config:
-            self.enable = False
-        else:
-            self.enable = self.config_ha_config["enable"]
-        if "hourly" not in self.config_ha_config:
-            self.hourly = False
-        else:
-            self.hourly = self.config_ha_config["hourly"]
-        self.contract = self.db.get_contract(self.usage_point_id)
-        if hasattr(self.contract, "last_activation_date"):
-            self.activation_date = self.contract.last_activation_date.strftime(self.date_format_detail)
-        else:
-            self.activation_date = None
-        if hasattr(self.contract, "subscribed_power"):
-            self.subscribed_power = self.contract.subscribed_power
-        else:
-            self.subscribed_power = None
-        self.usage_point = self.db.get_usage_point(self.usage_point_id)
+        self.config_usage_point = DB.get_usage_point(self.usage_point_id)
+        self.config = None
+        self.load_config()
+        self.usage_point = DB.get_usage_point(self.usage_point_id)
         self.mqtt = MQTT
         self.tempo_color = None
+        print(self.config.__dict__)
+
+    def load_config(self):
+        """Load the configuration for Home Assistant.
+
+        This method loads the configuration values from the usage point and contract objects.
+        """
+        self.config = self.Config()
+        for key in self.config.__dict__:
+            if hasattr(self.config_usage_point, key):
+                setattr(self.config, key, getattr(self.config_usage_point, key))
+
+        config_ha_config = CONFIG.home_assistant_config()
+        for key in self.config.__dict__:
+            if key in config_ha_config:
+                setattr(self.config, key, config_ha_config[key])
+
+        contract = DB.get_contract(self.usage_point_id)
+        for key in self.config.__dict__:
+            if hasattr(contract, key):
+                setattr(self.config, key, getattr(contract, key))
 
     def export(self):
-        if (
-            hasattr(self.config, "consumption")
-            and self.config.consumption
-            or (hasattr(self.config, "consumption_detail") and self.config.consumption_detail)
-        ):
+        """Export data to Home Assistant.
+
+        This method exports consumption, production, tempo, and ecowatt data to Home Assistant.
+        """
+        if self.config.consumption or self.config.consumption_detail:
             logging.info("Consommation :")
             self.myelectricaldata_usage_point_id("consumption")
             self.last_x_day(5, "consumption")
             self.history_usage_point_id("consumption")
 
-        if (
-            hasattr(self.config, "production")
-            and self.config.production
-            or (hasattr(self.config, "production_detail") and self.config.production_detail)
-        ):
+        if self.config.production or self.config.production_detail:
             logging.info("Production :")
             self.myelectricaldata_usage_point_id("production")
             self.last_x_day(5, "production")
             self.history_usage_point_id("production")
 
-        # tempo_config = CONFIG.tempo_config()
-        # if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
         self.tempo()
         self.tempo_info()
         self.tempo_days()
@@ -116,10 +161,14 @@ class HomeAssistant:
         self.ecowatt()
 
     def sensor(self, **kwargs):
+        """Publish sensor data to Home Assistant.
+
+        This method publishes sensor data to Home Assistant using MQTT.
+        """
         logging.info(
             f"- sensor.{kwargs['device_name'].lower().replace(' ', '_')}_{kwargs['name'].lower().replace(' ', '_')}"
         )
-        topic = f"{self.discovery_prefix}/sensor/{kwargs['topic']}"
+        topic = f"{self.config.discovery_prefix}/sensor/{kwargs['topic']}"
         if "device_class" not in kwargs:
             device_class = None
         else:
@@ -148,9 +197,9 @@ class HomeAssistant:
             **attributes_params,
             **{
                 "version": get_version(),
-                "activationDate": self.activation_date,
-                "lastUpdate": datetime.now().strftime(self.date_format_detail),
-                "timeLastCall": datetime.now().strftime(self.date_format_detail),
+                "activationDate": self.config.activation_date,
+                "lastUpdate": datetime.now(tz=UTC).strftime(self.date_format_detail),
+                "timeLastCall": datetime.now(tz=UTC).strftime(self.date_format_detail),
             },
         }
 
@@ -161,12 +210,17 @@ class HomeAssistant:
         }
         return self.mqtt.publish_multiple(data, topic)
 
-    # sensor.linky_01226049119129_myelectricaldata_consumption_01226049119129_history
     def last_x_day(self, days, measurement_direction):
+        """Get data for the last x days and publish it to Home Assistant.
+
+        Args:
+            days (int): The number of days to retrieve data for.
+            measurement_direction (str): The direction of the measurement (e.g., consumption or production).
+        """
         uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_last{days}day"
-        end = datetime.combine(datetime.now() - timedelta(days=1), datetime.max.time())
+        end = datetime.combine(datetime.now(tz=UTC) - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
-        range = self.db.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
+        range = DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
         attributes = {"time": [], measurement_direction: []}
         for data in range:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
@@ -186,9 +240,14 @@ class HomeAssistant:
         )
 
     def history_usage_point_id(self, measurement_direction):
+        """Retrieve the historical usage point ID and publishes it to Home Assistant.
+
+        Args:
+            measurement_direction (str): The direction of the measurement (e.g., "consumption", "production").
+        """
         uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_history"
         stats = Stat(self.usage_point_id, measurement_direction)
-        state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
+        state = DB.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
             state = state.value
         else:
@@ -209,62 +268,55 @@ class HomeAssistant:
             numPDL=self.usage_point_id,
         )
 
-    def myelectricaldata_usage_point_id(self, measurement_direction):
+    def myelectricaldata_usage_point_id(self, measurement_direction):  # noqa: PLR0912, PLR0915, C901
+        """Retrieve the usage point ID and calculates various statistics related to energy consumption.
+
+        Args:
+            measurement_direction (str): The direction of the measurement (e.g., "consumption", "production").
+
+        Returns:
+            dict: A dictionary containing various statistics related to energy consumption, such as daily, weekly,
+                  monthly, and yearly values.
+        """
         stats = Stat(self.usage_point_id, measurement_direction)
-        state = self.db.get_daily_last(self.usage_point_id, measurement_direction)
+        state = DB.get_daily_last(self.usage_point_id, measurement_direction)
         if state:
             state = state.value
         else:
             state = 0
-        offpeak_hours_enedis = ""
+
+        offpeak_hours_enedis = (
+            f"Lundi ({self.config.offpeak_hours_0});"
+            f"Mardi ({self.config.offpeak_hours_1});"
+            f"Mercredi ({self.config.offpeak_hours_2});"
+            f"Jeudi ({self.config.offpeak_hours_3});"
+            f"Vendredi ({self.config.offpeak_hours_4});"
+            f"Samedi ({self.config.offpeak_hours_5});"
+            f"Dimanche ({self.config.offpeak_hours_6});"
+        )
+
         offpeak_hours = []
-        if (
-            hasattr(self.usage_point, "offpeak_hours_0")
-            and self.usage_point.offpeak_hours_0 is not None
-            or hasattr(self.usage_point, "offpeak_hours_1")
-            and self.usage_point.offpeak_hours_1 is not None
-            or hasattr(self.usage_point, "offpeak_hours_2")
-            and self.usage_point.offpeak_hours_2 is not None
-            or hasattr(self.usage_point, "offpeak_hours_3")
-            and self.usage_point.offpeak_hours_3 is not None
-            or hasattr(self.usage_point, "offpeak_hours_4")
-            and self.usage_point.offpeak_hours_4 is not None
-            or hasattr(self.usage_point, "offpeak_hours_5")
-            and self.usage_point.offpeak_hours_5 is not None
-            or hasattr(self.usage_point, "offpeak_hours_6")
-            and self.usage_point.offpeak_hours_6 is not None
-        ):
-            offpeak_hours_enedis = (
-                f"Lundi ({self.usage_point.offpeak_hours_0});"
-                f"Mardi ({self.usage_point.offpeak_hours_1});"
-                f"Mercredi ({self.usage_point.offpeak_hours_2});"
-                f"Jeudi ({self.usage_point.offpeak_hours_3});"
-                f"Vendredi ({self.usage_point.offpeak_hours_4});"
-                f"Samedi ({self.usage_point.offpeak_hours_5});"
-                f"Dimanche ({self.usage_point.offpeak_hours_6});"
-            )
+        idx = 0
+        while idx <= 6:
+            _offpeak_hours = []
+            offpeak_hour = getattr(self.config, f"offpeak_hours_{idx}")
+            if not isinstance(offpeak_hour, str):
+                logging.error(
+                    [
+                        f"offpeak_hours_{idx} n'est pas une chaine de caractères",
+                        "  Format si une seule période : 00H00-06H00",
+                        "  Format si plusieurs périodes : 00H00-06H00;12H00-14H00",
+                    ]
+                )
+            else:
+                for offpeak_hours_data in getattr(self.config, f"offpeak_hours_{idx}").split(";"):
+                    if isinstance(offpeak_hours_data, str):
+                        _offpeak_hours.append(offpeak_hours_data.split("-"))
 
-            idx = 0
-            while idx <= 6:
-                _offpeak_hours = []
-                offpeak_hour = getattr(self.usage_point, f"offpeak_hours_{idx}")
-                if type(offpeak_hour) != str:
-                    logging.error(
-                        [
-                            f"offpeak_hours_{idx} n'est pas une chaine de caractères",
-                            "  Format si une seule période : 00H00-06H00",
-                            "  Format si plusieurs périodes : 00H00-06H00;12H00-14H00",
-                        ]
-                    )
-                else:
-                    for offpeak_hours_data in getattr(self.usage_point, f"offpeak_hours_{idx}").split(";"):
-                        if type(offpeak_hours_data) == str:
-                            _offpeak_hours.append(offpeak_hours_data.split("-"))
+            offpeak_hours.append(_offpeak_hours)
+            idx = idx + 1
 
-                offpeak_hours.append(_offpeak_hours)
-                idx = idx + 1
-
-        yesterday = datetime.combine(datetime.now() - relativedelta(days=1), datetime.max.time())
+        yesterday = datetime.combine(datetime.now(tz=UTC) - relativedelta(days=1), datetime.max.time())
         previous_week = datetime.combine(yesterday - relativedelta(days=7), datetime.min.time())
         yesterday_last_year = yesterday - relativedelta(years=1)
 
@@ -351,49 +403,43 @@ class HomeAssistant:
         yesterday_evolution = stats.yesterday_evolution()
         monthly_evolution = stats.monthly_evolution()
         yearly_evolution = stats.yearly_evolution()
-
-        # LOG.show(yesterday_last_year)
-
-        yesterday_last_year = self.db.get_daily_date(
+        yesterday_last_year = DB.get_daily_date(
             self.usage_point_id,
             datetime.combine(yesterday_last_year, datetime.min.time()),
         )
-
-        # LOG.show(yesterday_last_year)
-
         dailyweek_cost = []
-        dailyweek_HP = []
-        dailyweek_costHP = []
-        dailyweek_HC = []
-        dailyweek_costHC = []
+        dailyweek_hp = []
+        dailyweek_cost_hp = []
+        dailyweek_hc = []
+        dailyweek_cost_hc = []
         yesterday_hp_value_cost = 0
         if measurement_direction == "consumption":
             daily_cost = 0
-            plan = self.db.get_usage_point_plan(self.usage_point_id)
+            plan = DB.get_usage_point_plan(self.usage_point_id)
             if plan == "HC/HP":
                 for i in range(7):
                     hp = stats.detail(i, "HP")["value"]
                     hc = stats.detail(i, "HC")["value"]
-                    dailyweek_HP.append(convert_kw(hp))
-                    dailyweek_HC.append(convert_kw(hc))
-                    cost_hp = convert_kw_to_euro(hp, self.consumption_price_hp)
-                    cost_hc = convert_kw_to_euro(hc, self.consumption_price_hc)
-                    dailyweek_costHP.append(cost_hp)
-                    dailyweek_costHC.append(cost_hc)
+                    dailyweek_hp.append(convert_kw(hp))
+                    dailyweek_hc.append(convert_kw(hc))
+                    cost_hp = convert_kw_to_euro(hp, self.config.consumption_price_hp)
+                    cost_hc = convert_kw_to_euro(hc, self.config.consumption_price_hc)
+                    dailyweek_cost_hp.append(cost_hp)
+                    dailyweek_cost_hc.append(cost_hc)
                     value = cost_hp + cost_hc
                     if i == 0:
                         daily_cost = value
                     elif i == 1:
-                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.consumption_price_hp)
+                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.config.consumption_price_hp)
                     dailyweek_cost.append(round(value, 1))
             elif plan == "TEMPO":
-                tempo_config = self.db.get_tempo_config("price")
+                tempo_config = DB.get_tempo_config("price")
                 for i in range(7):
                     tempo_data = stats.tempo(i)["value"]
                     hp = tempo_data["blue_hp"] + tempo_data["white_hp"] + tempo_data["red_hp"]
                     hc = tempo_data["blue_hc"] + tempo_data["white_hc"] + tempo_data["red_hc"]
-                    dailyweek_HP.append(convert_kw(hp))
-                    dailyweek_HC.append(convert_kw(hc))
+                    dailyweek_hp.append(convert_kw(hp))
+                    dailyweek_hc.append(convert_kw(hc))
                     cost_hp = (
                         convert_kw_to_euro(
                             tempo_data["blue_hp"],
@@ -416,8 +462,8 @@ class HomeAssistant:
                         )
                         + convert_kw_to_euro(tempo_data["red_hc"], convert_price(tempo_config["red_hc"]))
                     )
-                    dailyweek_costHP.append(cost_hp)
-                    dailyweek_costHC.append(cost_hc)
+                    dailyweek_cost_hp.append(cost_hp)
+                    dailyweek_cost_hc.append(cost_hc)
                     value = cost_hp + cost_hc
                     if i == 0:
                         daily_cost = value
@@ -426,36 +472,38 @@ class HomeAssistant:
                     dailyweek_cost.append(round(value, 1))
             else:
                 for i in range(7):
-                    hp = stats.detail(i, "HP")["value"]
-                    hc = stats.detail(i, "HC")["value"]
-                    dailyweek_HP.append(convert_kw(hp))
-                    dailyweek_HC.append(convert_kw(hc))
-                    dailyweek_costHP.append(convert_kw_to_euro(hp, self.consumption_price_base))
-                    dailyweek_costHC.append(convert_kw_to_euro(hc, self.consumption_price_base))
-                    dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.consumption_price_base))
+                    hour_hp = stats.detail(i, "HP")["value"]
+                    hour_hc = stats.detail(i, "HC")["value"]
+                    dailyweek_hp.append(convert_kw(hour_hp))
+                    dailyweek_hc.append(convert_kw(hour_hc))
+                    dailyweek_cost_hp.append(convert_kw_to_euro(hour_hp, self.config.consumption_price_base))
+                    dailyweek_cost_hc.append(convert_kw_to_euro(hour_hc, self.config.consumption_price_base))
+                    dailyweek_cost.append(
+                        convert_kw_to_euro(stats.daily(i)["value"], self.config.consumption_price_base)
+                    )
                     if i == 0:
-                        daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.consumption_price_base)
+                        daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.config.consumption_price_base)
                     elif i == 1:
-                        yesterday_hp_value_cost = convert_kw_to_euro(hp, self.consumption_price_base)
+                        yesterday_hp_value_cost = convert_kw_to_euro(hour_hp, self.config.consumption_price_base)
         else:
-            daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.production_price)
+            daily_cost = convert_kw_to_euro(stats.daily(0)["value"], self.config.production_price)
             for i in range(7):
-                dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.production_price))
+                dailyweek_cost.append(convert_kw_to_euro(stats.daily(i)["value"], self.config.production_price))
 
-        if not dailyweek_HP:
-            dailyweek_HP = [0, 0, 0, 0, 0, 0, 0, 0]
-        if not dailyweek_costHP:
-            dailyweek_costHP = [0, 0, 0, 0, 0, 0, 0, 0]
-        if not dailyweek_HC:
-            dailyweek_HC = [0, 0, 0, 0, 0, 0, 0, 0]
-        if not dailyweek_costHC:
-            dailyweek_costHC = [0, 0, 0, 0, 0, 0, 0, 0]
+        if not dailyweek_hp:
+            dailyweek_hp = [0, 0, 0, 0, 0, 0, 0, 0]
+        if not dailyweek_cost_hp:
+            dailyweek_cost_hp = [0, 0, 0, 0, 0, 0, 0, 0]
+        if not dailyweek_hc:
+            dailyweek_hc = [0, 0, 0, 0, 0, 0, 0, 0]
+        if not dailyweek_cost_hc:
+            dailyweek_cost_hc = [0, 0, 0, 0, 0, 0, 0, 0]
 
         yesterday_consumption_max_power = 0
-        if hasattr(self.config, "consumption_max_power") and self.config.consumption_max_power:
+        if self.config.consumption_max_power:
             yesterday_consumption_max_power = stats.max_power(0)["value"]
 
-        error_last_call = self.db.get_error_log(self.usage_point_id)
+        error_last_call = DB.get_error_log(self.usage_point_id)
         if error_last_call is None:
             error_last_call = ""
 
@@ -463,7 +511,7 @@ class HomeAssistant:
             "yesterdayDate": stats.daily(0)["begin"],
             "yesterday": convert_kw(stats.daily(0)["value"]),
             "serviceEnedis": "myElectricalData",
-            "yesterdayLastYearDate": (datetime.now() - relativedelta(years=1)).strftime(self.date_format),
+            "yesterdayLastYearDate": (datetime.now(tz=UTC) - relativedelta(years=1)).strftime(self.date_format),
             "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year, "value") else 0,
             "daily": [
                 convert_kw(stats.daily(0)["value"]),
@@ -502,10 +550,10 @@ class HomeAssistant:
             ],
             "dailyweek_cost": dailyweek_cost,
             # TODO : If current_day = 0, dailyweek_hp & dailyweek_hc just next day...
-            "dailyweek_costHP": dailyweek_costHP,
-            "dailyweek_HP": dailyweek_HP,
-            "dailyweek_costHC": dailyweek_costHC,
-            "dailyweek_HC": dailyweek_HC,
+            "dailyweek_costHP": dailyweek_cost_hp,
+            "dailyweek_HP": dailyweek_hp,
+            "dailyweek_costHC": dailyweek_cost_hc,
+            "dailyweek_HC": dailyweek_hc,
             "daily_cost": daily_cost,
             "yesterday_HP_cost": yesterday_hp_value_cost,
             "yesterday_HP": convert_kw(yesterday_hp_value),
@@ -516,7 +564,7 @@ class HomeAssistant:
             "day_5_HP": stats.detail(4, "HP")["value"],
             "day_6_HP": stats.detail(5, "HP")["value"],
             "day_7_HP": stats.detail(6, "HP")["value"],
-            "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.consumption_price_hc),
+            "yesterday_HC_cost": convert_kw_to_euro(yesterday_hc_value, self.config.consumption_price_hc),
             "yesterday_HC": convert_kw(yesterday_hc_value),
             "day_1_HC": stats.detail(0, "HC")["value"],
             "day_2_HC": stats.detail(1, "HC")["value"],
@@ -574,7 +622,7 @@ class HomeAssistant:
             "current_week_number": yesterday.strftime("%V"),
             "offpeak_hours_enedis": offpeak_hours_enedis,
             "offpeak_hours": offpeak_hours,
-            "subscribed_power": self.subscribed_power,
+            "subscribed_power": self.config.subscribed_power,
             # "info": info
         }
 
@@ -594,10 +642,16 @@ class HomeAssistant:
         )
 
     def tempo(self):
-        uniq_id = f"myelectricaldata_tempo_today"
-        begin = datetime.combine(datetime.now(), datetime.min.time())
-        end = datetime.combine(datetime.now(), datetime.max.time())
-        tempo_data = self.db.get_tempo_range(begin, end, "asc")
+        """Add a sensor to Home Assistant with the tempo data for today and tomorrow.
+
+        Returns:
+            None
+
+        """
+        uniq_id = "myelectricaldata_tempo_today"
+        begin = datetime.combine(datetime.now(tz=UTC), datetime.min.time())
+        end = datetime.combine(datetime.now(tz=UTC), datetime.max.time())
+        tempo_data = DB.get_tempo_range(begin, end, "asc")
         if tempo_data:
             date = tempo_data[0].date.strftime(self.date_format_detail)
             state = tempo_data[0].color
@@ -607,20 +661,20 @@ class HomeAssistant:
         attributes = {"date": date}
         self.tempo_color = state
         self.sensor(
-            topic=f"myelectricaldata_rte/tempo_today",
-            name=f"Today",
-            device_name=f"RTE Tempo",
+            topic="myelectricaldata_rte/tempo_today",
+            name="Today",
+            device_name="RTE Tempo",
             device_model="RTE",
-            device_identifiers=f"rte_tempo",
+            device_identifiers="rte_tempo",
             uniq_id=uniq_id,
             attributes=attributes,
             state=state,
         )
 
-        uniq_id = f"myelectricaldata_tempo_tomorrow"
+        uniq_id = "myelectricaldata_tempo_tomorrow"
         begin = begin + timedelta(days=1)
         end = end + timedelta(days=1)
-        tempo_data = self.db.get_tempo_range(begin, end, "asc")
+        tempo_data = DB.get_tempo_range(begin, end, "asc")
         if tempo_data:
             date = tempo_data[0].date.strftime(self.date_format_detail)
             state = tempo_data[0].color
@@ -629,24 +683,31 @@ class HomeAssistant:
             state = "Inconnu"
         attributes = {"date": date}
         self.sensor(
-            topic=f"myelectricaldata_rte/tempo_tomorrow",
-            name=f"Tomorrow",
-            device_name=f"RTE Tempo",
+            topic="myelectricaldata_rte/tempo_tomorrow",
+            name="Tomorrow",
+            device_name="RTE Tempo",
             device_model="RTE",
-            device_identifiers=f"rte_tempo",
+            device_identifiers="rte_tempo",
             uniq_id=uniq_id,
             attributes=attributes,
             state=state,
         )
 
     def tempo_days(self):
-        tempo_days = self.db.get_tempo_config("days")
+        """Add tempo days sensors to Home Assistant.
+
+        This method retrieves tempo days configuration from the database
+        and creates sensors for each color and corresponding number of days.
+
+        Returns:
+            None
+        """
+        tempo_days = DB.get_tempo_config("days")
         for color, days in tempo_days.items():
             self.tempo_days_sensor(f"{color}", days)
 
     def tempo_days_sensor(self, color, days):
-        """
-        Add a sensor to Home Assistant with the given name and state.
+        """Add a sensor to Home Assistant with the given name and state.
 
         Args:
             color (str): The color of the tempo (e.g. blue, white, red).
@@ -662,16 +723,24 @@ class HomeAssistant:
             name=f"Days {color.capitalize()}",
             device_name="EDF Tempo",
             device_model="EDF",
-            device_identifiers=f"edf_tempo",
+            device_identifiers="edf_tempo",
             uniq_id=uniq_id,
             state=days,
         )
 
     def tempo_info(self):
-        uniq_id = f"myelectricaldata_tempo_info"
-        tempo_days = self.db.get_tempo_config("days")
-        tempo_price = self.db.get_tempo_config("price")
-        if 22 > int(datetime.now().strftime("%H")) < 6:
+        """Add tempo information sensor to Home Assistant.
+
+        This method retrieves tempo configuration from the database
+        and creates a sensor with information about tempo days and prices.
+
+        Returns:
+            None
+        """
+        uniq_id = "myelectricaldata_tempo_info"
+        tempo_days = DB.get_tempo_config("days")
+        tempo_price = DB.get_tempo_config("price")
+        if 22 > int(datetime.now(tz=UTC).strftime("%H")) < 6:
             measure_type = "hc"
         else:
             measure_type = "hp"
@@ -690,11 +759,11 @@ class HomeAssistant:
             "price_red_hc": convert_price(tempo_price["red_hc"]),
         }
         self.sensor(
-            topic=f"myelectricaldata_edf/tempo_info",
-            name=f"Info",
+            topic="myelectricaldata_edf/tempo_info",
+            name="Info",
             device_name="EDF Tempo",
             device_model="EDF",
-            device_identifiers=f"edf_tempo",
+            device_identifiers="edf_tempo",
             uniq_id=uniq_id,
             attributes=attributes,
             state=current_price,
@@ -702,7 +771,15 @@ class HomeAssistant:
         )
 
     def tempo_price(self):
-        tempo_price = self.db.get_tempo_config("price")
+        """Add tempo price sensors to Home Assistant.
+
+        This method retrieves tempo price configuration from the database
+        and creates sensors for each color with corresponding price.
+
+        Returns:
+            None
+        """
+        tempo_price = DB.get_tempo_config("price")
         for color, price in tempo_price.items():
             self.tempo_price_sensor(
                 f"{color}",
@@ -711,6 +788,18 @@ class HomeAssistant:
             )
 
     def tempo_price_sensor(self, color, price, name):
+        """Add tempo price sensor to Home Assistant.
+
+        This method creates a sensor for a specific tempo color with the corresponding price.
+
+        Args:
+            color (str): The color of the tempo.
+            price (float): The price of the tempo.
+            name (str): The name of the tempo.
+
+        Returns:
+            None
+        """
         uniq_id = f"myelectricaldata_tempo_price_{color}"
         name = f"{name[0:-2]} {name[-2:]}"
         self.sensor(
@@ -718,27 +807,44 @@ class HomeAssistant:
             name=f"Price {name}",
             device_name="EDF Tempo",
             device_model="EDF",
-            device_identifiers=f"edf_tempo",
+            device_identifiers="edf_tempo",
             uniq_id=uniq_id,
             state=convert_price(price),
             unit_of_measurement="EUR/kWh",
         )
 
     def ecowatt(self):
+        """Calculate the ecowatt sensor values for different delta values.
+
+        This method calculates the ecowatt sensor values for different delta values (0, 1, and 2).
+        It calls the `ecowatt_delta` method with the corresponding delta values.
+
+        Returns:
+            None
+        """
         self.ecowatt_delta("J0", 0)
         self.ecowatt_delta("J1", 1)
         self.ecowatt_delta("J2", 2)
 
     def ecowatt_delta(self, name, delta):
+        """Calculate the delta value for the ecowatt sensor.
+
+        Args:
+            name (str): The name of the ecowatt sensor.
+            delta (int): The number of days to calculate the delta.
+
+        Returns:
+            None
+        """
         uniq_id = f"myelectricaldata_ecowatt_{name}"
-        current_date = datetime.combine(datetime.now(), datetime.min.time()) + timedelta(days=delta)
+        current_date = datetime.combine(datetime.now(tz=UTC), datetime.min.time()) + timedelta(days=delta)
         fetch_date = current_date - timedelta(days=1)
-        ecowatt_data = self.db.get_ecowatt_range(fetch_date, fetch_date, "asc")
-        dayValue = 0
+        ecowatt_data = DB.get_ecowatt_range(fetch_date, fetch_date, "asc")
+        day_value = 0
         if ecowatt_data:
             forecast = {}
             for data in ecowatt_data:
-                dayValue = data.value
+                day_value = data.value
                 for date, value in json.loads(data.detail.replace("'", '"')).items():
                     date = datetime.strptime(date, self.date_format_detail)
                     forecast[f'{date.strftime("%H")} h'] = value
@@ -751,8 +857,8 @@ class HomeAssistant:
                 name=f"{name}",
                 device_name="RTE EcoWatt",
                 device_model="RTE",
-                device_identifiers=f"rte_ecowatt",
+                device_identifiers="rte_ecowatt",
                 uniq_id=uniq_id,
                 attributes=attributes,
-                state=dayValue,
+                state=day_value,
             )

@@ -1,3 +1,4 @@
+"""Manage all database operations."""
 import hashlib
 import json
 import logging
@@ -33,7 +34,15 @@ available_database = ["sqlite", "postgresql"]
 
 
 class Database:
+    """Represents a database connection and provides methods for database operations."""
+
     def __init__(self, config, path=APPLICATION_PATH_DATA):
+        """Initialize a Database object.
+
+        Args:
+            config (Config): The configuration object.
+            path (str, optional): The path to the database. Defaults to APPLICATION_PATH_DATA.
+        """
         self.config = config
         self.path = path
 
@@ -69,6 +78,7 @@ class Database:
             self.migratev7tov8()
 
     def migratev7tov8(self):
+        """Migrates the database from version 7 to version 8."""
         uri = f"sqlite:///{self.path}/enedisgateway.db"
         engine = create_engine(uri, echo=True, query_cache_size=0)
         session = scoped_session(sessionmaker(engine, autocommit=True, autoflush=True))
@@ -138,6 +148,7 @@ class Database:
         os.replace(f"{self.path}/enedisgateway.db", f"{self.path}/enedisgateway.db.migrate")
 
     def init_database(self):
+        """Initialize the database with default values."""
         try:
             logging.info("Configure Databases")
             query = select(Config).where(Config.key == "day")
@@ -177,40 +188,56 @@ class Database:
             logging.critical("Database initialize failed!")
 
     def purge_database(self):
+        """Purges the SQLite database."""
         logging.separator_warning()
         logging.info("Reset SQLite Database")
         if os.path.exists(f"{self.path}/cache.db"):
             os.remove(f"{self.path}/cache.db")
             logging.info(" => Success")
         else:
-            logging.info(" => Not cache detected")
+            logging.info(" => No cache detected")
 
     def lock_status(self):
-        # query = select(Config).where(Config.key == "lock")
-        # if str(self.session.scalars(query).one_or_none()) == "1":
+        """Check the lock status of the database.
+
+        Returns:
+            bool: True if the database is locked, False otherwise.
+        """
         if exists(self.lock_file):
             return True
         else:
             return False
 
     def lock(self):
-        # query = select(Config).where(Config.key == "lock")
-        # lock = self.session.scalars(query).one_or_none()
-        # lock.value = "1"
+        """Locks the database.
+
+        Returns:
+            bool: True if the database is locked, False otherwise.
+        """
         with open(self.lock_file, "xt") as f:
             f.write(str(datetime.now()))
             f.close()
         return self.lock_status()
 
     def unlock(self):
-        # query = select(Config).where(Config.key == "lock")
-        # lock = self.session.scalars(query).one_or_none()
-        # lock.value = "0"
+        """Unlocks the database.
+
+        Returns:
+            bool: True if the database is unlocked, False otherwise.
+        """
         if os.path.exists(self.lock_file):
             os.remove(self.lock_file)
         return self.lock_status()
 
     def clean_database(self, current_usage_point_id):
+        """Clean the database by removing unused data.
+
+        Args:
+            current_usage_point_id (list): List of current usage point IDs.
+
+        Returns:
+            bool: True if the database is cleaned successfully, False otherwise.
+        """
         for usage_point in self.get_usage_point_all():
             if usage_point.usage_point_id not in current_usage_point_id:
                 logging.warning(f"- Suppression du point de livraison {usage_point.usage_point_id}")
@@ -222,6 +249,7 @@ class Database:
         return True
 
     def refresh_object(self):
+        """Refreshe the ORM objects."""
         title("Refresh ORM Objects")
         self.session.expire_all()
 

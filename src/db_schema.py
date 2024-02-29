@@ -1,3 +1,5 @@
+"""This module defines the database schema for the application."""
+
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship

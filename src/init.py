@@ -1,8 +1,12 @@
+"""Initialisation of the application."""
+
 import locale
 import logging
+import sys
 import time
 import typing as t
-from os import environ, getenv, path
+from os import environ, getenv
+from pathlib import Path
 
 import yaml
 
@@ -15,17 +19,17 @@ from models.mqtt import Mqtt
 
 # LOGGING CONFIGURATION
 config = {}
-CONFIG_PATH = path.join(APPLICATION_PATH_DATA, "config.yaml")
-if path.exists(CONFIG_PATH):
-    with open(CONFIG_PATH) as file:
-        config = yaml.load(file, Loader=yaml.FullLoader)
+CONFIG_PATH = Path(APPLICATION_PATH_DATA) / "config.yaml"
+if Path(CONFIG_PATH).exists():
+    with Path(CONFIG_PATH).open() as file:
+        config = yaml.safe_load(file)
 
 if "DEBUG" in environ and str2bool(getenv("DEBUG")):
     logging_level = logging.DEBUG
 else:
     logging_level = logging.INFO
 
-if "log2file" in config and config["log2file"]:
+if config.get("log2file"):
     logging.basicConfig(
         filename=f"{APPLICATION_PATH_LOG}/myelectricaldata.log",
         format=LOG_FORMAT,
@@ -40,12 +44,14 @@ if "log2file" in config and config["log2file"]:
 else:
     logging.basicConfig(format=LOG_FORMAT, datefmt=LOG_FORMAT_DATE, level=logging_level)
 
-if not path.exists(CONFIG_PATH):
+if not Path(CONFIG_PATH).exists():
     logging.critical(f"Config file is not found ({CONFIG_PATH})")
-    exit()
+    sys.exit()
 
 
 class EndpointFilter(logging.Filter):
+    """Filter class for filtering log records based on the path."""
+
     def __init__(
         self,
         path: str,
@@ -56,6 +62,7 @@ class EndpointFilter(logging.Filter):
         self._path = path
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Filter log records based on the path."""
         return record.getMessage().find(self._path) == -1
 
 

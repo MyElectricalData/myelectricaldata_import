@@ -1,3 +1,5 @@
+"""This module contains dependencies for the application."""
+
 import datetime
 import logging
 from math import floor
@@ -22,37 +24,47 @@ if environ.get("APPLICATION_PATH_LOG") is None:
 else:
     APPLICATION_PATH_LOG = getenv("APPLICATION_PATH_LOG")
 
-paypal_footer = """
-<div style="text-align: center" id="paypal" class="paypal_link">
-    <form action="https://www.paypal.com/donate" method="post" target="_top" style="height: 55px;" id="paypal_form">
-        <input type="hidden" name="business" value="FY25JLXDYLXAJ" />
-        <input type="hidden" name="no_recurring" value="0" />
-        <input type="hidden" name="currency_code" value="EUR" />
-        <input type="image" id="paypal_img"
-               src="/static/img/paypal.png"
-               border="0"
-               name="submit"
-               title="PayPal - The safer, easier way to pay online!"
-               alt="Bouton Faites un don avec PayPal"/>
-        <img alt="" border="0" src="https://www.paypal.com/fr_FR/i/scr/pixel.gif" width="1" height="1" />
-    </form>
-    Le service est gratuit, mais si tu souhaites soutenir le projet (serveur & domaine).
-</div>
-"""
-
 
 def daterange(start_date, end_date):
+    """Generate a range of dates between the start_date and end_date.
+
+    Args:
+        start_date (datetime.date): The start date of the range.
+        end_date (datetime.date): The end date of the range.
+
+    Yields:
+        datetime.date: The dates in the range.
+
+    """
     for n in range(int((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
 
 
 def is_bool(v):
+    """Check if a value is a boolean.
+
+    Args:
+        v (any): The value to check.
+
+    Returns:
+        bool: True if the value is a boolean, False otherwise.
+
+    """
     if v in ["true", "false", "yes, no", "t, f", "y, n", 1, 0]:
         return True
     return False
 
 
 def str2bool(v):
+    """Convert a string representation of a boolean value to a boolean.
+
+    Args:
+        v (str): The string representation of the boolean value.
+
+    Returns:
+        bool: The boolean value.
+
+    """
     if type(v) != bool:
         return v and v.lower() in ("yes", "true", "t", "1")
     else:
@@ -60,6 +72,15 @@ def str2bool(v):
 
 
 def is_float(element):
+    """Check if a value can be converted to a float.
+
+    Args:
+        element (any): The value to check.
+
+    Returns:
+        bool: True if the value can be converted to a float, False otherwise.
+
+    """
     try:
         float(element)
         return True
@@ -68,6 +89,15 @@ def is_float(element):
 
 
 def reformat_json(yaml):
+    """Reformat a JSON object.
+
+    Args:
+        yaml (dict): The JSON object to reformat.
+
+    Returns:
+        dict: The reformatted JSON object.
+
+    """
     result = {}
     for key, value in yaml.items():
         if value in ["true", "false"]:
@@ -82,10 +112,26 @@ def reformat_json(yaml):
 
 
 def truncate(f, n=2):
+    """Truncate a float number to a specified number of decimal places.
+
+    Args:
+        f (float): The float number to truncate.
+        n (int, optional): The number of decimal places to keep. Defaults to 2.
+
+    Returns:
+        float: The truncated float number.
+
+    """
     return floor(f * 10**n) / 10**n
 
 
 def title(message):
+    """Print a title message.
+
+    Args:
+        message (str or list): The message or list of messages to print as a title.
+
+    """
     separator()
     if type(message) is list:
         for msg in message:
@@ -96,27 +142,61 @@ def title(message):
 
 
 def title_warning(message):
+    """Print a warning message with a title format.
+
+    Args:
+        message (str): The warning message to print.
+
+    """
     separator_warning()
     logging.warning(f" {message.upper()}")
     separator_warning()
 
 
 def separator():
+    """Print a separator line."""
     logging.info(
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
 
 def separator_warning():
+    """Print a warning separator line."""
     logging.warning(
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
 
 def export_finish():
+    """Finish the export process."""
     logging.info(
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ TERMINE ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
+
+
+def log_usage_point_id(usage_point_id):
+    """Log the usage point ID.
+
+    Args:
+        usage_point_id (str): The usage point ID to log.
+    """
+    text = f"Point de livraison : {usage_point_id}"
+    separator()
+    logging.info(f'{decor("barcode1")}{text: ^93}{decor("barcode1", reverse=True)}')
+    separator()
+
+
+def finish():
+    """Finish the import process."""
+    separator()
+    for line in text2art("Import Finish!!!").splitlines():
+        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
+    separator()
+
+
+def get_version():
+    """Return the version of the module."""
+    return VERSION
 
 
 def logo(version):
@@ -127,30 +207,4 @@ def logo(version):
     separator()
     version = f"VERSION : {version}"
     logging.info(f'{decor("barcode1")}{version: ^93}{decor("barcode1", reverse=True)}')
-    separator()
-
-
-def log_usage_point_id(self, usage_point_id):
-    text = f"Point de livraison : {usage_point_id}"
-    separator()
-    logging.info(f'{decor("barcode1")}{text: ^93}{decor("barcode1", reverse=True)}')
-    separator()
-
-
-def finish():
-    finish = text2art("Import Finish!!!")
-    separator()
-    for line in finish.splitlines():
-        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
-    separator()
-
-
-def get_version():
-    return VERSION
-
-
-def log_usage_point_id(usage_point_id):
-    text = f"Point de livraison : {usage_point_id}"
-    separator()
-    logging.info(f'{decor("barcode1")}{text: ^93}{decor("barcode1", reverse=True)}')
     separator()
