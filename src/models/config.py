@@ -339,7 +339,7 @@ class Config:
             else:
                 value = str(value)
             self.config["myelectricaldata"][usage_point_id][key] = value
-            with self.path_file.open("w", encoding="utf-8") as outfile:
+            with Path(self.path_file).open(mode="w", encoding="utf-8") as outfile:
                 yaml.dump(self.config, outfile, default_flow_style=False)
         else:
             return False
