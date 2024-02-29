@@ -1,3 +1,5 @@
+"""Documentation for the API."""
+
 DOCUMENTATION = {
     "usage_point_id": "Votre point de livraison",
     "measurement_direction": "consumption or production",
@@ -5,7 +7,7 @@ DOCUMENTATION = {
     "end": "Date de fin format : 2023-07-21",
     "date_format": "Date format : 2023-07-21",
     "target_full": """Valeur possible :
-    
+
     - tempo
     - ecowatt
     - account_status
@@ -22,7 +24,7 @@ DOCUMENTATION = {
     - influxdb
     """,
     "target": """Valeur possible :
-    
+
     - consumption
     - consumption_detail
     - production
