@@ -2,6 +2,31 @@
 
 
 
+## v0.13.0-rc.2 (2024-02-29)
+
+### Chore
+
+* chore: clean code ([`1680068`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1680068d62a5480dcb631edb027a993fba2faccc))
+
+* chore: clean + doc ([`5139e5d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5139e5d78da9e8b1c9f2fb90af3a36184cde1f31))
+
+### Ci
+
+* ci: update ([`a484cf6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a484cf61639fc823ceb1f267e8b3cda384792937))
+
+### Fix
+
+* fix: rework class ([`9fc4468`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9fc4468851ccba8f91f7664767cdb28110751192))
+
+* fix: fix sensor class ([`c1ffbc5`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c1ffbc5d819ceb029cc08843a397f9157beb8337))
+
+### Unknown
+
+* Merge pull request #506 from MyElectricalData/fix/ha_sensor_rework_ha
+
+Fix/ha sensor rework ha ([`f2b9811`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f2b9811b92ab13e88c4d2aca68a0185374f42ad0))
+
+
 ## v0.13.0-rc.1 (2024-02-26)
 
 ### Feature
