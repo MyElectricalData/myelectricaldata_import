@@ -216,3 +216,30 @@ $(call title, ${2})
 touch .env
 poetry run -v ${1}
 endef
+
+######################################
+## PYTHON SCRIPTS
+######################################
+define set_env
+from sys import argv
+KEY = argv[1]
+VALUE = argv[2]
+found = False
+new_file = []
+print(f"Set {KEY}={VALUE}")
+with open(f".env", 'r') as file:
+	env = file.read().splitlines()
+for line in env:
+	if line.startswith(f"{KEY}="):
+		new_file.append(f"{KEY}={VALUE}")
+		found = True
+	else:
+		new_file.append(line)
+if not found:
+	env.append(f"{KEY}={VALUE}")
+else:
+	env = new_file
+with open(f".env", 'w') as file:
+	file.write("\n".join(env))
+endef
+export set_env
