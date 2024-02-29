@@ -39,13 +39,12 @@ class HomeAssistantWs:
         self.current_stats = []
         if self.load_config():
             if self.connect():
+                self.mqtt = CONFIG.mqtt_config()
                 self.import_data()
         else:
             logging.critical("La configuration Home Assistant WebSocket est erronée")
         if self.websocket.connected:
             self.websocket.close()
-
-        self.mqtt = CONFIG.mqtt_config()
 
     def load_config(self):
         """Load the Home Assistant WebSocket configuration from the configuration file.
