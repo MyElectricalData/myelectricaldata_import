@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 # POETRY CONFIGURATION
 [tool.poetry]
 name = "myelectricaldata-import"
-version = "0.13.0-rc.2"
+version = "0.13.0-rc.3"
 description = "MyElectricalData official client"
 authors = ["Clément VALENTIN <m4dm4rtig4n@gmail.com>"]
 readme = "README.md"

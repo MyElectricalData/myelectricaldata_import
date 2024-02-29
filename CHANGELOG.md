@@ -2,6 +2,23 @@
 
 
 
+## v0.13.0-rc.3 (2024-02-29)
+
+### Fix
+
+* fix: clean log + code ([`6459130`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6459130e27b0ea66bd56396ca542c49e35b3e82c))
+
+* fix: makefile setenv ([`8f77775`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8f777756e7c3fe9f57d17753cef5374d578fb97d))
+
+### Unknown
+
+* Merge pull request #508 from MyElectricalData/fix/ha_sensor_rework_ha
+
+Fix/ha sensor rework ha ([`3856bc8`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3856bc830a52380673b6837e112f4ff239588445))
+
+* clean: code ([`3c43625`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3c43625f8d6ccfa649dc0717c59e86bc73118146))
+
+
 ## v0.13.0-rc.2 (2024-02-29)
 
 ### Chore
