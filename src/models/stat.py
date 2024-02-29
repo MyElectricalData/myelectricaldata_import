@@ -807,11 +807,34 @@ class Stat:  # pylint: disable=R0902,R0904
                     offpeak_stop = datetime.strptime(offpeak_stop, "%H:%M")
                     offpeak_stop = datetime.strftime(offpeak_stop, "%H:%M")
                     result = self.is_between(date_hour_minute, (offpeak_begin, offpeak_stop))
+                    print(date_hour_minute, (offpeak_begin, offpeak_stop), result)
                     if result:
                         measure_type = "HC"
         return measure_type
 
+    def is_between(self, time, time_range):
+        """Check if a given time is between a specified time range.
+
+        Args:
+            time (datetime): The time to check.
+            time_range (tuple): The time range represented by a tuple of two datetime objects.
+
+        Returns:
+            bool: True if the time is between the time range, False otherwise.
+        """
+        time = time.replace(":", "")
+        start = time_range[0].replace(":", "")
+        end = time_range[1].replace(":", "")
+        if end < start:
+            return time >= start or time < end
+        return start <= time < end
+
     def generate_price(self):
+        """Generates the price for the usage point based on the measurement data.
+
+        Returns:
+            str: JSON string representing the calculated price.
+        """
         data = self.db.get_detail_all(
             usage_point_id=self.usage_point_id, measurement_direction=self.measurement_direction
         )
@@ -896,7 +919,7 @@ class Stat:  # pylint: disable=R0902,R0904
                     if tempo_output:
                         color = tempo_output[0].color
                         tempo_price = tempo_config[f"{color.lower()}_{measure_type.lower()}"]
-                        if type(tempo_price) == str:
+                        if isinstance(tempo_price, str):
                             tempo_price = float(tempo_price.replace(",", "."))
                         result[year]["TEMPO"][f"{color}_{measure_type}"]["Wh"] += wh
                         result[year]["TEMPO"][f"{color}_{measure_type}"]["kWh"] += kwh
@@ -929,20 +952,3 @@ class Stat:  # pylint: disable=R0902,R0904
             if self.get_mesure_type(item.date).upper() == mesure_type.upper():
                 value += item.value / (60 / item.interval)
         return value
-
-    def is_between(self, time, time_range):
-        """Check if a given time is between a specified time range.
-
-        Args:
-            time (datetime): The time to check.
-            time_range (tuple): The time range represented by a tuple of two datetime objects.
-
-        Returns:
-            bool: True if the time is between the time range, False otherwise.
-        """
-        datetime_time = datetime.strptime(time, "%H:%M").replace(tzinfo=utc)
-        datetime_start = datetime.strptime(time_range[0], "%H:%M").replace(tzinfo=utc)
-        datetime_end = datetime.strptime(time_range[1], "%H:%M").replace(tzinfo=utc)
-        if datetime_end < datetime_start:
-            return datetime_time >= datetime_start or datetime_time < datetime_end
-        return datetime_start <= datetime_time < datetime_end
