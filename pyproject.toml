@@ -133,6 +133,7 @@ upload_to_vcs_release = true
 # PYTEST CONFIGURATION
 [tool.pytest.ini_options]
 norecursedirs = ".git .tox *.egg* old docs dist build"
+log_cli_level = "DEBUG"
 addopts = "-rw"
 pythonpath = [
     "src"
