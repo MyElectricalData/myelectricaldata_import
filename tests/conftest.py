@@ -1,10 +1,10 @@
-import logging
 import os
 import tempfile
 from contextlib import contextmanager
 
-import pytest
 import yaml
+import pytest
+import logging
 
 
 @contextmanager
