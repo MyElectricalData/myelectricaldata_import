@@ -126,7 +126,7 @@ class Config:
                     "Impossible de charger le fichier de configuration.",
                     "",
                     "Vous pouvez récupérer un exemple ici :",
-                    "https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file",
+                    "https://github.com/MyElectricalData/myelectricaldata_import/wiki/03.-Configuration",
                 ],
             }
 
