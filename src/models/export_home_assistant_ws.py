@@ -343,7 +343,7 @@ class HomeAssistantWs:
                     }
                     chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
                     chunks_len = len(chunks)
-                    data_name = metadata["name"].replace(f"MyElectricalData - {self.usage_point_id}","")
+                    data_name = metadata["name"].replace(f"MyElectricalData - {self.usage_point_id} ","")
                     for i, chunk in enumerate(chunks):
                         logging.info(f"Envoi des données '{data_name}' vers Home Assistant {(i+1)}/{chunks_len} ({chunk[0]["start"]} => {chunk[-1]["start"]})")
                         self.send({
@@ -378,7 +378,7 @@ class HomeAssistantWs:
                     }
                     chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
                     chunks_len = len(chunks)
-                    data_name = metadata["name"].replace(f"MyElectricalData - {self.usage_point_id}","")
+                    data_name = metadata["name"].replace(f"MyElectricalData - {self.usage_point_id} ","")
                     for i, chunk in enumerate(chunks):
                         logging.info(f"Envoi des données '{data_name}' vers Home Assistant {(i+1)}/{chunks_len} ({chunk[0]["start"]} => {chunk[-1]["start"]})")
                         self.send({
