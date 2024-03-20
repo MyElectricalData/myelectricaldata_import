@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import pytz
 import websocket
 
-from dependencies import str2bool, truncate
+from dependencies import is_integer, str2bool, truncate
 from init import CONFIG, DB
 from models.export_home_assistant import HomeAssistant
 from models.stat import Stat
@@ -36,6 +36,7 @@ class HomeAssistantWs:
         self.id = 1
         self.purge = False
         self.purge_force = True
+        self.batch_size = 1000
         self.current_stats = []
         if self.load_config():
             if self.connect():
@@ -71,6 +72,11 @@ class HomeAssistantWs:
                 return False
             if "purge" in self.config:
                 self.purge = str2bool(self.config["purge"])
+            if "batch_size" in self.config:
+                if not is_integer(self.config["batch_size"]):
+                    logging.error("Le paramètre batch_size du WebSocket Home Assistant doit être un entier")
+                else:
+                    self.batch_size = int(self.config["batch_size"])
         return True
 
     def connect(self):
@@ -335,7 +341,7 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "kWh",
                     }
-                    chunks = list(zip(*[iter(data["data"].values())] * 800))
+                    chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
                     chunks_len = len(chunks)
                     data_name = metadata["name"].replace(f"MyElectricalData - {self.usage_point_id}","")
                     for i, chunk in enumerate(chunks):
@@ -370,7 +376,7 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "EURO",
                     }
-                    chunks = list(zip(*[iter(data["data"].values())] * 800))
+                    chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
                     chunks_len = len(chunks)
                     data_name = metadata["name"].replace(f"MyElectricalData - {self.usage_point_id}","")
                     for i, chunk in enumerate(chunks):
