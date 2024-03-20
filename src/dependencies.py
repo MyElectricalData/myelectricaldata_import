@@ -99,11 +99,9 @@ def is_integer(element):
 
     """
     try:
-        float(element)
+        return float(element).is_integer()
     except ValueError:
         return False
-    else:
-        return float(element).is_integer()
 
 
 def reformat_json(yaml):
