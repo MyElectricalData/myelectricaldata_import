@@ -88,6 +88,22 @@ def is_float(element):
         return False
 
 
+def is_integer(element):
+    """Check if a value can be converted to an integer.
+
+    Args:
+        element (any): The value to check.
+
+    Returns:
+        bool: True if the value can be converted to an integer, False otherwise.
+
+    """
+    try:
+        return float(element).is_integer()
+    except ValueError:
+        return False
+
+
 def reformat_json(yaml):
     """Reformat a JSON object.
 

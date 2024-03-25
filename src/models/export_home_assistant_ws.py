@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import pytz
 import websocket
 
-from dependencies import str2bool, truncate
+from dependencies import is_integer, str2bool, truncate
 from init import CONFIG, DB
 from models.export_home_assistant import HomeAssistant
 from models.stat import Stat
@@ -36,6 +36,7 @@ class HomeAssistantWs:
         self.id = 1
         self.purge = False
         self.purge_force = True
+        self.batch_size = 1000
         self.current_stats = []
         if self.load_config():
             if self.connect():
@@ -71,6 +72,11 @@ class HomeAssistantWs:
                 return False
             if "purge" in self.config:
                 self.purge = str2bool(self.config["purge"])
+            if "batch_size" in self.config:
+                if not is_integer(self.config["batch_size"]):
+                    logging.error("Le paramètre batch_size du WebSocket Home Assistant doit être un entier")
+                else:
+                    self.batch_size = int(self.config["batch_size"])
         return True
 
     def connect(self):
@@ -131,7 +137,7 @@ class HomeAssistantWs:
         output = json.loads(self.websocket.recv())
         if "type" in output and output["type"] == "result":
             if not output["success"]:
-                logging.error(f"Erreur d'envoie : {data}")
+                logging.error(f"Erreur d'envoi : {data}")
                 logging.error(output)
         return output
 
@@ -204,7 +210,7 @@ class HomeAssistantWs:
                 logging.info("Consommation")
                 measurement_direction = "consumption"
                 if "max_date" in self.config:
-                    logging.warning("WARNING : Max date détecter %s", self.config["max_date"])
+                    logging.warning("Max date détectée %s", self.config["max_date"])
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
                     # begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d").replace(tzinfo=TZ_PARIS)
                     detail = DB.get_detail_all(begin=begin, usage_point_id=self.usage_point_id, order_dir="desc")
@@ -245,7 +251,6 @@ class HomeAssistantWs:
                         tag = "base"
                     elif plan == "HC/HP":
                         measure_type = stats.get_mesure_type(data.date)
-                        print(data.date, "=>", measure_type)
                         if measure_type == "HC":
                             name = f"{name} HC {measurement_direction}"
                             statistic_id = f"{statistic_id}_hc_{measurement_direction}"
@@ -336,13 +341,17 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "kWh",
                     }
-                    import_statistics = {
-                        "id": self.id,
-                        "type": "recorder/import_statistics",
-                        "metadata": metadata,
-                        "stats": list(data["data"].values()),
-                    }
-                    self.send(import_statistics)
+                    chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
+                    chunks_len = len(chunks)
+                    for i, chunk in enumerate(chunks):
+                        logging.info(f"Envoi des données de conso {data["tag"].upper()} vers Home Assistant {(i+1)}/{chunks_len} ({chunk[0]["start"]} => {chunk[-1]["start"]})")
+                        self.send({
+                            "id": self.id,
+                            "type": "recorder/import_statistics",
+                            "metadata": metadata,
+                            "stats": chunk,
+                        })
+
                     if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
                         HomeAssistant(self.usage_point_id).sensor(
                             topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_energy",
@@ -366,13 +375,16 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "EURO",
                     }
-                    import_statistics = {
-                        "id": self.id,
-                        "type": "recorder/import_statistics",
-                        "metadata": metadata,
-                        "stats": list(data["data"].values()),
-                    }
-                    self.send(import_statistics)
+                    chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
+                    chunks_len = len(chunks)
+                    for i, chunk in enumerate(chunks):
+                        logging.info(f"Envoi des données de coût {data["tag"].upper()} vers Home Assistant {(i+1)}/{chunks_len} ({chunk[0]["start"]} => {chunk[-1]["start"]})")
+                        self.send({
+                            "id": self.id,
+                            "type": "recorder/import_statistics",
+                            "metadata": metadata,
+                            "stats": list(chunk),
+                        })
                     if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
                         HomeAssistant(self.usage_point_id).sensor(
                             topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_cost",
@@ -391,7 +403,7 @@ class HomeAssistantWs:
                 logging.info("Production")
                 measurement_direction = "production"
                 if "max_date" in self.config:
-                    logging.warning("WARNING : Max date détectée %s", self.config["max_date"])
+                    logging.warning("Max date détectée %s", self.config["max_date"])
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
                     detail = DB.get_detail_all(
                         begin=begin,
