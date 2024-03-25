@@ -1,3 +1,5 @@
+"""Fetch and store Ecowatt data."""
+
 import ast
 import json
 import logging
@@ -6,30 +8,31 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from config import URL
+from config import CODE_200_SUCCESS, TIMEZONE, URL
+from database.ecowatt import DatabaseEcowatt
 from dependencies import title
-from init import CONFIG, DB
 from models.query import Query
 
 
 class Ecowatt:
+    """Class for fetching and storing Ecowatt data."""
+
     def __init__(self):
-        self.config = CONFIG
-        self.db = DB
         self.url = URL
-        self.valid_date = datetime.combine(datetime.now() + relativedelta(days=2), datetime.min.time())
+        self.valid_date = datetime.combine(datetime.now(tz=TIMEZONE) + relativedelta(days=2), datetime.min.time())
 
     def run(self):
-        start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
-        end = (datetime.now() + relativedelta(days=3)).strftime("%Y-%m-%d")
+        """Fetches Ecowatt data from the API and stores it in the database."""
+        start = (datetime.now(tz=TIMEZONE) - relativedelta(years=3)).strftime("%Y-%m-%d")
+        end = (datetime.now(tz=TIMEZONE) + relativedelta(days=3)).strftime("%Y-%m-%d")
         target = f"{self.url}/rte/ecowatt/{start}/{end}"
         query_response = Query(endpoint=target).get()
-        if query_response.status_code == 200:
+        if query_response.status_code == CODE_200_SUCCESS:
             try:
                 response_json = json.loads(query_response.text)
                 for date, data in response_json.items():
-                    date = datetime.strptime(date, "%Y-%m-%d")
-                    self.db.set_ecowatt(date, data["value"], data["message"], str(data["detail"]))
+                    date_obj = datetime.strptime(date, "%Y-%m-%d").astimezone(TIMEZONE)
+                    DatabaseEcowatt().set(date_obj, data["value"], data["message"], str(data["detail"]))
                 response = response_json
             except Exception as e:
                 logging.error(e)
@@ -46,7 +49,8 @@ class Ecowatt:
             }
 
     def get(self):
-        data = self.db.get_ecowatt()
+        """Retrieve Ecowatt data from the database and format it as a dictionary."""
+        data = DatabaseEcowatt().get()
         output = {}
         for d in data:
             if hasattr(d, "date") and hasattr(d, "value") and hasattr(d, "message") and hasattr(d, "detail"):
@@ -58,11 +62,11 @@ class Ecowatt:
         return output
 
     def fetch(self):
-        current_cache = self.db.get_ecowatt()
+        """Fetches Ecowatt data and returns the result."""
+        current_cache = DatabaseEcowatt().get()
         result = {}
         if not current_cache:
-            # No cache
-            title(f"No cache")
+            title("No cache")
             result = self.run()
         else:
             last_item = current_cache[0]

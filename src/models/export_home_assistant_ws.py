@@ -9,8 +9,12 @@ from datetime import datetime, timedelta
 import pytz
 import websocket
 
+from config import TEMPO_BEGIN, TEMPO_END
+from database.detail import DatabaseDetail
+from database.tempo import DatabaseTempo
+from database.usage_points import DatabaseUsagePoints
 from dependencies import str2bool, truncate
-from init import CONFIG, DB
+from init import CONFIG
 from models.export_home_assistant import HomeAssistant
 from models.stat import Stat
 
@@ -28,7 +32,7 @@ class HomeAssistantWs:
         """
         self.websocket = None
         self.usage_point_id = usage_point_id
-        self.usage_point_id_config = DB.get_usage_point(self.usage_point_id)
+        self.usage_point_id_config = DatabaseUsagePoints(self.usage_point_id).get()
         self.config = None
         self.url = None
         self.ssl = None
@@ -195,21 +199,20 @@ class HomeAssistantWs:
         stat_period = self.send(statistics_during_period)
         return stat_period
 
-    def import_data(self):  # noqa: C901
+    def import_data(self):  # noqa: C901, PLR0912, PLR0915
         """Import the data for the usage point into Home Assistant."""
         logging.info(f"Importation des données du point de livraison : {self.usage_point_id}")
         try:
-            plan = DB.get_usage_point_plan(self.usage_point_id)
+            plan = DatabaseUsagePoints(self.usage_point_id).get_plan()
             if self.usage_point_id_config.consumption_detail:
                 logging.info("Consommation")
                 measurement_direction = "consumption"
                 if "max_date" in self.config:
                     logging.warning("WARNING : Max date détecter %s", self.config["max_date"])
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
-                    # begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d").replace(tzinfo=TZ_PARIS)
-                    detail = DB.get_detail_all(begin=begin, usage_point_id=self.usage_point_id, order_dir="desc")
+                    detail = DatabaseDetail(self.usage_point_id).get_all(begin=begin, order_dir="desc")
                 else:
-                    detail = DB.get_detail_all(usage_point_id=self.usage_point_id, order_dir="desc")
+                    detail = DatabaseDetail(self.usage_point_id).get_all(order_dir="desc")
 
                 cost = 0
                 last_year = None
@@ -218,9 +221,9 @@ class HomeAssistantWs:
                 stats_kwh = {}
                 stats_euro = {}
 
-                db_tempo_price = DB.get_tempo_config("price")
+                db_tempo_price = DatabaseTempo().get_config("price")
                 tempo_color_ref = {}
-                for tempo_data in DB.get_tempo():
+                for tempo_data in DatabaseTempo().get():
                     tempo_color_ref[tempo_data.date] = tempo_data.color
 
                 stats = Stat(usage_point_id=self.usage_point_id, measurement_direction="consumption")
@@ -257,11 +260,11 @@ class HomeAssistantWs:
                             cost = value * self.usage_point_id_config.consumption_price_hp / 1000
                             tag = "hp"
                     elif plan.upper() == "TEMPO":
-                        if 600 <= hour_minute < 2200:
+                        if TEMPO_BEGIN <= hour_minute < TEMPO_END:
                             hour_type = "HP"
                         else:
                             hour_type = "HC"
-                        if 600 <= hour_minute <= 2330:
+                        if TEMPO_BEGIN <= hour_minute <= 2359:
                             date = datetime.combine(data.date, datetime.min.time())
                         else:
                             date = datetime.combine(data.date - timedelta(days=1), datetime.min.time())
@@ -393,16 +396,9 @@ class HomeAssistantWs:
                 if "max_date" in self.config:
                     logging.warning("WARNING : Max date détectée %s", self.config["max_date"])
                     begin = datetime.strptime(self.config["max_date"], "%Y-%m-%d")
-                    detail = DB.get_detail_all(
-                        begin=begin,
-                        usage_point_id=self.usage_point_id,
-                        measurement_direction="production",
-                        order_dir="desc",
-                    )
+                    detail = DatabaseDetail(self.usage_point_id, "production").get_all(begin=begin, order_dir="desc")
                 else:
-                    detail = DB.get_detail_all(
-                        usage_point_id=self.usage_point_id, measurement_direction="production", order_dir="desc"
-                    )
+                    detail = DatabaseDetail(self.usage_point_id, "production").get_all(order_dir="desc")
 
                 cost = 0
                 last_year = None

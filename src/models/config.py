@@ -1,5 +1,4 @@
 """Configuration class loader and checker."""
-
 import logging
 import re
 from pathlib import Path
@@ -23,8 +22,8 @@ class Config:
         default (dict): The default configuration settings.
     """
 
-    def __init__(self, path=APPLICATION_PATH_DATA):
-        self.path = path
+    def __init__(self):
+        self.path = APPLICATION_PATH_DATA
         self.db = None
         self.file = "config.yaml"
         self.path_file = f"{self.path}/{self.file}"
@@ -101,6 +100,7 @@ class Config:
                 "keyfile": None,
             },
         }
+        self.load()
 
     def set_db(self, db):
         """Set the database."""
@@ -109,16 +109,11 @@ class Config:
     def load(self):
         """Load the configuration."""
         config_file = f"{self.path_file}"
-        if Path(config_file).exists():
-            with Path(config_file).open(encoding="utf-8") as file:
-                self.config = yaml.safe_load(file)
-
-        else:
+        if not Path(config_file).exists():
             with Path(config_file).open(mode="a", encoding="utf-8") as file:
                 file.write(yaml.dump(self.default))
-            with Path(config_file).open(encoding="utf-8") as file:
-                self.config = yaml.safe_load(file)
-
+        with Path(config_file).open(encoding="utf-8") as file:
+            self.config = yaml.safe_load(file)
         if self.config is None:
             return {
                 "error": True,
@@ -173,7 +168,7 @@ class Config:
         Returns:
             None
         """
-        logging.info("Display configuration :")
+        logging.debug("Display configuration :")
         for key, value in self.config.items():
             if isinstance(value, dict):
                 logging.info(f"  {key}:")

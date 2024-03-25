@@ -5,7 +5,6 @@ from fastapi import APIRouter, HTTPException, Path, Request
 from fastapi.responses import HTMLResponse
 
 from doc import DOCUMENTATION
-from init import DB
 from models.ajax import Ajax
 
 ROUTER = APIRouter(tags=["Données"])

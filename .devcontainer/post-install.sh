@@ -23,3 +23,4 @@ sudo update-ca-certificates --fresh
 echo ""
 echo "Install environment"
 make install
+chmod +x /workspace/.devcontainer/boot.sh

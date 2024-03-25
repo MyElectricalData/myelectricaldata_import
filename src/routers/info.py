@@ -1,10 +1,12 @@
+"""Routers pour les informations générales."""
+
 from typing import Optional
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from init import CONFIG, DB
+from database import DB
 from models.ajax import Ajax
 
 ROUTER = APIRouter(tags=["Infos"])

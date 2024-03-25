@@ -4,14 +4,18 @@ import json
 import logging
 from datetime import datetime, timedelta
 
-import pytz
 from dateutil.relativedelta import relativedelta
 
+from config import TIMEZONE_UTC
+from database.contracts import DatabaseContracts
+from database.daily import DatabaseDaily
+from database.detail import DatabaseDetail
+from database.ecowatt import DatabaseEcowatt
+from database.tempo import DatabaseTempo
+from database.usage_points import DatabaseUsagePoints
 from dependencies import get_version, truncate
-from init import CONFIG, DB, MQTT
+from init import CONFIG, MQTT
 from models.stat import Stat
-
-UTC = pytz.UTC
 
 
 def convert_kw(value):
@@ -109,13 +113,11 @@ class HomeAssistant:  # pylint: disable=R0902
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
-        self.config_usage_point = DB.get_usage_point(self.usage_point_id)
         self.config = None
         self.load_config()
-        self.usage_point = DB.get_usage_point(self.usage_point_id)
+        self.usage_point = DatabaseUsagePoints(self.usage_point_id).get()
         self.mqtt = MQTT
         self.tempo_color = None
-        print(self.config.__dict__)
 
     def load_config(self):
         """Load the configuration for Home Assistant.
@@ -132,7 +134,7 @@ class HomeAssistant:  # pylint: disable=R0902
             if key in config_ha_config:
                 setattr(self.config, key, config_ha_config[key])
 
-        contract = DB.get_contract(self.usage_point_id)
+        contract = DatabaseContracts(self.usage_point_id).get()
         for key in self.config.__dict__:
             if hasattr(contract, key):
                 setattr(self.config, key, getattr(contract, key))
@@ -198,8 +200,8 @@ class HomeAssistant:  # pylint: disable=R0902
             **{
                 "version": get_version(),
                 "activationDate": self.config.activation_date,
-                "lastUpdate": datetime.now(tz=UTC).strftime(self.date_format_detail),
-                "timeLastCall": datetime.now(tz=UTC).strftime(self.date_format_detail),
+                "lastUpdate": datetime.now(tz=TIMEZONE_UTC).strftime(self.date_format_detail),
+                "timeLastCall": datetime.now(tz=TIMEZONE_UTC).strftime(self.date_format_detail),
             },
         }
 
@@ -218,11 +220,11 @@ class HomeAssistant:  # pylint: disable=R0902
             measurement_direction (str): The direction of the measurement (e.g., consumption or production).
         """
         uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_last{days}day"
-        end = datetime.combine(datetime.now(tz=UTC) - timedelta(days=1), datetime.max.time())
+        end = datetime.combine(datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1), datetime.max.time())
         begin = datetime.combine(end - timedelta(days), datetime.min.time())
-        range = DB.get_detail_range(self.usage_point_id, begin, end, measurement_direction)
+        range_detail = DatabaseDetail(self.usage_point_id, measurement_direction).get_range(begin, end)
         attributes = {"time": [], measurement_direction: []}
-        for data in range:
+        for data in range_detail:
             attributes["time"].append(data.date.strftime("%Y-%m-%d %H:%M:%S"))
             attributes[measurement_direction].append(data.value)
         self.sensor(
@@ -247,7 +249,7 @@ class HomeAssistant:  # pylint: disable=R0902
         """
         uniq_id = f"myelectricaldata_linky_{self.usage_point_id}_{measurement_direction}_history"
         stats = Stat(self.usage_point_id, measurement_direction)
-        state = DB.get_daily_last(self.usage_point_id, measurement_direction)
+        state = DatabaseDaily(self.usage_point_id, measurement_direction).get_last()
         if state:
             state = state.value
         else:
@@ -279,7 +281,7 @@ class HomeAssistant:  # pylint: disable=R0902
                   monthly, and yearly values.
         """
         stats = Stat(self.usage_point_id, measurement_direction)
-        state = DB.get_daily_last(self.usage_point_id, measurement_direction)
+        state = DatabaseDaily(self.usage_point_id, measurement_direction).get_last()
         if state:
             state = state.value
         else:
@@ -316,7 +318,7 @@ class HomeAssistant:  # pylint: disable=R0902
             offpeak_hours.append(_offpeak_hours)
             idx = idx + 1
 
-        yesterday = datetime.combine(datetime.now(tz=UTC) - relativedelta(days=1), datetime.max.time())
+        yesterday = datetime.combine(datetime.now(tz=TIMEZONE_UTC) - relativedelta(days=1), datetime.max.time())
         previous_week = datetime.combine(yesterday - relativedelta(days=7), datetime.min.time())
         yesterday_last_year = yesterday - relativedelta(years=1)
 
@@ -403,8 +405,7 @@ class HomeAssistant:  # pylint: disable=R0902
         yesterday_evolution = stats.yesterday_evolution()
         monthly_evolution = stats.monthly_evolution()
         yearly_evolution = stats.yearly_evolution()
-        yesterday_last_year = DB.get_daily_date(
-            self.usage_point_id,
+        yesterday_last_year = DatabaseDaily(self.usage_point_id).get_date(
             datetime.combine(yesterday_last_year, datetime.min.time()),
         )
         dailyweek_cost = []
@@ -415,7 +416,7 @@ class HomeAssistant:  # pylint: disable=R0902
         yesterday_hp_value_cost = 0
         if measurement_direction == "consumption":
             daily_cost = 0
-            plan = DB.get_usage_point_plan(self.usage_point_id)
+            plan = DatabaseUsagePoints(self.usage_point_id).get_plan()
             if plan == "HC/HP":
                 for i in range(7):
                     hp = stats.detail(i, "HP")["value"]
@@ -433,7 +434,7 @@ class HomeAssistant:  # pylint: disable=R0902
                         yesterday_hp_value_cost = convert_kw_to_euro(hp, self.config.consumption_price_hp)
                     dailyweek_cost.append(round(value, 1))
             elif plan == "TEMPO":
-                tempo_config = DB.get_tempo_config("price")
+                tempo_config = DatabaseTempo().get_config("price")
                 for i in range(7):
                     tempo_data = stats.tempo(i)["value"]
                     hp = tempo_data["blue_hp"] + tempo_data["white_hp"] + tempo_data["red_hp"]
@@ -503,7 +504,7 @@ class HomeAssistant:  # pylint: disable=R0902
         if self.config.consumption_max_power:
             yesterday_consumption_max_power = stats.max_power(0)["value"]
 
-        error_last_call = DB.get_error_log(self.usage_point_id)
+        error_last_call = DatabaseUsagePoints(self.usage_point_id).get_error_log()
         if error_last_call is None:
             error_last_call = ""
 
@@ -511,7 +512,9 @@ class HomeAssistant:  # pylint: disable=R0902
             "yesterdayDate": stats.daily(0)["begin"],
             "yesterday": convert_kw(stats.daily(0)["value"]),
             "serviceEnedis": "myElectricalData",
-            "yesterdayLastYearDate": (datetime.now(tz=UTC) - relativedelta(years=1)).strftime(self.date_format),
+            "yesterdayLastYearDate": (datetime.now(tz=TIMEZONE_UTC) - relativedelta(years=1)).strftime(
+                self.date_format
+            ),
             "yesterdayLastYear": convert_kw(yesterday_last_year.value) if hasattr(yesterday_last_year, "value") else 0,
             "daily": [
                 convert_kw(stats.daily(0)["value"]),
@@ -649,9 +652,9 @@ class HomeAssistant:  # pylint: disable=R0902
 
         """
         uniq_id = "myelectricaldata_tempo_today"
-        begin = datetime.combine(datetime.now(tz=UTC), datetime.min.time())
-        end = datetime.combine(datetime.now(tz=UTC), datetime.max.time())
-        tempo_data = DB.get_tempo_range(begin, end, "asc")
+        begin = datetime.combine(datetime.now(tz=TIMEZONE_UTC), datetime.min.time())
+        end = datetime.combine(datetime.now(tz=TIMEZONE_UTC), datetime.max.time())
+        tempo_data = DatabaseTempo().get_range(begin, end, "asc")
         if tempo_data:
             date = tempo_data[0].date.strftime(self.date_format_detail)
             state = tempo_data[0].color
@@ -674,7 +677,6 @@ class HomeAssistant:  # pylint: disable=R0902
         uniq_id = "myelectricaldata_tempo_tomorrow"
         begin = begin + timedelta(days=1)
         end = end + timedelta(days=1)
-        tempo_data = DB.get_tempo_range(begin, end, "asc")
         if tempo_data:
             date = tempo_data[0].date.strftime(self.date_format_detail)
             state = tempo_data[0].color
@@ -702,7 +704,7 @@ class HomeAssistant:  # pylint: disable=R0902
         Returns:
             None
         """
-        tempo_days = DB.get_tempo_config("days")
+        tempo_days = DatabaseTempo().get_config("days")
         for color, days in tempo_days.items():
             self.tempo_days_sensor(f"{color}", days)
 
@@ -738,9 +740,9 @@ class HomeAssistant:  # pylint: disable=R0902
             None
         """
         uniq_id = "myelectricaldata_tempo_info"
-        tempo_days = DB.get_tempo_config("days")
-        tempo_price = DB.get_tempo_config("price")
-        if 22 > int(datetime.now(tz=UTC).strftime("%H")) < 6:
+        tempo_days = DatabaseTempo().get_config("days")
+        tempo_price = DatabaseTempo().get_config("price")
+        if 22 > int(datetime.now(tz=TIMEZONE_UTC).strftime("%H")) < 6:
             measure_type = "hc"
         else:
             measure_type = "hp"
@@ -779,7 +781,7 @@ class HomeAssistant:  # pylint: disable=R0902
         Returns:
             None
         """
-        tempo_price = DB.get_tempo_config("price")
+        tempo_price = DatabaseTempo().get_config("price")
         for color, price in tempo_price.items():
             self.tempo_price_sensor(
                 f"{color}",
@@ -837,9 +839,9 @@ class HomeAssistant:  # pylint: disable=R0902
             None
         """
         uniq_id = f"myelectricaldata_ecowatt_{name}"
-        current_date = datetime.combine(datetime.now(tz=UTC), datetime.min.time()) + timedelta(days=delta)
+        current_date = datetime.combine(datetime.now(tz=TIMEZONE_UTC), datetime.min.time()) + timedelta(days=delta)
         fetch_date = current_date - timedelta(days=1)
-        ecowatt_data = DB.get_ecowatt_range(fetch_date, fetch_date, "asc")
+        ecowatt_data = DatabaseEcowatt().get_range(fetch_date, fetch_date, "asc")
         day_value = 0
         if ecowatt_data:
             forecast = {}

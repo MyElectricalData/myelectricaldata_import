@@ -1,23 +1,33 @@
+"""The 'Daily' class represents a daily data retrieval and manipulation process for a specific usage point."""
+
 import json
 import logging
 from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 
-from config import DAILY_MAX_DAYS, URL
-from init import CONFIG, DB
+from config import (
+    CODE_200_SUCCESS,
+    CODE_400_BAD_REQUEST,
+    CODE_403_FORBIDDEN,
+    CODE_409_CONFLICT,
+    CODE_500_INTERNAL_SERVER_ERROR,
+    DAILY_MAX_DAYS,
+    TIMEZONE_UTC,
+    URL,
+)
+from database.contracts import DatabaseContracts
+from database.daily import DatabaseDaily
+from database.usage_points import DatabaseUsagePoints
+from dependencies import daterange
 from models.query import Query
 from models.stat import Stat
 
 
-def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days)):
-        yield start_date + timedelta(n)
-
-
 class Daily:
-    """
-    The 'Daily' class represents a daily data retrieval and manipulation process for a specific usage point. It provides methods for fetching, resetting, deleting, and blacklisting daily data.
+    """The 'Daily' class represents a daily data retrieval and manipulation process for a specific usage point.
+
+    It provides methods for fetching, resetting, deleting, and blacklisting daily data.
 
     Attributes:
         config (dict): The configuration settings.
@@ -68,18 +78,16 @@ class Daily:
     """
 
     def __init__(self, headers, usage_point_id, measure_type="consumption"):
-        self.config = CONFIG
-        self.db = DB
         self.url = URL
         self.max_daily = 1095
         self.date_format = "%Y-%m-%d"
         self.date_detail_format = "%Y-%m-%d %H:%M:%S"
         self.headers = headers
         self.usage_point_id = usage_point_id
-        self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
-        self.contract = self.db.get_contract(self.usage_point_id)
+        self.usage_point_config = DatabaseUsagePoints(self.usage_point_id).get()
+        self.contract = DatabaseContracts(self.usage_point_id).get()
         self.daily_max_days = int(DAILY_MAX_DAYS)
-        self.max_days_date = datetime.utcnow() - timedelta(days=self.daily_max_days)
+        self.max_days_date = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=self.daily_max_days)
         if (
             measure_type == "consumption"
             and hasattr(self.usage_point_config, "consumption_max_date")
@@ -107,20 +115,19 @@ class Daily:
         if measure_type == "consumption":
             if hasattr(self.usage_point_config, "consumption_price_base"):
                 self.base_price = self.usage_point_config.consumption_price_base
-        else:
-            if hasattr(self.usage_point_config, "production_price"):
-                self.base_price = self.usage_point_config.production_price
+        elif hasattr(self.usage_point_config, "production_price"):
+            self.base_price = self.usage_point_config.production_price
 
     def run(self, begin, end):
+        """Retrieves and stores daily data for a specified date range."""
         begin_str = begin.strftime(self.date_format)
         end_str = end.strftime(self.date_format)
         logging.info(f"Récupération des données : {begin_str} => {end_str}")
         endpoint = f"daily_{self.measure_type}/{self.usage_point_id}/start/{begin_str}/end/{end_str}"
-        # if begin < now() - timedelta(days=7):
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
             endpoint += "/cache"
         try:
-            current_data = self.db.get_daily(self.usage_point_id, begin, end, self.measure_type)
+            current_data = DatabaseDaily(self.usage_point_id, self.measure_type).get(begin, end)
             if not current_data["missing_data"]:
                 logging.info(" => Toutes les données sont déjà en cache.")
                 output = []
@@ -130,7 +137,7 @@ class Daily:
             else:
                 logging.info(f" Chargement des données depuis MyElectricalData {begin_str} => {end_str}")
                 data = Query(endpoint=f"{self.url}/{endpoint}/", headers=self.headers).get()
-                if data.status_code == 403:
+                if data.status_code == CODE_403_FORBIDDEN:
                     if hasattr(data, "text"):
                         description = json.loads(data.text)["detail"]
                     else:
@@ -138,7 +145,7 @@ class Daily:
                     if hasattr(data, "status_code"):
                         status_code = data.status_code
                     else:
-                        status_code = 500
+                        status_code = CODE_500_INTERNAL_SERVER_ERROR
                     return {
                         "error": True,
                         "description": description,
@@ -147,31 +154,31 @@ class Daily:
                     }
                 else:
                     blacklist = 0
-                    max_histo = datetime.combine(datetime.now(), datetime.max.time()) - timedelta(days=1)
+                    max_histo = datetime.combine(datetime.now(tz=TIMEZONE_UTC), datetime.max.time()) - timedelta(
+                        days=1
+                    )
                     if hasattr(data, "status_code"):
-                        if data.status_code == 200:
+                        if data.status_code == CODE_200_SUCCESS:
                             meter_reading = json.loads(data.text)["meter_reading"]
                             interval_reading = meter_reading["interval_reading"]
                             interval_reading_tmp = {}
                             for interval_reading_data in interval_reading:
                                 interval_reading_tmp[interval_reading_data["date"]] = interval_reading_data["value"]
                             for single_date in daterange(begin, end):
-                                if single_date < max_histo:
-                                    if single_date.strftime(self.date_format) in interval_reading_tmp:
+                                single_date_tz = single_date.replace(tzinfo=TIMEZONE_UTC)
+                                max_histo = max_histo.replace(tzinfo=TIMEZONE_UTC)
+                                if single_date_tz < max_histo:
+                                    if single_date_tz.strftime(self.date_format) in interval_reading_tmp:
                                         # FOUND
-                                        self.db.insert_daily(
-                                            usage_point_id=self.usage_point_id,
-                                            date=datetime.combine(single_date, datetime.min.time()),
-                                            value=interval_reading_tmp[single_date.strftime(self.date_format)],
+                                        DatabaseDaily(self.usage_point_id, self.measure_type).insert(
+                                            date=datetime.combine(single_date_tz, datetime.min.time()),
+                                            value=interval_reading_tmp[single_date_tz.strftime(self.date_format)],
                                             blacklist=blacklist,
-                                            measurement_direction=self.measure_type,
                                         )
                                     else:
                                         # NOT FOUND
-                                        self.db.daily_fail_increment(
-                                            usage_point_id=self.usage_point_id,
-                                            date=datetime.combine(single_date, datetime.min.time()),
-                                            measurement_direction=self.measure_type,
+                                        DatabaseDaily(self.usage_point_id, self.measure_type).fail_increment(
+                                            date=datetime.combine(single_date_tz, datetime.min.time()),
                                         )
                             return interval_reading
                         else:
@@ -188,7 +195,7 @@ class Daily:
                         if hasattr(data, "status_code"):
                             status_code = data.status_code
                         else:
-                            status_code = 500
+                            status_code = CODE_500_INTERNAL_SERVER_ERROR
                         return {
                             "error": True,
                             "description": description,
@@ -222,10 +229,16 @@ class Daily:
         Note:
             The end date is exclusive, meaning it is not included in the range.
         """
-        end = datetime.combine((datetime.now() + timedelta(days=2)), datetime.max.time())
-        begin = datetime.combine(end - relativedelta(days=self.max_daily), datetime.min.time())
+        end = datetime.combine((datetime.now(tz=TIMEZONE_UTC) + timedelta(days=2)), datetime.max.time()).astimezone(
+            TIMEZONE_UTC
+        )
+        begin = datetime.combine(end - relativedelta(days=self.max_daily), datetime.min.time()).astimezone(
+            TIMEZONE_UTC
+        )
         finish = True
         result = []
+        print(self.activation_date, begin)
+        self.activation_date = self.activation_date.astimezone(TIMEZONE_UTC)
         while finish:
             if self.max_days_date > begin:
                 # Max day reached
@@ -255,40 +268,48 @@ class Daily:
                     "error": True,
                     "description": "MyElectricalData est indisponible.",
                 }
-            if "error" in response and response["error"]:
+            if "error" in response and response.get("error"):
                 logging.error("Echec de la récupération des données")
                 logging.error(f'=> {response["description"]}')
                 logging.error(f"=> {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
-            if "status_code" in response and (response["status_code"] == 409 or response["status_code"] == 400):
+            if "status_code" in response and (
+                response["status_code"] == CODE_409_CONFLICT or response["status_code"] == CODE_400_BAD_REQUEST
+            ):
                 finish = False
                 logging.error("Arrêt de la récupération des données suite à une erreur.")
-                logging.error(f"Prochain lancement à {datetime.now() + timedelta(seconds=self.config.get('cycle'))}")
+                logging.error(
+                    "Prochain lancement à "
+                    f"{datetime.now(tz=TIMEZONE_UTC) + timedelta(seconds=self.config.get('cycle'))}"
+                )
         return result
 
     def reset(self, date=None):
+        """Resets the daily data for the usage point, optionally for a specific date."""
         if date is not None:
-            date = datetime.strptime(date, self.date_format)
-        self.db.reset_daily(self.usage_point_id, date, self.measure_type)
+            date = datetime.strptime(date, self.date_format).astimezone(TIMEZONE_UTC)
+        DatabaseDaily(self.usage_point_id, self.measure_type).reset(date)
         return True
 
     def delete(self, date=None):
+        """Deletes the daily data for the usage point, optionally for a specific date."""
         if date is not None:
-            date = datetime.strptime(date, self.date_format)
-        self.db.delete_daily(self.usage_point_id, date, self.measure_type)
+            date = datetime.strptime(date, self.date_format).astimezone(TIMEZONE_UTC)
+        DatabaseDaily(self.usage_point_id, self.measure_type).delete(date)
         return True
 
     def fetch(self, date):
+        """Fetches and returns the daily data for a specific date."""
         if date is not None:
-            date = datetime.strptime(date, self.date_format)
+            date = datetime.strptime(date, self.date_format).astimezone(TIMEZONE_UTC)
         result = self.run(
             datetime.combine(date - timedelta(days=2), datetime.min.time()),
             datetime.combine(date + timedelta(days=2), datetime.min.time()),
         )
-        if "error" in result and result["error"]:
+        if result.get("error"):
             return {
                 "error": True,
                 "notif": result["description"],
-                "fail_count": self.db.get_daily_fail_count(self.usage_point_id, date, self.measure_type),
+                "fail_count": DatabaseDaily(self.usage_point_id, date, self.measure_type).get_fail_count(),
             }
         for item in result:
             if date.strftime(self.date_format) in item["date"]:
@@ -299,11 +320,12 @@ class Daily:
         return {
             "error": True,
             "notif": f"Aucune donnée n'est disponible chez Enedis sur cette date ({date})",
-            "fail_count": self.db.get_daily_fail_count(self.usage_point_id, date, self.measure_type),
+            "fail_count": DatabaseDaily(self.usage_point_id, date, self.measure_type).get_fail_count(),
         }
 
     def blacklist(self, date, action):
+        """Adds or removes a date from the blacklist for the usage point."""
         if date is not None:
-            date = datetime.strptime(date, self.date_format)
-        self.db.blacklist_daily(self.usage_point_id, date, action, self.measure_type)
+            date = datetime.strptime(date, self.date_format).astimezone(TIMEZONE_UTC)
+        DatabaseDaily(self.usage_point_id, date, self.measure_type).blacklist(date, action)
         return True

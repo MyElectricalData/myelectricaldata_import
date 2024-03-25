@@ -2,7 +2,6 @@ import __main__ as app
 from jinja2 import Template
 
 from dependencies import APPLICATION_PATH
-from init import DB
 from templates.models.configuration import Configuration
 
 

@@ -1,14 +1,23 @@
+"""Usage point template."""
 import ast
 import json
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import markdown
+import pytz
 from jinja2 import Template
 from mergedeep import Strategy, merge
 
+from database.addresses import DatabaseAddresses
+from database.contracts import DatabaseContracts
+from database.daily import DatabaseDaily
+from database.statistique import DatabaseStatistique
+from database.tempo import DatabaseTempo
+from database.usage_points import DatabaseUsagePoints
 from dependencies import APPLICATION_PATH, get_version
-from init import CONFIG, DB
+from init import CONFIG
 from models.stat import Stat
 from templates.models.configuration import Configuration
 from templates.models.menu import Menu
@@ -17,18 +26,18 @@ from templates.models.usage_point_select import UsagePointSelect
 
 
 class UsagePoint:
+    """Represents a usage point."""
+
     def __init__(self, usage_point_id):
-        # if not DB.lock_status():
+        """Initialize a UsagePoint object."""
         self.config = CONFIG
-        self.db = DB
-        self.db.refresh_object()
         self.application_path = APPLICATION_PATH
         self.usage_point_id = usage_point_id
-        self.current_years = int(datetime.now().strftime("%Y"))
+        self.current_years = int(datetime.now(tz=pytz.utc).strftime("%Y"))
         self.max_history = 4
         self.max_history_chart = 6
         if self.usage_point_id is not None:
-            self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
+            self.usage_point_config = DatabaseUsagePoints(self.usage_point_id).get()
             if hasattr(self.usage_point_config, "token"):
                 self.headers = {
                     "Content-Type": "application/json",
@@ -38,7 +47,7 @@ class UsagePoint:
                 }
             else:
                 self.headers = None
-        self.usage_point_select = UsagePointSelect(self.config, self.db, usage_point_id)
+        self.usage_point_select = UsagePointSelect(self.config, usage_point_id)
         self.side_menu = SideMenu()
         menu = {}
         menu = merge(
@@ -169,12 +178,11 @@ class UsagePoint:
         )
         self.menu = Menu(menu)
         self.configuration_div = Configuration(
-            self.db,
             f"Modification du point de livraison {self.usage_point_id}",
             self.usage_point_id,
         )
-        self.contract = self.db.get_contract(self.usage_point_id)
-        self.address = self.db.get_addresse(self.usage_point_id)
+        self.contract = DatabaseContracts(self.usage_point_id).get()
+        self.address = DatabaseAddresses(self.usage_point_id).get()
         self.javascript = ""
         self.recap_consumption_data = {}
         self.recap_consumption_price = {}
@@ -183,20 +191,20 @@ class UsagePoint:
         self.recap_production_price = {}
         self.recap_hc_hp = "Pas de données."
 
-    def display(self):
-        # if self.db.lock_status():
-        #     return Loading().display()
-        # else:
+    def display(self):  # noqa: C901, PLR0912, PLR0915
+        """Display the usage point page.
+
+        Returns:
+            str: The HTML content of the usage point page.
+        """
         if self.headers is None:
             self.javascript = "window.location.href = '/';"
-            with open(f"{self.application_path}/templates/html/usage_point_id.html") as file_:
+            with Path(f"{self.application_path}/templates/html/usage_point_id.html").open() as file_:
                 index_template = Template(file_.read())
             html = index_template.render(
                 select_usage_points=self.usage_point_select.html(),
-                javascript_loader=open(f"{self.application_path}/templates/html/head.html").read(),
+                javascript_loader=Path(f"{self.application_path}/templates/html/head.html").read_text(),
                 side_menu=self.side_menu.html(),
-                javascript=self.javascript,
-                # configuration=self.configuration_div.html().strip(),
                 menu=self.menu.html(),
                 css=self.menu.css(),
             )
@@ -210,7 +218,7 @@ class UsagePoint:
             else:
                 title = address
 
-            with open(f"{self.application_path}/templates/md/usage_point_id.md") as file_:
+            with Path(f"{self.application_path}/templates/md/usage_point_id.md").open() as file_:
                 homepage_template = Template(file_.read())
             body = homepage_template.render(
                 title=title,
@@ -224,19 +232,19 @@ class UsagePoint:
             # TEMPO
             tempo_config = None
             if self.usage_point_config.plan == "Tempo":
-                tempo_config = self.db.get_tempo_config("price")
+                tempo_config = DatabaseTempo().get_config("price")
                 body += "<h1>Tempo</h1>"
-                today = datetime.combine(datetime.now(), datetime.min.time())
-                tomorow = datetime.combine(datetime.now() + timedelta(days=1), datetime.min.time())
-                tempo = self.db.get_tempo_range(today, tomorow, "asc")
+                today = datetime.combine(datetime.now(tz=pytz.utc), datetime.min.time())
+                tomorow = datetime.combine(datetime.now(tz=pytz.utc) + timedelta(days=1), datetime.min.time())
+                tempo = DatabaseTempo().get_range(today, tomorow, "asc")
                 if tempo_config:
                     body += f"""
-                    <table style="width:100%" class="table_recap">
-                        <tr>
-                            <td style="width:50%; text-align: center">Aujourd'hui <br> {today.strftime("%d-%m-%Y")}</td>
-                            <td style="width:50%; text-align: center">Demain <br> {tomorow.strftime("%d-%m-%Y")}</td>
-                        </tr>
-                        <tr>"""
+                <table style="width:100%" class="table_recap">
+                    <tr>
+                        <td style="width:50%; text-align: center">Aujourd'hui <br> {today.strftime("%d-%m-%Y")}</td>
+                        <td style="width:50%; text-align: center">Demain <br> {tomorow.strftime("%d-%m-%Y")}</td>
+                    </tr>
+                    <tr>"""
                     tempo_template = {
                         "?": {
                             "color": "background-color: #000000",
@@ -272,12 +280,14 @@ class UsagePoint:
                         color = tempo[0].color
                     else:
                         color = "?"
-                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
+                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};
+                    {tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
                     if len(tempo) > 1:
                         color = tempo[1].color
                     else:
                         color = "?"
-                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};{tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
+                    body += f"""<td style="width:50%; text-align: center; {tempo_template[color]["color"]};
+                    {tempo_template[color]["text_color"]}">{tempo_template[color]["text"]}</td>"""
                     body += """</tr>
                     </table>
                     """
@@ -287,7 +297,6 @@ class UsagePoint:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 self.generate_data("consumption")
                 self.consumption()
-                # recap_consumption = self.recap(data=self.recap_consumption_data)
                 recap_consumption = self.recapv2()
                 body += "<h2>Consommation</h2>"
                 body += str(recap_consumption)
@@ -345,8 +354,6 @@ class UsagePoint:
                 body += "<h2>Consommation VS Production</h2>"
                 for year, data in self.recap_consumption_data.items():
                     if data["value"] != 0:
-                        # body += f'<div><h3>{year}</h3></div>'
-                        # body += f'<div>{self.consumption_vs_production(year)}</div>'
                         self.consumption_vs_production(year)
                         body += f'<div id="chart_daily_production_compare_{year}"></div>'
 
@@ -389,7 +396,10 @@ class UsagePoint:
                 """
             if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
                 body += "<h3>Horaires</h2>"
-                body += "<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
+                body += (
+                    "<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité "
+                    "du cache de la journée.</li></ul>"
+                )
                 body += """
                 <table id="dataTableConsommationDetail" class="display">
                     <thead>
@@ -442,15 +452,16 @@ class UsagePoint:
                     </tr>
                     <tr>
                         <td style='border: none'></td>
-                        <td style='border: none'>ATTENTION, Un dépassement d'abonnement ne veut pas forcement dire 
+                        <td style='border: none'>ATTENTION, Un dépassement d'abonnement ne veut pas forcement dire
                         qu'il est nécessaire de basculer sur un abonnement supérieur.
                         Le compteur Linky vous autorise à dépasser un certain seuil pendant un certain temps afin
-                        d'absorber un pic de consommation anormal sans pour autant disjoncter.                        
+                        d'absorber un pic de consommation anormal sans pour autant disjoncter.
                         </td>
                     </tr>
                     <tr>
                         <td style='border: none'></td>
-                        <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Lien vers la documentation officielle d’Enedis.</a> (cf. chapitre 7)</td>
+                        <td style='border: none'><a href="https://www.enedis.fr/media/2035/download">Lien vers la
+                          documentation officielle d'Enedis.</a> (cf. chapitre 7)</td>
                     </tr>
                 </table>"""
                 body += """
@@ -516,7 +527,10 @@ class UsagePoint:
                 """
             if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
                 body += "<h3>Horaires</h2>"
-                body += "<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache de la journée.</li></ul>"
+                body += (
+                    "<ul><li>Quand vous videz le cache d'une tranche horaire, vous supprimez la totalité du cache"
+                    "de la journée.</li></ul>"
+                )
                 body += """
                 <table id="dataTableProductionDetail" class="display">
                     <thead>
@@ -546,11 +560,11 @@ class UsagePoint:
                 </table>
                 """
 
-            with open(f"{self.application_path}/templates/html/usage_point_id.html") as file_:
+            with Path(f"{self.application_path}/templates/html/usage_point_id.html").open() as file_:
                 index_template = Template(file_.read())
             html = index_template.render(
                 select_usage_points=self.usage_point_select.html(),
-                javascript_loader=open(f"{self.application_path}/templates/html/head.html").read(),
+                javascript_loader=Path(f"{self.application_path}/templates/html/head.html").open().read(),
                 body=body,
                 side_menu=self.side_menu.html(),
                 javascript=(
@@ -558,11 +572,11 @@ class UsagePoint:
                     + self.side_menu.javascript()
                     + self.usage_point_select.javascript()
                     + self.menu.javascript()
-                    + open(f"{self.application_path}/templates/js/loading.js").read()
-                    + open(f"{self.application_path}/templates/js/notif.js").read()
-                    + open(f"{self.application_path}/templates/js/gateway_status.js").read()
-                    + open(f"{self.application_path}/templates/js/datatable.js").read()
-                    + open(f"{self.application_path}/templates/js/loading.js").read()
+                    + Path(f"{self.application_path}/templates/js/loading.js").open().read()
+                    + Path(f"{self.application_path}/templates/js/notif.js").open().read()
+                    + Path(f"{self.application_path}/templates/js/gateway_status.js").open().read()
+                    + Path(f"{self.application_path}/templates/js/datatable.js").open().read()
+                    + Path(f"{self.application_path}/templates/js/loading.js").open().read()
                     + self.javascript
                 ),
                 configuration=self.configuration_div.html().strip(),
@@ -572,6 +586,7 @@ class UsagePoint:
             return html
 
     def contract_data(self):
+        """Return the contract data for the usage point."""
         contract_data = {}
         if self.contract is not None:
             last_activation_date = self.contract.last_activation_date
@@ -596,6 +611,8 @@ class UsagePoint:
         return contract_data
 
     def offpeak_hours_table(self):
+        """Return the offpeak hours table for the usage point."""
+
         def split(data):
             result = ""
             if data is not None:
@@ -618,7 +635,8 @@ class UsagePoint:
             </tr>
             <tr>"""
         day = 0
-        while day <= 6:
+        max_day_offpeak = 6
+        while day <= max_day_offpeak:
             week_day = f"offpeak_hours_{day}"
             if (
                 hasattr(self.contract, week_day)
@@ -629,22 +647,26 @@ class UsagePoint:
                 contract_offpeak_hours = split(getattr(self.contract, week_day))
                 config_offpeak_hours = split(getattr(self.usage_point_config, week_day))
                 if getattr(self.usage_point_config, week_day) != getattr(self.contract, week_day):
-                    offpeak_hours += f"<td><i style='text-decoration:line-through;'>{contract_offpeak_hours}</i><br>{config_offpeak_hours}</td>"
+                    offpeak_hours += (
+                        f"<td><i style='text-decoration:line-through;'>{contract_offpeak_hours}</i>"
+                        f"<br>{config_offpeak_hours}</td>"
+                    )
                 else:
                     offpeak_hours += f"<td>{contract_offpeak_hours}</td>"
             else:
-                offpeak_hours += f"<td>Pas de données.</td>"
+                offpeak_hours += "<td>Pas de données.</td>"
             day = day + 1
         offpeak_hours += "</tr></table>"
         return offpeak_hours
 
     def get_address(self):
+        """Return the address of the usage point."""
         if self.address is not None:
             return f"{self.address.street}, " f"{self.address.postal_code} " f"{self.address.city}"
-        else:
-            return None
+        return None
 
-    def consumption(self):
+    def consumption(self):  # noqa: C901
+        """Return the consumption data for the usage point."""
         if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
             if self.recap_consumption_data:
                 self.javascript += """
@@ -676,20 +698,21 @@ class UsagePoint:
                             table_value += ", "
                     self.javascript += f"['{month}', {table_value}],"
                 self.javascript += """]);
-                            var options = {
-                              title : '',
-                              vAxis: {title: 'Consommation (kWh)'},
-                              hAxis: {title: 'Mois'},
-                              seriesType: 'bars',
-                              series: {5: {type: 'line'}}
-                            };
+                var options = {
+                    title : '',
+                    vAxis: {title: 'Consommation (kWh)'},
+                    hAxis: {title: 'Mois'},
+                    seriesType: 'bars',
+                    series: {5: {type: 'line'}}
+                };
 
-                            var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption'));
-                            chart.draw(data, options);
-                        }
+                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_consumption'));
+                chart.draw(data, options);
+            }
                             """
 
-    def production(self):
+    def production(self):  # noqa: C901
+        """Return the production data for the usage point."""
         if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
             if self.recap_production_data:
                 self.javascript += """
@@ -721,19 +744,20 @@ class UsagePoint:
                             table_value += ", "
                     self.javascript += f"['{month}', {table_value}],"
                 self.javascript += """]);
-                                var options = {
-                                  vAxis: {title: 'Production (kWh)'},
-                                  hAxis: {title: 'Mois'},
-                                  seriesType: 'bars',
-                                  series: {5: {type: 'line'}}
-                                };
+                var options = {
+                    vAxis: {title: 'Production (kWh)'},
+                    hAxis: {title: 'Mois'},
+                    seriesType: 'bars',
+                    series: {5: {type: 'line'}}
+                };
 
-                                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production'));
-                                chart.draw(data, options);
-                            }
+                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production'));
+                chart.draw(data, options);
+            }
                             """
 
     def consumption_vs_production(self, year):
+        """Return the consumption vs production data for the usage point."""
         if self.recap_production_data != {} and self.usage_point_config.production != {}:
             # For a given year, we want to return the union of all months where
             # energy was either consumed or produced.
@@ -756,7 +780,7 @@ class UsagePoint:
                 production = self.recap_production_data[year]["month"][month] if month in production_months else 0
                 compare_comsuption_production[month] = [float(consumption) / 1000, float(production) / 1000]
             self.javascript += (
-                """            
+                """
             google.charts.load("current", {packages:["corechart"]});
             google.charts.setOnLoadCallback(drawChartProductionVsConsumption"""
                 + year
@@ -771,9 +795,10 @@ class UsagePoint:
             for month, data in compare_comsuption_production.items():
                 table_value = ""
                 for idx, value in enumerate(data):
+                    new_value = None
                     if value == "":
-                        value = 0
-                    table_value += f"{value}"
+                        new_value = 0
+                    table_value += f"{new_value}"
                     if idx + 1 < len(data):
                         table_value += ", "
                 self.javascript += f"['{month}', {table_value}],"
@@ -782,16 +807,17 @@ class UsagePoint:
                 ])
                 data.sort([{column: 0}]);
                 var options = {
-                  title : '"""
+                    title : '"""
                 + year
                 + """',
-                  vAxis: {title: 'Consommation (kWh)'},
-                  hAxis: {title: 'Mois'},
-                  seriesType: 'bars',
-                  series: {5: {type: 'line'}}
+                    vAxis: {title: 'Consommation (kWh)'},
+                    hAxis: {title: 'Mois'},
+                    seriesType: 'bars',
+                    series: {5: {type: 'line'}}
                 };
 
-                var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_"""
+                var chart = new google.visualization.ComboChart(
+                        document.getElementById('chart_daily_production_compare_"""
                 + year
                 + """'));
                 chart.draw(data, options);
@@ -802,7 +828,10 @@ class UsagePoint:
             return "Pas de données."
 
     def generate_chart_hc_hp(self):
-        price_consumption = self.db.get_stat(self.usage_point_id, "price_consumption")
+        """Generate the chart for the usage point."""
+        price_consumption = DatabaseStatistique(
+            self.usage_point_id,
+        ).get("price_consumption")
         if price_consumption and hasattr(price_consumption[0], "value"):
             recap = ast.literal_eval(price_consumption[0].value)
             for year, data in sorted(recap.items(), reverse=True):
@@ -817,7 +846,6 @@ class UsagePoint:
                 self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
                 self.javascript += f"['HC',     {data['HC']['Wh']}],"
                 self.javascript += f"['HP',     {data['HP']['Wh']}],"
-                # self.javascript += f"['BASE',     {data['BASE']['Wh']}],"
                 self.javascript += (
                     """
                     ]);
@@ -837,7 +865,8 @@ class UsagePoint:
             logging.error("Pas de données.")
 
     def generate_data(self, measurement_direction):
-        data = self.db.get_daily_all(self.usage_point_id, measurement_direction)
+        """Generate the data for the usage point."""
+        data = DatabaseDaily(self.usage_point_id, measurement_direction).get_all()
         result = {}
         for item in data:
             year = item.date.strftime("%Y")
@@ -854,6 +883,8 @@ class UsagePoint:
             self.recap_production_data = result
 
     def get_price(self, measurement_direction):
+        """Return the price for the usage point."""
+
         def generate_price_compare(data):
             evolution_1 = round(data["price_2"] - data["price_1"], 2)
             evolution_2 = round(data["price_3"] - data["price_1"], 2)
@@ -869,14 +900,18 @@ class UsagePoint:
             if color_1 == "red" and color_2 == "red":
                 text_color = "rgb(16, 150, 24);"
             return (
-                f"<td>"
-                f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{data['price_1']} €</b></div>"
-                f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>{data['lib_1']} : {evolution_1}€</span><br>"
-                f"<span style='color: {color_2}; font-size: 12px'>{data['lib_2']} : {evolution_2}€</span></div>"
-                f"</td>"
+                "<td>"
+                "<div style='float: left; width: 50%; padding-top: 14px;'>"
+                f"<b style='font-size: 18px; color: {text_color}'>{data['price_1']} €</b>"
+                "</div>"
+                "<div style='float: right; width: 50%'>"
+                f"<span style='color: {color_1}; font-size: 12px'>{data['lib_1']} : {evolution_1}€</span><br>"
+                f"<span style='color: {color_2}; font-size: 12px'>{data['lib_2']} : {evolution_2}€</span>"
+                "</div>"
+                "</td>"
             )
 
-        data = self.db.get_stat(self.usage_point_id, f"price_{measurement_direction}")
+        data = DatabaseStatistique(self.usage_point_id).get(f"price_{measurement_direction}")
         html = ""
         if len(data) > 0:
             data = data[0]
@@ -888,7 +923,6 @@ class UsagePoint:
                     <td>Base</td>
                     <td>HP/HC</td>
             """
-            tempo_config = self.config.tempo_config()
             html += "<td>Tempo</td>"
             html += "</tr>"
             if data:
@@ -896,10 +930,9 @@ class UsagePoint:
                 for years, value in data_value.items():
                     price_base = round(value["BASE"]["euro"], 2)
                     price_hchp = round(value["HC"]["euro"] + value["HP"]["euro"], 2)
-                    tempo_config = self.config.tempo_config()
                     price_tempo = None
                     value_tempo = 0
-                    for color, tempo in value["TEMPO"].items():
+                    for _, tempo in value["TEMPO"].items():
                         value_tempo = value_tempo + tempo["euro"]
                     price_tempo = round(value_tempo, 2)
                     html += "<tr>"
@@ -935,16 +968,18 @@ class UsagePoint:
             html += "</table>"
         return html
 
-    def recap(self, data):
+    def recap(self, data):  # noqa: PLR0915, PLR0912, C901
+        """Return the recap for the usage point."""
         if data:
-            current_years = int(datetime.now().strftime("%Y"))
-            current_month = datetime.now().strftime("%m")
+            current_years = int(datetime.now(tz=pytz.utc).strftime("%Y"))
+            current_month = datetime.now(tz=pytz.utc).strftime("%m")
             max_history = current_years - self.max_history
             linear_years = {}
             mount_count = 0
             first_occurance = False
-            for linear_year, linear_data in reversed(sorted(data.items())):
-                for linear_month, linear_value in reversed(sorted(linear_data["month"].items())):
+            nb_month = 12
+            for _linear_year, linear_data in sorted(data.items(), reverse=True):
+                for _linear_month, linear_value in sorted(linear_data["month"].items(), reverse=True):
                     key = f"{current_month}/{current_years} => {current_month}/{current_years - 1}"
                     if not first_occurance and linear_value != 0:
                         first_occurance = True
@@ -953,26 +988,26 @@ class UsagePoint:
                             linear_years[key] = 0
                         linear_years[key] = linear_years[key] + linear_value
                         mount_count = mount_count + 1
-                        if mount_count >= 12:
+                        if mount_count >= nb_month:
                             current_years = current_years - 1
                             mount_count = 0
             body = '<table class="table_recap"><tr>'
             body += '<th class="table_recap_header">Annuel</th>'
-            current_years = int(datetime.now().strftime("%Y"))
-            for year, data in reversed(sorted(data.items())):
+            current_years = int(datetime.now(tz=pytz.utc).strftime("%Y"))
+            for year, year_data in sorted(data.items(), reverse=True):
                 if int(year) > max_history:
                     body += f"""
-                <td class="table_recap_data">                    
+                <td class="table_recap_data">
                     <div class='recap_years_title'>{year}</div>
-                    <div class='recap_years_value'>{round(data['value'] / 1000)} kWh</div>
-                </td>    
+                    <div class='recap_years_value'>{round(year_data['value'] / 1000)} kWh</div>
+                </td>
                 """
                     current_years = current_years - 1
             body += "</tr>"
             body += "<tr>"
             body += '<th class="table_recap_header">Annuel linéaire</th>'
-            current_years = int(datetime.now().strftime("%Y"))
-            for year, data in linear_years.items():
+            current_years = int(datetime.now(tz=pytz.utc).strftime("%Y"))
+            for year, year_data in linear_years.items():
                 if current_years > max_history:
                     data_last_years_class = ""
                     data_last_years = 0
@@ -980,7 +1015,7 @@ class UsagePoint:
                     if str(key) in linear_years:
                         data_last_years = linear_years[str(key)]
                         if data_last_years != 0:
-                            data_last_years = round((100 * int(data)) / int(data_last_years) - 100, 2)
+                            data_last_years = round((100 * int(year_data)) / int(data_last_years) - 100, 2)
                         current_years = current_years - 1
                         if data_last_years >= 0:
                             if data_last_years == 0:
@@ -991,11 +1026,11 @@ class UsagePoint:
                         else:
                             data_last_years_class = "green"
                     body += f"""
-                <td class="table_recap_data">                    
+                <td class="table_recap_data">
                     <div class='recap_years_title'>{year}</div>
-                    <div class='recap_years_value'>{round(data / 1000)} kWh</div>
+                    <div class='recap_years_value'>{round(year_data / 1000)} kWh</div>
                     <div class='recap_years_value {data_last_years_class}'><b>{data_last_years}%</b></div>
-                </td>                
+                </td>
                 """
             body += "</tr>"
             body += "</table>"
@@ -1004,6 +1039,7 @@ class UsagePoint:
         return body
 
     def recapv2(self, measurement_direction="consumption"):
+        """Return the recap for the usage point."""
         idx = 0
         finish = False
         output_data = {"years": {}, "linear": {}}
