@@ -3,14 +3,14 @@ import logging
 import requests
 
 from dependencies import str2bool
-from init import CONFIG
+from database.config import DatabaseConfig
 
 
 class Query(object):
     def __init__(self, endpoint, headers=None):
         self.endpoint = endpoint
         self.timeout = 60
-        check_ssl = CONFIG.get("ssl")
+        check_ssl = DatabaseConfig().get("ssl")
         if check_ssl and "gateway" in check_ssl:
             self.ssl_valid = str2bool(check_ssl["gateway"])
         else:

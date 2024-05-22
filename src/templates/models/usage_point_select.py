@@ -2,13 +2,16 @@ import json
 
 from jinja2 import Template
 
+from database.addresses import DatabaseAddresses
+from database.usage_points import DatabaseUsagePoints
 from dependencies import APPLICATION_PATH
 
 
 class UsagePointSelect:
-    def __init__(self, config, db, selected_usage_point=None, choice=False):
+    """Class representing a usage point select."""
+
+    def __init__(self, config, selected_usage_point=None, choice=False):
         self.config = config
-        self.db = db
         self.application_path = APPLICATION_PATH
         self.selected_usage_point = selected_usage_point
         self.choice = choice
@@ -17,9 +20,9 @@ class UsagePointSelect:
         list_usage_points_id = '<select name="usages_points_id" id="select_usage_point_id" class="right">'
         if self.choice:
             list_usage_points_id += '<option value="none">--- Choix du point de livraison ---</option>'
-        for config in self.db.get_usage_point_all():
+        for config in DatabaseUsagePoints().get_all():
             usage_point = config.usage_point_id
-            address_data = self.db.get_addresse(usage_point)
+            address_data = DatabaseAddresses(usage_point).get()
             if hasattr(config, "name"):
                 text = config.name
             elif address_data is not None:

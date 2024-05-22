@@ -1,18 +1,21 @@
+"""Query contract from gateway."""
+
 import datetime
 import json
 import logging
 import re
 import traceback
 
-from config import URL
-from dependencies import title
-from init import DB
+from config import CODE_200_SUCCESS, URL
+from database.contracts import DatabaseContracts
+from database.usage_points import DatabaseUsagePoints
 from models.query import Query
 
 
 class Contract:
+    """Query contract from gateway."""
+
     def __init__(self, headers, usage_point_id, config):
-        self.db = DB
         self.url = URL
 
         self.headers = headers
@@ -20,6 +23,7 @@ class Contract:
         self.usage_point_config = config
 
     def run(self):
+        """Run the contract query process."""
         name = "contracts"
         endpoint = f"{name}/{self.usage_point_id}"
         if hasattr(self.usage_point_config, "cache") and self.usage_point_config.cache:
@@ -27,7 +31,7 @@ class Contract:
         target = f"{self.url}/{endpoint}"
 
         query_response = Query(endpoint=target, headers=self.headers).get()
-        if query_response.status_code == 200:
+        if query_response.status_code == CODE_200_SUCCESS:
             try:
                 response_json = json.loads(query_response.text)
                 response = response_json["customer"]["usage_points"][0]
@@ -37,7 +41,7 @@ class Contract:
                 response.update(usage_point)
 
                 if contracts["offpeak_hours"] is not None:
-                    offpeak_hours = re.search("HC \((.*)\)", contracts["offpeak_hours"]).group(1)
+                    offpeak_hours = re.search(r"HC \((.*)\)", contracts["offpeak_hours"]).group(1)
                 else:
                     offpeak_hours = ""
                 if "last_activation_date" in contracts and contracts["last_activation_date"] is not None:
@@ -58,8 +62,7 @@ class Contract:
                     ).replace(tzinfo=None)
                 else:
                     last_distribution_tariff_change_date = contracts["last_distribution_tariff_change_date"]
-                self.db.set_contract(
-                    self.usage_point_id,
+                DatabaseContracts(self.usage_point_id).set(
                     {
                         "usage_point_status": usage_point["usage_point_status"],
                         "meter_type": usage_point["meter_type"],
@@ -76,7 +79,7 @@ class Contract:
                         "offpeak_hours_6": offpeak_hours,
                         "contract_status": contracts["contract_status"],
                         "last_distribution_tariff_change_date": last_distribution_tariff_change_date,
-                    },
+                    }
                 )
             except Exception as e:
                 logging.error(e)
@@ -93,25 +96,23 @@ class Contract:
             }
 
     def get(self):
-        current_cache = self.db.get_contract(usage_point_id=self.usage_point_id)
+        current_cache = DatabaseContracts(self.usage_point_id).get()
         if not current_cache:
             # No cache
             logging.info(" =>  Pas de cache")
             result = self.run()
+        elif hasattr(self.usage_point_config, "refresh_contract") and self.usage_point_config.refresh_contract:
+            logging.info(" =>  Mise à jour du cache")
+            result = self.run()
+            self.usage_point_config.refresh_contract = False
+            DatabaseUsagePoints(self.usage_point_id).set(self.usage_point_config.__dict__)
         else:
-            # Refresh cache
-            if hasattr(self.usage_point_config, "refresh_contract") and self.usage_point_config.refresh_contract:
-                logging.info(" =>  Mise à jour du cache")
-                result = self.run()
-                self.usage_point_config.refresh_contract = False
-                DB.set_usage_point(self.usage_point_id, self.usage_point_config.__dict__)
-            else:
-                # Get data in cache
-                logging.info(" =>  Récupération du cache")
-                result = {}
-                for column in current_cache.__table__.columns:
-                    result[column.name] = str(getattr(current_cache, column.name))
-                logging.debug(f" => {result}")
+            # Get data in cache
+            logging.info(" =>  Récupération du cache")
+            result = {}
+            for column in current_cache.__table__.columns:
+                result[column.name] = str(getattr(current_cache, column.name))
+            logging.debug(f" => {result}")
         if "error" not in result:
             for key, value in result.items():
                 logging.info(f"{key}: {value}")

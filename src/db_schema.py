@@ -1,5 +1,7 @@
 """This module defines the database schema for the application."""
 
+import typing
+
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -8,6 +10,8 @@ Base = declarative_base()  # Required
 
 
 class Config(Base):
+    """This class represents the configuration table in the database."""
+
     __tablename__ = "config"
 
     key = Column(Text, primary_key=True, index=True, unique=True)
@@ -18,14 +22,16 @@ class Config(Base):
         self.value = value
 
     def __str__(self):
+        """Return the string representation of the Config object."""
         return self.value
 
 
 class UsagePoints(Base):
+    """This class represents the usage points table in the database."""
+
     __tablename__ = "usage_points"
 
     usage_point_id = Column(Text, primary_key=True, unique=True, nullable=False, index=True)
-
     name = Column(Text, nullable=False)
     cache = Column(Boolean, nullable=False, default=False)
     consumption = Column(Boolean, nullable=False, default=True)
@@ -58,10 +64,7 @@ class UsagePoints(Base):
     last_call = Column(DateTime, nullable=True)
     ban = Column(Boolean, nullable=True)
     consumption_max_date = Column(DateTime, nullable=True)
-    consumption_detail_max_date = Column(
-        DateTime,
-        nullable=True,
-    )
+    consumption_detail_max_date = Column(DateTime, nullable=True)
     production_max_date = Column(DateTime, nullable=True)
     production_detail_max_date = Column(DateTime, nullable=True)
     consumption_max_power = Column(Boolean, nullable=False, default=True)
@@ -77,6 +80,7 @@ class UsagePoints(Base):
     relation_consumption_daily_max_power = relationship("ConsumptionDailyMaxPower", back_populates="usage_point")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"UsagePoints("
             f"usage_point_id={self.usage_point_id!r}, "
@@ -122,8 +126,10 @@ class UsagePoints(Base):
 
 
 class Addresses(Base):
+    """Represents the Addresses class."""
+
     __tablename__ = "addresses"
-    __table_args__ = {"sqlite_autoincrement": True}
+    __table_args__: typing.ClassVar[dict] = {"sqlite_autoincrement": True}
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -139,6 +145,7 @@ class Addresses(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_addressess")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"Addresses("
             f"id={self.id!r}, "
@@ -156,8 +163,10 @@ class Addresses(Base):
 
 
 class Contracts(Base):
+    """Represents the Contracts class."""
+
     __tablename__ = "contracts"
-    __table_args__ = {"sqlite_autoincrement": True}
+    __table_args__: typing.ClassVar[dict] = {"sqlite_autoincrement": True}
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -181,6 +190,7 @@ class Contracts(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_contract")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"Contracts("
             f"id={self.id!r}, "
@@ -206,8 +216,9 @@ class Contracts(Base):
 
 
 class ConsumptionDaily(Base):
+    """Represents the ConsumptionDaily class."""
+
     __tablename__ = "consumption_daily"
-    # __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(String, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -219,6 +230,7 @@ class ConsumptionDaily(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_consumption_daily")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"ConsumptionDaily("
             f"id={self.id!r}, "
@@ -232,8 +244,9 @@ class ConsumptionDaily(Base):
 
 
 class ConsumptionDetail(Base):
+    """Represents the ConsumptionDetail class."""
+
     __tablename__ = "consumption_detail"
-    # __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(String, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -247,6 +260,7 @@ class ConsumptionDetail(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_consumption_detail")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"ConsumptionDetail("
             f"id={self.id!r}, "
@@ -262,8 +276,9 @@ class ConsumptionDetail(Base):
 
 
 class ProductionDaily(Base):
+    """Represents the ProductionDaily class."""
+
     __tablename__ = "production_daily"
-    # __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(String, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -275,6 +290,7 @@ class ProductionDaily(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_production_daily")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"ProductionDaily("
             f"id={self.id!r}, "
@@ -288,8 +304,9 @@ class ProductionDaily(Base):
 
 
 class ProductionDetail(Base):
+    """Represents the ProductionDetail class."""
+
     __tablename__ = "production_detail"
-    # __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(String, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -303,6 +320,7 @@ class ProductionDetail(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_production_detail")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"ProductionDetail("
             f"id={self.id!r}, "
@@ -318,8 +336,10 @@ class ProductionDetail(Base):
 
 
 class Statistique(Base):
+    """Represents the Statistique class."""
+
     __tablename__ = "statistique"
-    __table_args__ = {"sqlite_autoincrement": True}
+    __table_args__: typing.ClassVar[dict] = {"sqlite_autoincrement": True}
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -329,6 +349,7 @@ class Statistique(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_stats")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"Statistique("
             f"id={self.id!r}, "
@@ -340,8 +361,9 @@ class Statistique(Base):
 
 
 class ConsumptionDailyMaxPower(Base):
+    """Represents the ConsumptionDailyMaxPower class."""
+
     __tablename__ = "consumption_daily_max_power"
-    # __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(String, primary_key=True, index=True, unique=True)
     usage_point_id = Column(Text, ForeignKey("usage_points.usage_point_id"), nullable=False, index=True)
@@ -354,6 +376,7 @@ class ConsumptionDailyMaxPower(Base):
     usage_point = relationship("UsagePoints", back_populates="relation_consumption_daily_max_power")
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"ConsumptionDailyMaxPower("
             f"id={self.id!r}, "
@@ -368,16 +391,21 @@ class ConsumptionDailyMaxPower(Base):
 
 
 class Tempo(Base):
+    """Represents the Tempo class."""
+
     __tablename__ = "tempo"
 
     date = Column(DateTime, primary_key=True, index=True, unique=True)
     color = Column(Text, nullable=False, index=True)
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return f"Tempo(" f"date={self.date!r}, " f"color={self.color!r}, " f")"
 
 
 class TempoConfig(Base):
+    """Represents the TempoConfig class."""
+
     __tablename__ = "tempo_config"
 
     key = Column(Text, primary_key=True, index=True, unique=True)
@@ -388,10 +416,13 @@ class TempoConfig(Base):
         self.value = value
 
     def __str__(self):
+        """Return the string representation of the Config object."""
         return self.value
 
 
 class Ecowatt(Base):
+    """Represents the Ecowatt class."""
+
     __tablename__ = "ecowatt"
 
     date = Column(DateTime, primary_key=True, index=True, unique=True)
@@ -400,6 +431,7 @@ class Ecowatt(Base):
     detail = Column(Text, nullable=False, index=True)
 
     def __repr__(self):
+        """Return the string representation of the Config object."""
         return (
             f"Ecowatt("
             f"date={self.date!r}, "

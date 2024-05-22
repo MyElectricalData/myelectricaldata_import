@@ -1,74 +1,62 @@
+"""Export des données vers MQTT."""
+
 import ast
 import logging
 from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 
-from dependencies import title
-from init import CONFIG, DB, MQTT
+from config import TIMEZONE_UTC
+from database.addresses import DatabaseAddresses
+from database.contracts import DatabaseContracts
+from database.daily import DatabaseDaily
+from database.detail import DatabaseDetail
+from database.ecowatt import DatabaseEcowatt
+from database.max_power import DatabaseMaxPower
+from database.statistique import DatabaseStatistique
+from database.tempo import DatabaseTempo
+from database.usage_points import DatabaseUsagePoints
+from init import MQTT
 from models.stat import Stat
 
 
 class ExportMqtt:
+    """A class for exporting MQTT data."""
+
     def __init__(self, usage_point_id):
-        self.config = CONFIG
-        self.db = DB
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
         self.mqtt = MQTT
 
     def status(self):
+        """Get the status of the account."""
         logging.info("Statut du compte.")
-        usage_point_id_config = self.db.get_usage_point(self.usage_point_id)
-        # consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
-        if (
-            hasattr(usage_point_id_config, "consentement_expiration")
-            and usage_point_id_config.consentement_expiration is not None
-        ):
-            consentement_expiration_date = usage_point_id_config.consentement_expiration.strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            consentement_expiration_date = ""
-        if hasattr(usage_point_id_config, "call_number") and usage_point_id_config.call_number is not None:
-            call_number = usage_point_id_config.call_number
-        else:
-            call_number = ""
-        if hasattr(usage_point_id_config, "quota_reached") and usage_point_id_config.quota_reached is not None:
-            quota_reached = usage_point_id_config.quota_reached
-        else:
-            quota_reached = ""
-        if hasattr(usage_point_id_config, "quota_limit") and usage_point_id_config.quota_limit is not None:
-            quota_limit = usage_point_id_config.quota_limit
-        else:
-            quota_limit = ""
-        if hasattr(usage_point_id_config, "quota_reset_at") and usage_point_id_config.quota_reset_at is not None:
-            quota_reset_at = (usage_point_id_config.quota_reset_at.strftime("%Y-%m-%d %H:%M:%S"),)
-        else:
-            quota_reset_at = ""
-        if hasattr(usage_point_id_config, "last_call") and usage_point_id_config.last_call is not None:
-            last_call = (usage_point_id_config.last_call.strftime("%Y-%m-%d %H:%M:%S"),)
-        else:
-            last_call = ""
-        if hasattr(usage_point_id_config, "ban") and usage_point_id_config.ban is not None:
-            ban = usage_point_id_config.ban
-        else:
-            ban = ""
-        consentement_expiration = {
-            f"{self.usage_point_id}/status/consentement_expiration": consentement_expiration_date,
-            f"{self.usage_point_id}/status/call_number": str(call_number),
-            f"{self.usage_point_id}/status/quota_reached": str(quota_reached),
-            f"{self.usage_point_id}/status/quota_limit": str(quota_limit),
-            f"{self.usage_point_id}/status/quota_reset_at": str(quota_reset_at),
-            f"{self.usage_point_id}/status/last_call": str(last_call),
-            f"{self.usage_point_id}/status/ban": str(ban),
-        }
-        # print(consentement_expiration)
+        usage_point_id_config = DatabaseUsagePoints(self.usage_point_id).get()
+        send_data = [
+            "consentement_expiration",
+            "call_number",
+            "quota_reached",
+            "quota_limit",
+            "quota_reset_at",
+            "last_call",
+            "ban",
+        ]
+        consentement_expiration = {}
+        for item in send_data:
+            if hasattr(usage_point_id_config, item):
+                queue = f"{self.usage_point_id}/status/{item}"
+                value = getattr(usage_point_id_config, item)
+                if isinstance(value, datetime):
+                    value = value.strftime("%Y-%m-%d %H:%M:%S")
+                consentement_expiration[queue] = str(getattr(usage_point_id_config, item))
         self.mqtt.publish_multiple(consentement_expiration)
         logging.info(" => OK")
 
     def contract(self):
+        """Get the contract data."""
         logging.info("Génération des messages du contrat")
-        contract_data = self.db.get_contract(self.usage_point_id)
+        contract_data = DatabaseContracts(self.usage_point_id).get()
         if hasattr(contract_data, "__table__"):
             output = {}
             for column in contract_data.__table__.columns:
@@ -79,8 +67,9 @@ class ExportMqtt:
             logging.info(" => ERREUR")
 
     def address(self):
-        logging.info(f"Génération des messages d'addresse")
-        address_data = self.db.get_addresse(self.usage_point_id)
+        """Get the address data."""
+        logging.info("Génération des messages d'addresse")
+        address_data = DatabaseAddresses(self.usage_point_id).get()
         if hasattr(address_data, "__table__"):
             output = {}
             for column in address_data.__table__.columns:
@@ -91,20 +80,23 @@ class ExportMqtt:
             logging.info(" => ERREUR")
 
     def daily_annual(self, price, measurement_direction="consumption"):
+        """Get the daily annual data."""
         logging.info("Génération des données annuelles")
-        date_range = self.db.get_daily_date_range(self.usage_point_id)
+        date_range = DatabaseDaily(self.usage_point_id).get_date_range()
         stat = Stat(self.usage_point_id, measurement_direction)
         if date_range["begin"] and date_range["end"]:
-            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-            date_end = datetime.combine(date_range["end"], datetime.max.time())
-            date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1), datetime.min.time())
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time()).astimezone(TIMEZONE_UTC)
+            date_end = datetime.combine(date_range["end"], datetime.max.time()).astimezone(TIMEZONE_UTC)
+            date_begin_current = datetime.combine(
+                date_end.replace(month=1).replace(day=1), datetime.min.time()
+            ).astimezone(TIMEZONE_UTC)
             finish = False
             while not finish:
                 year = int(date_begin_current.strftime("%Y"))
                 get_daily_year = stat.get_year(year=year)
                 get_daily_month = stat.get_month(year=year)
                 get_daily_week = stat.get_week(year=year)
-                if year == int(datetime.now().strftime("%Y")):
+                if year == int(datetime.now(tz=TIMEZONE_UTC).strftime("%Y")):
                     sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/current"
                 else:
                     sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
@@ -131,7 +123,11 @@ class ExportMqtt:
 
                 for week in range(7):
                     begin = stat.daily(week)["begin"]
-                    begin_day = datetime.strptime(stat.daily(week)["begin"], self.date_format).strftime("%A")
+                    begin_day = (
+                        datetime.strptime(stat.daily(week)["begin"], self.date_format)
+                        .astimezone(TIMEZONE_UTC)
+                        .strftime("%A")
+                    )
                     end = stat.daily(week)["end"]
                     value = stat.daily(week)["value"]
                     mqtt_data[f"{sub_prefix}/week/{begin_day}/dateBegin"] = begin
@@ -152,14 +148,9 @@ class ExportMqtt:
 
                 if date_begin_current == date_begin:
                     finish = True
-                date_end = datetime.combine(
-                    (date_end - relativedelta(years=1)).replace(month=12, day=31),
-                    datetime.max.time(),
-                )
                 date_begin_current = date_begin_current - relativedelta(years=1)
                 if date_begin_current < date_begin:
                     date_begin_current = date_begin
-
                 self.mqtt.publish_multiple(mqtt_data)
 
             logging.info(" => OK")
@@ -167,12 +158,13 @@ class ExportMqtt:
             logging.info(" => Pas de donnée")
 
     def daily_linear(self, price, measurement_direction="consumption"):
+        """Get the daily linear data."""
         logging.info("Génération des données linéaires journalières.")
-        date_range = self.db.get_daily_date_range(self.usage_point_id)
+        date_range = DatabaseDaily(self.usage_point_id).get_date_range()
         stat = Stat(self.usage_point_id, measurement_direction)
         if date_range["begin"] and date_range["end"]:
-            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-            date_end = datetime.combine(date_range["end"], datetime.max.time())
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time()).astimezone(TIMEZONE_UTC)
+            date_end = datetime.combine(date_range["end"], datetime.max.time()).astimezone(TIMEZONE_UTC)
             date_begin_current = date_end - relativedelta(years=1)
             idx = 0
             finish = False
@@ -213,7 +205,7 @@ class ExportMqtt:
                     finish = True
                 date_end = datetime.combine((date_end - relativedelta(years=1)), datetime.max.time())
                 date_begin_current = date_begin_current - relativedelta(years=1)
-                if date_begin_current < date_begin:
+                if date_begin_current.astimezone(TIMEZONE_UTC) < date_begin.astimezone(TIMEZONE_UTC):
                     date_begin_current = datetime.combine(date_begin, datetime.min.time())
                 idx = idx + 1
 
@@ -224,17 +216,18 @@ class ExportMqtt:
             logging.info(" => Pas de donnée")
 
     def detail_annual(self, price_hp, price_hc=0, measurement_direction="consumption"):
+        """Get the detailed annual data."""
         logging.info("Génération des données annuelles détaillé.")
-        date_range = self.db.get_daily_date_range(self.usage_point_id)
+        date_range = DatabaseDetail(self.usage_point_id).get_date_range()
         stat = Stat(self.usage_point_id, measurement_direction)
         if date_range["begin"] and date_range["end"]:
-            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-            date_end = datetime.combine(date_range["end"], datetime.max.time())
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time()).astimezone(TIMEZONE_UTC)
+            date_end = datetime.combine(date_range["end"], datetime.max.time()).astimezone(TIMEZONE_UTC)
             date_begin_current = datetime.combine(date_end.replace(month=1).replace(day=1), datetime.min.time())
             finish = False
             while not finish:
                 year = int(date_begin_current.strftime("%Y"))
-                month = int(datetime.now().strftime("%m"))
+                month = int(datetime.now(tz=TIMEZONE_UTC).strftime("%m"))
                 get_detail_year_hp = stat.get_year(year=year, measure_type="HP")
                 get_detail_year_hc = stat.get_year(year=year, measure_type="HC")
                 get_detail_month_hp = stat.get_month(year=year, month=month, measure_type="HP")
@@ -250,7 +243,7 @@ class ExportMqtt:
                     measure_type="HC",
                 )
 
-                if year == int(datetime.now().strftime("%Y")):
+                if year == int(datetime.now(tz=TIMEZONE_UTC).strftime("%Y")):
                     sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/current"
                 else:
                     sub_prefix = f"{self.usage_point_id}/{measurement_direction}/annual/{year}"
@@ -283,14 +276,22 @@ class ExportMqtt:
 
                 for week in range(7):
                     # HP
-                    begin_hp_day = datetime.strptime(stat.detail(week, "HP")["begin"], self.date_format).strftime("%A")
+                    begin_hp_day = (
+                        datetime.strptime(stat.detail(week, "HP")["begin"], self.date_format)
+                        .astimezone(TIMEZONE_UTC)
+                        .strftime("%A")
+                    )
                     value_hp = stat.detail(week, "HP")["value"]
                     prefix = f"{sub_prefix}/week/{begin_hp_day}/hp"
                     mqtt_data[f"{prefix}/Wh"] = value_hp
                     mqtt_data[f"{prefix}/kWh"] = round(value_hp / 1000, 2)
                     mqtt_data[f"{prefix}/euro"] = round(value_hp / 1000 * price_hp, 2)
                     # HC
-                    begin_hc_day = datetime.strptime(stat.detail(week, "HC")["begin"], self.date_format).strftime("%A")
+                    begin_hc_day = (
+                        datetime.strptime(stat.detail(week, "HC")["begin"], self.date_format)
+                        .astimezone(TIMEZONE_UTC)
+                        .strftime("%A")
+                    )
                     value_hc = stat.detail(week, "HC")["value"]
                     prefix = f"{sub_prefix}/week/{begin_hc_day}/hc"
                     mqtt_data[f"{prefix}/Wh"] = value_hc
@@ -298,16 +299,16 @@ class ExportMqtt:
                     mqtt_data[f"{prefix}/euro"] = round(value_hc / 1000 * price_hc, 2)
 
                 for month in range(12):
-                    month = month + 1
+                    current_month = month + 1
                     # HP
-                    get_detail_month_hp = stat.get_month(year=year, month=month, measure_type="HP")
-                    prefix = f"{sub_prefix}/month/{month}/hp"
+                    get_detail_month_hp = stat.get_month(year=year, month=current_month, measure_type="HP")
+                    prefix = f"{sub_prefix}/month/{current_month}/hp"
                     mqtt_data[f"{prefix}/Wh"] = get_detail_month_hp["value"]
                     mqtt_data[f"{prefix}/kWh"] = round(get_detail_month_hp["value"] / 1000, 2)
                     mqtt_data[f"{prefix}/euro"] = round(get_detail_month_hp["value"] / 1000 * price_hp, 2)
                     # HC
-                    get_detail_month_hc = stat.get_month(year=year, month=month, measure_type="HC")
-                    prefix = f"{sub_prefix}/month/{month}/hc"
+                    get_detail_month_hc = stat.get_month(year=year, month=current_month, measure_type="HC")
+                    prefix = f"{sub_prefix}/month/{current_month}/hc"
                     mqtt_data[f"{prefix}/Wh"] = get_detail_month_hc["value"]
                     mqtt_data[f"{prefix}/kWh"] = round(get_detail_month_hc["value"] / 1000, 2)
                     mqtt_data[f"{prefix}/euro"] = round(get_detail_month_hc["value"] / 1000 * price_hc, 2)
@@ -328,12 +329,13 @@ class ExportMqtt:
             logging.info(" => Pas de donnée")
 
     def detail_linear(self, price_hp, price_hc=0, measurement_direction="consumption"):
+        """Get the detailed linear data."""
         logging.info("Génération des données linéaires détaillées")
-        date_range = self.db.get_detail_date_range(self.usage_point_id)
+        date_range = DatabaseDetail(self.usage_point_id).get_date_range()
         stat = Stat(self.usage_point_id, measurement_direction)
         if date_range["begin"] and date_range["end"]:
-            date_begin = datetime.combine(date_range["begin"], datetime.min.time())
-            date_end = datetime.combine(date_range["end"], datetime.max.time())
+            date_begin = datetime.combine(date_range["begin"], datetime.min.time()).astimezone(TIMEZONE_UTC)
+            date_end = datetime.combine(date_range["end"], datetime.max.time()).astimezone(TIMEZONE_UTC)
             date_begin_current = date_end - relativedelta(years=1)
             idx = 0
             finish = False
@@ -391,10 +393,11 @@ class ExportMqtt:
             logging.info(" => Pas de donnée")
 
     def max_power(self):
+        """Get the maximum power data."""
         logging.info("Génération des données de puissance max journalières.")
-        max_power_data = self.db.get_daily_max_power_all(self.usage_point_id, order="asc")
+        max_power_data = DatabaseMaxPower(self.usage_point_id).get_all(order="asc")
         mqtt_data = {}
-        contract = self.db.get_contract(self.usage_point_id)
+        contract = DatabaseContracts(self.usage_point_id).get()
         max_value = 0
         if max_power_data:
             if hasattr(contract, "subscribed_power"):
@@ -419,11 +422,12 @@ class ExportMqtt:
             logging.info(" => Pas de donnée")
 
     def ecowatt(self):
+        """Get the ecowatt data."""
         logging.info("Génération des données Ecowatt")
-        begin = datetime.combine(datetime.now() - relativedelta(days=1), datetime.min.time())
+        begin = datetime.combine(datetime.now(tz=TIMEZONE_UTC) - relativedelta(days=1), datetime.min.time())
         end = begin + timedelta(days=7)
-        ecowatt = self.db.get_ecowatt_range(begin, end)
-        today = datetime.combine(datetime.now(), datetime.min.time())
+        ecowatt = DatabaseEcowatt().get_range(begin, end)
+        today = datetime.combine(datetime.now(tz=TIMEZONE_UTC), datetime.min.time())
         mqtt_data = {}
         if ecowatt:
             for data in ecowatt:
@@ -437,69 +441,71 @@ class ExportMqtt:
                 mqtt_data[f"ecowatt/{queue}/value"] = data.value
                 mqtt_data[f"ecowatt/{queue}/message"] = data.message
                 for date, value in ast.literal_eval(data.detail).items():
-                    date = datetime.strptime(date, self.date_format_detail).strftime("%H")
-                    mqtt_data[f"ecowatt/{queue}/detail/{date}"] = value
+                    date_tmp = datetime.strptime(date, self.date_format_detail).astimezone(TIMEZONE_UTC).strftime("%H")
+                    mqtt_data[f"ecowatt/{queue}/detail/{date_tmp}"] = value
             self.mqtt.publish_multiple(mqtt_data)
             logging.info(" => OK")
         else:
             logging.info(" => Pas de donnée")
 
     def tempo(self):
+        """Get the tempo data."""
         logging.info("Envoie des données Tempo")
         mqtt_data = {}
-        tempo_data = self.db.get_stat(self.usage_point_id, "price_consumption")
-        tempo_price = self.db.get_tempo_config("price")
+        tempo_data = DatabaseStatistique(self.usage_point_id).get("price_consumption")
+        tempo_price = DatabaseTempo().get_config("price")
         if tempo_price:
             for color, price in tempo_price.items():
                 mqtt_data[f"tempo/price/{color}"] = price
-        tempo_days = self.db.get_tempo_config("days")
+        tempo_days = DatabaseTempo().get_config("days")
         if tempo_days:
             for color, days in tempo_days.items():
                 mqtt_data[f"tempo/days/{color}"] = days
-        today = datetime.combine(datetime.now(), datetime.min.time())
-        tempo_color = self.db.get_tempo_range(today, today)
+        today = datetime.combine(datetime.now(tz=TIMEZONE_UTC), datetime.min.time())
+        tempo_color = DatabaseTempo().get_range(today, today)
         if tempo_color:
-            mqtt_data[f"tempo/color/today"] = tempo_color[0].color
+            mqtt_data["tempo/color/today"] = tempo_color[0].color
         tomorrow = today + timedelta(days=1)
-        tempo_color = self.db.get_tempo_range(tomorrow, tomorrow)
+        tempo_color = DatabaseTempo().get_range(tomorrow, tomorrow)
         if tempo_color:
-            mqtt_data[f"tempo/color/tomorrow"] = tempo_color[0].color
+            mqtt_data["tempo/color/tomorrow"] = tempo_color[0].color
         if tempo_data:
             for year, data in ast.literal_eval(tempo_data[0].value).items():
-                if year == datetime.now().strftime("%Y"):
-                    year = "current"
+                select_year = year
+                if year == datetime.now(tz=TIMEZONE_UTC).strftime("%Y"):
+                    select_year = "current"
                 for color, tempo in data["TEMPO"].items():
-                    mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/Wh"] = round(
-                        tempo["Wh"], 2
-                    )
-                    mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/kWh"] = round(
-                        tempo["kWh"], 2
-                    )
-                    mqtt_data[f"{self.usage_point_id}/consumption/annual/{year}/thisYear/tempo/{color}/euro"] = round(
-                        tempo["euro"], 2
-                    )
+                    mqtt_data[
+                        f"{self.usage_point_id}/consumption/annual/{select_year}/thisYear/tempo/{color}/Wh"
+                    ] = round(tempo["Wh"], 2)
+                    mqtt_data[
+                        f"{self.usage_point_id}/consumption/annual/{select_year}/thisYear/tempo/{color}/kWh"
+                    ] = round(tempo["kWh"], 2)
+                    mqtt_data[
+                        f"{self.usage_point_id}/consumption/annual/{select_year}/thisYear/tempo/{color}/euro"
+                    ] = round(tempo["euro"], 2)
                 for month, month_data in data["month"].items():
                     for month_color, month_tempo in month_data["TEMPO"].items():
-                        if month == datetime.strftime(datetime.now(), "%m"):
+                        if month == datetime.strftime(datetime.now(tz=TIMEZONE_UTC), "%m"):
                             if month_tempo:
                                 mqtt_data[
-                                    f"{self.usage_point_id}/consumption/annual/{year}/thisMonth/tempo/{month_color}/Wh"
+                                    f"{self.usage_point_id}/consumption/annual/{select_year}/thisMonth/tempo/{month_color}/Wh"
                                 ] = round(month_tempo["Wh"], 2)
                                 mqtt_data[
-                                    f"{self.usage_point_id}/consumption/annual/{year}/thisMonth/tempo/{month_color}/kWh"
+                                    f"{self.usage_point_id}/consumption/annual/{select_year}/thisMonth/tempo/{month_color}/kWh"
                                 ] = round(month_tempo["kWh"], 2)
                                 mqtt_data[
-                                    f"{self.usage_point_id}/consumption/annual/{year}/thisMonth/tempo/{month_color}/euro"
+                                    f"{self.usage_point_id}/consumption/annual/{select_year}/thisMonth/tempo/{month_color}/euro"
                                 ] = round(month_tempo["euro"], 2)
                         if month_tempo:
                             mqtt_data[
-                                f"{self.usage_point_id}/consumption/annual/{year}/month/{int(month)}/tempo/{month_color}/Wh"
+                                f"{self.usage_point_id}/consumption/annual/{select_year}/month/{int(month)}/tempo/{month_color}/Wh"
                             ] = round(month_tempo["Wh"], 2)
                             mqtt_data[
-                                f"{self.usage_point_id}/consumption/annual/{year}/month/{int(month)}/tempo/{month_color}/kWh"
+                                f"{self.usage_point_id}/consumption/annual/{select_year}/month/{int(month)}/tempo/{month_color}/kWh"
                             ] = round(month_tempo["kWh"], 2)
                             mqtt_data[
-                                f"{self.usage_point_id}/consumption/annual/{year}/month/{int(month)}/tempo/{month_color}/euro"
+                                f"{self.usage_point_id}/consumption/annual/{select_year}/month/{int(month)}/tempo/{month_color}/euro"
                             ] = round(month_tempo["euro"], 2)
             self.mqtt.publish_multiple(mqtt_data)
             logging.info(" => OK")

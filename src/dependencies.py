@@ -1,11 +1,12 @@
 """This module contains dependencies for the application."""
-
-import datetime
 import logging
+from datetime import datetime, timedelta
 from math import floor
 from os import environ, getenv
 
+import pytz
 from art import decor, text2art
+from dateutil.parser import parse
 
 from __version__ import VERSION
 
@@ -37,7 +38,7 @@ def daterange(start_date, end_date):
 
     """
     for n in range(int((end_date - start_date).days)):
-        yield start_date + datetime.timedelta(n)
+        yield start_date + timedelta(n)
 
 
 def is_bool(v):
@@ -65,10 +66,9 @@ def str2bool(v):
         bool: The boolean value.
 
     """
-    if type(v) != bool:
+    if not isinstance(v, bool):
         return v and v.lower() in ("yes", "true", "t", "1")
-    else:
-        return v
+    return v
 
 
 def is_float(element):
@@ -83,6 +83,24 @@ def is_float(element):
     """
     try:
         float(element)
+        return True
+    except ValueError:
+        return False
+
+
+def is_datetime(element, fuzzy=False):
+    """Check if a value can be parsed as a datetime.
+
+    Args:
+        element (str): The value to check.
+        fuzzy (bool, optional): Whether to allow fuzzy parsing. Defaults to False.
+
+    Returns:
+        bool: True if the value can be parsed as a datetime, False otherwise.
+
+    """
+    try:
+        parse(element, fuzzy=fuzzy)
         return True
     except ValueError:
         return False
@@ -118,7 +136,7 @@ def reformat_json(yaml):
     for key, value in yaml.items():
         if value in ["true", "false"]:
             result[key] = str2bool(value)
-        elif type(value) == dict:
+        elif isinstance(value, dict):
             result[key] = value
         elif not isinstance(value, bool) and is_float(value):
             result[key] = float(value)
@@ -149,7 +167,7 @@ def title(message):
 
     """
     separator()
-    if type(message) is list:
+    if isinstance(message, list):
         for msg in message:
             logging.info(f"{msg.upper()}")
     else:
@@ -172,21 +190,24 @@ def title_warning(message):
 def separator():
     """Print a separator line."""
     logging.info(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ ❖ ◦ "
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
 
 def separator_warning():
     """Print a warning separator line."""
     logging.warning(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ▲ "
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
 
 def export_finish():
     """Finish the export process."""
     logging.info(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ TERMINE ◦ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◦ TERMINE ◦ "
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
 
@@ -216,11 +237,60 @@ def get_version():
 
 
 def logo(version):
-    Art = text2art("MyElectricalData")
+    """Print the logo of MyElectricalData with the version number.
+
+    Args:
+        version (str): The version number of MyElectricalData.
+
+    """
+    art = text2art("MyElectricalData")
     separator()
-    for line in Art.splitlines():
+    for line in art.splitlines():
         logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
     separator()
     version = f"VERSION : {version}"
     logging.info(f'{decor("barcode1")}{version: ^93}{decor("barcode1", reverse=True)}')
     separator()
+
+
+def check_format(value):
+    """Check the format of a value and convert it if necessary.
+
+    Args:
+        value (any): The value to check and convert.
+
+    Returns:
+        any: The checked and converted value.
+
+    """
+    if is_bool(value):
+        new_value = str2bool(value)
+    elif value is None or value == "None" or not value:
+        new_value = None
+    elif isinstance(value, int):
+        new_value = int(value)
+    elif is_float(value):
+        new_value = float(value)
+    elif is_datetime(value):
+        new_value = datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=pytz.utc)
+    else:
+        new_value = str(value)
+    return new_value
+
+
+def is_between(time, time_range):
+    """Check if a given time is between a specified time range.
+
+    Args:
+        time (datetime): The time to check.
+        time_range (tuple): The time range represented by a tuple of two datetime objects.
+
+    Returns:
+        bool: True if the time is between the time range, False otherwise.
+    """
+    time = time.replace(":", "")
+    start = time_range[0].replace(":", "")
+    end = time_range[1].replace(":", "")
+    if end < start:
+        return time >= start or time < end
+    return start <= time < end

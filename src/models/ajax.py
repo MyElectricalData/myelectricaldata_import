@@ -1,10 +1,17 @@
+"""This module represents an Ajax object."""
 import logging
 from datetime import datetime
 
 import pytz
 
+from database.contracts import DatabaseContracts
+from database.daily import DatabaseDaily
+from database.detail import DatabaseDetail
+from database.max_power import DatabaseMaxPower
+from database.tempo import DatabaseTempo
+from database.usage_points import DatabaseUsagePoints
 from dependencies import APPLICATION_PATH, get_version, title
-from init import CONFIG, DB
+from init import CONFIG
 from models.jobs import Job
 from models.query_cache import Cache
 from models.query_daily import Daily
@@ -19,15 +26,17 @@ utc = pytz.UTC
 
 
 class Ajax:
+    """This class represents an Ajax object."""
+
     def __init__(self, usage_point_id=None):
+        """Initialize Ajax."""
         self.config = CONFIG
-        self.db = DB
         self.application_path = APPLICATION_PATH
         self.usage_point_id = usage_point_id
         self.date_format = "%Y-%m-%d"
         self.date_format_detail = "%Y-%m-%d %H:%M:%S"
         if self.usage_point_id is not None:
-            self.usage_point_config = self.db.get_usage_point(self.usage_point_id)
+            self.usage_point_config = DatabaseUsagePoints(self.usage_point_id).get()
             if hasattr(self.usage_point_config, "token"):
                 self.headers = {
                     "Content-Type": "application/json",
@@ -44,6 +53,7 @@ class Ajax:
         self.usage_points_id_list = ""
 
     def gateway_status(self):
+        """Check the status of the gateway."""
         if self.usage_point_id is not None:
             msg = f"[{self.usage_point_id}] Check de l'état de la passerelle."
         else:
@@ -52,6 +62,7 @@ class Ajax:
         return Status().ping()
 
     def account_status(self):
+        """Check the status of the account."""
         title(f"[{self.usage_point_id}] Check du statut du compte.")
         data = Status(headers=self.headers).status(self.usage_point_id)
         if isinstance(self.usage_point_config.last_call, datetime):
@@ -61,30 +72,35 @@ class Ajax:
         return data
 
     def fetch_tempo(self):
-        title(f"Récupération des jours Tempo.")
+        title("Récupération des jours Tempo.")
         return Tempo().fetch()
 
     def get_tempo(self):
-        title(f"Affichage des jours Tempo.")
+        title("Affichage des jours Tempo.")
         return Tempo().get()
 
     def fetch_ecowatt(self):
-        title(f"Récupération des jours Ecowatt.")
+        """Fetch the days of Ecowatt."""
+        title("Récupération des jours Ecowatt.")
         return Ecowatt().fetch()
 
     def get_ecowatt(self):
-        title(f"Affichage des jours Ecowatt.")
+        """Get the days of Ecowatt."""
+        title("Affichage des jours Ecowatt.")
         return Ecowatt().get()
 
     def generate_price(self):
+        """Generate the costs by subscription type."""
         title(f"[{self.usage_point_id}] Calcul des coûts par type d'abonnements.")
         return Stat(self.usage_point_id, "consumption").generate_price()
 
     def get_price(self):
+        """Get the result of the subscription comparator."""
         title(f"[{self.usage_point_id}] Retourne le résultat du comparateur d'abonnements.")
         return Stat(self.usage_point_id, "consumption").get_price()
 
     def reset_all_data(self):
+        """Reset all the data."""
         title(f"[{self.usage_point_id}] Reset de la consommation journalière.")
         Daily(
             headers=self.headers,
@@ -118,6 +134,7 @@ class Ajax:
         }
 
     def delete_all_data(self):
+        """Delete all the data."""
         title(f"[{self.usage_point_id}] Suppression de la consommation journalière.")
         Daily(
             headers=self.headers,
@@ -153,17 +170,25 @@ class Ajax:
         }
 
     def reset_gateway(self):
+        """Reset the gateway cache."""
         title(f"[{self.usage_point_id}] Reset du cache de la passerelle.")
         return Cache(headers=self.headers, usage_point_id=self.usage_point_id).reset()
 
     def reset_data(self, target, date):
+        """Reset the specified data for the given target and date.
+
+        Args:
+            target (str): The target to reset.
+            date (str): The date to reset.
+
+        Returns:
+            dict: The result of the reset.
+        """
         result = {}
         if target == "consumption":
             title(f"[{self.usage_point_id}] Reset de la consommation journalière du {date}:")
             result["consumption"] = Daily(headers=self.headers, usage_point_id=self.usage_point_id).reset(date)
         elif target == "consumption_detail":
-            # date = date.replace("---", " ")
-            # date = date.replace("--", ":")
             title(f"[{self.usage_point_id}] Reset de la consommation détaillée du {date}:")
             result["consumption_detail"] = Detail(
                 headers=self.headers, usage_point_id=self.usage_point_id
@@ -181,8 +206,6 @@ class Ajax:
                 measure_type="production",
             ).reset(date)
         elif target == "production_detail":
-            # date = date.replace("---", " ")
-            # date = date.replace("--", ":")
             title(f"[{self.usage_point_id}] Reset de la production détaillée du {date}:")
             result["production_detail"] = Detail(
                 headers=self.headers,
@@ -204,51 +227,72 @@ class Ajax:
                 "result": result[target],
             }
 
-    def fetch(self, target, date):
+    def fetch(self, target, date):  # noqa: C901, PLR0912
+        """Fetch the specified data for the given target and date.
+
+        Args:
+            target (str): The target to fetch.
+            date (str): The date to fetch.
+
+        Returns:
+            dict: The fetched data.
+        """
         result = {}
-        if target == "consumption":
-            if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
-                title(f"[{self.usage_point_id}] Importation de la consommation journalière du {date}:")
-                result["consumption"] = Daily(
-                    headers=self.headers,
-                    usage_point_id=self.usage_point_id,
-                ).fetch(date)
-        elif target == "consumption_max_power":
-            if hasattr(self.usage_point_config, "consumption_max_power") and self.usage_point_config.consumption:
-                title(f"[{self.usage_point_id}] Importation de la puissance maximum journalière du {date}:")
-                result["consumption_max_power"] = Power(
-                    headers=self.headers,
-                    usage_point_id=self.usage_point_id,
-                ).fetch(date)
-        elif target == "consumption_detail":
-            # date = date.replace("---", " ")
-            # date = date.replace("--", ":")
-            if hasattr(self.usage_point_config, "consumption_detail") and self.usage_point_config.consumption_detail:
-                title(f"[{self.usage_point_id}] Importation de la consommation détaillée du {date}:")
-                result["consumption_detail"] = Detail(
-                    headers=self.headers,
-                    usage_point_id=self.usage_point_id,
-                ).fetch(date)
-        elif target == "production":
-            if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
-                title(f"[{self.usage_point_id}] Importation de la production journalière du {date}:")
-                result["production"] = Daily(
-                    headers=self.headers,
-                    usage_point_id=self.usage_point_id,
-                    measure_type="production",
-                ).fetch(date)
-        elif target == "production_detail":
-            # date = date.replace("---", " ")
-            # date = date.replace("--", ":")
-            if hasattr(self.usage_point_config, "production_detail") and self.usage_point_config.production_detail:
-                title(f"[{self.usage_point_id}] Importation de la production détaillée du {date}:")
-                result["production_detail"] = Detail(
-                    headers=self.headers,
-                    usage_point_id=self.usage_point_id,
-                    measure_type="production",
-                ).fetch(date)
+        if (
+            target == "consumption"
+            and hasattr(self.usage_point_config, "consumption")
+            and self.usage_point_config.consumption
+        ):
+            title(f"[{self.usage_point_id}] Importation de la consommation journalière du {date}:")
+            result["consumption"] = Daily(
+                headers=self.headers,
+                usage_point_id=self.usage_point_id,
+            ).fetch(date)
+        elif (
+            target == "consumption_max_power"
+            and hasattr(self.usage_point_config, "consumption_max_power")
+            and self.usage_point_config.consumption_max_power
+        ):
+            title(f"[{self.usage_point_id}] Importation de la puissance maximum journalière du {date}:")
+            result["consumption_max_power"] = Power(
+                headers=self.headers,
+                usage_point_id=self.usage_point_id,
+            ).fetch(date)
+        elif (
+            target == "consumption_detail"
+            and hasattr(self.usage_point_config, "consumption_detail")
+            and self.usage_point_config.consumption_detail
+        ):
+            title(f"[{self.usage_point_id}] Importation de la consommation détaillée du {date}:")
+            result["consumption_detail"] = Detail(
+                headers=self.headers,
+                usage_point_id=self.usage_point_id,
+            ).fetch(date)
+        elif (
+            target == "production"
+            and hasattr(self.usage_point_config, "production")
+            and self.usage_point_config.production
+        ):
+            title(f"[{self.usage_point_id}] Importation de la production journalière du {date}:")
+            result["production"] = Daily(
+                headers=self.headers,
+                usage_point_id=self.usage_point_id,
+                measure_type="production",
+            ).fetch(date)
+        elif (
+            target == "production_detail"
+            and hasattr(self.usage_point_config, "production_detail")
+            and self.usage_point_config.production_detail
+        ):
+            title(f"[{self.usage_point_id}] Importation de la production détaillée du {date}:")
+            result["production_detail"] = Detail(
+                headers=self.headers,
+                usage_point_id=self.usage_point_id,
+                measure_type="production",
+            ).fetch(date)
         else:
             return {"error": "true", "notif": "Target inconnue.", "result": ""}
+
         if "error" in result[target] and result[target]["error"]:
             data = {
                 "error": "true",
@@ -289,7 +333,16 @@ class Ajax:
                 }
             return data
 
-    def blacklist(self, target, date):
+    def blacklist(self, target, date):  # noqa: C901, PLR0912
+        """Blacklist the specified target for the given date.
+
+        Args:
+            target (str): The target to blacklist.
+            date (str): The date to blacklist.
+
+        Returns:
+            dict: A dictionary containing the result of the blacklist operation.
+        """
         result = {}
         if target == "consumption":
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
@@ -346,7 +399,16 @@ class Ajax:
                 "result": result[target],
             }
 
-    def whitelist(self, target, date):
+    def whitelist(self, target, date):  # noqa: C901, PLR0912
+        """Whitelist the specified target for the given date.
+
+        Args:
+            target (str): The target to whitelist.
+            date (str): The date to whitelist.
+
+        Returns:
+            dict: A dictionary containing the result of the whitelist operation.
+        """
         result = {}
         if target == "consumption":
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
@@ -404,6 +466,14 @@ class Ajax:
             }
 
     def import_data(self, target=None):
+        """Import data for the specified target.
+
+        Args:
+            target (str, optional): The target to import data for. Defaults to None.
+
+        Returns:
+            dict: A dictionary containing the result of the import data operation.
+        """
         result = Job(self.usage_point_id).job_import_data(wait=False, target=target)
         if not result:
             return {
@@ -419,34 +489,60 @@ class Ajax:
             }
 
     def new_account(self, configs):
-        print(vars(configs))
+        """Add a new account.
+
+        Args:
+            configs (dict): A dictionary containing the configuration for the new account.
+
+        Returns:
+            dict: A dictionary containing the output of the new account operation.
+        """
         self.usage_point_id = configs["usage_point_id"]
         title(f"[{self.usage_point_id}] Ajout d'un nouveau point de livraison:")
         output = {}
         for key, value in configs.items():
             if key != "usage_point_id":
+                new_value = value
                 if value is None or value == "None":
-                    value = ""
-                logging.info(f"{str(key)} => {str(value)}")
-                output[key] = value
-                self.config.set_usage_point_config(self.usage_point_id, key, value)
-        self.db.set_usage_point(self.usage_point_id, output)
+                    new_value = ""
+                logging.info("%s => %s", str(key), str(new_value))
+                output[key] = new_value
+                self.config.set_usage_point_config(self.usage_point_id, key, new_value)
+        DatabaseUsagePoints(self.usage_point_id).set(output)
         return output
 
     def configuration(self, configs):
+        """Change the configuration for the specified usage point.
+
+        Args:
+            configs (dict): A dictionary containing the new configuration values.
+
+        Returns:
+            dict: A dictionary containing the updated configuration values.
+        """
         title(f"[{self.usage_point_id}] Changement de configuration:")
         output = {}
         for key, value in configs.items():
+            new_value = value
             if value is None or value == "None":
-                value = ""
-            logging.info(f"{str(key)} => {str(value)}")
-            output[key] = value
-            self.config.set_usage_point_config(self.usage_point_id, key, value)
-        self.db.set_usage_point(self.usage_point_id, output)
+                new_value = ""
+            logging.info("%s => %s", str(key), str(new_value))
+            output[key] = new_value
+            self.config.set_usage_point_config(self.usage_point_id, key, new_value)
+        DatabaseUsagePoints(self.usage_point_id).set(output)
         return output
 
     def datatable(self, measurement_direction, args):
-        recordsTotal = 0
+        """Retrieve datatable for the specified measurement direction.
+
+        Args:
+            measurement_direction (str): The measurement direction.
+            args (object): The arguments.
+
+        Returns:
+            dict: A dictionary containing the datatable result.
+        """
+        records_total = 0
         args = args._query_params
         draw = int(args.get("draw"))
         length = int(args.get("length"))
@@ -458,9 +554,7 @@ class Ajax:
         all_data = []
         data = []
         if measurement_direction == "consumption":
-            recordsTotal = self.db.get_daily_count(
-                usage_point_id=self.usage_point_id, measurement_direction="consumption"
-            )
+            records_total = DatabaseDaily(self.usage_point_id, "consumption").get_count()
             col_spec = {
                 0: "date",
                 1: "value",
@@ -472,19 +566,15 @@ class Ajax:
                 7: "import_clean",
                 8: "blacklist",
             }
-            all_data = self.db.get_daily_datatable(
-                usage_point_id=self.usage_point_id,
+            all_data = DatabaseDaily(self.usage_point_id, "consumption").get_datatable(
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
                 search=search,
-                measurement_direction="consumption",
             )
             data = self.datatable_daily(all_data, start_index, end_index, measurement_direction)
 
         elif measurement_direction == "consumption_detail":
-            recordsTotal = self.db.get_detail_count(
-                usage_point_id=self.usage_point_id, measurement_direction="consumption"
-            )
+            records_total = DatabaseDetail(self.usage_point_id, "consumption").get_count()
             col_spec = {
                 0: "date",
                 1: "date",
@@ -495,19 +585,15 @@ class Ajax:
                 6: "import_clean",
                 7: "blacklist",
             }
-            all_data = self.db.get_detail_datatable(
-                usage_point_id=self.usage_point_id,
+            all_data = DatabaseDetail(self.usage_point_id, "consumption").get_datatable(
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
                 search=search,
-                measurement_direction="consumption",
             )
             data = self.datatable_detail(all_data, start_index, end_index, measurement_direction)
 
         elif measurement_direction == "production":
-            recordsTotal = self.db.get_daily_count(
-                usage_point_id=self.usage_point_id, measurement_direction="production"
-            )
+            records_total = DatabaseDaily(self.usage_point_id, "production").get_count()
             col_spec = {
                 0: "date",
                 1: "value",
@@ -517,18 +603,14 @@ class Ajax:
                 5: "import_clean",
                 6: "blacklist",
             }
-            all_data = self.db.get_daily_datatable(
-                usage_point_id=self.usage_point_id,
+            all_data = DatabaseDaily(self.usage_point_id, "consumption").get_datatable(
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
                 search=search,
-                measurement_direction="production",
             )
             data = self.datatable_daily(all_data, start_index, end_index, measurement_direction)
         elif measurement_direction == "production_detail":
-            recordsTotal = self.db.get_detail_count(
-                usage_point_id=self.usage_point_id, measurement_direction="production"
-            )
+            records_total = DatabaseDetail(self.usage_point_id, "production").get_count()
             col_spec = {
                 0: "date",
                 1: "date",
@@ -539,16 +621,14 @@ class Ajax:
                 6: "import_clean",
                 7: "blacklist",
             }
-            all_data = self.db.get_detail_datatable(
-                usage_point_id=self.usage_point_id,
+            all_data = DatabaseDetail(self.usage_point_id, "production").get_datatable(
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
                 search=search,
-                measurement_direction="production",
             )
             data = self.datatable_detail(all_data, start_index, end_index, measurement_direction)
         elif measurement_direction == "consumption_max_power":
-            recordsTotal = self.db.get_daily_max_power_count(usage_point_id=self.usage_point_id)
+            records_total = DatabaseMaxPower(self.usage_point_id).get_daily_count()
             col_spec = {
                 0: "date",
                 1: "date",
@@ -560,8 +640,7 @@ class Ajax:
                 7: "import_clean",
                 8: "blacklist",
             }
-            all_data = self.db.get_daily_max_power_datatable(
-                usage_point_id=self.usage_point_id,
+            all_data = DatabaseMaxPower(self.usage_point_id).get_daily_datatable(
                 order_column=col_spec[order_column],
                 order_dir=order_dir,
                 search=search,
@@ -569,13 +648,22 @@ class Ajax:
             data = self.datatable_max_power(all_data, start_index, end_index)
         result = {
             "draw": draw + 1,
-            "recordsTotal": recordsTotal,
+            "recordsTotal": records_total,
             "recordsFiltered": len(all_data),
             "data": data,
         }
         return result
 
     def datatable_button(self, measurement_direction, db_data):
+        """Generate HTML code for datatable buttons based on measurement direction and database data.
+
+        Args:
+            measurement_direction (str): The measurement direction.
+            db_data (object): The database data.
+
+        Returns:
+            dict: The generated HTML code for the buttons.
+        """
         date_text = db_data.date.strftime(self.date_format)
         value = db_data.value
         blacklist = db_data.blacklist
@@ -601,23 +689,45 @@ class Ajax:
             btn_whitelist = "display:none"
 
         cache_html = f"""
-        <div id="{measurement_direction}_import_{date_text}" title="{measurement_direction}" name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import {btn_import_disable}" style="{btn_import}">
-            <input type="button" value="Importer"></div>
-        <div id="{measurement_direction}_reset_{date_text}" title="{measurement_direction}" name="reset_{self.usage_point_id}_{date_text}"  class="datatable_button" style="{btn_reset}">
-            <input type="button" value="Vider"></div>
+<div id="{measurement_direction}_import_{date_text}" title="{measurement_direction}"
+ name="import_{self.usage_point_id}_{date_text}" class="datatable_button datatable_button_import {btn_import_disable}"
+ style="{btn_import}">
+    <input type="button" value="Importer">
+</div>
+<div id="{measurement_direction}_reset_{date_text}" title="{measurement_direction}"
+ name="reset_{self.usage_point_id}_{date_text}" class="datatable_button" style="{btn_reset}">
+    <input type="button" value="Vider">
+</div>
         """
 
         blacklist_html = f"""
-        <div class="datatable_button datatable_blacklist {btn_blacklist_disable}" title="{measurement_direction}" id="{measurement_direction}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}" style="{btn_blacklist}">
-            <input type="button" value="Blacklist"></div>
-        <div class="datatable_button datatable_whitelist" title="{measurement_direction}" id="{measurement_direction}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}" style="{btn_whitelist}">
-            <input type="button"  value="Whitelist"></div>
+<div class="datatable_button datatable_blacklist {btn_blacklist_disable}" title="{measurement_direction}"
+ id="{measurement_direction}_blacklist_{date_text}" name="blacklist_{self.usage_point_id}_{date_text}"
+ style="{btn_blacklist}">
+    <input type="button" value="Blacklist">
+</div>
+<div class="datatable_button datatable_whitelist" title="{measurement_direction}"
+ id="{measurement_direction}_whitelist_{date_text}" name="whitelist_{self.usage_point_id}_{date_text}"
+ style="{btn_whitelist}">
+    <input type="button"  value="Whitelist">
+</div>
         """
 
         btn = {"cache": cache_html, "blacklist": blacklist_html}
         return btn
 
-    def datatable_daily(self, all_data, start_index, end_index, measurement_direction):
+    def datatable_daily(self, all_data, start_index, end_index, measurement_direction):  # noqa: PLR0912
+        """Generate the HTML code for the daily datatable based on the provided data.
+
+        Args:
+            all_data (list): The list of database data.
+            start_index (int): The start index of the datatable.
+            end_index (int): The end index of the datatable.
+            measurement_direction (str): The measurement direction.
+
+        Returns:
+            list: The generated HTML code for the daily datatable.
+        """
         index = 0
         result = []
         for db_data in all_data:
@@ -637,7 +747,7 @@ class Ajax:
                     cache_state = (
                         f'<div id="{measurement_direction}_icon_{target}_{date_text}" class="icon_failed">0</div>'
                     )
-                tempo = self.db.get_tempo_range(
+                tempo = DatabaseTempo().get_range(
                     db_data.date.strftime(self.date_format), db_data.date.strftime(self.date_format)
                 )
                 if tempo and tempo[0]:
@@ -695,11 +805,21 @@ class Ajax:
         return result
 
     def datatable_detail(self, all_data, start_index, end_index, measurement_direction):
+        """Generate the datatable for the detailed view of the electrical data.
+
+        Args:
+            all_data (list): List of all data.
+            start_index (int): Start index of the data.
+            end_index (int): End index of the data.
+            measurement_direction (str): Measurement direction.
+
+        Returns:
+            list: Resulting datatable.
+        """
         index = 0
         result = []
         for db_data in all_data:
             if start_index <= index <= end_index:
-                # print(db_data)
                 date_text = db_data.date.strftime(self.date_format)
                 date_hour = db_data.date.strftime("%H:%M:%S")
                 target = "detail"
@@ -731,12 +851,22 @@ class Ajax:
         return result
 
     def datatable_max_power(self, all_data, start_index, end_index):
+        """Generate the datatable for the maximum power data.
+
+        Args:
+            all_data (list): List of all data.
+            start_index (int): Start index of the data.
+            end_index (int): End index of the data.
+
+        Returns:
+            list: Resulting datatable.
+        """
         index = 0
         result = []
         measurement_direction = "consumption_max_power"
         event_date = ""
         target = "daily"
-        contract = self.db.get_contract(self.usage_point_id)
+        contract = DatabaseContracts(self.usage_point_id).get()
         if hasattr(contract, "subscribed_power") and contract.subscribed_power is not None:
             max_power = int(contract.subscribed_power.split(" ")[0]) * 1000
         else:
