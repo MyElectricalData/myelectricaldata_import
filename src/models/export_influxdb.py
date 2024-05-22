@@ -129,6 +129,7 @@ class ExportInfluxDB:
                         else:
                             euro = kwatth * self.usage_point_config.consumption_price_hc
                     else:
+                        measure_type = "BASE"
                         euro = kwatth * self.usage_point_config.production_price
                     INFLUXDB.write(
                         measurement=measurement,
