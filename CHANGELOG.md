@@ -2,7 +2,167 @@
 
 
 
+## v0.13.0-rc.4 (2024-02-29)
+
+### Fix
+
+* fix: mqtt connect ([`4d3e919`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4d3e919c0d088f9a4b64d5990cc3c2448cc7cf03))
+
+### Unknown
+
+* Merge pull request #509 from MyElectricalData/fix/ha_sensor_rework_ha
+
+fix: mqtt connect ([`5845a77`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5845a77bd93f774aec5f7316a3f9c7df86150a46))
+
+
+## v0.13.0-rc.3 (2024-02-29)
+
+### Fix
+
+* fix: clean log + code ([`6459130`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6459130e27b0ea66bd56396ca542c49e35b3e82c))
+
+* fix: makefile setenv ([`8f77775`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8f777756e7c3fe9f57d17753cef5374d578fb97d))
+
+### Unknown
+
+* Merge pull request #508 from MyElectricalData/fix/ha_sensor_rework_ha
+
+Fix/ha sensor rework ha ([`3856bc8`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3856bc830a52380673b6837e112f4ff239588445))
+
+* clean: code ([`3c43625`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3c43625f8d6ccfa649dc0717c59e86bc73118146))
+
+
+## v0.13.0-rc.2 (2024-02-29)
+
+### Chore
+
+* chore: clean code ([`1680068`](https://github.com/MyElectricalData/myelectricaldata_import/commit/1680068d62a5480dcb631edb027a993fba2faccc))
+
+* chore: clean + doc ([`5139e5d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5139e5d78da9e8b1c9f2fb90af3a36184cde1f31))
+
+### Ci
+
+* ci: update ([`a484cf6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a484cf61639fc823ceb1f267e8b3cda384792937))
+
+### Fix
+
+* fix: rework class ([`9fc4468`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9fc4468851ccba8f91f7664767cdb28110751192))
+
+* fix: fix sensor class ([`c1ffbc5`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c1ffbc5d819ceb029cc08843a397f9157beb8337))
+
+### Unknown
+
+* Merge pull request #506 from MyElectricalData/fix/ha_sensor_rework_ha
+
+Fix/ha sensor rework ha ([`f2b9811`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f2b9811b92ab13e88c4d2aca68a0185374f42ad0))
+
+
+## v0.13.0-rc.1 (2024-02-26)
+
+### Feature
+
+* feat: add sensor create in energy dasboard + fix: HP/HD ([`5ed9171`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5ed9171ef952737e46a6a7f8a0c2e4c9aac764cc))
+
+### Fix
+
+* fix: https://github.com/MyElectricalData/myelectricaldata_import/issues/491 ([`6b19700`](https://github.com/MyElectricalData/myelectricaldata_import/commit/6b19700306e0b608f026459ba258722cf3751617))
+
+* fix: isort ([`9dc054c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9dc054c9d6544888148c1580ef7ad105ec974a41))
+
+* fix: divers ([`bfc149a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/bfc149a791990e539fc758de44c76b67dc2a7be7))
+
+* fix: update python lib ([`962112f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/962112f97e3b63543e200ea346f78b7da132f2e3))
+
+* fix: remove tempo from exemple ([`e43676f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e43676f90b5050d565240d16392a2dcdf196a8b4))
+
+* fix: fix type in config.yaml when change config ([`17ae37f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/17ae37f8c33efe3ea2eaa5c52efe6e53fa907fdd))
+
+* fix: create ha sensor create by home_assistant_ws ([`7380db0`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7380db0c917fc5d34c85546174ecfc7fc9702bf3))
+
+### Unknown
+
+* Merge pull request #503 from MyElectricalData/fix/isort_491
+
+Fix/isort 491 ([`fcae211`](https://github.com/MyElectricalData/myelectricaldata_import/commit/fcae211116134fa9375b16a0561ab47f835f26e2))
+
+* Merge pull request #502 from MyElectricalData/feat/ha_sensor_from_energy
+
+Feat/ha sensor from energy ([`0d431a3`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0d431a3e50881bb6559e17f0d56aa398c081b989))
+
+* dev: add dev standart ([`d57f9ff`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d57f9ff7590714d8e4a933db60119258607cd021))
+
+* Merge pull request #500 from MyElectricalData/feat/devcontainer
+
+type: change image ([`41fadc9`](https://github.com/MyElectricalData/myelectricaldata_import/commit/41fadc9bec6663e2ec66003c86d380b3f739a60c))
+
+* type: change image ([`c38e73c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c38e73cb74828ef9da6d059921c21cb72e827ab1))
+
+
+## v0.12.0 (2024-02-19)
+
+
+## v0.12.0-rc.1 (2024-02-19)
+
+### Chore
+
+* chore: add devcontainer ([`f5dd2a4`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f5dd2a45305d9c171e4ae574334bda6d6a7934ff))
+
+* chore: upgrade to python 3.12.2 ([`bffe1c2`](https://github.com/MyElectricalData/myelectricaldata_import/commit/bffe1c2686e6e81c747d940da6895e8f7115ef65))
+
+* chore: devcontainer ([`70e4aca`](https://github.com/MyElectricalData/myelectricaldata_import/commit/70e4aca04db856afc8c8e6bc9507847cb55f7b52))
+
+### Ci
+
+* ci: add devcontainer ([`7664475`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7664475aa0344f4838de789059af82b761bbf616))
+
+### Fix
+
+* fix: devcontaienr post-install ([`211371e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/211371ea8a06e0c1a8e9ba1d6fa38c187bf9be75))
+
+* fix: send tempo sensor to HA always ([`91456c9`](https://github.com/MyElectricalData/myelectricaldata_import/commit/91456c9c998223b4a9ab816881f72dcedde22f03))
+
+* fix: python version ([`5710106`](https://github.com/MyElectricalData/myelectricaldata_import/commit/57101067400d4f3b6b5827fbd2937f5b1425ef86))
+
+* fix: test ([`d0ca933`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d0ca93302f77529f21e575f6c81e5d3a28f0c887))
+
+* fix: test ([`79c0981`](https://github.com/MyElectricalData/myelectricaldata_import/commit/79c098108d4fbe1be487a200259c932e3f40db13))
+
+* fix: test ([`0374f0b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0374f0b889ecdfd39a7c52f6cf181930daf8a86f))
+
+* fix: test ([`e734cac`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e734cac88d17c2f378ea48423ec28861cc531d61))
+
+### Unknown
+
+* Merge pull request #498 from MyElectricalData/feat/devcontainer
+
+Feat/devcontainer ([`f4b241e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f4b241e8afce2269f81512f47647ef977ed9aff8))
+
+* Merge branch &#39;main&#39; of github.com:MyElectricalData/myelectricaldata_import into feat/devcontainer ([`3172f45`](https://github.com/MyElectricalData/myelectricaldata_import/commit/3172f453ed16846721692c38ea86b97ba5752b41))
+
+* chore upgrade lib ([`0826eb2`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0826eb2f84d455333145799fd57b12b6ce04c3c4))
+
+* dev: release devcontainer ([`e75acdf`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e75acdfab308143bc7e194327a52d35b9a04266e))
+
+* clean: devcontainer ([`988ad9a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/988ad9a7b023ab94ba54f3f0f1204084779e8d5a))
+
+* Merge pull request #496 from MyElectricalData/feat/ha-production
+
+Feat/ha production ([`ed0ba55`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ed0ba55d1f0104a06702a56140b52ac826286211))
+
+
 ## v0.11.0 (2024-02-15)
+
+### Feature
+
+* feat: add production in home assistant energy ([`9c3aa3c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9c3aa3c7e80818676972e2ac993bdd02957821e0))
+
+### Fix
+
+* fix: production daily html + doc ([`96598e6`](https://github.com/MyElectricalData/myelectricaldata_import/commit/96598e61e14570dc0faeafed28983688b945edfb))
+
+### Unknown
+
+* doc: add purge ha ws to config example ([`4851a1a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4851a1a73b0787b7883e88e7c379d60d64b8704a))
 
 
 ## v0.11.0-rc.3 (2024-02-12)

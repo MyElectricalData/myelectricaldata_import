@@ -1,10 +1,10 @@
-import logging
 import os
 import tempfile
 from contextlib import contextmanager
 
-import pytest
 import yaml
+import pytest
+import logging
 
 
 @contextmanager
@@ -74,3 +74,16 @@ def update_paths():
         with setenv(APPLICATION_PATH=app_path, APPLICATION_PATH_DATA=data_dir), mock_config(data_dir):
             copied_from_main()
             yield
+
+
+def contains_logline(caplog, expected_log: str, expected_level: int = None):
+    for logger_name, level, message in caplog.record_tuples:
+        is_log_match = expected_log == message
+        is_level_match = expected_level == level if expected_level else True
+        if is_log_match and is_level_match:
+            return True
+    try:
+        # Use assertion to generate debugging message
+        assert expected_log in caplog.text
+    except Exception:
+        return False

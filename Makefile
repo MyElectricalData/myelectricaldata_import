@@ -146,6 +146,8 @@ python-clean:
 ## TESTS
 ######################################
 ## Run PyTest
+test: pytest
+tests: pytest
 pytest: init
 	if [ ! $$? -ne 0 ]; then \
 		$(call poetry, tox -e pytest, "Run PyTest"); \

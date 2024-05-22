@@ -33,7 +33,6 @@ class Database:
         self.path = path
 
         # DBURI CONFIGURATION
-
         if "storage_uri" in Config().config:
             storage_uri = self.config["storage_uri"]
         else:

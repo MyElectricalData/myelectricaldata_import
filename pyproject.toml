@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 # POETRY CONFIGURATION
 [tool.poetry]
 name = "myelectricaldata-import"
-version = "0.11.0"
+version = "0.13.0-rc.4"
 description = "MyElectricalData official client"
 authors = ["Clément VALENTIN <m4dm4rtig4n@gmail.com>"]
 readme = "README.md"
@@ -135,7 +135,8 @@ upload_to_vcs_release = true
 #############################################
 # PYTEST CONFIGURATION
 [tool.pytest.ini_options]
-norecursedirs = ".git .tox *.egg* old docs dist build"
+norecursedirs = ".git .tox *.egg* old docs dist build data"
+log_cli_level = "DEBUG"
 addopts = "-rw"
 pythonpath = [
     "src"

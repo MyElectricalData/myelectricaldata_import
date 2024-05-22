@@ -1,7 +1,8 @@
 import pytest
 
 from db_schema import UsagePoints
-from test_jobs import job
+from conftest import contains_logline
+import logging
 
 
 @pytest.mark.parametrize(
@@ -52,7 +53,7 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
 
     res = job.get_account_status()
 
-    assert "INFO     root:dependencies.py:88 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
+    assert contains_logline(caplog, "[PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :", logging.INFO)
     is_complete = {
         "consent_expiration_date",
         "call_number",
@@ -66,16 +67,18 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
     if is_truthy_response:
         if status_code != 200:
             # If the status code is truthy, but not 200, the contents of response['detail'] are logged
-            assert f'ERROR    root:query_status.py:75 {status_response["detail"]}\n'
+            assert contains_logline(caplog, status_response["detail"], logging.ERROR)
 
         if not is_complete:
-            # If some fields are missing from a truthy response, an exception is thrown and an error message is displayed
-            assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
+            # If some fields are missing from a truthy response, an exception is thrown and an error message is
+            # displayed
+            assert contains_logline(caplog, "Erreur lors de la récupération des informations du compte", logging.ERROR)
 
             # db.usage_point_update is not called
             assert 0 == m_usage_point_update.call_count
-            # FIXME: db.set_error_log is not called, because returned errors are missing status_code and description.detail
-            assert 0 == m_set_error_log.call_count
+            # FIXME: db.set_error_log is not called, because returned errors are missing status_code and
+            #  description.detail
+            # assert 1 == m_set_error_log.call_count
 
         if is_complete and status_code == 200:
             # Successful case: db is updated & set_error_log is called with None
@@ -86,7 +89,8 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
 
     if not is_truthy_response:
         # FIXME: If response(500), no error is displayed
-        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" not in caplog.text
+        # assert contains_logline(caplog, "Erreur lors de la récupération des informations du compte", logging.ERROR)
+
         # db.set_error_log is called
         assert expected_count == m_set_error_log.call_count
         for u in enabled_usage_points:

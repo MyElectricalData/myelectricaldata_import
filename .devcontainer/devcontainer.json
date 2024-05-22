@@ -2,7 +2,7 @@
   "name": "MyElectricalData development",
   "dockerComposeFile": ["docker-compose.yaml"],
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "/bin/zsh -lc ./.devcontainer/post-install.sh",
+  // "postCreateCommand": "/bin/zsh -lc ./.devcontainer/post-install.sh",
   // "postCreateCommand": "make init-devcontainer",
   "postStartCommand": "/bin/zsh -lc ./.devcontainer/boot.sh",
   "service": "workspace",

@@ -37,7 +37,7 @@ jobs:
       - name: Test with pytest
         run: |
           pip install pytest pytest-cov pytest-mock requests-mock
-          pytest --cov=src/ --cov-report=xml
+          python -m pytest --cov=src/ --cov-report=xml
       - name: Upload coverage reports to Codecov         # Optional: Run codecov. Requires: secrets.CODECOV_TOKEN
         uses: codecov/codecov-action@v3
         env:
