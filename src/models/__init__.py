@@ -1,0 +1,1 @@
+"""This module contains the models for the MyElectricalData application."""

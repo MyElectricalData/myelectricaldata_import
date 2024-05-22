@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 import pytest
 
 from db_schema import Tempo
-from tests.conftest import contains_logline
+from conftest import contains_logline
 
 
 @pytest.mark.parametrize("response, status_code",

@@ -1,5 +1,8 @@
+"""This module contains the InfluxDB class for connecting to and interacting with InfluxDB."""
 import datetime
+import json
 import logging
+import sys
 
 import influxdb_client
 from dateutil.tz import tzlocal
@@ -7,89 +10,121 @@ from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
 from influxdb_client.client.write_api import ASYNCHRONOUS, SYNCHRONOUS
 
+from database.config import DatabaseConfig
 from dependencies import separator, separator_warning, title
+
+# from . import INFLUXDB
 
 
 class InfluxDB:
+    """Class for connecting to and interacting with InfluxDB."""
+
+    class BatchingOptions:
+        """Default configuration for InfluxDB batching options."""
+
+        def __init__(self) -> None:
+            """Initialize a new instance of the InfluxDB class.
+
+            Parameters:
+                batch_size (int): The number of data points to batch together before writing to InfluxDB.
+                flush_interval (int): The time interval (in milliseconds) between flushing batches to InfluxDB.
+                jitter_interval (int): The maximum random interval (in milliseconds) to add to the flush interval.
+                retry_interval (int): The time interval (in milliseconds) between retry attempts when writing to InfluxDB fails.
+                max_retry_time (str): The maximum total time (in milliseconds) to spend on retry attempts.
+                max_retries (int): The maximum number of retry attempts when writing to InfluxDB fails.
+                max_retry_delay (str): The maximum delay (in milliseconds) between retry attempts.
+                exponential_base (int): The base value for exponential backoff when retrying.
+
+            Returns:
+                None
+            """
+            self.batch_size: int = 1000
+            self.flush_interval: int = 1000
+            self.jitter_interval: int = 0
+            self.retry_interval: int = 5000
+            self.max_retry_time: str = "180_000"
+            self.max_retries: int = 5
+            self.max_retry_delay: str = "125_000"
+            self.exponential_base: int = 2
+
+    class Config:
+        """Default configuration for InfluxDB."""
+
+        def __init__(self) -> None:
+            """Initialize an instance of the InfluxDBConfig class.
+
+            Attributes:
+            - enable (bool): Indicates whether InfluxDB is enabled or not.
+            - scheme (str): The scheme to use for connecting to InfluxDB (e.g., "http", "https").
+            - hostname (str): The hostname of the InfluxDB server.
+            - port (int): The port number to use for connecting to InfluxDB.
+            - token (str): The authentication token for accessing InfluxDB.
+            - org (str): The organization name in InfluxDB.
+            - bucket (str): The bucket name in InfluxDB.
+            - method (str): The method to use for writing data to InfluxDB (e.g., "SYNCHRONOUS", "BATCHING").
+            """
+            self.enable: bool = False
+            self.scheme: str = "http"
+            self.hostname: str = "localhost"
+            self.port: int = 8086
+            self.token: str = "my-token"
+            self.org: str = "myorg"
+            self.bucket: str = "mybucket"
+            self.method: str = "SYNCHRONOUS"
+
     def __init__(
         self,
-        scheme: str,
-        hostname: str,
-        port: int,
-        token: str,
-        org: str = "myelectricaldata.fr",
-        bucket: str = "myelectricaldata",
-        method="SYNCHRONOUS",
-        write_options=None,
     ):
-        if write_options is None:
-            write_options = {}
-        self.scheme = scheme
-        self.hostname = hostname
-        self.port = port
-        self.token = token
-        self.org = org
-        self.bucket = bucket
         self.influxdb = {}
         self.query_api = {}
         self.write_api = {}
         self.delete_api = {}
         self.buckets_api = {}
-        self.method = method
-        self.write_options = {}
-        if "batch_size" in write_options:
-            self.write_options["batch_size"] = write_options["batch_size"]
-        else:
-            self.write_options["batch_size"] = 1000
-        if "flush_interval" in write_options:
-            self.write_options["flush_interval"] = write_options["flush_interval"]
-        else:
-            self.write_options["flush_interval"] = 1000
-        if "jitter_interval" in write_options:
-            self.write_options["jitter_interval"] = write_options["jitter_interval"]
-        else:
-            self.write_options["jitter_interval"] = 0
-        if "retry_interval" in write_options:
-            self.write_options["retry_interval"] = write_options["retry_interval"]
-        else:
-            self.write_options["retry_interval"] = 5000
-        if "max_retry_time" in write_options:
-            self.write_options["max_retry_time"] = write_options["max_retry_time"]
-        else:
-            self.write_options["max_retry_time"] = "180_000"
-        if "max_retries" in write_options:
-            self.write_options["max_retries"] = write_options["max_retries"]
-        else:
-            self.write_options["max_retries"] = 5
-        if "max_retry_delay" in write_options:
-            self.write_options["max_retry_delay"] = write_options["max_retry_delay"]
-        else:
-            self.write_options["max_retry_delay"] = 125_000
-        if "exponential_base" in write_options:
-            self.write_options["exponential_base"] = write_options["exponential_base"]
-        else:
-            self.write_options["exponential_base"] = 2
-        self.connect()
         self.retention = 0
         self.max_retention = None
-        self.get_list_retention_policies()
-        if self.retention != 0:
-            day = int(self.retention / 60 / 60 / 24)
-            logging.warning(f"<!> ATTENTION, InfluxDB est configuré avec une durée de rétention de {day} jours.")
-            logging.warning(
-                f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci."
-            )
-        else:
-            logging.warning(" => Aucune durée de rétention de données détectée.")
+        self.config = self.Config()
+        self.config_batching = self.BatchingOptions()
+        self.load_config()
+        if self.config.enable:
+            self.connect()
+            self.get_list_retention_policies()
+            if self.retention != 0:
+                day = int(self.retention / 60 / 60 / 24)
+                logging.warning(f"<!> ATTENTION, InfluxDB est configuré avec une durée de rétention de {day} jours.")
+                logging.warning(
+                    f"    Toutes les données supérieures à {day} jours ne seront jamais insérées dans celui-ci."
+                )
+            else:
+                logging.warning(" => Aucune durée de rétention de données détectée.")
+
+    def load_config(self):
+        """Load the configuration for InfluxDB.
+
+        This method loads the configuration values from the usage point and contract objects.
+        """
+        self.influxdb_config = json.loads(DatabaseConfig().get("influxdb").value)
+        for key in self.config.__dict__:
+            if key in self.influxdb_config:
+                setattr(self.config, key, self.influxdb_config.get(key))
+
+        if "batching" in self.influxdb_config:
+            self.batching_options = self.influxdb_config.get("batching")
+            for key in self.config_batching.__dict__:
+                if key in self.batching_options:
+                    setattr(self.config_batching, key, self.batching_options.get(key))
 
     def connect(self):
+        """Connect to InfluxDB.
+
+        This method establishes a connection to the InfluxDB database using the provided configuration.
+        """
         separator()
-        logging.info(f"Connect to InfluxDB {self.hostname}:{self.port}")
+        logging.info(f"Connect to InfluxDB {self.config.hostname}:{self.config.port}")
         date_utils.date_helper = DateHelper(timezone=tzlocal())
         self.influxdb = influxdb_client.InfluxDBClient(
-            url=f"{self.scheme}://{self.hostname}:{self.port}",
-            token=self.token,
-            org=self.org,
+            url=f"{self.config.scheme}://{self.config.hostname}:{self.config.port}",
+            token=self.config.token,
+            org=self.config.org,
             timeout="600000",
         )
         health = self.influxdb.health()
@@ -98,33 +133,32 @@ class InfluxDB:
         else:
             logging.critical(
                 """
-            
 Impossible de se connecter à la base influxdb.
 
 Vous pouvez récupérer un exemple ici :
 https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file
 """
             )
-            exit(1)
+            sys.exit(1)
 
-        title(f"Méthode d'importation : {self.method.upper()}")
-        if self.method.upper() == "ASYNCHRONOUS":
+        title(f"Méthode d'importation : {self.config.method.upper()}")
+        if self.config.method.upper() == "ASYNCHRONOUS":
             logging.warning(
                 ' <!> ATTENTION, le mode d\'importation "ASYNCHRONOUS" est très consommateur de ressources système.'
             )
             self.write_api = self.influxdb.write_api(write_options=ASYNCHRONOUS)
-        elif self.method.upper() == "SYNCHRONOUS":
+        elif self.config.method.upper() == "SYNCHRONOUS":
             self.write_api = self.influxdb.write_api(write_options=SYNCHRONOUS)
         else:
             self.write_api = self.influxdb.write_api(
                 write_options=influxdb_client.WriteOptions(
-                    batch_size=self.write_options["batch_size"],
-                    flush_interval=self.write_options["flush_interval"],
-                    jitter_interval=self.write_options["jitter_interval"],
-                    retry_interval=self.write_options["retry_interval"],
-                    max_retries=self.write_options["max_retries"],
-                    max_retry_delay=self.write_options["max_retry_delay"],
-                    exponential_base=self.write_options["exponential_base"],
+                    batch_size=self.config_batching.batch_size,
+                    flush_interval=self.config_batching.flush_interval,
+                    jitter_interval=self.config_batching.jitter_interval,
+                    retry_interval=self.config_batching.retry_interval,
+                    max_retries=self.config_batching.max_retries,
+                    max_retry_delay=self.config_batching.max_retry_delay,
+                    exponential_base=self.config_batching.exponential_base,
                 )
             )
         self.query_api = self.influxdb.query_api()
@@ -133,8 +167,12 @@ https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file
         self.get_list_retention_policies()
 
     def purge_influxdb(self):
+        """Purge the InfluxDB database.
+
+        This method wipes the InfluxDB database by deleting all data within specified measurement types.
+        """
         separator_warning()
-        logging.warning(f"Wipe influxdb database {self.hostname}:{self.port}")
+        logging.warning(f"Wipe influxdb database {self.config.hostname}:{self.config.port}")
         start = "1970-01-01T00:00:00Z"
         stop = datetime.datetime.utcnow()
         measurement = [
@@ -144,26 +182,41 @@ https://github.com/m4dm4rtig4n/enedisgateway2mqtt#configuration-file
             "production_detail",
         ]
         for mesure in measurement:
-            self.delete_api.delete(start, stop, f'_measurement="{mesure}"', self.bucket, org=self.org)
-        # CONFIG.set("wipe_influxdb", False)
-        logging.warning(f" => Data reset")
+            self.delete_api.delete(start, stop, f'_measurement="{mesure}"', self.config.bucket, org=self.config.org)
+        logging.warning(" => Data reset")
 
     def get_list_retention_policies(self):
-        if self.org == f"-":  # InfluxDB 1.8
+        """Get the list of retention policies.
+
+        This method retrieves the list of retention policies for the InfluxDB database.
+        """
+        if self.config.org == "-":  # InfluxDB 1.8
             self.retention = 0
             self.max_retention = 0
             return
         else:
             buckets = self.buckets_api.find_buckets().buckets
             for bucket in buckets:
-                if bucket.name == self.bucket:
+                if bucket.name == self.config.bucket:
                     self.retention = bucket.retention_rules[0].every_seconds
                     self.max_retention = datetime.datetime.now() - datetime.timedelta(seconds=self.retention)
 
     def get(self, start, end, measurement):
-        if self.org != f"-":
+        """Retrieve data from the InfluxDB database.
+
+        This method retrieves data from the specified measurement within the given time range.
+
+        Args:
+            start (str): Start time of the data range.
+            end (str): End time of the data range.
+            measurement (str): Name of the measurement to retrieve data from.
+
+        Returns:
+            list: List of data points retrieved from the database.
+        """
+        if self.config.org != "-":
             query = f"""
-from(bucket: "{self.bucket}")
+from(bucket: "{self.config.bucket}")
   |> range(start: {start}, stop: {end})
   |> filter(fn: (r) => r["_measurement"] == "{measurement}")
 """
@@ -175,9 +228,19 @@ from(bucket: "{self.bucket}")
         return output
 
     def count(self, start, end, measurement):
-        if self.org != f"-":
+        """Count the number of data points within a specified time range and measurement.
+
+        Args:
+            start (str): Start time of the data range.
+            end (str): End time of the data range.
+            measurement (str): Name of the measurement to count data points from.
+
+        Returns:
+            list: List of count values.
+        """
+        if self.config.org != "-":
             query = f"""
-from(bucket: "{self.bucket}")
+from(bucket: "{self.config.bucket}")
     |> range(start: {start}, stop: {end})
     |> filter(fn: (r) => r["_measurement"] == "{measurement}")
     |> filter(fn: (r) => r["_field"] == "Wh")
@@ -192,9 +255,27 @@ from(bucket: "{self.bucket}")
         return output
 
     def delete(self, date, measurement):
-        self.delete_api.delete(date, date, f'_measurement="{measurement}"', self.bucket, org=self.org)
+        """Delete data from the InfluxDB database.
+
+        This method deletes data from the specified measurement for a given date.
+
+        Args:
+            date (str): Date of the data to be deleted.
+            measurement (str): Name of the measurement to delete data from.
+        """
+        self.delete_api.delete(date, date, f'_measurement="{measurement}"', self.config.bucket, org=self.config.org)
 
     def write(self, tags, date=None, fields=None, measurement="log"):
+        """Write data to the InfluxDB database.
+
+        This method writes data to the specified measurement in the InfluxDB database.
+
+        Args:
+            tags (dict): Dictionary of tags associated with the data.
+            date (datetime.datetime, optional): Date and time of the data. Defaults to None.
+            fields (dict, optional): Dictionary of fields and their values. Defaults to None.
+            measurement (str, optional): Name of the measurement. Defaults to "log".
+        """
         date_max = self.max_retention
         if date is None:
             date_object = datetime.datetime.now()
@@ -213,4 +294,4 @@ from(bucket: "{self.bucket}")
             if fields is not None:
                 for key, value in fields.items():
                     record["fields"][key] = value
-            self.write_api.write(bucket=self.bucket, org=self.org, record=record)
+            self.write_api.write(bucket=self.config.bucket, org=self.config.org, record=record)

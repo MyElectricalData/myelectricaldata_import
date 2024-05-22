@@ -1,10 +1,14 @@
+"""This module contains the Job class, which is responsible for importing data from the API."""
+
 import logging
 import time
 import traceback
-from os import environ, getenv
+from os import getenv
 
+from database import DB
+from database.usage_points import DatabaseUsagePoints
 from dependencies import export_finish, finish, get_version, log_usage_point_id, str2bool, title
-from init import CONFIG, DB
+from init import CONFIG
 from models.export_home_assistant import HomeAssistant
 from models.export_home_assistant_ws import HomeAssistantWs
 from models.export_influxdb import ExportInfluxDB
@@ -21,9 +25,10 @@ from models.stat import Stat
 
 
 class Job:
+    """Represents a job for importing data."""
+
     def __init__(self, usage_point_id=None):
         self.config = CONFIG
-        self.db = DB
         self.usage_point_id = usage_point_id
         self.usage_point_config = {}
         self.mqtt_config = self.config.mqtt_config()
@@ -32,23 +37,24 @@ class Job:
         self.influxdb_config = self.config.influxdb_config()
         self.wait_job_start = 10
         self.tempo_enable = False
-
         if self.usage_point_id is None:
-            self.usage_points = self.db.get_usage_point_all()
+            self.usage_points_all = DatabaseUsagePoints().get_all()
         else:
-            self.usage_points = [self.db.get_usage_point(self.usage_point_id)]
+            self.usage_points_all = [DatabaseUsagePoints(self.usage_point_id).get()]
 
     def boot(self):
+        """Boots the import job."""
         if str2bool(getenv("DEV")) or str2bool(getenv("DEBUG")):
             logging.warning("=> Import job disable")
         else:
             self.job_import_data()
 
-    def job_import_data(self, wait=True, target=None):
-        if self.db.lock_status():
+    def job_import_data(self, wait=True, target=None):  # noqa: PLR0912, PLR0915, C901
+        """Import data from the API."""
+        if DB.lock_status():
             return {"status": False, "notif": "Importation déjà en cours..."}
         else:
-            self.db.lock()
+            DB.lock()
 
             if wait:
                 title("Démarrage du job d'importation dans 10s")
@@ -71,11 +77,12 @@ class Job:
             if target == "ecowatt" or target is None:
                 self.get_ecowatt()
 
-            for self.usage_point_config in self.usage_points:
-                self.usage_point_id = self.usage_point_config.usage_point_id
-                log_usage_point_id(self.usage_point_id)
-                self.db.last_call_update(self.usage_point_id)
-                if self.usage_point_config.enable:
+            for usage_point_config in self.usage_points_all:
+                self.usage_point_config = usage_point_config
+                usage_point_id = usage_point_config.usage_point_id
+                log_usage_point_id(usage_point_id)
+                DatabaseUsagePoints(usage_point_id).last_call_update()
+                if usage_point_config.enable:
                     #######################################################################################################
                     # CHECK ACCOUNT DATA
                     if target == "account_status" or target is None:
@@ -134,16 +141,24 @@ class Job:
                         self.export_influxdb()
                 else:
                     logging.info(
-                        f" => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)."
+                        " => Point de livraison Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)."
                     )
 
             finish()
 
             self.usage_point_id = None
-            self.db.unlock()
+            DB.unlock()
             return {"status": True, "notif": "Importation terminée"}
 
     def header_generate(self, token=True):
+        """Generate the header for the API request.
+
+        Args:
+            token (bool, optional): Whether to include the authorization token in the header. Defaults to True.
+
+        Returns:
+            dict: The generated header as a dictionary.
+        """
         output = {
             "Content-Type": "application/json",
             "call-service": "myelectricaldata",
@@ -154,6 +169,14 @@ class Job:
         return output
 
     def get_gateway_status(self):
+        """Retrieve the status of the gateway.
+
+        This method retrieves the status of the gateway by pinging it. If an error occurs during the process,
+        it logs the error message.
+
+        Returns:
+            None
+        """
         detail = "Récupération du statut de la passerelle :"
         try:
             title(detail)
@@ -164,32 +187,57 @@ class Job:
             logging.error(e)
 
     def get_account_status(self):
+        """Retrieve the account status information.
+
+        This method retrieves the account status information for the usage point(s).
+        It sets the error log if there is an error in the status response.
+
+        Returns:
+            None
+        """
         detail = "Récupération des informations du compte"
 
-        def run(usage_point_config):
-            usage_point_id = usage_point_config.usage_point_id
+        def run():
+            usage_point_id = self.usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
             status = Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
-            if "error" in status and status["error"]:
+            if status.get("error"):
                 message = f'{status["status_code"]} - {status["description"]["detail"]}'
-                self.db.set_error_log(usage_point_id, message)
+                DatabaseUsagePoints(usage_point_id).set_error_log(message)
             else:
-                self.db.set_error_log(usage_point_id, None)
+                DatabaseUsagePoints(usage_point_id).set_error_log(None)
             export_finish()
 
         try:
-            if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
-                    if usage_point_config.enable:
-                        run(usage_point_config)
+            if self.usage_point_config is None:
+                for usage_point_config in self.usage_points_all:
+                    self.usage_point_config = usage_point_config
+                    if self.usage_point_config.enable:
+                        run()
             else:
-                run(self.usage_point_config)
+                run()
         except Exception as e:
             traceback.print_exc()
             logging.error(f"Erreur lors de la {detail.lower()}")
             logging.error(e)
 
     def get_contract(self):
+        """Retrieve contract information for the usage points.
+
+        This method iterates over the list of usage points and retrieves the contract information
+        for each enabled usage point. If a specific usage point ID is provided, it retrieves the
+        contract information only for that usage point.
+
+        Args:
+            self: The current instance of the Jobs class.
+
+        Returns:
+            None
+
+        Raises:
+            Exception: If an error occurs during the retrieval of contract information.
+
+        """
         detail = "Récupération des informations contractuelles"
 
         def run(usage_point_config):
@@ -204,7 +252,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -215,6 +263,18 @@ class Job:
             logging.error(e)
 
     def get_addresses(self):
+        """Retrieve the postal addresses for the usage points.
+
+        This method iterates over the list of usage points and retrieves the postal addresses
+        for each enabled usage point. It calls the `Address.get()` method to fetch the addresses
+        and then calls the `export_finish()` function to indicate the completion of the export.
+
+        If a specific usage point ID is provided, only that usage point will be processed.
+
+        Raises:
+            Exception: If an error occurs during the retrieval of postal addresses.
+
+        """
         detail = "Récupération des coordonnées postales"
 
         def run(usage_point_config):
@@ -225,7 +285,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -249,7 +309,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -273,7 +333,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -301,7 +361,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -329,7 +389,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -350,7 +410,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -362,11 +422,11 @@ class Job:
 
     def get_tempo(self):
         try:
-            title(f"Récupération des données Tempo :")
+            title("Récupération des données Tempo :")
             Tempo().fetch()
-            title(f"Calcul des jours Tempo :")
+            title("Calcul des jours Tempo :")
             Tempo().calc_day()
-            title(f"Récupération des tarifs Tempo :")
+            title("Récupération des tarifs Tempo :")
             Tempo().fetch_price()
             export_finish()
         except Exception as e:
@@ -376,7 +436,7 @@ class Job:
 
     def get_ecowatt(self):
         try:
-            title(f"Récupération des données EcoWatt :")
+            title("Récupération des données EcoWatt :")
             Ecowatt().fetch()
             export_finish()
         except Exception as e:
@@ -400,7 +460,7 @@ class Job:
 
         try:
             if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
+                for usage_point_config in self.usage_points_all:
                     if usage_point_config.enable:
                         run(usage_point_config)
             else:
@@ -411,10 +471,10 @@ class Job:
             logging.error(e)
 
     def export_home_assistant(self, target=None):
+        """Export data to Home Assistant."""
         detail = "Exportation des données vers Home Assistant (via MQTT)"
 
-        def run(usage_point_config, target):
-            usage_point_id = usage_point_config.usage_point_id
+        def run(usage_point_id, target):
             title(f"[{usage_point_id}] {detail}")
             if target is None:
                 HomeAssistant(usage_point_id).export()
@@ -426,11 +486,11 @@ class Job:
             if "enable" in self.home_assistant_config and str2bool(self.home_assistant_config["enable"]):
                 if "enable" in self.mqtt_config and str2bool(self.mqtt_config["enable"]):
                     if self.usage_point_id is None:
-                        for usage_point_config in self.usage_points:
+                        for usage_point_id, usage_point_config in self.usage_points_all.items():
                             if usage_point_config.enable:
-                                run(usage_point_config, target)
+                                run(usage_point_id, target)
                     else:
-                        run(self.usage_point_config, target)
+                        run(self.usage_point_id, target)
                 else:
                     logging.critical(
                         "L'export Home Assistant est dépendant de MQTT, "
@@ -480,7 +540,7 @@ class Job:
         try:
             if "enable" in self.influxdb_config and self.influxdb_config["enable"]:
                 if self.usage_point_id is None:
-                    for usage_point_config in self.usage_points:
+                    for usage_point_config in self.usage_points_all:
                         if usage_point_config.enable:
                             run(usage_point_config)
                 else:
@@ -552,7 +612,7 @@ class Job:
         try:
             if "enable" in self.mqtt_config and self.mqtt_config["enable"]:
                 if self.usage_point_id is None:
-                    for usage_point_config in self.usage_points:
+                    for usage_point_config in self.usage_points_all:
                         if usage_point_config.enable:
                             run(usage_point_config)
                 else:

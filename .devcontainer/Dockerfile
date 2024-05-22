@@ -19,4 +19,38 @@ ENV LANG ${LOCAL}
 RUN docker context use default
 RUN docker buildx use default
 
+ARG home=/home/vscode
+
+USER vscode
+
+COPY ./ /workspace
+
+# ZSH
+RUN mkdir -p ${home}/.local/share/fonts
+RUN curl -fL https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/DroidSansMono/DroidSansMNerdFontMono-Regular.otf --output ${home}/.local/share/fonts/DroidSansMNerdFontMono-Regular.otf 
+RUN git clone https://github.com/tarjoilija/zgen.git "${home}/.zgen"
+RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-${home}/.oh-my-zsh/custom}/themes/powerlevel10k
+RUN cp /workspace/.devcontainer/zshrc ${home}/.zshrc
+
+# ASDF
+RUN git clone https://github.com/asdf-vm/asdf.git ${home}/.asdf
+RUN echo '. "$HOME/.asdf/asdf.sh"'  >> ${home}/.bashrc
+RUN echo '. "$HOME/.asdf/completions/asdf.bash"'  >> ${home}/.bashrc
+RUN echo '. "$HOME/.asdf/asdf.sh"'  >> ${home}/.zshrc
+RUN echo '. "$HOME/.asdf/completions/asdf.bash"'  >> ${home}/.zshrc
+RUN export PATH=~/.asdf/bin:~/.asdf/shims:$PATH
+
+# CURL SSL DISABLE
+RUN sudo update-ca-certificates --fresh
+RUN echo "insecure" >> ${home}/.curlrc
+
+# RUN POETRY_VERSION=$(cat .tool-versions|grep 'poetry' | cut -d " " -f 2) && export PATH=${home}/.asdf/installs/poetry/$POETRY_VERSION/bin:$PATH
+
+RUN sudo chown -Rf vscode:vscode ${home}
+RUN sudo chown -Rf vscode:vscode /workspace
+
 WORKDIR /workspace
+
+SHELL ["/bin/bash", "-c"]
+RUN source ${home}/.asdf/asdf.sh && make install
+RUN sudo rm -rf /workspace

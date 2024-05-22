@@ -3,7 +3,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pytest
 from test_jobs import job
-from tests.conftest import contains_logline
+from conftest import contains_logline
 
 
 @pytest.mark.parametrize("response, status_code", [(None, 200), (None, 500), ({"2099-01-01": {"value": 9000, "message": "mock message", "detail": "mock detail"}}, 200)])

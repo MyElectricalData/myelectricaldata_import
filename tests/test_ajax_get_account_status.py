@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from tests.conftest import contains_logline
+from conftest import contains_logline
 
 
 @pytest.mark.parametrize("usage_point_id", ["pdl1"])
