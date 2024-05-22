@@ -2,7 +2,7 @@ import logging
 
 import pytest
 from test_jobs import job
-from tests.conftest import contains_logline
+from conftest import contains_logline
 
 
 @pytest.mark.parametrize("response, status_code", [(None, 200), (None, 500), ({"mock": "response"}, 200)])

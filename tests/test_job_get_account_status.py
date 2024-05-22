@@ -1,8 +1,7 @@
 import pytest
-from test_jobs import job
 
 from db_schema import UsagePoints
-from tests.conftest import contains_logline
+from conftest import contains_logline
 import logging
 
 
