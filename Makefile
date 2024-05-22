@@ -146,6 +146,8 @@ python-clean:
 ## TESTS
 ######################################
 ## Run PyTest
+test: pytest
+tests: pytest
 pytest: init
 	if [ ! $$? -ne 0 ]; then \
 		$(call poetry, tox -e pytest, "Run PyTest"); \
@@ -204,6 +206,11 @@ vulture: init
 build: generate-dependencies
 	@$(call title,"Build image in local")
 	docker build ./
+
+reload-dev-container:
+	set -x
+	DOCKER_ID=$(shell docker ps | grep myelectricaldata| grep workspace | awk '{print $$NF}')
+	docker restart $$DOCKER_ID
 
 ######################################
 ## MAKEFILE FUNCTION
