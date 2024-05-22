@@ -2,9 +2,56 @@
 
 
 
+## v1.0.0-rc.1 (2024-05-22)
+
+### Breaking
+
+* feat: rework database
+
+BREAKING CHANGE: Release 1.0.0 with database rework
+
+- Upgrade FastAPI to latest (0.111.0) ([`38a77c9`](https://github.com/MyElectricalData/myelectricaldata_import/commit/38a77c9e8fce2ce96db222bf43c09bec23a3e76b))
+
+### Chore
+
+* chore: tnr ([`cbb3352`](https://github.com/MyElectricalData/myelectricaldata_import/commit/cbb3352bf93c27e38f83f9ba0358febba9b85730))
+
+* chore: vsconfig ([`a115719`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a1157195d4aa3c9b968503e547a9284fa142b499))
+
+* chore: add devcontainer ([`b7a856a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b7a856ac735070bf2fd11e29f58f77457d14ee8d))
+
+### Refactor
+
+* refactor: rework database ([`ae03761`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ae037614902d2917c7c61795a8a08e0002420889))
+
+* refactor: rework database ([`7ac2a64`](https://github.com/MyElectricalData/myelectricaldata_import/commit/7ac2a649449ec977545026b9dc1da265996f5bd8))
+
+### Unknown
+
+* Merge pull request #534 from MyElectricalData/feat/rework-database
+
+feat: rework database ([`2b9204d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2b9204db8ecbd40970183eff9b8ffafb5c1d2a52))
+
+* Merge pull request #533 from MyElectricalData/feat/rework-database
+
+BREAKING CHANGE: database rework ([`bb95b75`](https://github.com/MyElectricalData/myelectricaldata_import/commit/bb95b75a979aa458ae0b72f03bea92da44edc256))
+
+* BREAKING CHANGE: database rework ([`ba40034`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ba40034dcf908bffbba7c01df36ac30093bb9320))
+
+* Merge pull request #532 from MyElectricalData/feat/rework-database
+
+Feat/rework database ([`e2a5c7b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e2a5c7b4d1be888c25129033d8c26e38a10df2da))
+
+* Merge pull request #523 from hotfix31/fix-export-influxdb-production-only
+
+fix export to influxdb for production ([`d9639bf`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d9639bfaaf8b1fef9b2b74422d4d3c885574bf79))
+
+
 ## v0.13.0 (2024-05-22)
 
 ### Unknown
+
+* fix export to influxdb for production ([`2959b05`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2959b0576f3a605d6f5f8b727abbf425b0679f9f))
 
 * Merge pull request #517 from FabienPennequin/feature/homeassistant_ws_batch_size
 
