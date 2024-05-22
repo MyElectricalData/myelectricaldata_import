@@ -1,17 +1,26 @@
 {
-    "sqltools.connections": [
-        {
-            "previewLimit": 50,
-            "server": "127.0.0.1",
-            "port": 5432,
-            "driver": "PostgreSQL",
-            "name": "MED Import",
-            "group": "MED",
-            "database": "myelectricaldata",
-            "username": "myelectricaldata",
-            "password": "myelectricaldata"
-        }
-    ],
-    "github-actions.workflows.pinned.workflows": [],
-    "GitHooks.hooksDirectory": "/home/cvalentin/git/myelectricaldata/myelectricaldata_import/.git/hooks"
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "127.0.0.1",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "MED Import",
+      "group": "MED",
+      "database": "myelectricaldata",
+      "username": "myelectricaldata",
+      "password": "myelectricaldata"
+    }
+  ],
+  "github-actions.workflows.pinned.workflows": [],
+  "GitHooks.hooksDirectory": "/home/cvalentin/git/myelectricaldata/myelectricaldata_import/.git/hooks",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  "hide-files.files": []
 }
