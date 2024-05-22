@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.2 (2024-05-22)
+
+### Fix
+
+* fix: update requirement ([`aa839fc`](https://github.com/MyElectricalData/myelectricaldata_import/commit/aa839fc14ce8139f40d81b6c6488b77aaeb4c102))
+
+### Unknown
+
+* Merge pull request #535 from MyElectricalData/feat/rework-database
+
+fix: update requirement ([`cf56680`](https://github.com/MyElectricalData/myelectricaldata_import/commit/cf56680c26ada1c1edb30d22e126dc0a2b9c0898))
+
+
 ## v1.0.0-rc.1 (2024-05-22)
 
 ### Breaking
