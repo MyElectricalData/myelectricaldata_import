@@ -2,6 +2,41 @@
 
 
 
+## v0.13.0 (2024-05-22)
+
+### Unknown
+
+* Merge pull request #517 from FabienPennequin/feature/homeassistant_ws_batch_size
+
+Send data to Home Assistant WS per batches ([`353c44f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/353c44f0f48798499a288562f494eb78d2014947))
+
+* Merge pull request #512 from Rathorian/patch-1
+
+Changing the link for the configuration file reference ([`de3ba6e`](https://github.com/MyElectricalData/myelectricaldata_import/commit/de3ba6e29eb82c8009e50155f87f58f05d470c74))
+
+* Merge pull request #510 from koukihai/koukihai/fix-tests
+
+tests: fix tests + stop tracking logging file and line_no ([`5103919`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5103919531c3bbb40a086ae20f2ae82734e8446c))
+
+* Simplify code ([`0bde36d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0bde36d05120f99f149ab1362759ea813f841031))
+
+* Tweak logging ([`67cda56`](https://github.com/MyElectricalData/myelectricaldata_import/commit/67cda569969f73b35fb40301deef7205b9a0b1c1))
+
+* Add batch_size param in config file ([`54a1a6c`](https://github.com/MyElectricalData/myelectricaldata_import/commit/54a1a6c85aee671515bc1bf59c5c811c76a207b6))
+
+* Send data to Home Assistant per batches
+
+Avoid websocket timeout when data is too large ([`8173a52`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8173a526628fb40da25e801e7bfc66a1372d6b61))
+
+* Changing the link for the configuration file reference ([`6863752`](https://github.com/MyElectricalData/myelectricaldata_import/commit/68637521d68ff1df6a39df8b4e5160dc7e18af59))
+
+* more coverage ([`5e118e7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/5e118e76f93241c4bce474b0b46a34a0406d89a4))
+
+* use pytest module ([`d64ee7f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d64ee7f5395a5ee48de296131789cff5a647ba7f))
+
+* tests: fix tests + stop tracking logging file and line_no ([`e28a575`](https://github.com/MyElectricalData/myelectricaldata_import/commit/e28a575517454ae0c5bff5f3705c0901f9fdb4ef))
+
+
 ## v0.13.0-rc.4 (2024-02-29)
 
 ### Fix
