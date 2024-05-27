@@ -1,5 +1,4 @@
 """This module contains dependencies for the application."""
-
 import datetime
 import logging
 from math import floor
@@ -224,3 +223,8 @@ def logo(version):
     version = f"VERSION : {version}"
     logging.info(f'{decor("barcode1")}{version: ^93}{decor("barcode1", reverse=True)}')
     separator()
+
+def chunks_list(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
