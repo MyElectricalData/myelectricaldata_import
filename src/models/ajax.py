@@ -419,7 +419,6 @@ class Ajax:
             }
 
     def new_account(self, configs):
-        print(vars(configs))
         self.usage_point_id = configs["usage_point_id"]
         title(f"[{self.usage_point_id}] Ajout d'un nouveau point de livraison:")
         output = {}

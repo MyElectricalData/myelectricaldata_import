@@ -115,7 +115,6 @@ class HomeAssistant:  # pylint: disable=R0902
         self.usage_point = DB.get_usage_point(self.usage_point_id)
         self.mqtt = MQTT
         self.tempo_color = None
-        print(self.config.__dict__)
 
     def load_config(self):
         """Load the configuration for Home Assistant.
