@@ -206,7 +206,7 @@ class HomeAssistantWs:
         """Import the data for the usage point into Home Assistant."""
         logging.info(f"Importation des données du point de livraison : {self.usage_point_id}")
         try:
-            plan = DB.get_usage_point_plan(self.usage_point_id)
+            plan = DB.get_usage_point_plan(self.usage_point_id).upper()
             if self.usage_point_id_config.consumption_detail:
                 logging.info("Consommation")
                 measurement_direction = "consumption"
@@ -261,7 +261,7 @@ class HomeAssistantWs:
                             statistic_id = f"{statistic_id}_hp_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hp / 1000
                             tag = "hp"
-                    elif plan.upper() == "TEMPO":
+                    elif plan == "TEMPO":
                         if 600 <= hour_minute < 2200:
                             hour_type = "HP"
                         else:
