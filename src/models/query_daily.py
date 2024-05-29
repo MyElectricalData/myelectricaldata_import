@@ -16,7 +16,8 @@ def daterange(start_date, end_date):
 
 
 class Daily:
-    """The 'Daily' class represents a daily data retrieval and manipulation process for a specific usage point. It provides methods for fetching, resetting, deleting, and blacklisting daily data.
+    """
+    The 'Daily' class represents a daily data retrieval and manipulation process for a specific usage point. It provides methods for fetching, resetting, deleting, and blacklisting daily data.
 
     Attributes:
         config (dict): The configuration settings.
@@ -106,8 +107,9 @@ class Daily:
         if measure_type == "consumption":
             if hasattr(self.usage_point_config, "consumption_price_base"):
                 self.base_price = self.usage_point_config.consumption_price_base
-        elif hasattr(self.usage_point_config, "production_price"):
-            self.base_price = self.usage_point_config.production_price
+        else:
+            if hasattr(self.usage_point_config, "production_price"):
+                self.base_price = self.usage_point_config.production_price
 
     def run(self, begin, end):
         begin_str = begin.strftime(self.date_format)
@@ -253,7 +255,7 @@ class Daily:
                     "error": True,
                     "description": "MyElectricalData est indisponible.",
                 }
-            if response.get("error"):
+            if "error" in response and response["error"]:
                 logging.error("Echec de la récupération des données")
                 logging.error(f'=> {response["description"]}')
                 logging.error(f"=> {begin.strftime(self.date_format)} -> {end.strftime(self.date_format)}")
@@ -282,7 +284,7 @@ class Daily:
             datetime.combine(date - timedelta(days=2), datetime.min.time()),
             datetime.combine(date + timedelta(days=2), datetime.min.time()),
         )
-        if result.get("error"):
+        if "error" in result and result["error"]:
             return {
                 "error": True,
                 "notif": result["description"],
