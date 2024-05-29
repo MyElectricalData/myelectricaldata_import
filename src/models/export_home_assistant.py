@@ -415,8 +415,8 @@ class HomeAssistant:  # pylint: disable=R0902
         yesterday_hp_value_cost = 0
         if measurement_direction == "consumption":
             daily_cost = 0
-            plan = DB.get_usage_point_plan(self.usage_point_id)
-            if plan == "HC/HP":
+            plan = DB.get_usage_point_plan(self.usage_point_id).upper()
+            if plan in ("HC/HP", "HC/HP"):
                 for i in range(7):
                     hp = stats.detail(i, "HP")["value"]
                     hc = stats.detail(i, "HC")["value"]

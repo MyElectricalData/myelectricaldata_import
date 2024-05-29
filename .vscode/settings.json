@@ -13,5 +13,14 @@
         }
     ],
     "github-actions.workflows.pinned.workflows": [],
-    "GitHooks.hooksDirectory": "/home/cvalentin/git/myelectricaldata/myelectricaldata_import/.git/hooks"
+    "GitHooks.hooksDirectory": "/home/cvalentin/git/myelectricaldata/myelectricaldata_import/.git/hooks",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true
+    },
+    "hide-files.files": []
 }
