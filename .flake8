@@ -40,4 +40,4 @@ exclude =
 max-complexity = 15
 import-order-style = google
 application-import-names = flake8
-min_python_version = 3.11.9
+min_python_version = 3.12.3
