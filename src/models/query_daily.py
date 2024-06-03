@@ -313,7 +313,6 @@ class Daily:
             }
         for item in result:
             if date.strftime(self.date_format) in item["date"]:
-                print(Stat(self.usage_point_id, self.measure_type).get_daily(date, "hc"))
                 item["hc"] = Stat(self.usage_point_id, self.measure_type).get_daily(date, "hc")
                 item["hp"] = Stat(self.usage_point_id, self.measure_type).get_daily(date, "hp")
                 return item

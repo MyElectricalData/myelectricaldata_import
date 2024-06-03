@@ -1,0 +1,93 @@
+version: "3.9"
+services:
+#  myelectricaldata_import:
+#    build: ./../
+##    image: m4dm4rtig4n/myelectricaldata:0.8.13-beta2
+#    environment:
+#      TZ: Europe/Paris
+#    ports:
+#      - '5000:5000'
+#    links:
+#      - influxdb
+#      - mosquitto
+#      - postgres
+#    volumes:
+#      - ./../data/cache:/data
+#      - ./../data/log:/log
+#      - ./../app:/app
+      
+  influxdb:
+    image: influxdb:2.4
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./../data/influxdb:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://influxdb:8086"]
+      interval: 25s
+      timeout: 3s
+      start_period: 30s
+    environment:
+      TZ: Europe/Paris
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: myelectricaldata
+      DOCKER_INFLUXDB_INIT_PASSWORD: myelectricaldata
+      DOCKER_INFLUXDB_INIT_ORG: myelectricaldata
+      DOCKER_INFLUXDB_INIT_BUCKET: myelectricaldata
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: myelectricaldata
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.12
+    environment:
+      TZ: Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ${HOME}/.tmp/myelectridalcata/data/mosquitto:/data
+      - ./../mosquitto:/mosquitto/config/
+    ports:
+      - 1883:1883
+      - 9001:9001
+
+  mqtt_explorer:
+    image: smeagolworms4/mqtt-explorer
+    environment:
+      TZ: Europe/Paris
+    links:
+      - mosquitto
+    volumes:
+      - ${HOME}/.tmp/myelectridalcata/data/:/mqtt-explorer/config
+    ports:
+      - 4000:4000
+
+# ----------------------------------------------------------------------------------------------------------------------
+# DATABASE
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: myelectricaldata
+      POSTGRES_PASSWORD: myelectricaldata
+      POSTGRES_DB: myelectricaldata
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - ${HOME}/.tmp/myelectridalcata/data/postgresql/data:/var/lib/postgresql/data
+      - ./../init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  mysql:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_USER: myelectricaldata
+      MARIADB_PASSWORD: myelectricaldata
+      MARIADB_ROOT_PASSWORD: myelectricaldata
+      MARIADB_DATABASE : myelectricaldata
+    ports:
+      - "3306:3306"
+    volumes:
+      - ${HOME}/.tmp/myelectridalcata/data/mysql/data:/var/lib/mysql
+
+volumes:
+  mydata:

@@ -13,7 +13,7 @@ from config import TEMPO_BEGIN, TEMPO_END
 from database.detail import DatabaseDetail
 from database.tempo import DatabaseTempo
 from database.usage_points import DatabaseUsagePoints
-from dependencies import is_integer, str2bool, truncate
+from dependencies import chunks_list, is_integer, str2bool, truncate
 from init import CONFIG
 from models.export_home_assistant import HomeAssistant
 from models.stat import Stat
@@ -45,6 +45,7 @@ class HomeAssistantWs:
         if self.load_config():
             if self.connect():
                 self.mqtt = CONFIG.mqtt_config()
+                # self.mqtt = False
                 self.import_data()
         else:
             logging.critical("La configuration Home Assistant WebSocket est erronée")
@@ -329,11 +330,13 @@ class HomeAssistantWs:
 
                 # CLEAN OLD DATA
                 if self.purge or self.purge_force:
+                    logging.info(f"Clean old data import In Home Assistant Recorder {self.usage_point_id}")
                     list_statistic_ids = []
                     for statistic_id, _ in stats_kwh.items():
                         list_statistic_ids.append(statistic_id)
                     self.clear_data(list_statistic_ids)
                     CONFIG.set("purge", False)
+
 
                 for statistic_id, data in stats_kwh.items():
                     metadata = {
@@ -344,10 +347,18 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "kWh",
                     }
-                    chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
+
+
+                    chunks = list(chunks_list(list(data["data"].values()), self.batch_size))
                     chunks_len = len(chunks)
                     for i, chunk in enumerate(chunks):
-                        logging.info(f"Envoi des données de conso {data["tag"].upper()} vers Home Assistant {(i+1)}/{chunks_len} ({chunk[0]["start"]} => {chunk[-1]["start"]})")
+                        logging.info("Envoi des données de conso %s vers Home Assistant %s/%s (%s => %s)",
+                            data["tag"].upper(),
+                            i+1,
+                            chunks_len,
+                            chunk[-1]["start"],
+                            chunk[0]["start"]
+                        )
                         self.send({
                             "id": self.id,
                             "type": "recorder/import_statistics",
@@ -378,10 +389,16 @@ class HomeAssistantWs:
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "EURO",
                     }
-                    chunks = list(zip(*[iter(data["data"].values())] * self.batch_size))
+                    chunks = list(chunks_list(list(data["data"].values()), self.batch_size))
                     chunks_len = len(chunks)
                     for i, chunk in enumerate(chunks):
-                        logging.info(f"Envoi des données de coût {data["tag"].upper()} vers Home Assistant {(i+1)}/{chunks_len} ({chunk[0]["start"]} => {chunk[-1]["start"]})")
+                        logging.info("Envoi des données de coût %s vers Home Assistant %s/%s (%s => %s)",
+                            data["tag"].upper(),
+                            i+1,
+                            chunks_len,
+                            chunk[0]["start"],
+                            chunk[-1]["start"]
+                        )
                         self.send({
                             "id": self.id,
                             "type": "recorder/import_statistics",

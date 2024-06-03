@@ -294,3 +294,8 @@ def is_between(time, time_range):
     if end < start:
         return time >= start or time < end
     return start <= time < end
+
+def chunks_list(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
