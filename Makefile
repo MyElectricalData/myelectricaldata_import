@@ -110,7 +110,7 @@ run: init install-poetry disable-debug disable-dev
 	@$(call poetry, --ansi python src/main.py, "Run main.py")
 
 ## Run in dev mode
-dev: init install-poetry enable-debug enable-dev
+dev: init install-poetry enable-dev
 	@$(call poetry, --ansi python src/main.py, "Run main.py")
 
 ## Enable debug mode

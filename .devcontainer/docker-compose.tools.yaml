@@ -43,7 +43,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./../data/mosquitto:/data
+      - ${HOME}/.tmp/myelectridalcata/data/mosquitto:/data
       - ./../mosquitto:/mosquitto/config/
     ports:
       - 1883:1883
@@ -56,7 +56,7 @@ services:
     links:
       - mosquitto
     volumes:
-      - ./../data/:/mqtt-explorer/config
+      - ${HOME}/.tmp/myelectridalcata/data/:/mqtt-explorer/config
     ports:
       - 4000:4000
 
@@ -73,7 +73,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./../data/postgresql/data:/var/lib/postgresql/data
+      - ${HOME}/.tmp/myelectridalcata/data/postgresql/data:/var/lib/postgresql/data
       - ./../init.sql:/docker-entrypoint-initdb.d/init.sql
 
   mysql:
@@ -87,7 +87,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./../data/mysql/data:/var/lib/mysql
+      - ${HOME}/.tmp/myelectridalcata/data/mysql/data:/var/lib/mysql
 
 volumes:
   mydata:
