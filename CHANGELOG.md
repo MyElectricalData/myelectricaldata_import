@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.5 (2024-06-03)
+
+### Fix
+
+* fix: build arg + downgrade python to 3.11.9 (armv7 bug) ([`026ac3d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/026ac3dffcb91304c42e3553f8f6aade5ced8728))
+
+### Unknown
+
+* Merge pull request #547 from MyElectricalData/feat/build-args
+
+fix: build arg + downgrade python to 3.11.9 (armv7 bug) ([`de3b6dc`](https://github.com/MyElectricalData/myelectricaldata_import/commit/de3b6dc82420576ee0eb1a75e2e170d5e80ef890))
+
+
 ## v1.0.0-rc.4 (2024-06-03)
 
 ### Feature
