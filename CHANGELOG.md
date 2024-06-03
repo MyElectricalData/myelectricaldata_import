@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.4 (2024-06-03)
+
+### Feature
+
+* feat: add build arg on staging ([`91d3e99`](https://github.com/MyElectricalData/myelectricaldata_import/commit/91d3e99b180c9914e5db50370a707b2e127a8a6b))
+
+### Unknown
+
+* Merge pull request #546 from MyElectricalData/feat/build-args
+
+feat: add build arg on staging ([`98b4ab7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/98b4ab7c71b4278f841713920b5bc37527367bad))
+
+
 ## v1.0.0-rc.3 (2024-06-03)
 
 ### Feature
