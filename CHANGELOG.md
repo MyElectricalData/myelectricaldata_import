@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.7 (2024-06-03)
+
+### Fix
+
+* fix: downgrade orjson ([`ba3d0d1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/ba3d0d135721ae88766ab14d63915883d738b394))
+
+### Unknown
+
+* Merge pull request #549 from MyElectricalData/feat/build-args
+
+fix: downgrade orjson ([`2f71601`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2f716015c494b813987e38b30f5308e90cc3014a))
+
+
 ## v1.0.0-rc.6 (2024-06-03)
 
 ### Fix
