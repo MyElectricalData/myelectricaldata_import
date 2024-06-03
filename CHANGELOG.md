@@ -2,6 +2,54 @@
 
 
 
+## v1.0.0-rc.3 (2024-06-03)
+
+### Feature
+
+* feat: add build arg ([`779be47`](https://github.com/MyElectricalData/myelectricaldata_import/commit/779be474452004b385ebb7da7a82c6d213723ce4))
+
+### Fix
+
+* fix: lock file ([`00fcfff`](https://github.com/MyElectricalData/myelectricaldata_import/commit/00fcfffdfcb2be522b83d39d9ac72ea4ba5cdab9))
+
+### Unknown
+
+* Merge pull request #545 from MyElectricalData/feat/build-args
+
+Feat/build args ([`b4ddc19`](https://github.com/MyElectricalData/myelectricaldata_import/commit/b4ddc19aad94672f8b0eee12aac55f46d46c1155))
+
+* merge: resync 0.13 ([`f73ca88`](https://github.com/MyElectricalData/myelectricaldata_import/commit/f73ca88751838fcdc44ce84b9d54d5cf990d4c0e))
+
+
+## v0.13.2 (2024-05-29)
+
+### Chore
+
+* chore: clean ([`a6c18d1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a6c18d18d658320e6da4b12ce611eea497b31332))
+
+### Fix
+
+* fix: error ([`055823a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/055823a19f7c37afbb9b91b97f09b16bf29179e2))
+
+* fix: daily cost ([`a3ddb89`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a3ddb894ca82f28dd37a56585e03357ac64995f0))
+
+* fix: daily cost ([`190e1df`](https://github.com/MyElectricalData/myelectricaldata_import/commit/190e1df7e1b24f438a7bb47d3cd32244258242c3))
+
+
+## v0.13.1 (2024-05-28)
+
+### Chore
+
+* chore: upgrade version ([`0fa8fe2`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0fa8fe29fe30e036b4229e9751c463cdebec61fe))
+
+
+## v0.13.1-rc.1 (2024-05-27)
+
+### Fix
+
+* fix: home assistant ws export ([`c31dfb4`](https://github.com/MyElectricalData/myelectricaldata_import/commit/c31dfb4ec66b0fb0d78b3cdf034f33875900d1d9))
+
+
 ## v1.0.0-rc.2 (2024-05-22)
 
 ### Fix
