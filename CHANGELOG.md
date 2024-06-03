@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.6 (2024-06-03)
+
+### Fix
+
+* fix: requirements ([`8b8cc78`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8b8cc7802ae7c8a4c515af09de07868f9a92eec0))
+
+### Unknown
+
+* Merge pull request #548 from MyElectricalData/feat/build-args
+
+fix: requirements ([`d7866df`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d7866dfd710a45b8f81afc9d04275f1ecaa12702))
+
+
 ## v1.0.0-rc.5 (2024-06-03)
 
 ### Fix
