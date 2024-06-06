@@ -38,7 +38,6 @@ websocket-client = "^1.7.0"
 sqlalchemy = "^1.0.0"
 fastapi-utils = "^0.2.1"
 pytz = "^2023.3.post1"
-orjson = "<3.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
