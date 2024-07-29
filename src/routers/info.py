@@ -1,11 +1,13 @@
 """Routers pour les informations générales."""
 
+import inspect
 from typing import Optional
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from config.main import APP_CONFIG
 from database import DB
 from models.ajax import Ajax
 
@@ -55,4 +57,5 @@ class GatewayStatus(BaseModel):
 @ROUTER.get("/gateway_status/", response_model=GatewayStatus, include_in_schema=False)
 def gateway_status():
     """Remonte l'état de la passerelle MyElectricalData."""
-    return Ajax().gateway_status()
+    with APP_CONFIG.tracer.start_as_current_span(f"{__name__}.{inspect.currentframe().f_code.co_name}"):
+        return Ajax().gateway_status()

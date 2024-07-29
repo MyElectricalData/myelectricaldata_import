@@ -1,11 +1,12 @@
 """Manage Addresses table in database."""
 from sqlalchemy import delete, select
 
-from database import DB
 from db_schema import (
     Addresses,
     UsagePoints,
 )
+
+from . import DB
 
 
 class DatabaseAddresses:
@@ -13,12 +14,12 @@ class DatabaseAddresses:
 
     def __init__(self, usage_point_id):
         """Initialize DatabaseConfig."""
-        self.session = DB.session
+        self.session = DB.session()
         self.usage_point_id = usage_point_id
 
     def get(
         self,
-    ):
+    ) -> Addresses:
         """Retrieve the address associated with the given usage point ID."""
         query = (
             select(Addresses)

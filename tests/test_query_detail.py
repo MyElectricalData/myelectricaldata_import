@@ -13,7 +13,7 @@ class MockResponse:
 
 @pytest.mark.parametrize("measure_type", ["consumption", "production"])
 def test_get(mocker, measure_type):
-    from models.query_detail import Detail
+    from external_services.myelectricaldata.detail import Detail
 
     m_get: mock.Mock = mocker.patch("models.query.Query.get")
     m_insert_detail: mock.Mock = mocker.patch("models.database.Database.insert_detail")

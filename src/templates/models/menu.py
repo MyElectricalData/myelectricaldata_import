@@ -1,22 +1,24 @@
-from dependencies import APPLICATION_PATH
+"""Menu."""
 
 
 class Menu:
+    """HTML Menu."""
+
     def __init__(self, items):
-        self.application_path = APPLICATION_PATH
         self.items = items
 
     def html(self):
+        """Return HTML Code."""
         html = """
 <div id="bottom_menu" class="fixed-action-btn horizontal" style="bottom: 20px; right: 25px;">
     <a id="menu" class="btn-floating btn-large red" >
         <i class="large material-icons">menu</i>
     </a>
     <ul>"""
-        for id, items in self.items.items():
+        for idx, items in self.items.items():
             html += f"""
         <li>
-            <a id="{id}" class="btn-floating" title="{items["title"]}">
+            <a id="{idx}" class="btn-floating" title="{items["title"]}">
                 <i class="material-icons">{items["icon"]}</i>
             </a>
         </li>
@@ -25,11 +27,12 @@ class Menu:
         return html
 
     def javascript(self):
+        """Return Javascript Code."""
         javascript = ""
-        for id, items in self.items.items():
+        for idx, items in self.items.items():
             if "ajax" in items:
                 javascript += f"""
-$("#{id}").click(function () {{
+$("#{idx}").click(function () {{
     $("#bottom_menu").removeClass("active")
 """
                 if "loading_page" in items:
@@ -47,22 +50,23 @@ $("#{id}").click(function () {{
             data = JSON.parse(JSON.stringify(data))
             let status = data["result"]["status"];
             if (status == false) {{
-                
+
             }}else{{
                 location.reload();
             }}
         }})
-}});            
+}});
 """
         return javascript
 
     def css(self):
+        """Return CSS Code."""
         css = ""
-        for id, items in self.items.items():
+        for idx, items in self.items.items():
             if "css" in items:
                 css += f"""
-#{id} {{
-  {items["css"]}  
+#{idx} {{
+  {items["css"]}
 }}
 """
         return css

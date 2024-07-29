@@ -5,8 +5,9 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from database import DB
 from db_schema import Tempo, TempoConfig
+
+from . import DB
 
 
 class DatabaseTempo:
@@ -14,7 +15,7 @@ class DatabaseTempo:
 
     def __init__(self):
         """Initialize DatabaseTempo."""
-        self.session = DB.session
+        self.session = DB.session()
 
     def get(self, order="desc"):
         """Retrieve Tempo data from the database.

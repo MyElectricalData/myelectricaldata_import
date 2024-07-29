@@ -3,8 +3,9 @@
 
 from sqlalchemy import delete, select
 
-from database import DB
 from db_schema import Statistique, UsagePoints
+
+from . import DB
 
 
 class DatabaseStatistique:
@@ -12,7 +13,7 @@ class DatabaseStatistique:
 
     def __init__(self, usage_point_id):
         """Initialize DatabaseConfig."""
-        self.session = DB.session
+        self.session = DB.session()
         self.usage_point_id = usage_point_id
 
     def get(self, key):

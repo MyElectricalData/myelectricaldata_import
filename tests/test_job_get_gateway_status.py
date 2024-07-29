@@ -7,7 +7,7 @@ from conftest import contains_logline
 
 @pytest.mark.parametrize("response, status_code", [(None, 200), (None, 500), ({"mock": "response"}, 200)])
 def test_get_gateway_status(job, caplog, requests_mock, response, status_code):
-    from config import URL
+    from const import URL
 
     requests_mock.get(f"{URL}/ping", json=response, status_code=status_code)
 
@@ -21,6 +21,10 @@ def test_get_gateway_status(job, caplog, requests_mock, response, status_code):
 
     if status_code == 200:
         if response:
-            assert not contains_logline(caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR)
+            assert not contains_logline(
+                caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR
+            )
         else:
-            assert contains_logline(caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR)
+            assert contains_logline(
+                caplog, "Erreur lors de la récupération du statut de la passerelle :", logging.ERROR
+            )

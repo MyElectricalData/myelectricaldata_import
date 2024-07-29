@@ -8,7 +8,8 @@ from conftest import contains_logline
 
 @pytest.mark.parametrize("response, status_code", [(None, 200), (None, 500), ({"2099-01-01": "turquoise"}, 200)])
 def test_get_tempo(mocker, job, caplog, requests_mock, response, status_code):
-    from config import URL
+    from const import URL
+
     start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
     end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
 
@@ -38,13 +39,19 @@ def test_get_tempo(mocker, job, caplog, requests_mock, response, status_code):
             assert m_db_set_tempo.call_count == 1
             assert m_db_set_tempo_config.call_count == 2
 
-            assert not contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
-                                                "de la récupération de données Tempo.'}", logging.ERROR)
+            assert not contains_logline(
+                caplog,
+                "{'error': True, 'description': 'Erreur lors " "de la récupération de données Tempo.'}",
+                logging.ERROR,
+            )
         else:
             assert m_db_get_tempo.call_count == 1
             assert m_db_set_tempo.call_count == 0
             # FIXME: set_tempo_config shouldn't be called when status_code != 200
             # assert m_db_set_tempo_config.call_count == 0
 
-            assert contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
-                                            "de la récupération de données Tempo.'}", logging.ERROR)
+            assert contains_logline(
+                caplog,
+                "{'error': True, 'description': 'Erreur lors " "de la récupération de données Tempo.'}",
+                logging.ERROR,
+            )

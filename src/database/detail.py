@@ -4,12 +4,12 @@ import hashlib
 import logging
 from datetime import datetime, timedelta
 
-import pytz
 from sqlalchemy import asc, delete, desc, func, select
 
-from config import MAX_IMPORT_TRY
-from database import DB
+from const import MAX_IMPORT_TRY, TIMEZONE
 from db_schema import ConsumptionDetail, ProductionDetail, UsagePoints
+
+from . import DB
 
 
 class DatabaseDetail:
@@ -17,8 +17,8 @@ class DatabaseDetail:
 
     def __init__(self, usage_point_id, measurement_direction="consumption"):
         """Initialize DatabaseConfig."""
-        self.session = DB.session
-        self.min_entry = 300
+        self.session = DB.session()
+        self.min_entry = 100
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
         if self.measurement_direction == "consumption":
@@ -44,6 +44,10 @@ class DatabaseDetail:
         Returns:
             list: A list of records.
         """
+        if begin is not None:
+            begin = begin.astimezone(TIMEZONE)
+        if end is not None:
+            end = end.astimezone(TIMEZONE)
         sort = asc("date") if order_dir == "desc" else desc("date")
         if begin is None and end is None:
             return self.session.scalars(
@@ -94,7 +98,7 @@ class DatabaseDetail:
         Returns:
             list: A list of datatable records.
         """
-        yesterday = datetime.combine(datetime.now(tz=pytz.utc) - timedelta(days=1), datetime.max.time())
+        yesterday = datetime.combine(datetime.now(tz=TIMEZONE) - timedelta(days=1), datetime.max.time())
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
         if search is not None and search != "":
             result = self.session.scalars(
@@ -128,7 +132,7 @@ class DatabaseDetail:
             .where(UsagePoints.usage_point_id == self.usage_point_id)
         ).one_or_none()
 
-    def get_date(self, date):
+    def get_date(self, date: datetime):
         """Retrieve the data for a specific date from the database.
 
         Args:
@@ -137,13 +141,14 @@ class DatabaseDetail:
         Returns:
             object: The data for the specified date.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         return self.session.scalars(select(self.table).join(self.relation).where(self.table.id == unique_id)).first()
 
     def get_range(
         self,
-        begin,
-        end,
+        begin: datetime,
+        end: datetime,
         order="desc",
     ):
         """Retrieve a range of data from the database.
@@ -156,6 +161,8 @@ class DatabaseDetail:
         Returns:
             list: A list of data records within the specified range.
         """
+        begin = begin.astimezone(TIMEZONE)
+        end = end.astimezone(TIMEZONE)
         if order == "desc":
             order = self.table.date.desc()
         else:
@@ -172,10 +179,9 @@ class DatabaseDetail:
         current_data = self.session.scalars(query).all()
         if current_data is None:
             return False
-        else:
-            return current_data
+        return current_data
 
-    def get(self, begin, end):
+    def get(self, begin: datetime, end: datetime):
         """Retrieve data for a specific range from the database.
 
         Args:
@@ -185,10 +191,10 @@ class DatabaseDetail:
         Returns:
             dict: A dictionary containing the retrieved data.
         """
-        delta = begin - begin
-
+        begin = begin.astimezone(TIMEZONE)
+        end = end.astimezone(TIMEZONE)
+        delta = end - begin
         result = {"missing_data": False, "date": {}, "count": 0}
-
         for _ in range(delta.days + 1):
             query_result = self.get_all(
                 begin=begin,
@@ -212,7 +218,7 @@ class DatabaseDetail:
                     }
             return result
 
-    def get_state(self, date):
+    def get_state(self, date: datetime):
         """Get the state of a specific data record in the database.
 
         Args:
@@ -221,6 +227,7 @@ class DatabaseDetail:
         Returns:
             bool: True if the data record exists, False otherwise.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         current_data = self.session.scalars(
             select(self.table).join(self.relation).where(self.table.id == unique_id)
@@ -232,7 +239,7 @@ class DatabaseDetail:
 
     def insert(  # noqa: PLR0913
         self,
-        date,
+        date: datetime,
         value,
         interval,
         blacklist=0,
@@ -247,6 +254,7 @@ class DatabaseDetail:
             blacklist (int, optional): The blacklist status of the record. Defaults to 0.
             fail_count (int, optional): The fail count of the record. Defaults to 0.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         detail = self.get_date(date)
         if detail is not None:
@@ -282,6 +290,8 @@ class DatabaseDetail:
         Returns:
             bool: True if the reset was successful, False otherwise.
         """
+        if date is not None:
+            date = date.astimezone(TIMEZONE)
         detail = self.get_date(date)
         if detail is not None:
             detail.value = 0
@@ -290,10 +300,9 @@ class DatabaseDetail:
             detail.fail_count = 0
             self.session.flush()
             return True
-        else:
-            return False
+        return False
 
-    def reset_range(self, begin, end):
+    def reset_range(self, begin: datetime, end: datetime):
         """Reset the values of consumption or production detail records within a specified range.
 
         Args:
@@ -303,6 +312,8 @@ class DatabaseDetail:
         Returns:
             bool: True if the reset was successful, False otherwise.
         """
+        begin = begin.astimezone(TIMEZONE)
+        end = end.astimezone(TIMEZONE)
         detail = self.get_range(begin, end)
         if detail is not None:
             for row in detail:
@@ -312,8 +323,7 @@ class DatabaseDetail:
                 row.fail_count = 0
             self.session.flush()
             return True
-        else:
-            return False
+        return False
 
     def delete(self, date=None):
         """Delete a consumption or production detail record.
@@ -325,6 +335,7 @@ class DatabaseDetail:
             bool: True if the deletion was successful, False otherwise.
         """
         if date is not None:
+            date = date.astimezone(TIMEZONE)
             unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
             self.session.execute(delete(self.table).where(self.table.id == unique_id))
         else:
@@ -332,7 +343,7 @@ class DatabaseDetail:
         self.session.flush()
         return True
 
-    def delete_range(self, date):
+    def delete_range(self, date: datetime):
         """Delete a range of consumption or production detail records.
 
         Args:
@@ -342,6 +353,7 @@ class DatabaseDetail:
             bool: True if the deletion was successful, False otherwise.
         """
         if date is not None:
+            date = date.astimezone(TIMEZONE)
             unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
             self.session.execute(delete(self.table).where(self.table.id == unique_id))
         else:
@@ -349,7 +361,7 @@ class DatabaseDetail:
         self.session.flush()
         return True
 
-    def get_ratio_hc_hp(self, begin, end):
+    def get_ratio_hc_hp(self, begin: datetime, end: datetime):
         """Calculate the ratio of high consumption (HC) to high production (HP) for a given usage point and time range.
 
         Args:
@@ -359,6 +371,8 @@ class DatabaseDetail:
         Returns:
             dict: A dictionary with the ratio of HC and HP.
         """
+        begin = begin.astimezone(TIMEZONE)
+        end = end.astimezone(TIMEZONE)
         result = {
             "HC": 0,
             "HP": 0,
@@ -380,9 +394,13 @@ class DatabaseDetail:
         Returns:
             int: The fail count for the specified usage point, date, and measurement type.
         """
-        return self.get_detail_date(date).fail_count
+        date = date.astimezone(TIMEZONE)
+        data = self.get_date(date)
+        if not hasattr(data, "fail_count"):
+            return 0
+        return self.get_date(date).fail_count
 
-    def fail_increment(self, date):
+    def fail_increment(self, date: datetime):
         """Increment the fail count for a specific usage point, date, and measurement type.
 
         Args:
@@ -391,6 +409,7 @@ class DatabaseDetail:
         Returns:
             int: The updated fail count.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         query = select(self.table).join(self.relation).where(self.table.id == unique_id)
         detail = self.session.scalars(query).one_or_none()
@@ -423,6 +442,7 @@ class DatabaseDetail:
                 )
             )
         self.session.flush()
+        self.session.close()
         return fail_count
 
     def get_last_date(self):
@@ -468,6 +488,36 @@ class DatabaseDetail:
             dict: A dictionary containing the begin and end dates.
         """
         return {
-            "begin": self.get_last_date(self.usage_point_id),
-            "end": self.get_first_date(self.usage_point_id),
+            "begin": self.get_last_date(),
+            "end": self.get_first_date(),
         }
+
+    def blacklist(self, date: datetime, action=True):
+        """Blacklist or unblacklist the daily data for a given usage point, date, and measurement direction.
+
+        Args:
+            date (str): The date of the data.
+            action (bool, optional): The action to perform. True to blacklist, False to unblacklist. Defaults to True.
+
+        Returns:
+            bool: True if the data was blacklisted or unblacklisted, False otherwise.
+        """
+        date = date.astimezone(TIMEZONE)
+        unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
+        query = select(self.table).join(self.relation).where(self.table.id == unique_id)
+        daily = self.session.scalars(query).one_or_none()
+        if daily is not None:
+            daily.blacklist = action
+        else:
+            self.session.add(
+                self.table(
+                    id=unique_id,
+                    usage_point_id=self.usage_point_id,
+                    date=date,
+                    value=0,
+                    blacklist=action,
+                    fail_count=0,
+                )
+            )
+        self.session.flush()
+        return True

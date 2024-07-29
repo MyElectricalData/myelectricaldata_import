@@ -1,8 +1,8 @@
 import logging
 
 import pytest
-from conftest import setenv, contains_logline
 
+from conftest import contains_logline, setenv
 from db_schema import UsagePoints
 
 EXPORT_METHODS = ["export_influxdb", "export_home_assistant_ws", "export_home_assistant", "export_mqtt"]
@@ -71,7 +71,7 @@ def test_job_import_data(mocker, job, caplog):
 
 
 def test_header_generate(job, caplog):
-    from dependencies import get_version
+    from utils import get_version
 
     expected_logs = ""
     # FIXME: header_generate() assumes job.usage_point_config is populated from a side effect
@@ -112,12 +112,10 @@ def test_header_generate(job, caplog):
 )
 @pytest.mark.parametrize("side_effect", [None, Exception("Mocker: call failed")])
 def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, method, patch, details):
-    """
-    This test covers all methods that call "get" methods from query objects:
+    """This test covers all methods that call "get" methods from query objects:
     - without checking for their return value
     - without calling set_error_log on failure
     """
-
     m = mocker.patch(patch)
     m_set_error_log = mocker.patch("models.database.Database.set_error_log")
     mocker.patch("models.jobs.Job.header_generate")

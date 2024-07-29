@@ -3,9 +3,9 @@
 from datetime import datetime, timedelta
 
 from sqlalchemy import delete, select, update
+from sqlalchemy.orm import scoped_session
 
-from config import TIMEZONE_UTC
-from database import DB
+from const import TIMEZONE_UTC
 from db_schema import (
     Addresses,
     ConsumptionDaily,
@@ -17,58 +17,60 @@ from db_schema import (
     Statistique,
     UsagePoints,
 )
-from dependencies import check_format
+
+from . import DB
+
+
+class UsagePointsConfig:  # pylint: disable=R0902
+    """Default configuration for UsagePoints."""
+
+    def __init__(self) -> None:
+        self.usage_point_id: str = "------ SET_YOUR_USAGE_POINT_ID ------"
+        self.enable: bool = True
+        self.name: str = "Maison"
+        self.token: str = "------- SET_YOUR_TOKEN --------"
+        self.cache: bool = True
+        self.consumption: bool = True
+        self.consumption_detail: bool = True
+        self.consumption_price_base: float = 0
+        self.consumption_price_hc: float = 0
+        self.consumption_price_hp: float = 0
+        self.consumption_max_power: bool = True
+        self.production: bool = False
+        self.production_detail: bool = False
+        self.production_price: float = 0
+        self.offpeak_hours_0: str = None
+        self.offpeak_hours_1: str = None
+        self.offpeak_hours_2: str = None
+        self.offpeak_hours_3: str = None
+        self.offpeak_hours_4: str = None
+        self.offpeak_hours_5: str = None
+        self.offpeak_hours_6: str = None
+        self.plan: str = "BASE"
+        self.refresh_addresse: bool = False
+        self.refresh_contract: bool = False
+        self.consumption_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
+        self.consumption_detail_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
+        self.production_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
+        self.production_detail_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
+        self.call_number: int = 0
+        self.quota_reached: bool = False
+        self.quota_limit: bool = False
+        self.quota_reset_at: datetime = None
+        self.ban: bool = False
+        self.consentement_expiration: datetime = None
+        self.progress: int = 0
+        self.progress_status: str = ""
 
 
 class DatabaseUsagePoints:
     """Manage configuration for the database."""
 
-    class UsagePointsConfig:  # pylint: disable=R0902
-        """Default configuration for UsagePoints."""
-
-        def __init__(self) -> None:
-            self.usage_point_id: str = "------ SET_YOUR_USAGE_POINT_ID ------"
-            self.enable: bool = True
-            self.name: str = "Maison"
-            self.token: str = "------- SET_YOUR_TOKEN --------"
-            self.cache: bool = True
-            self.consumption: bool = True
-            self.consumption_detail: bool = True
-            self.consumption_price_base: float = 0
-            self.consumption_price_hc: float = 0
-            self.consumption_price_hp: float = 0
-            self.consumption_max_power: bool = True
-            self.production: bool = False
-            self.production_detail: bool = False
-            self.production_price: float = 0
-            self.offpeak_hours_0: str = None
-            self.offpeak_hours_1: str = None
-            self.offpeak_hours_2: str = None
-            self.offpeak_hours_3: str = None
-            self.offpeak_hours_4: str = None
-            self.offpeak_hours_5: str = None
-            self.offpeak_hours_6: str = None
-            self.plan: str = "BASE"
-            self.refresh_addresse: bool = False
-            self.refresh_contract: bool = False
-            self.consumption_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
-            self.consumption_detail_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
-            self.production_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
-            self.production_detail_max_date: datetime = datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1095)
-            self.call_number: int = 0
-            self.quota_reached: bool = False
-            self.quota_limit: bool = False
-            self.quota_reset_at: datetime = None
-            self.ban: bool = False
-            self.consentement_expiration: datetime = None
-            self.progress: int = 0
-            self.progress_status: str = ""
-
     def __init__(self, usage_point_id=None):
         """Initialize DatabaseConfig."""
         self.usage_point_id = usage_point_id
-        self.session = DB.session
-        self.usage_point_config = self.UsagePointsConfig()
+        self.session: scoped_session = DB.session()
+        self.usage_point_config = None
 
     def get_all(self):
         """Get all data from usage point table."""
@@ -93,27 +95,28 @@ class DatabaseUsagePoints:
             return "HC/HP"
         return data.plan.upper()
 
-    def set(self, data):
+    def set_value(self, key, value):
+        """Set value in usage point table."""
+        values = {key: value}
+        self.session.execute(
+            update(UsagePoints, values=values).where(UsagePoints.usage_point_id == self.usage_point_id)
+        )
+        self.session.flush()
+        self.session.close()
+
+    def set(self, data: dict) -> None:
         """Set data from usage point table."""
         query = select(UsagePoints).where(UsagePoints.usage_point_id == self.usage_point_id)
-        usage_points = self.session.execute(query).scalar_one_or_none()
-
+        usage_points: UsagePoints = self.session.execute(query).scalar_one_or_none()
         if usage_points is not None:
-            self.usage_point_config = self.UsagePointsConfig()
-            for key in self.usage_point_config.__dict__:
-                if data.get(key):
-                    setattr(usage_points, key, check_format(data[key]))
-            usage_points.usage_point_id = self.usage_point_id
+            self.session.execute(
+                update(UsagePoints, values=data).where(UsagePoints.usage_point_id == self.usage_point_id)
+            )
         else:
-            insert_value = {}
-            self.usage_point_config = self.UsagePointsConfig()
-            for key, value in self.usage_point_config.__dict__.items():
-                if data.get(key):
-                    insert_value[key] = check_format(data[key])
-                else:
-                    insert_value[key] = value
-            insert_value["usage_point_id"] = self.usage_point_id
-            self.session.add(UsagePoints(**insert_value))
+            usage_points = UsagePoints(usage_point_id=self.usage_point_id)
+            for key, value in data.items():
+                setattr(usage_points, key, value)
+            self.session.add(usage_points)
         self.session.flush()
         self.session.close()
 
@@ -181,7 +184,7 @@ class DatabaseUsagePoints:
 
     def get_error_log(self):
         """Get error log in usage point table."""
-        data = self.get(self.usage_point_id)
+        data = self.get()
         return data.last_error
 
     def set_error_log(self, message):

@@ -21,7 +21,7 @@ services:
     ports:
       - '8086:8086'
     volumes:
-      - ./../data/influxdb:/var/lib/influxdb2
+      - ~/tmp/med/data/influxdb:/var/lib/influxdb2
     healthcheck:
       test: ["CMD", "curl", "-f", "http://influxdb:8086"]
       interval: 25s
@@ -43,7 +43,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ${HOME}/.tmp/myelectridalcata/data/mosquitto:/data
+      - /tmp/med/data/mosquitto:/data
       - ./../mosquitto:/mosquitto/config/
     ports:
       - 1883:1883
@@ -56,7 +56,7 @@ services:
     links:
       - mosquitto
     volumes:
-      - ${HOME}/.tmp/myelectridalcata/data/:/mqtt-explorer/config
+      - /tmp/med/data/mqtt-explorer:/mqtt-explorer/config
     ports:
       - 4000:4000
 
@@ -73,7 +73,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ${HOME}/.tmp/myelectridalcata/data/postgresql/data:/var/lib/postgresql/data
+      - /tmp/med/data/postgresql:/var/lib/postgresql/data
       - ./../init.sql:/docker-entrypoint-initdb.d/init.sql
 
   mysql:
@@ -87,7 +87,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ${HOME}/.tmp/myelectridalcata/data/mysql/data:/var/lib/mysql
+      - /tmp/med/data/data/mysql/data:/var/lib/mysql
 
 volumes:
   mydata:

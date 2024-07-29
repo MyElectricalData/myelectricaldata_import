@@ -12,31 +12,31 @@ from conftest import contains_logline
         ({"detail": "truthy response"}, 300),
         ({"detail": "falsy response"}, 500),
         (
-                {
-                    "consent_expiration_date": "2099-01-01T00:00:00",
-                    "call_number": 42,
-                    "quota_limit": 42,
-                    "quota_reached": 42,
-                    "quota_reset_at": "2099-01-01T00:00:00.000000",
-                    "ban": False,
-                },
-                200,
+            {
+                "consent_expiration_date": "2099-01-01T00:00:00",
+                "call_number": 42,
+                "quota_limit": 42,
+                "quota_reached": 42,
+                "quota_reset_at": "2099-01-01T00:00:00.000000",
+                "ban": False,
+            },
+            200,
         ),
     ],
 )
 def test_get_account_status(mocker, usage_point_id, caplog, status_response, status_code, requests_mock):
     from models.ajax import Ajax
-    from config import URL
+    from const import URL
 
-    default_error_message = 'Erreur lors de la récupération du statut du compte.'
+    default_error_message = "Erreur lors de la récupération du statut du compte."
 
     m_usage_point_update = mocker.patch("models.database.Database.usage_point_update")
     m_set_error_log = mocker.patch("models.database.Database.set_error_log")
 
     requests_mocks = list()
-    requests_mocks.append(requests_mock.get(
-        f"{URL}/valid_access/{usage_point_id}/cache", json=status_response, status_code=status_code
-    ))
+    requests_mocks.append(
+        requests_mock.get(f"{URL}/valid_access/{usage_point_id}/cache", json=status_response, status_code=status_code)
+    )
 
     ajax = Ajax(usage_point_id=usage_point_id) if usage_point_id else Ajax()
 
@@ -54,8 +54,12 @@ def test_get_account_status(mocker, usage_point_id, caplog, status_response, sta
 
     if is_truthy_response:
         if status_code != 200 or not is_complete:
-            assert contains_logline(caplog, status_response.get('detail', default_error_message), logging.ERROR)
-            assert res == {'description': status_response.get('detail', default_error_message), 'error': True, 'last_call': None}
+            assert contains_logline(caplog, status_response.get("detail", default_error_message), logging.ERROR)
+            assert res == {
+                "description": status_response.get("detail", default_error_message),
+                "error": True,
+                "last_call": None,
+            }
 
             # db.usage_point_update is not called
             assert 0 == m_usage_point_update.call_count
@@ -74,10 +78,7 @@ def test_get_account_status(mocker, usage_point_id, caplog, status_response, sta
         assert not contains_logline(caplog, "Erreur lors de la récupération des informations du compte", logging.ERROR)
         # FIXME: Ajax does not use set_error_log while Job does
         assert 0 == m_set_error_log.call_count
-        assert res == {'description': status_response,
-                       'error': True,
-                       'last_call': None,
-                       'status_code': status_code}
+        assert res == {"description": status_response, "error": True, "last_call": None, "status_code": status_code}
 
     # Ensuring {URL}/valid_access/{usage_point_id} is called exactly as many times as enabled usage_points
     # and only once per enabled usage_point

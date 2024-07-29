@@ -7,9 +7,10 @@ from datetime import datetime, timedelta
 import pytz
 from sqlalchemy import asc, delete, desc, func, select
 
-from config import MAX_IMPORT_TRY
-from database import DB
+from const import MAX_IMPORT_TRY
 from db_schema import ConsumptionDailyMaxPower, UsagePoints
+
+from . import DB
 
 
 class DatabaseMaxPower:
@@ -17,7 +18,7 @@ class DatabaseMaxPower:
 
     def __init__(self, usage_point_id, measurement_direction="consumption"):
         """Initialize DatabaseConfig."""
-        self.session = DB.session
+        self.session = DB.session()
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
 

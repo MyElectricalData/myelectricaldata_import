@@ -1,26 +1,27 @@
+"""Request."""
+
 import logging
 
 import requests
 
-from dependencies import str2bool
 from database.config import DatabaseConfig
+from utils import str2bool
+from config.main import APP_CONFIG
 
 
 class Query(object):
+    """Requests object."""
+
     def __init__(self, endpoint, headers=None):
         self.endpoint = endpoint
         self.timeout = 60
-        check_ssl = DatabaseConfig().get("ssl")
-        if check_ssl and "gateway" in check_ssl:
-            self.ssl_valid = str2bool(check_ssl["gateway"])
-        else:
-            self.ssl_valid = True
         if not headers:
             self.headers = {"Content-Type": "application/x-www-form-urlencoded"}
         else:
             self.headers = headers
 
     def get(self, params=None):
+        """Get."""
         logging.debug(f"[GET] Endpoint {self.endpoint}")
         logging.debug(f" - url : {self.endpoint}")
         logging.debug(f" - headers : {self.headers}")
@@ -33,7 +34,7 @@ class Query(object):
                 params=params,
                 url=self.endpoint,
                 timeout=self.timeout,
-                verify=self.ssl_valid,
+                verify=APP_CONFIG.gateway.ssl,
             )
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
@@ -42,6 +43,7 @@ class Query(object):
         return response
 
     def post(self, params=None, data=None):
+        """Post."""
         logging.debug(f"[POST] Endpoint {self.endpoint}")
         logging.debug(f" - url : {self.endpoint}")
         logging.debug(f" - headers : {self.headers}")
@@ -56,15 +58,16 @@ class Query(object):
                 data=data,
                 url=self.endpoint,
                 timeout=self.timeout,
-                verify=self.ssl_valid,
+                verify=APP_CONFIG.gateway.ssl,
             )
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
-        except Exception as e:
+        except Exception:
             logging.error(response)
         return response
 
     def delete(self, params=None, data=None):
+        """Delete."""
         logging.debug(f"[DELETE] Endpoint {self.endpoint}")
         logging.debug(f" - headers : {self.headers}")
         logging.debug(f" - params : {params}")
@@ -78,16 +81,17 @@ class Query(object):
                 data=data,
                 url=self.endpoint,
                 timeout=self.timeout,
-                verify=self.ssl_valid,
+                verify=APP_CONFIG.gateway.ssl,
             )
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
             return response
-        except Exception as e:
+        except Exception:
             logging.error(response)
         return response
 
     def update(self, params=None, data=None):
+        """Update."""
         logging.debug(f"[UPDATE] Endpoint {self.endpoint}")
         logging.debug(f" - headers : {self.headers}")
         logging.debug(f" - params : {params}")
@@ -101,16 +105,17 @@ class Query(object):
                 data=data,
                 url=self.endpoint,
                 timeout=self.timeout,
-                verify=self.ssl_valid,
+                verify=APP_CONFIG.gateway.ssl,
             )
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
             return response
-        except Exception as e:
+        except Exception:
             logging.error(response)
         return response
 
     def put(self, params=None, data=None):
+        """Put."""
         logging.debug(f"[PUT] Endpoint {self.endpoint}")
         logging.debug(f" - headers : {self.headers}")
         logging.debug(f" - params : {params}")
@@ -124,10 +129,10 @@ class Query(object):
                 data=data,
                 url=self.endpoint,
                 timeout=self.timeout,
-                verify=self.ssl_valid,
+                verify=APP_CONFIG.gateway.ssl,
             )
             logging.debug(f"[RESPONSE] : status_code {response.status_code}")
             logging.debug(f" => {response.text}...")
-        except Exception as e:
+        except Exception:
             logging.error(response)
         return response

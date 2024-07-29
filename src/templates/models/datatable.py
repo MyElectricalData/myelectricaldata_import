@@ -1,13 +1,15 @@
+"""Generate Datatable."""
 from datetime import datetime, timezone
 
 import pytz
 
-from dependencies import daterange
+from utils import daterange
 
 utc = pytz.UTC
 
 
 class Datatable:
+    """Datatable."""
     def __init__(self, usage_point_id):
         self.usage_point_id = usage_point_id
 
@@ -65,6 +67,10 @@ class Datatable:
                         "blacklist": data.blacklist,
                         "fail_count": data.fail_count,
                     }
+            print("-" * 200)
+            print(cache_last_date)
+            print("-" * 200)
+
             start_date = utc.localize(cache_last_date)
             end_date = datetime.now(timezone.utc)
             if start_date:

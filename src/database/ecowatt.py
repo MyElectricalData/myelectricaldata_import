@@ -4,8 +4,9 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from database import DB
 from db_schema import Ecowatt
+
+from . import DB
 
 
 class DatabaseEcowatt:
@@ -13,7 +14,7 @@ class DatabaseEcowatt:
 
     def __init__(self):
         """Initialize DatabaseConfig."""
-        self.session = DB.session
+        self.session = DB.session()
 
     def get(self, order="desc"):
         """Retrieve Ecowatt data from the database.
