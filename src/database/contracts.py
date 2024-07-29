@@ -2,11 +2,12 @@
 
 from sqlalchemy import delete, select
 
-from database import DB
 from db_schema import (
     Contracts,
     UsagePoints,
 )
+
+from . import DB
 
 
 class DatabaseContracts:
@@ -14,10 +15,10 @@ class DatabaseContracts:
 
     def __init__(self, usage_point_id):
         """Initialize DatabaseConfig."""
-        self.session = DB.session
+        self.session = DB.session()
         self.usage_point_id = usage_point_id
 
-    def get(self):
+    def get(self) -> Contracts:
         """Retrieve the contract associated with the given usage point ID.
 
         Returns:
@@ -32,11 +33,7 @@ class DatabaseContracts:
         self.session.close()
         return data
 
-    def set(
-        self,
-        data,
-        count=0,
-    ):
+    def set(self, data: dict, count: int = 0) -> None:
         """Set the contract details for the given usage point ID.
 
         Args:
@@ -52,7 +49,7 @@ class DatabaseContracts:
             .join(UsagePoints.relation_contract)
             .where(UsagePoints.usage_point_id == self.usage_point_id)
         )
-        contract = self.session.scalars(query).one_or_none()
+        contract: Contracts = self.session.scalars(query).one_or_none()
         if contract is not None:
             contract.usage_point_status = data["usage_point_status"]
             contract.meter_type = data["meter_type"]

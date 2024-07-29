@@ -8,11 +8,13 @@ from db_schema import Tempo
 from conftest import contains_logline
 
 
-@pytest.mark.parametrize("response, status_code",
-                         [(None, 200), (None, 500), ({"mock": "response"}, 200), ({"2099-01-01": "turquoise"}, 200)])
+@pytest.mark.parametrize(
+    "response, status_code",
+    [(None, 200), (None, 500), ({"mock": "response"}, 200), ({"2099-01-01": "turquoise"}, 200)],
+)
 def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
     from models.ajax import Ajax
-    from config import URL
+    from const import URL
 
     start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
     end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
@@ -40,8 +42,11 @@ def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
             assert m_db_set_tempo.call_count == 1
             assert m_db_set_tempo_config.call_count == 0
 
-            assert not contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
-                                                "de la récupération de données Tempo.'}", logging.ERROR)
+            assert not contains_logline(
+                caplog,
+                "{'error': True, 'description': 'Erreur lors " "de la récupération de données Tempo.'}",
+                logging.ERROR,
+            )
         else:
             assert res == "OK"
 
@@ -49,8 +54,11 @@ def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
             assert m_db_set_tempo.call_count == 0
             assert m_db_set_tempo_config.call_count == 0
 
-            assert contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
-                                            "de la récupération de données Tempo.'}", logging.ERROR)
+            assert contains_logline(
+                caplog,
+                "{'error': True, 'description': 'Erreur lors " "de la récupération de données Tempo.'}",
+                logging.ERROR,
+            )
 
 
 @pytest.mark.parametrize("response", [None, [Tempo(date="2099-01-01", color="turquoise")]])
@@ -76,5 +84,8 @@ def test_get_tempo(mocker, caplog, response):
         assert m_db_set_tempo.call_count == 0
         assert m_db_set_tempo_config.call_count == 0
 
-        assert not contains_logline(caplog, "{'error': True, 'description': 'Erreur lors "
-                                            "de la récupération de données Tempo.'}", logging.ERROR)
+        assert not contains_logline(
+            caplog,
+            "{'error': True, 'description': 'Erreur lors " "de la récupération de données Tempo.'}",
+            logging.ERROR,
+        )

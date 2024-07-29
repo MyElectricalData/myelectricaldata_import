@@ -44,7 +44,7 @@ if (document.URL.indexOf("/usage_point_id/") >= 0) {
                 var last_call = data["last_call"]
             }
             if(information === undefined) {
-                information = "Soucis sur le compte<br>Vérifier les logs ou votre configuration"
+                information = "Erreur détectée."
             }
             content = "<table class='stat_table'>" +
                 "<tr>" +

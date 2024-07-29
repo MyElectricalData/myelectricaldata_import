@@ -15,19 +15,22 @@ from conftest import contains_logline
         ({"detail": "falsy response"}, 500),
         (
             {
-                "customer": {"usage_points": [
-                    {"usage_point": {
-                        "usage_point_status": "mock_value",
-                        "meter_type": "mock meter type"
-                    },
-                     "contracts": {
-                         "offpeak_hours": None, "last_activation_date": "2099-01-01+00:00",
-                         "last_distribution_tariff_change_date": "2099-01-01+00:00",
-                         "segment": "mock_segment",
-                         "subscribed_power": "10000000kVA",
-                         "distribution_tariff": "mock tariff",
-                         "contract_status": "mock status"
-                     }}]},
+                "customer": {
+                    "usage_points": [
+                        {
+                            "usage_point": {"usage_point_status": "mock_value", "meter_type": "mock meter type"},
+                            "contracts": {
+                                "offpeak_hours": None,
+                                "last_activation_date": "2099-01-01+00:00",
+                                "last_distribution_tariff_change_date": "2099-01-01+00:00",
+                                "segment": "mock_segment",
+                                "subscribed_power": "10000000kVA",
+                                "distribution_tariff": "mock tariff",
+                                "contract_status": "mock status",
+                            },
+                        }
+                    ]
+                },
                 "call_number": 42,
                 "quota_limit": 42,
                 "quota_reached": 42,
@@ -39,7 +42,7 @@ from conftest import contains_logline
     ],
 )
 def test_get_contract(mocker, job, caplog, status_response, status_code, requests_mock):
-    from config import URL
+    from const import URL
 
     m_set_error_log = mocker.patch("models.database.Database.set_error_log")
     m_get_contract = mocker.patch("models.database.Database.get_contract")
@@ -48,9 +51,7 @@ def test_get_contract(mocker, job, caplog, status_response, status_code, request
     requests_mocks = list()
 
     if job.usage_point_id:
-        rm = requests_mock.get(
-            f"{URL}/contracts/{job.usage_point_id}", json=status_response, status_code=status_code
-        )
+        rm = requests_mock.get(f"{URL}/contracts/{job.usage_point_id}", json=status_response, status_code=status_code)
         requests_mocks.append(rm)
 
         # FIXME: If job has usage_point_id, get_contract() expects
@@ -76,8 +77,7 @@ def test_get_contract(mocker, job, caplog, status_response, status_code, request
     if is_truthy_response:
         if status_code != 200 and status_response:
             # If the status code is truthy, but not 200, the contents of response['detail'] are logged
-            assert contains_logline(caplog, "{'error': True, 'description': 'truthy "
-                                            "response'}", logging.ERROR)
+            assert contains_logline(caplog, "{'error': True, 'description': 'truthy " "response'}", logging.ERROR)
 
         elif status_response and status_response.get("customer"):
             # Successful case: db is updated & set_error_log is called with None

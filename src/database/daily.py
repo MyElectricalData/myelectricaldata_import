@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import asc, delete, desc, func, select, update
 
-from config import MAX_IMPORT_TRY, TIMEZONE_UTC
-from database import DB
+from const import MAX_IMPORT_TRY, TIMEZONE
 from db_schema import ConsumptionDaily, ProductionDaily, UsagePoints
+
+from . import DB
 
 
 class DatabaseDaily:
@@ -16,7 +17,7 @@ class DatabaseDaily:
 
     def __init__(self, usage_point_id, measurement_direction="consumption"):
         """Initialize DatabaseConfig."""
-        self.session = DB.session
+        self.session = DB.session()
         self.usage_point_id = usage_point_id
         self.measurement_direction = measurement_direction
         if self.measurement_direction == "consumption":
@@ -53,7 +54,7 @@ class DatabaseDaily:
         Returns:
             list: The datatable.
         """
-        yesterday = datetime.combine(datetime.now(tz=TIMEZONE_UTC) - timedelta(days=1), datetime.max.time())
+        yesterday = datetime.combine(datetime.now(tz=TIMEZONE) - timedelta(days=1), datetime.max.time())
         sort = asc(order_column) if order_dir == "desc" else desc(order_column)
         if search is not None and search != "":
             result = self.session.scalars(
@@ -89,7 +90,7 @@ class DatabaseDaily:
         self.session.close()
         return data
 
-    def get_date(self, date):
+    def get_date(self, date: datetime):
         """Retrieve the data for a given usage point, date, and measurement direction.
 
         Args:
@@ -98,13 +99,14 @@ class DatabaseDaily:
         Returns:
             object: The data.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         data = self.session.scalars(select(self.table).join(self.relation).where(self.table.id == unique_id)).first()
         self.session.flush()
         self.session.close()
         return data
 
-    def get_state(self, date):
+    def get_state(self, date: datetime):
         """Check the state of daily data for a given usage point, date, and measurement direction.
 
         Args:
@@ -113,10 +115,10 @@ class DatabaseDaily:
         Returns:
             bool: True if the daily data exists, False otherwise.
         """
+        date = date.astimezone(TIMEZONE)
         if self.get_date(date) is not None:
             return True
-        else:
-            return False
+        return False
 
     def get_last_date(self):
         """Retrieve the last date for a given usage point and measurement direction.
@@ -134,8 +136,7 @@ class DatabaseDaily:
         self.session.close()
         if current_data is None:
             return False
-        else:
-            return current_data.date
+        return current_data.date
 
     def get_last(self):
         """Retrieve the last data point for a given usage point and measurement direction.
@@ -154,8 +155,7 @@ class DatabaseDaily:
         self.session.close()
         if current_data is None:
             return False
-        else:
-            return current_data
+        return current_data
 
     def get_first_date(self):
         """Retrieve the first date for a given usage point and measurement direction.
@@ -173,10 +173,9 @@ class DatabaseDaily:
         current_data = self.session.scalars(query).first()
         if current_data is None:
             return False
-        else:
-            return current_data.date
+        return current_data.date
 
-    def get_fail_count(self, date):
+    def get_fail_count(self, date: datetime):
         """Retrieve the fail count for a given usage point, date, and measurement direction.
 
         Args:
@@ -185,13 +184,13 @@ class DatabaseDaily:
         Returns:
             int: The fail count.
         """
+        date = date.astimezone(TIMEZONE)
         result = self.get_date(date)
         if hasattr(result, "fail_count"):
             return result.fail_count
-        else:
-            return 0
+        return 0
 
-    def fail_increment(self, date):
+    def fail_increment(self, date: datetime):
         """Increment the fail count for a given usage point, date, and measurement direction.
 
         Args:
@@ -200,6 +199,7 @@ class DatabaseDaily:
         Returns:
             int: The updated fail count.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         query = select(self.table).join(self.relation).where(self.table.id == unique_id)
         logging.debug(query.compile(compile_kwargs={"literal_binds": True}))
@@ -232,7 +232,7 @@ class DatabaseDaily:
         self.session.flush()
         return fail_count
 
-    def get_range(self, begin, end):
+    def get_range(self, begin: datetime, end: datetime):
         """Retrieve the range of data for a given usage point, begin date, end date, and measurement direction.
 
         Args:
@@ -242,6 +242,8 @@ class DatabaseDaily:
         Returns:
             list: The list of data within the specified range.
         """
+        begin = begin.astimezone(TIMEZONE)
+        end = end.astimezone(TIMEZONE)
         query = (
             select(self.table)
             .join(self.relation)
@@ -257,7 +259,7 @@ class DatabaseDaily:
         else:
             return current_data
 
-    def get(self, begin, end):
+    def get(self, begin: datetime, end: datetime):
         """Retrieve the data for a given usage point, begin date, end date, and measurement direction.
 
         Args:
@@ -267,6 +269,8 @@ class DatabaseDaily:
         Returns:
             dict: A dictionary containing the retrieved data.
         """
+        begin = begin.astimezone(TIMEZONE)
+        end = end.astimezone(TIMEZONE)
         delta = end - begin
         result = {"missing_data": False, "date": {}, "count": 0}
         for i in range(delta.days + 1):
@@ -304,7 +308,7 @@ class DatabaseDaily:
 
     def insert(
         self,
-        date,
+        date: datetime,
         value,
         blacklist=0,
         fail_count=0,
@@ -317,6 +321,7 @@ class DatabaseDaily:
             blacklist (int, optional): The blacklist status. Defaults to 0.
             fail_count (int, optional): The fail count. Defaults to 0.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         query = select(self.table).join(self.relation).where(self.table.id == unique_id)
         daily = self.session.scalars(query).one_or_none()
@@ -353,6 +358,8 @@ class DatabaseDaily:
         Returns:
             bool: True if the data was reset, False otherwise.
         """
+        if date is not None:
+            date = date.astimezone(TIMEZONE)
         data = self.get_date(date)
         if data is not None:
             values = {
@@ -364,8 +371,7 @@ class DatabaseDaily:
             self.session.execute(update(self.table, values=values).where(self.table.id == unique_id))
             self.session.flush()
             return True
-        else:
-            return False
+        return False
 
     def delete(self, date=None):
         """Delete the daily data for a given usage point, date, and measurement direction.
@@ -377,6 +383,7 @@ class DatabaseDaily:
             bool: True if the data was deleted, False otherwise.
         """
         if date is not None:
+            date = date.astimezone(TIMEZONE)
             unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
             self.session.execute(delete(self.table).where(self.table.id == unique_id))
         else:
@@ -394,6 +401,7 @@ class DatabaseDaily:
         Returns:
             bool: True if the data was blacklisted or unblacklisted, False otherwise.
         """
+        date = date.astimezone(TIMEZONE)
         unique_id = hashlib.md5(f"{self.usage_point_id}/{date}".encode("utf-8")).hexdigest()  # noqa: S324
         query = select(self.table).join(self.relation).where(self.table.id == unique_id)
         daily = self.session.scalars(query).one_or_none()

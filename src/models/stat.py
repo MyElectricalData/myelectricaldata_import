@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from dateutil.relativedelta import relativedelta
 
-from config import TEMPO_BEGIN, TEMPO_END
+from const import TEMPO_BEGIN, TEMPO_END
 from database.contracts import DatabaseContracts
 from database.daily import DatabaseDaily
 from database.detail import DatabaseDetail
@@ -14,7 +14,7 @@ from database.max_power import DatabaseMaxPower
 from database.statistique import DatabaseStatistique
 from database.tempo import DatabaseTempo
 from database.usage_points import DatabaseUsagePoints
-from dependencies import is_between
+from utils import is_between
 
 now_date = datetime.now(timezone.utc)
 yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
@@ -218,10 +218,11 @@ class Stat:  # pylint: disable=R0902,R0904
         value = 0
         for data in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
             day_measure_type = self.get_mesure_type(data.date)
+            day_interval = data.interval if hasattr(data, "interval") and data.interval != 0 else 1
             if measure_type is None or (measure_type == "HP" and day_measure_type == "HP"):
-                value = value + data.value / (60 / data.interval)
+                value = value + data.value / (60 / day_interval)
             elif measure_type is None or (measure_type == "HC" and day_measure_type == "HC"):
-                value = value + data.value / (60 / data.interval)
+                value = value + data.value / (60 / day_interval)
         return {
             "value": value,
             "begin": begin.strftime(self.date_format),
@@ -724,10 +725,11 @@ class Stat:  # pylint: disable=R0902,R0904
         end = datetime.combine(now_date, datetime.max.time())
         for day in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
             measure_type = self.get_mesure_type(day.date)
+            day_interval = day.interval if hasattr(day, "interval") and day.interval != 0 else 1
             if measure_type == "HP":
-                self.value_yesterday_hp = self.value_yesterday_hp + (day.value / (60 / day.interval))
+                self.value_yesterday_hp = self.value_yesterday_hp + (day.value / (60 / day_interval))
             if measure_type == "HC":
-                self.value_yesterday_hc = self.value_yesterday_hc + (day.value / (60 / day.interval))
+                self.value_yesterday_hc = self.value_yesterday_hc + (day.value / (60 / day_interval))
         logging.debug(f" yesterday_hc => HC : {self.value_yesterday_hc}")
         logging.debug(f" yesterday_hp => HP : {self.value_yesterday_hp}")
         return {
@@ -788,7 +790,8 @@ class Stat:  # pylint: disable=R0902,R0904
             for day in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
                 day_measure_type = self.get_mesure_type(day.date)
                 if day_measure_type == measure_type:
-                    value = value + (day.value / (60 / day.interval))
+                    day_interval = day.interval if hasattr(day, "interval") and day.interval != 0 else 1
+                    value = value + (day.value / (60 / day_interval))
         return {
             "value": value,
             "begin": begin.strftime(self.date_format),
@@ -817,7 +820,8 @@ class Stat:  # pylint: disable=R0902,R0904
             for day in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
                 day_measure_type = self.get_mesure_type(day.date)
                 if day_measure_type == measure_type:
-                    value = value + (day.value / (60 / day.interval))
+                    day_interval = day.interval if hasattr(day, "interval") and day.interval != 0 else 1
+                    value = value + (day.value / (60 / day_interval))
         return {
             "value": value,
             "begin": begin.strftime(self.date_format),
@@ -852,7 +856,8 @@ class Stat:  # pylint: disable=R0902,R0904
             for day in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
                 day_measure_type = self.get_mesure_type(day.date)
                 if day_measure_type == measure_type:
-                    value = value + (day.value / (60 / day.interval))
+                    day_interval = day.interval if hasattr(day, "interval") and day.interval != 0 else 1
+                    value = value + (day.value / (60 / day_interval))
         return {
             "value": value,
             "begin": begin.strftime(self.date_format),
@@ -881,7 +886,8 @@ class Stat:  # pylint: disable=R0902,R0904
             for day in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
                 day_measure_type = self.get_mesure_type(day.date)
                 if day_measure_type == measure_type:
-                    value = value + (day.value / (60 / day.interval))
+                    day_interval = day.interval if hasattr(day, "interval") and day.interval != 0 else 1
+                    value = value + (day.value / (60 / day_interval))
         return {
             "value": value,
             "begin": begin.strftime(self.date_format),
@@ -925,7 +931,8 @@ class Stat:  # pylint: disable=R0902,R0904
             for day in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
                 day_measure_type = self.get_mesure_type(day.date)
                 if day_measure_type == measure_type:
-                    value = value + (day.value / (60 / day.interval))
+                    day_interval = day.interval if hasattr(day, "interval") and day.interval != 0 else 1
+                    value = value + (day.value / (60 / day_interval))
         return {
             "value": value,
             "begin": begin.strftime(self.date_format),
@@ -954,7 +961,8 @@ class Stat:  # pylint: disable=R0902,R0904
             for day in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
                 day_measure_type = self.get_mesure_type(day.date)
                 if day_measure_type == measure_type:
-                    value = value + (day.value / (60 / day.interval))
+                    day_interval = day.interval if hasattr(day, "interval") and day.interval != 0 else 1
+                    value = value + (day.value / (60 / day_interval))
         return {
             "value": value,
             "begin": begin.strftime(self.date_format),
@@ -968,6 +976,8 @@ class Stat:  # pylint: disable=R0902,R0904
             dict: A dictionary containing the price data.
         """
         data = DatabaseStatistique(self.usage_point_id).get(f"price_{self.measurement_direction}")
+        if len(data) == 0:
+            return {}
         return json.loads(data[0].value)
 
     def get_mesure_type(self, measurement_date):
@@ -1024,7 +1034,7 @@ class Stat:  # pylint: disable=R0902,R0904
                 measure_type = self.get_mesure_type(item.date)
 
                 tempo_date = datetime.combine(item.date, datetime.min.time())
-                interval = item.interval
+                interval = item.interval if hasattr(item, "interval") and item.interval != 0 else 1
                 if year not in result:
                     result[year] = {
                         "BASE": {"euro": 0, "kWh": 0, "Wh": 0},
@@ -1104,6 +1114,8 @@ class Stat:  # pylint: disable=R0902,R0904
                 f"price_{self.measurement_direction}",
                 json.dumps(result),
             )
+        else:
+            logging.error(" => Aucune donnée en cache.")
         return json.dumps(result)
 
     def get_daily(self, specific_date, mesure_type):
@@ -1119,7 +1131,12 @@ class Stat:  # pylint: disable=R0902,R0904
         begin = datetime.combine(specific_date, datetime.min.time())
         end = datetime.combine(specific_date, datetime.max.time())
         value = 0
-        for item in DatabaseDetail(self.usage_point_id, mesure_type).get_range(begin, end):
+        for item in DatabaseDetail(self.usage_point_id, self.measurement_direction).get_range(begin, end):
             if self.get_mesure_type(item.date).upper() == mesure_type.upper():
-                value += item.value / (60 / item.interval)
+                day_interval = item.interval if hasattr(item, "interval") and item.interval != 0 else 1
+                value += item.value / (60 / day_interval)
         return value
+
+    def delete(self):
+        """Delete the data from the database."""
+        DatabaseStatistique(self.usage_point_id).delete()

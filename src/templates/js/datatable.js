@@ -16,6 +16,7 @@ $(document.body).on('click', '.datatable_button', function () {
             })
                 .done(function (data) {
                     data = $.parseJSON(JSON.stringify(data))
+                    console.log(data);
                     if (tag.includes("detail") && type != "reset") {
                         setTimeout(function () {
                             $('#dataTableConsommationDetail').DataTable(datatable_consumption_detail).ajax.reload();

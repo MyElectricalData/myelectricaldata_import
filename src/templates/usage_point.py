@@ -10,19 +10,19 @@ import pytz
 from jinja2 import Template
 from mergedeep import Strategy, merge
 
+from config.main import APP_CONFIG
 from database.addresses import DatabaseAddresses
 from database.contracts import DatabaseContracts
 from database.daily import DatabaseDaily
 from database.statistique import DatabaseStatistique
 from database.tempo import DatabaseTempo
 from database.usage_points import DatabaseUsagePoints
-from dependencies import APPLICATION_PATH, get_version
-from init import CONFIG
 from models.stat import Stat
 from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
+from utils import get_version
 
 
 class UsagePoint:
@@ -30,8 +30,7 @@ class UsagePoint:
 
     def __init__(self, usage_point_id):
         """Initialize a UsagePoint object."""
-        self.config = CONFIG
-        self.application_path = APPLICATION_PATH
+        self.config = APP_CONFIG
         self.usage_point_id = usage_point_id
         self.current_years = int(datetime.now(tz=pytz.utc).strftime("%Y"))
         self.max_history = 4
@@ -199,11 +198,15 @@ class UsagePoint:
         """
         if self.headers is None:
             self.javascript = "window.location.href = '/';"
-            with Path(f"{self.application_path}/templates/html/usage_point_id.html").open() as file_:
+            with Path(f"{APP_CONFIG.application_path}/templates/html/usage_point_id.html").open(
+                encoding="UTF-8"
+            ) as file_:
                 index_template = Template(file_.read())
             html = index_template.render(
                 select_usage_points=self.usage_point_select.html(),
-                javascript_loader=Path(f"{self.application_path}/templates/html/head.html").read_text(),
+                javascript_loader=Path(f"{APP_CONFIG.application_path}/templates/html/head.html").read_text(
+                    encoding="UTF-8"
+                ),
                 side_menu=self.side_menu.html(),
                 menu=self.menu.html(),
                 css=self.menu.css(),
@@ -218,7 +221,7 @@ class UsagePoint:
             else:
                 title = address
 
-            with Path(f"{self.application_path}/templates/md/usage_point_id.md").open() as file_:
+            with Path(f"{APP_CONFIG.application_path}/templates/md/usage_point_id.md").open(encoding="UTF-8") as file_:
                 homepage_template = Template(file_.read())
             body = homepage_template.render(
                 title=title,
@@ -560,11 +563,15 @@ class UsagePoint:
                 </table>
                 """
 
-            with Path(f"{self.application_path}/templates/html/usage_point_id.html").open() as file_:
+            with Path(f"{APP_CONFIG.application_path}/templates/html/usage_point_id.html").open(
+                encoding="UTF-8"
+            ) as file_:
                 index_template = Template(file_.read())
             html = index_template.render(
                 select_usage_points=self.usage_point_select.html(),
-                javascript_loader=Path(f"{self.application_path}/templates/html/head.html").open().read(),
+                javascript_loader=Path(f"{APP_CONFIG.application_path}/templates/html/head.html")
+                .open(encoding="UTF-8")
+                .read(),
                 body=body,
                 side_menu=self.side_menu.html(),
                 javascript=(
@@ -572,11 +579,13 @@ class UsagePoint:
                     + self.side_menu.javascript()
                     + self.usage_point_select.javascript()
                     + self.menu.javascript()
-                    + Path(f"{self.application_path}/templates/js/loading.js").open().read()
-                    + Path(f"{self.application_path}/templates/js/notif.js").open().read()
-                    + Path(f"{self.application_path}/templates/js/gateway_status.js").open().read()
-                    + Path(f"{self.application_path}/templates/js/datatable.js").open().read()
-                    + Path(f"{self.application_path}/templates/js/loading.js").open().read()
+                    + Path(f"{APP_CONFIG.application_path}/templates/js/loading.js").open(encoding="UTF-8").read()
+                    + Path(f"{APP_CONFIG.application_path}/templates/js/notif.js").open(encoding="UTF-8").read()
+                    + Path(f"{APP_CONFIG.application_path}/templates/js/gateway_status.js")
+                    .open(encoding="UTF-8")
+                    .read()
+                    + Path(f"{APP_CONFIG.application_path}/templates/js/datatable.js").open(encoding="UTF-8").read()
+                    + Path(f"{APP_CONFIG.application_path}/templates/js/loading.js").open(encoding="UTF-8").read()
                     + self.javascript
                 ),
                 configuration=self.configuration_div.html().strip(),

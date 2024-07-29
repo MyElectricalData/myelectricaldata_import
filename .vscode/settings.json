@@ -20,7 +20,15 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/Thumbs.db": true
+    "**/Thumbs.db": true,
+    ".venv": true,
+    ".pytest_cache": true
   },
-  "hide-files.files": []
+  "hide-files.files": [
+    ".venv",
+    ".pytest_cache"
+  ],
+  "yaml.schemas": {
+    "https://json.schemastore.org/yamllint.json": "file:///home/cvalentin/git/myelectricaldata/myelectricaldata_import/data/config.yaml"
+  }
 }

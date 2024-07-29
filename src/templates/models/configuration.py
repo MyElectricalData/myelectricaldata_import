@@ -7,9 +7,10 @@ import pytz
 from jinja2 import Template
 from mergedeep import Strategy, merge
 
+from config.main import APP_CONFIG
 from database.contracts import DatabaseContracts
 from database.usage_points import DatabaseUsagePoints
-from dependencies import APPLICATION_PATH, str2bool
+from utils import str2bool
 
 TIMEZONE = pytz.timezone("Europe/Paris")
 
@@ -18,7 +19,6 @@ class Configuration:
     """Represents the configuration settings for the application."""
 
     def __init__(self, title="", usage_point_id=0, display_usage_point_id=False):
-        self.application_path = APPLICATION_PATH
         self.title = title
         self.usage_point_id = usage_point_id
         self.display_usage_point_id = display_usage_point_id
@@ -263,6 +263,8 @@ class Configuration:
                             <td><i class="material-icons help" alt="{data["help"]}">help_outline</i></td>"""
                         configuration += "</tr>"
                     elif isinstance(var_type, (str, float)):
+                        if value is None:
+                            value = ""
                         configuration += f"""
                         <tr>
                             <td class="key">{title}</td>
@@ -312,6 +314,7 @@ class Configuration:
                         current_cat = cat
                     title = data["title"]
                     var_type = data["type"]
+                    default = False
                     if "default" in data:
                         default = data["default"]
                     if var_type is None:
@@ -387,6 +390,8 @@ class Configuration:
                     configuration_input += f'{key}: $("#configuration_{key}").val(),'
                 elif isinstance(var_type, datetime.datetime):
                     configuration_input += f'{key}: $("#configuration_{key}").val(),'
-        with Path(f"{self.application_path}/templates/js/usage_point_configuration.js").open() as file_:
+        with Path(f"{APP_CONFIG.application_path}/templates/js/usage_point_configuration.js").open(
+            encoding="UTF-8"
+        ) as file_:
             usage_point_configuration = Template(file_.read())
         return usage_point_configuration.render(configurationInput=configuration_input)

@@ -1,0 +1,97 @@
+backend:
+  uri: sqlite:////data/myelectricaldata.db
+gateway:
+  url: myelectricaldata.fr
+  ssl: true
+home_assistant:
+  enable: false
+  discovery_prefix: homeassistant
+home_assistant_ws:
+  enable: false
+  ssl: false
+  token: ''
+  url: ws://localhost:8123
+  purge: false
+  batch_size: 1000
+  max_date:
+influxdb:
+  enable: false
+  scheme: http
+  hostname: localhost
+  port: 8086
+  token: my-token
+  org: myorg
+  bucket: mybucket
+  method: SYNCHRONOUS
+  timezone: UTC
+  wipe: false
+  batching_options:
+    batch_size: 1000
+    flush_interval: 1000
+    jitter_interval: 0
+    retry_interval: 5000
+    max_retry_time: '180_000'
+    max_retries: 5
+    max_retry_delay: '125_000'
+    exponential_base: 2
+logging:
+  log_format: '%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s'
+  log_format_date: '%Y-%m-%d %H:%M:%S'
+  log2file: false
+  log_level: 20
+  debug: false
+  log_http: false
+mqtt:
+  enable: false
+  hostname: localhost
+  port: 1883
+  username: ''
+  password: ''
+  prefix: myelectricaldata
+  client_id: myelectricaldata
+  retain: true
+  qos: 0
+  cert: false
+myelectricaldata:
+  MON_POINT_DE_LIVRAISON:
+    enable: true
+    name: MON_POINT_DE_LIVRAISON
+    token: VOTRE_TOKEN_MYELECTRICALDATA
+    cache: true
+    plan: BASE
+    consumption: true
+    consumption_detail: true
+    consumption_max_power: true
+    consumption_price_hc: 0
+    consumption_price_hp: 0
+    consumption_price_base: 0
+    consumption_max_date: ''
+    consumption_detail_max_date: ''
+    production: false
+    production_detail: false
+    production_max_date: ''
+    production_detail_max_date: ''
+    production_price: 0
+    offpeak_hours_0: ''
+    offpeak_hours_1: ''
+    offpeak_hours_2: ''
+    offpeak_hours_3: ''
+    offpeak_hours_4: ''
+    offpeak_hours_5: ''
+    offpeak_hours_6: ''
+    refresh_addresse: false
+    refresh_contract: false
+opentelemetry:
+  enable: false
+  service_name: myelectricaldata
+  endpoint: http://localhost:4317
+  environment: production
+  extension:
+    - fastapi
+    - sqlalchemy
+server: # Configuration du serveur web.
+  cidr: 0.0.0.0
+  port: 5000
+  certfile: ''
+  keyfile: ''
+  cycle: 14400

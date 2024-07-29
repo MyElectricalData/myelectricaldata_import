@@ -250,3 +250,10 @@ with open(f".env", 'w') as file:
 	file.write("\n".join(env))
 endef
 export set_env
+
+######################################
+## OPENTRACING DEV TOOLS
+otel-collector: jaeger
+jaeger:	## ▶ Run Jaeger (opentrace collector & UI) in local.
+	docker-compose -f toolbox/tools/jaeger.yaml up -d
+	@$(call title, "Jaeger is running on http://localhost:16686")
