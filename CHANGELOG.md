@@ -2,6 +2,25 @@
 
 
 
+## v1.0.0-rc.8 (2024-07-29)
+
+### Feature
+
+* feat: rework all config ([`239c4f1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/239c4f1b01098d84961e8c59216cdf5be0ba5245))
+
+* feat: rework config ([`a2a1308`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a2a1308e7447e6440ae637290ce246ef0d6425b0))
+
+### Fix
+
+* fix: build armv7 ([`4ad4860`](https://github.com/MyElectricalData/myelectricaldata_import/commit/4ad48601948a7cf0ed693cbea68ef63dad8935e5))
+
+### Unknown
+
+* Merge pull request #558 from MyElectricalData/feat/build-args
+
+Feat/build args ([`299af44`](https://github.com/MyElectricalData/myelectricaldata_import/commit/299af4407e68bcdacbdc160f031e692d5b2c5ea7))
+
+
 ## v1.0.0-rc.7 (2024-06-03)
 
 ### Fix
