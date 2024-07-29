@@ -34,7 +34,9 @@ COPY ./src /app
 RUN pip install -r /app/requirements.txt
 
 # REMOVE RUST
-RUN /usr/local/lib/rustlib/uninstall.sh
+RUN if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
+        /usr/local/lib/rustlib/uninstall.sh; \
+    fi
 
 RUN mkdir /data
 RUN mkdir /log
