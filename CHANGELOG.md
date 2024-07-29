@@ -2,6 +2,31 @@
 
 
 
+## v1.0.0-rc.9 (2024-07-29)
+
+### Feature
+
+* feat: generate release ([`0e9eab3`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0e9eab38d3f3d763101e346b5a6c8e5b0c726c4c))
+
+### Unknown
+
+* Merge pull request #561 from MyElectricalData/feat/build-args
+
+feat: generate release ([`a2f0bfd`](https://github.com/MyElectricalData/myelectricaldata_import/commit/a2f0bfd3bdae93ca7936466107198863b727a264))
+
+* Merge pull request #560 from MyElectricalData/feat/build-args
+
+feat fix dep ([`d643dfe`](https://github.com/MyElectricalData/myelectricaldata_import/commit/d643dfed7cf3834cb9bf06f350ed25af24e3f37c))
+
+* feat fix dep ([`0cf2579`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0cf2579cc158ac24cf4aee54e86c7b961256683d))
+
+* Merge pull request #559 from MyElectricalData/feat/build-args
+
+Fix rust uninstall ([`9f0e44d`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9f0e44dab40d617b6dd79c92cdc79fb1db346ad5))
+
+* Fix rust uninstall ([`2270051`](https://github.com/MyElectricalData/myelectricaldata_import/commit/227005129c09c148670ee14c53c70923f3d2b16a))
+
+
 ## v1.0.0-rc.8 (2024-07-29)
 
 ### Feature
