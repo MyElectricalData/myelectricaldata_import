@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.11 (2024-07-31)
+
+### Fix
+
+* fix: influxdb method lower ([`2848e9b`](https://github.com/MyElectricalData/myelectricaldata_import/commit/2848e9bfb77e900a63e1581af7a97b2b83cd812a))
+
+### Unknown
+
+* Merge pull request #564 from MyElectricalData/feat/build-args
+
+fix: influxdb method lower ([`8e1ed22`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8e1ed22ab1699eac40171ca7bc999ad2884fb355))
+
+
 ## v1.0.0-rc.10 (2024-07-31)
 
 ### Feature
