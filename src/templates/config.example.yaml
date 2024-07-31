@@ -87,8 +87,8 @@ opentelemetry:
   endpoint: http://localhost:4317
   environment: production
   extension:
-    - fastapi
     - sqlalchemy
+    - fastapi
 server: # Configuration du serveur web.
   cidr: 0.0.0.0
   port: 5000
