@@ -22,11 +22,17 @@ RUN pip install --upgrade pip pip-tools setuptools
 
 # INSTALL RUST FOR ARMv7 and orjson lib
 RUN if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
-        apt install -y curl git build-essential libc6-armhf-cross libc6-dev-armhf-cross gcc-arm-linux-gnueabihf libdbus-1-dev libdbus-1-dev:armhf && \
-        curl -k -o rust-install.tar.gz https://static.rust-lang.org/dist/rust-1.78.0-armv7-unknown-linux-gnueabihf.tar.xz && \
-        tar -xvf rust-install.tar.gz && \
-        chmod +x rust-1.78.0-armv7-unknown-linux-gnueabihf/install.sh && \
-        ./rust-1.78.0-armv7-unknown-linux-gnueabihf/install.sh; \
+    apt install -y curl git build-essential libc6-armhf-cross libc6-dev-armhf-cross gcc-arm-linux-gnueabihf libdbus-1-dev libdbus-1-dev:armhf && \
+    curl -k -o rust-install.tar.gz https://static.rust-lang.org/dist/rust-1.78.0-armv7-unknown-linux-gnueabihf.tar.xz && \
+    tar -xvf rust-install.tar.gz && \
+    chmod +x rust-1.78.0-armv7-unknown-linux-gnueabihf/install.sh && \
+    ./rust-1.78.0-armv7-unknown-linux-gnueabihf/install.sh; \
+    elif [ "$TARGETPLATFORM" = "linux/arm/v6" ]; then \
+    apt install -y curl git build-essential libc6-armel-cross libc6-dev-armel-cross gcc-arm-linux-gnueabi libdbus-1-dev libdbus-1-dev:armel && \
+    curl -k -o rust-install.tar.gz https://static.rust-lang.org/dist/rust-1.78.0-arm-unknown-linux-gnueabi.tar.xz && \
+    tar -xvf rust-install.tar.gz && \
+    chmod +x rust-1.78.0-arm-unknown-linux-gnueabi/install.sh && \
+    ./rust-1.78.0-arm-unknown-linux-gnueabi/install.sh; \
     fi
 
 COPY ./src /app
