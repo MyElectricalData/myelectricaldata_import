@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.12 (2024-07-31)
+
+### Fix
+
+* fix: med plan upper ([`9748bc7`](https://github.com/MyElectricalData/myelectricaldata_import/commit/9748bc7d7db62b540181d3e053c88d07943e9216))
+
+### Unknown
+
+* Merge pull request #565 from MyElectricalData/feat/build-args
+
+fix: med plan upper ([`dc35599`](https://github.com/MyElectricalData/myelectricaldata_import/commit/dc35599665f807a3782fd9dd45f2b608cc302b1c))
+
+
 ## v1.0.0-rc.11 (2024-07-31)
 
 ### Fix
