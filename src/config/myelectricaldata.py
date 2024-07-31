@@ -115,7 +115,7 @@ class UsagePointId:
             self.change(sub_key, self.default()[sub_key], False)
         try:
             sub_key = "plan"
-            current_plan = self.config[self.key][self.usage_point_id][sub_key]
+            current_plan = self.config[self.key][self.usage_point_id][sub_key].upper()
             plan = Plan()
             plan_available = ""
             for value in plan.__dict__.values():
@@ -123,10 +123,10 @@ class UsagePointId:
             if current_plan not in plan.__dict__.values():
                 sys.exit(
                     f'[MyElectricalData][{self.usage_point_id}] Erreur de configuration, le plan "{current_plan} '
-                    "n'éxiste pas. ({plan_available[:-2]})"
+                    f"n'éxiste pas. ({plan_available[:-2]})"
                 )
 
-            self.change(sub_key, self.config[self.key][self.usage_point_id][sub_key], False)
+            self.change(sub_key, self.config[self.key][self.usage_point_id][sub_key].upper(), False)
         except Exception:
             self.change(sub_key, self.default()[sub_key], False)
         try:
