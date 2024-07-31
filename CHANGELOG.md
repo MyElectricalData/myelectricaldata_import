@@ -2,6 +2,25 @@
 
 
 
+## v1.0.0-rc.10 (2024-07-31)
+
+### Feature
+
+* feat: rework ([`0afc73a`](https://github.com/MyElectricalData/myelectricaldata_import/commit/0afc73acb849ef13afd9e5b1f3801f8ba81886ed))
+
+### Unknown
+
+* Merge pull request #563 from MyElectricalData/feat/build-args
+
+feat: rework ([`755edf5`](https://github.com/MyElectricalData/myelectricaldata_import/commit/755edf54f1ea925d2366549697c7a2eb4ed4ce9c))
+
+* Merge pull request #562 from MyElectricalData/feat/build-args
+
+update setuptools ([`779cdd0`](https://github.com/MyElectricalData/myelectricaldata_import/commit/779cdd03b1cf34e33713a89d1c1ee737390e2507))
+
+* update setuptools ([`42bfd46`](https://github.com/MyElectricalData/myelectricaldata_import/commit/42bfd46f09c7bf0b84693647439f9a1567035d6d))
+
+
 ## v1.0.0-rc.9 (2024-07-29)
 
 ### Feature
