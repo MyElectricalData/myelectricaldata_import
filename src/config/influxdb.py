@@ -178,9 +178,9 @@ class Method:
     """InfluxDB Method."""
 
     def __init__(self) -> None:
-        self.synchronous: str = "SYNCHRONOUS"
-        self.asynchronous: str = "ASYNCHRONOUS"
-        self.batching: str = "BATCHING"
+        self.synchronous: str = "synchronous"
+        self.asynchronous: str = "asynchronous"
+        self.batching: str = "batching"
 
 
 class InfluxDB:
@@ -263,7 +263,7 @@ class InfluxDB:
             self.change(sub_key, self.default()[sub_key], False)
         try:
             sub_key = "method"
-            current_method = self.config[self.key][sub_key]
+            current_method = self.config[self.key][sub_key].lower()
             method = Method()
             method_available = ""
             for value in method.__dict__.values():
@@ -271,9 +271,9 @@ class InfluxDB:
             if current_method not in method.__dict__.values():
                 sys.exit(
                     f'[InfluxDB] Erreur de configuration, la méthode "{current_method}" '
-                    "n'éxiste pas. ({method_available[:-2]})"
+                    f"n'éxiste pas. ({method_available[:-2]})"
                 )
-            self.change(sub_key, self.config[self.key][sub_key], False)
+            self.change(sub_key, self.config[self.key][sub_key].lower(), False)
         except Exception:
             self.change(sub_key, self.default()[sub_key], False)
         try:

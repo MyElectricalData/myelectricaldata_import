@@ -22,7 +22,7 @@ influxdb:
   token: my-token
   org: myorg
   bucket: mybucket
-  method: SYNCHRONOUS
+  method: synchronous
   timezone: UTC
   wipe: false
   batching_options:
