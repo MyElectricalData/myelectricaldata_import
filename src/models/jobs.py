@@ -3,6 +3,7 @@
 import logging
 import time
 import traceback
+from typing import List
 
 from config.main import APP_CONFIG
 from config.myelectricaldata import UsagePointId
@@ -29,13 +30,13 @@ class Job:
 
     def __init__(self, usage_point_id=None):
         self.usage_point_id = usage_point_id
-        self.usage_point_config = {}
-        self.wait_job_start = 10
-        self.tempo_enable = False
+        self.usage_point_config: UsagePointId = {}
+        self.wait_job_start: int = 10
+        self.tempo_enable: bool = False
         if self.usage_point_id is None:
-            self.usage_points_all = DatabaseUsagePoints().get_all()
+            self.usage_points_all: List[UsagePointId] = DatabaseUsagePoints().get_all()
         else:
-            self.usage_points_all = [DatabaseUsagePoints(self.usage_point_id).get()]
+            self.usage_points_all: List[UsagePointId] = [DatabaseUsagePoints(self.usage_point_id).get()]
 
     def boot(self):
         """Boots the import job."""
@@ -171,7 +172,7 @@ class Job:
         Returns:
             None
         """
-        detail = "Récupération du statut de la passerelle :"
+        detail = "Récupération du statut de la passerelle"
         try:
             title(detail)
             Status(headers=self.header_generate(token=False)).ping()
@@ -193,7 +194,7 @@ class Job:
 
         def run():
             usage_point_id = self.usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             status = Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
             if status.get("error"):
                 message = f'{status["status_code"]} - {status["description"]["detail"]}'
@@ -236,7 +237,7 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             Contract(
                 headers=self.header_generate(),
                 usage_point_id=usage_point_id,
@@ -273,7 +274,7 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             Address(headers=self.header_generate(), usage_point_id=usage_point_id).get()
             export_finish()
 
@@ -295,7 +296,7 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
                 Daily(headers=self.header_generate(), usage_point_id=usage_point_id).get()
                 export_finish()
@@ -320,7 +321,7 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             if hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail:
                 Detail(headers=self.header_generate(), usage_point_id=usage_point_id).get()
                 export_finish()
@@ -345,7 +346,7 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             if hasattr(usage_point_config, "production") and usage_point_config.production:
                 Daily(
                     headers=self.header_generate(),
@@ -374,7 +375,7 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             if hasattr(usage_point_config, "production_detail") and usage_point_config.production_detail:
                 Detail(
                     headers=self.header_generate(),
@@ -402,7 +403,7 @@ class Job:
         detail = "Récupération de la puissance maximum journalière"
 
         def run(usage_point_id: str, usage_point_config: UsagePointId) -> None:
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             if getattr(usage_point_config, "consumption_max_power", True):
                 Power(headers=self.header_generate(), usage_point_id=usage_point_id).get()
                 export_finish()
@@ -425,11 +426,11 @@ class Job:
     def get_tempo(self):
         """Get tempo from gateway."""
         try:
-            title("Récupération des données Tempo :")
+            title("Récupération des données Tempo")
             Tempo().fetch()
-            title("Calcul des jours Tempo :")
+            title("Calcul des jours Tempo")
             Tempo().calc_day()
-            title("Récupération des tarifs Tempo :")
+            title("Récupération des tarifs Tempo")
             Tempo().fetch_price()
             export_finish()
         except Exception as e:
@@ -440,7 +441,7 @@ class Job:
     def get_ecowatt(self):
         """Get ecowatt from gateway."""
         try:
-            title("Récupération des données EcoWatt :")
+            title("Récupération des données EcoWatt")
             Ecowatt().fetch()
             export_finish()
         except Exception as e:
@@ -454,7 +455,7 @@ class Job:
 
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
+            title(f"[{usage_point_id}] {detail}")
             if hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail:
                 logging.info("Consommation :")
                 Stat(usage_point_id=usage_point_id, measurement_direction="consumption").generate_price()
@@ -491,9 +492,9 @@ class Job:
             if APP_CONFIG.home_assistant:
                 if APP_CONFIG.mqtt:
                     if self.usage_point_id is None:
-                        for usage_point_id, usage_point_config in self.usage_points_all.items():
+                        for usage_point_config in self.usage_points_all:
                             if usage_point_config.enable:
-                                run(usage_point_id, target)
+                                run(usage_point_config.usage_point_id, target)
                     else:
                         run(self.usage_point_id, target)
                 else:

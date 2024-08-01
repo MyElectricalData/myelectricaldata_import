@@ -15,7 +15,6 @@ from database.daily import DatabaseDaily
 from database.detail import DatabaseDetail
 from database.max_power import DatabaseMaxPower
 from database.usage_points import DatabaseUsagePoints
-from db_schema import Contracts
 from doc import DOCUMENTATION
 from models.ajax import Ajax
 
