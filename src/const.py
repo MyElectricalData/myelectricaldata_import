@@ -7,7 +7,7 @@ LOG_FORMAT = "%(asctime)s.%(msecs)03d - %(levelname)8s : %(message)s"
 LOG_FORMAT_DATE = "%Y-%m-%d %H:%M:%S"
 
 URL = "https://myelectricaldata.fr"
-URL_CONFIG_FILE = "https://github.com/MyElectricalData/myelectricaldata_import/blob/main/config.exemple.yaml"
+URL_CONFIG_FILE = "https://github.com/MyElectricalData/myelectricaldata_import/blob/main/config.example.yaml"
 
 USAGE_POINT_ID_LENGTH = 14
 

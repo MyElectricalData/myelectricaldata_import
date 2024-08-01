@@ -40,8 +40,8 @@ COPY ./src /app
 RUN pip install -r /app/requirements.txt
 
 # REMOVE RUST
-RUN if [ "$TARGETPLATFORM" = "linux/arm/v7" ]; then \
-        /usr/local/lib/rustlib/uninstall.sh; \
+RUN if [ "$TARGETPLATFORM" = "linux/arm/v7" ] || [ "$TARGETPLATFORM" = "linux/arm/v6" ]; then \
+    /usr/local/lib/rustlib/uninstall.sh; \
     fi
 
 RUN mkdir /data
@@ -67,5 +67,6 @@ LABEL \
 
 # CLEAN
 RUN rm -rf /var/lib/apt/lists/*
+RUN apt remove -y git libpq-dev gcc g++
 
 CMD ["python", "-u", "/app/main.py"]

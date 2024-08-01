@@ -12,7 +12,6 @@ from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk.trace import Resource, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from __version__ import VERSION
 from config.backend import Backend
@@ -257,38 +256,37 @@ class Config:
 
     def setup_tracing(self):
         """OTEL setup."""
-        if self.config.opentelemetry.enable:  # pragma: no cover
+        if self.config.opentelemetry.enable: # no pragma: no cover
             RequestsInstrumentor().instrument()
-
-        resource_attributes = {
-            "service.name": self.config.opentelemetry.service_name,
-            "telemetry.version": VERSION,
-            "service.version": VERSION,
-            "env": self.config.opentelemetry.environment,
-            "Deployment.environment": self.config.opentelemetry.environment,
-        }
-        resource = Resource.create(resource_attributes)
-        provider = TracerProvider(resource=resource)
-        otlp_exporter = (
-            OTLPSpanExporter(endpoint=self.config.opentelemetry.endpoint, insecure=True)
-            if self.config.opentelemetry.enable
-            else InMemorySpanExporter()
-        )
-        processor = BatchSpanProcessor(otlp_exporter)
-        provider.add_span_processor(processor)
-        trace.set_tracer_provider(provider)
+            resource_attributes = {
+                "service.name": self.config.opentelemetry.service_name,
+                "telemetry.version": VERSION,
+                "service.version": VERSION,
+                "env": self.config.opentelemetry.environment,
+                "Deployment.environment": self.config.opentelemetry.environment,
+            }
+            resource = Resource.create(resource_attributes)
+            provider = TracerProvider(resource=resource)
+            processor = BatchSpanProcessor(
+                OTLPSpanExporter(endpoint=self.config.opentelemetry.endpoint, insecure=True),
+                export_timeout_millis=5,
+                )
+            provider.add_span_processor(processor)
+            trace.set_tracer_provider(provider)
+        else:
+            trace.set_tracer_provider(trace.NoOpTracerProvider())
         self.tracer = trace.get_tracer_provider().get_tracer("main")
         self.tracing_sqlalchemy()
 
     def tracing_sqlalchemy(self):
         """SQLAchemy Tracing."""
-        if "sqlalchemy" in self.config.opentelemetry.extension:
+        if self.config.opentelemetry.enable and "sqlalchemy" in self.config.opentelemetry.extension:
             logging.debug("[OpenTelemetry] SQLAchemy loaded")
             SQLAlchemyInstrumentor().instrument(enable_commenter=True, commenter_options={})
 
     def tracing_fastapi(self, app):
         """FastAPI Tracing."""
-        if "fastapi" in self.config.opentelemetry.extension:
+        if self.config.opentelemetry.enable and "fastapi" in self.config.opentelemetry.extension:
             logging.debug("[OpenTelemetry] FastAPI loaded")
             FastAPIInstrumentor.instrument_app(app)
 
