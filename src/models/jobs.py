@@ -40,7 +40,7 @@ class Job:
 
     def boot(self):
         """Boots the import job."""
-        if APP_CONFIG.dev or APP_CONFIG.logging.debug:
+        if APP_CONFIG.dev:
             logging.warning("=> Import job disable")
         else:
             self.job_import_data()
