@@ -2,6 +2,19 @@
 
 
 
+## v1.0.0-rc.13 (2024-08-01)
+
+### Fix
+
+* fix: opentel trash + bug ([`8183fa2`](https://github.com/MyElectricalData/myelectricaldata_import/commit/8183fa241a8a17279e57fd8a6f098cfc3e617216))
+
+### Unknown
+
+* Merge pull request #566 from MyElectricalData/feat/build-args
+
+fix: opentel trash + bug ([`dee45cd`](https://github.com/MyElectricalData/myelectricaldata_import/commit/dee45cd17e292c556cd30a5ea0ffb6051496b543))
+
+
 ## v1.0.0-rc.12 (2024-07-31)
 
 ### Fix
