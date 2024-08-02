@@ -20,6 +20,7 @@ class Tempo:
     def __init__(self):
         self.url = URL
         self.valid_date = datetime.combine(datetime.now(tz=TIMEZONE) + relativedelta(days=1), datetime.min.time())
+        self.display_nb_day = 10
         self.nb_check_day = 31
         self.total_tempo_days = {
             "red": 22,
@@ -44,7 +45,7 @@ class Tempo:
             query_response = Query(endpoint=target).get()
             if query_response.status_code == CODE_200_SUCCESS:
                 try:
-                    response_json = json.loads(query_response.text)
+                    response_json: dict = json.loads(query_response.text)
                     for date, color in response_json.items():
                         date_obj = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=TIMEZONE)
                         DatabaseTempo().set(date_obj, color)
@@ -57,11 +58,10 @@ class Tempo:
                         "description": "Erreur lors de la récupération de données Tempo.",
                     }
                 return response
-            else:
-                return {
-                    "error": True,
-                    "description": json.loads(query_response.text)["detail"],
-                }
+            return {
+                "error": True,
+                "description": json.loads(query_response.text)["detail"],
+            }
 
     def get(self):
         """Retrieves tempo data from the database.
@@ -110,8 +110,13 @@ class Tempo:
                 else:
                     logging.info(" => Toutes les données sont déjà en cache.")
             if "error" not in result:
-                for key, value in result.items():
-                    logging.info(f"{key}: {value}")
+                if len(result) > 0:
+                    i = 0
+                    for key, value in result.items():
+                        if i < self.display_nb_day:
+                            logging.info(f"{key}: {value}")
+                            i += 1
+                    logging.info("...")
             else:
                 logging.error(result)
                 return "OK"
@@ -140,6 +145,7 @@ class Tempo:
             for day in current_tempo_day:
                 result[day.color.lower()] -= 1
             DatabaseTempo().set_config("days", result)
+            logging.info(" => OK")
             return result
 
     def fetch_day(self):

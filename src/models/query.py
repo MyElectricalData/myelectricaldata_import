@@ -4,8 +4,6 @@ import logging
 
 import requests
 
-from database.config import DatabaseConfig
-from utils import str2bool
 from config.main import APP_CONFIG
 
 

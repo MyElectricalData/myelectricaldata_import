@@ -40,12 +40,12 @@ class Job:
 
     def boot(self):
         """Boots the import job."""
-        if APP_CONFIG.dev or APP_CONFIG.logging.debug:
+        if APP_CONFIG.dev:
             logging.warning("=> Import job disable")
         else:
             self.job_import_data()
 
-    def job_import_data(self, wait=True, target=None):  # noqa: PLR0912, PLR0915, C901
+    def job_import_data(self, wait=True, target=None):  # noqa: PLR0912, C901
         """Import data from the API."""
         if DB.lock_status():
             return {"status": False, "notif": "Importation déjà en cours..."}
@@ -58,9 +58,6 @@ class Job:
                 logging.info(f"{i}s")
                 time.sleep(1)
                 i = i - 1
-
-        if target == "gateway_status" or target is None:
-            self.get_gateway_status()
 
         # ######################################################################################################
         # FETCH TEMPO DATA
