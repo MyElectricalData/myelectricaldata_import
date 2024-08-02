@@ -3,6 +3,7 @@ import locale
 import logging
 import sys
 from os import getenv
+from typing import List
 
 from deepdiff import DeepDiff
 from opentelemetry import trace
@@ -25,7 +26,8 @@ from config.myelectricaldata import MyElectricalData, UsagePointId
 from config.optel import OpTel
 from config.server import Server
 from const import URL_CONFIG_FILE
-from utils import edit_config, load_config, logo, str2bool, title
+from database.usage_points import DatabaseUsagePoints
+from utils import barcode_message, edit_config, load_config, logo, str2bool, title
 
 locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
 
@@ -88,7 +90,6 @@ class Config:
         self.load_logging()
         self.setup_tracing()
         logo(VERSION)
-        self.display()
 
         comments = None
         for key in self.config.config:
@@ -99,6 +100,7 @@ class Config:
 
         self.check_config()
         if self.dev:
+            barcode_message("DEV MODE")
             exemple_file = "config.example.yaml"
             edit_config(data=self.default, file=exemple_file, comments=comments, wipe=True)
             edit_config(
@@ -108,6 +110,19 @@ class Config:
                 wipe=True,
             )
             title([f"Generate {exemple_file}", f" => {exemple_file} generated"])
+        self.display()
+        self.clean_database()
+
+    def clean_database(self):
+        """Clean database."""
+        title("Nettoyage de la base de données...")
+        usage_point_list: List[UsagePointId] = []
+        if self.myelectricaldata.usage_point_config is not None:
+            for upi, _ in self.myelectricaldata.usage_point_config.items():
+                usage_point_list.append(upi)
+        for usage_point in DatabaseUsagePoints().get_all():
+            if usage_point.usage_point_id not in usage_point_list:
+                DatabaseUsagePoints(usage_point.usage_point_id).delete()
 
     def check_config(self):
         """Check current config file."""
@@ -290,5 +305,5 @@ class Config:
             logging.debug("[OpenTelemetry] FastAPI loaded")
             FastAPIInstrumentor.instrument_app(app)
 
-
-APP_CONFIG = Config()
+if __name__ == "config.main":
+    APP_CONFIG = Config()

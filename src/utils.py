@@ -322,6 +322,13 @@ def get_version():
     return VERSION
 
 
+def barcode_message(message):
+    """Barcode message."""
+    art = text2art(message)
+    for line in art.splitlines():
+        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
+
+
 def logo(version):
     """Print the logo of MyElectricalData with the version number.
 

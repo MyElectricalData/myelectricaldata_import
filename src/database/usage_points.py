@@ -1,6 +1,7 @@
 """Manage UsagePoints table in database."""
 
 from datetime import datetime, timedelta
+from typing import List
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import scoped_session
@@ -72,7 +73,7 @@ class DatabaseUsagePoints:
         self.session: scoped_session = DB.session()
         self.usage_point_config = None
 
-    def get_all(self):
+    def get_all(self) -> List[UsagePoints]:
         """Get all data from usage point table."""
         query = select(UsagePoints)
         data = self.session.scalars(query).all()
