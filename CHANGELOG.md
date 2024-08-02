@@ -2,6 +2,23 @@
 
 
 
+## v1.0.0-rc.14 (2024-08-02)
+
+### Feature
+
+* feat: migrate to lifespan, clean ([`23ab2f1`](https://github.com/MyElectricalData/myelectricaldata_import/commit/23ab2f1aa2925030fd5244739c075331705aedb9))
+
+### Fix
+
+* fix: remove &#34;disable import&#34; when debug is enable ([`681421f`](https://github.com/MyElectricalData/myelectricaldata_import/commit/681421facfede2976f2ddb947399d54157119a90))
+
+### Unknown
+
+* Merge pull request #568 from MyElectricalData/feat/build-args
+
+Feat/build args ([`98e9962`](https://github.com/MyElectricalData/myelectricaldata_import/commit/98e99627b3ff8d9fb2dcd79832ae4ffeaa9e1801))
+
+
 ## v1.0.0-rc.13 (2024-08-01)
 
 ### Fix
