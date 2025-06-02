@@ -25,13 +25,14 @@ influxdb:
   enable: false
   scheme: http
   hostname: influxdb
-  port: 8086
+  port: 8086  # 8086 pour influxdb, 8428 pour victoriametrics
   token: myelectricaldata
   org: myelectricaldata
   bucket: myelectricaldata
   # ATTENTION, L'activation de l'importation asynchrone va réduire fortement le temps d'importation dans InfluxDB
   # mais va augmenter la consommation mémoire & CPU et donc à activer uniquement sur un hardware robuste.
   method: synchronous    # Mode disponible : synchronous / asynchronous / batching
+  vm_mode: true        # Active le mode VictoriaMetrics true sinon false pour influxdb
   # batching_options permet uniquement de configurer la methode `batching`.
   # Pour plus d'information : https://github.com/influxdata/influxdb-client-python#batching
   batching_options:
