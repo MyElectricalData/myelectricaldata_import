@@ -1,4 +1,5 @@
 """Import data in statistique recorder of Home Assistant."""
+
 import inspect
 import json
 import logging
@@ -202,15 +203,15 @@ class HomeAssistantWs:
                     stats = Stat(usage_point_id=self.usage_point_id, measurement_direction="consumption")
 
                     for data in detail:
-                        year = int(f'{data.date.strftime("%Y")}')
+                        year = int(f"{data.date.strftime('%Y')}")
                         if last_year is None or year != last_year:
                             logging.info(f"  - {year} :")
-                        month = int(f'{data.date.strftime("%m")}')
+                        month = int(f"{data.date.strftime('%m')}")
                         if last_month is None or month != last_month:
                             logging.info(f"    * {month}")
                         last_year = year
                         last_month = month
-                        hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
+                        hour_minute = int(f"{data.date.strftime('%H')}{data.date.strftime('%M')}")
                         name = f"MyElectricalData - {self.usage_point_id}"
                         statistic_id = f"myelectricaldata:{self.usage_point_id}"
                         day_interval = data.interval if hasattr(data, "interval") and data.interval != 0 else 1
@@ -391,15 +392,15 @@ class HomeAssistantWs:
                     stats_kwh = {}
                     stats_euro = {}
                     for data in detail:
-                        year = int(f'{data.date.strftime("%Y")}')
+                        year = int(f"{data.date.strftime('%Y')}")
                         if last_year is None or year != last_year:
                             logging.info(f"{year} :")
-                        month = int(f'{data.date.strftime("%m")}')
+                        month = int(f"{data.date.strftime('%m')}")
                         if last_month is None or month != last_month:
                             logging.info(f"- {month}")
                         last_year = year
                         last_month = month
-                        hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
+                        hour_minute = int(f"{data.date.strftime('%H')}{data.date.strftime('%M')}")
                         name = f"MyElectricalData - {self.usage_point_id} {measurement_direction}"
                         statistic_id = f"myelectricaldata:{self.usage_point_id}_{measurement_direction}"
                         day_interval = data.interval if hasattr(data, "interval") and data.interval != 0 else 1
@@ -452,6 +453,7 @@ class HomeAssistantWs:
                         DatabaseConfig().set("purge", False)
 
                     logging.info(" => Envoie des données de production...")
+                    logging.info(" - Production :")
 
                     for statistic_id, data in stats_kwh.items():
                         metadata = {
@@ -462,13 +464,28 @@ class HomeAssistantWs:
                             "statistic_id": statistic_id,
                             "unit_of_measurement": "kWh",
                         }
-                        import_statistics = {
-                            "id": self.id,
-                            "type": "recorder/import_statistics",
-                            "metadata": metadata,
-                            "stats": list(data["data"].values()),
-                        }
-                        self.send(import_statistics)
+                        chunks = list(
+                            chunks_list(list(data["data"].values()), APP_CONFIG.home_assistant_ws.batch_size)
+                        )
+                        chunks_len = len(chunks)
+                        for i, chunk in enumerate(chunks):
+                            current_plan = data["tag"].upper()
+                            logging.info(
+                                "   * %s : %s => %s (%s/%s) ",
+                                current_plan,
+                                chunk[-1]["start"],
+                                chunk[0]["start"],
+                                i + 1,
+                                chunks_len,
+                            )
+                            self.send(
+                                {
+                                    "id": self.id,
+                                    "type": "recorder/import_statistics",
+                                    "metadata": metadata,
+                                    "stats": chunk,
+                                }
+                            )
 
                     for statistic_id, data in stats_euro.items():
                         metadata = {
