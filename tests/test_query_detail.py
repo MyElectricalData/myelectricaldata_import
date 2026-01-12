@@ -3,6 +3,7 @@ import datetime
 from unittest import mock
 
 import pytest
+from const import TIMEZONE
 
 
 @dataclasses.dataclass
@@ -16,7 +17,7 @@ def test_get(mocker, measure_type):
     from external_services.myelectricaldata.detail import Detail
 
     m_get: mock.Mock = mocker.patch("models.query.Query.get")
-    m_insert_detail: mock.Mock = mocker.patch("models.database.Database.insert_detail")
+    m_insert_detail: mock.Mock = mocker.patch("database.detail.DatabaseDetail.insert")
     m_get.return_value = MockResponse(
         status_code=200,
         text='{"meter_reading": {"interval_reading": [{"interval_length": "30", '
@@ -37,12 +38,10 @@ def test_get(mocker, measure_type):
     # Query.get() should only be called once, with no parameter
     m_get.assert_called_once_with()
     # Database.insert_details() should only be called once, with parameters below
+    expected_date = TIMEZONE.localize(datetime.datetime(2024, 1, 1, 0, 30))
     m_insert_detail.assert_called_once_with(
-        date=datetime.datetime(2023, 12, 31, 23, 30, 00),
-        interval="30",
-        measure_type="",
-        mesure_type=measure_type,
-        usage_point_id="pdl1",
+        date=expected_date,
         value="10",
+        interval="30",
         blacklist=0,
     )

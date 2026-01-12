@@ -5,11 +5,10 @@ Revises: c70a0702d76b
 Create Date: 2022-12-30 16:29:42.282094
 
 """
-import sys
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import Date, DateTime, Integer, String, Text
+from sqlalchemy import DateTime, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import column, table
 

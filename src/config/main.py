@@ -1,4 +1,5 @@
 """Configuration class loader and checker."""
+
 import locale
 import logging
 import sys
@@ -29,7 +30,13 @@ from const import URL_CONFIG_FILE
 from database.usage_points import DatabaseUsagePoints
 from utils import barcode_message, edit_config, load_config, logo, str2bool, title
 
-locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+try:
+    locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_ALL, "")  # Use system default
+    except locale.Error:
+        locale.setlocale(locale.LC_ALL, "C")  # Last resort
 
 
 class Configuration:
@@ -130,10 +137,10 @@ class Config:
         diff_config = DeepDiff(self.default, self.config.config, ignore_order=True, exclude_paths=["myelectricaldata"])
         found = ""
         for diff in diff_config.get("dictionary_item_added", {}):
-            found += f"\n - {str(diff.replace("root", "")[2:-2]).replace("']['", ".")}"
+            found += f"\n - {str(diff.replace('root', '')[2:-2]).replace("']['", '.')}"
 
         # CHECK MYELETRICALDATA KEYS
-        for usage_point_id, data in self.config.config['myelectricaldata'].items():
+        for usage_point_id, data in self.config.config["myelectricaldata"].items():
             usage_point_default = UsagePointId(self.config, usage_point_id, False).default()
             diff_config = DeepDiff(usage_point_default, data, ignore_order=True)
             for diff in diff_config.get("dictionary_item_added", {}):
@@ -271,7 +278,7 @@ class Config:
 
     def setup_tracing(self):
         """OTEL setup."""
-        if self.config.opentelemetry.enable: # no pragma: no cover
+        if self.config.opentelemetry.enable:  # no pragma: no cover
             RequestsInstrumentor().instrument()
             resource_attributes = {
                 "service.name": self.config.opentelemetry.service_name,
@@ -285,7 +292,7 @@ class Config:
             processor = BatchSpanProcessor(
                 OTLPSpanExporter(endpoint=self.config.opentelemetry.endpoint, insecure=True),
                 export_timeout_millis=5,
-                )
+            )
             provider.add_span_processor(processor)
             trace.set_tracer_provider(provider)
         else:
@@ -304,6 +311,7 @@ class Config:
         if self.config.opentelemetry.enable and "fastapi" in self.config.opentelemetry.extension:
             logging.debug("[OpenTelemetry] FastAPI loaded")
             FastAPIInstrumentor.instrument_app(app)
+
 
 if __name__ == "config.main":
     APP_CONFIG = Config()

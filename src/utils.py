@@ -1,4 +1,5 @@
 """Generic utils."""
+
 import decimal
 import json
 import logging
@@ -305,7 +306,7 @@ def log_usage_point_id(usage_point_id):
     """
     text = f"Point de livraison : {usage_point_id}"
     separator()
-    logging.info(f'{decor("barcode1")}{text: ^93}{decor("barcode1", reverse=True)}')
+    logging.info(f"{decor('barcode1')}{text: ^93}{decor('barcode1', reverse=True)}")
     separator()
 
 
@@ -313,7 +314,7 @@ def finish():
     """Finish the import process."""
     separator()
     for line in text2art("Import Finish!!!").splitlines():
-        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
+        logging.info(f"{decor('barcode1')}{line: ^93}{decor('barcode1', reverse=True)}")
     separator()
 
 
@@ -326,7 +327,7 @@ def barcode_message(message):
     """Barcode message."""
     art = text2art(message)
     for line in art.splitlines():
-        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
+        logging.info(f"{decor('barcode1')}{line: ^93}{decor('barcode1', reverse=True)}")
 
 
 def logo(version):
@@ -339,10 +340,10 @@ def logo(version):
     art = text2art("MyElectricalData")
     separator()
     for line in art.splitlines():
-        logging.info(f'{decor("barcode1")}{line: ^93}{decor("barcode1", reverse=True)}')
+        logging.info(f"{decor('barcode1')}{line: ^93}{decor('barcode1', reverse=True)}")
     separator()
     version = f"VERSION : {version}"
-    logging.info(f'{decor("barcode1")}{version: ^93}{decor("barcode1", reverse=True)}')
+    logging.info(f"{decor('barcode1')}{version: ^93}{decor('barcode1', reverse=True)}")
     separator()
 
 
@@ -455,9 +456,9 @@ def load_config() -> ConfigOutput:
         shutil.copyfile(f"{output.application_path}/templates/config.example.yaml", output.config_file)
     try:
         # Check Usage Point Id single quote
-        with Path(output.config_file) as file:
-            content_new = re.sub(r"  ([0-9]*)\:", r"  '\1':", file.read_text(encoding="UTF-8"), flags=re.M)
-            file.write_text(content_new, encoding="UTF-8")
+        config_path = Path(output.config_file)
+        content_new = re.sub(r"  ([0-9]*)\:", r"  '\1':", config_path.read_text(encoding="UTF-8"), flags=re.M)
+        config_path.write_text(content_new, encoding="UTF-8")
         with Path(output.config_file).open(encoding="utf-8") as file:
             output.config = yaml.safe_load(file)
     except yaml.YAMLError:
@@ -477,40 +478,42 @@ def edit_config(data, file=None, comments=None, wipe=False):  # noqa: C901
     """Edit a value in a YAML file."""
     if file is None:
         file = load_config().config_file
-    with Path(file) as config_file:
-        yaml_obj = YAML()
-        yaml_obj.indent(mapping=2, sequence=4, offset=2)
-        code = yaml_obj.load(config_file.read_text(encoding="UTF-8")) if not wipe else {}
-        if code is None:
-            code = {}
-        # CLEAN OLD CONFIGURATION
-        if "wipe_influxdb" in code:
-            del code["wipe_influxdb"]
-        if "debug" in code:
-            del code["debug"]
-        if "log2file" in code:
-            del code["log2file"]
-        if "port" in code:
-            del code["port"]
-        if "ssl" in code:
-            del code["ssl"]
-        new_config = merge(code, data, strategy=Strategy.ADDITIVE)
-        new_config = dict(sorted(new_config.items()))
-        if comments is not None:
-            comments_obj = com.CommentedMap()
-            for key, value in comments.items():
-                comments_obj.yaml_add_eol_comment(value, key, column=1)
-                new_config = merge(comments_obj, code, strategy=Strategy.ADDITIVE)
-        for key, value in new_config.items():
-            currant_value = value
-            if isinstance(currant_value, list):
-                currant_value = list(set(currant_value))
-                new_config[key] = currant_value
-            if isinstance(currant_value, Union[dict, list]):
-                for sub_key, sub_value in currant_value.items():
-                    current_sub_value = sub_value
-                    if isinstance(current_sub_value, list):
-                        current_sub_value = list(set(current_sub_value))
-                        new_config[key][sub_key] = current_sub_value
+    config_path = Path(file)
+    yaml_obj = YAML()
+    yaml_obj.indent(mapping=2, sequence=4, offset=2)
 
-        yaml_obj.dump(new_config, config_file)
+    code = yaml_obj.load(config_path.read_text(encoding="UTF-8")) if not wipe else {}
+    if code is None:
+        code = {}
+    # CLEAN OLD CONFIGURATION
+    if "wipe_influxdb" in code:
+        del code["wipe_influxdb"]
+    if "debug" in code:
+        del code["debug"]
+    if "log2file" in code:
+        del code["log2file"]
+    if "port" in code:
+        del code["port"]
+    if "ssl" in code:
+        del code["ssl"]
+    new_config = merge(code, data, strategy=Strategy.ADDITIVE)
+    new_config = dict(sorted(new_config.items()))
+    if comments is not None:
+        comments_obj = com.CommentedMap()
+        for key, value in comments.items():
+            comments_obj.yaml_add_eol_comment(value, key, column=1)
+            new_config = merge(comments_obj, code, strategy=Strategy.ADDITIVE)
+    for key, value in new_config.items():
+        currant_value = value
+        if isinstance(currant_value, list):
+            currant_value = list(set(currant_value))
+            new_config[key] = currant_value
+        if isinstance(currant_value, Union[dict, list]):
+            for sub_key, sub_value in currant_value.items():
+                current_sub_value = sub_value
+                if isinstance(current_sub_value, list):
+                    current_sub_value = list(set(current_sub_value))
+                    new_config[key][sub_key] = current_sub_value
+
+    with config_path.open("w", encoding="UTF-8") as f:
+        yaml_obj.dump(new_config, f)

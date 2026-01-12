@@ -24,8 +24,8 @@ def test_fetch_ecowatt_empty(mocker, caplog, requests_mock, response, status_cod
     start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
     end = (datetime.now() + relativedelta(days=3)).strftime("%Y-%m-%d")
 
-    m_db_get_ecowatt = mocker.patch("models.database.Database.get_ecowatt")
-    m_db_set_ecowatt = mocker.patch("models.database.Database.set_ecowatt")
+    m_db_get_ecowatt = mocker.patch("database.ecowatt.DatabaseEcowatt.get")
+    m_db_set_ecowatt = mocker.patch("database.ecowatt.DatabaseEcowatt.set")
 
     m_db_get_ecowatt.return_value = []
     requests_mock.get(f"{URL}/rte/ecowatt/{start}/{end}", json=response, status_code=status_code)
@@ -76,9 +76,9 @@ def test_fetch_ecowatt_empty(mocker, caplog, requests_mock, response, status_cod
 def test_get_ecowatt(mocker, caplog, response, expect_exception, expect_success):
     from models.ajax import Ajax
 
-    m_db_get_ecowatt = mocker.patch("models.database.Database.get_ecowatt")
+    m_db_get_ecowatt = mocker.patch("database.ecowatt.DatabaseEcowatt.get")
     m_db_get_ecowatt.return_value = response
-    m_db_set_ecowatt = mocker.patch("models.database.Database.set_ecowatt")
+    m_db_set_ecowatt = mocker.patch("database.ecowatt.DatabaseEcowatt.set")
 
     ajax = Ajax()
 

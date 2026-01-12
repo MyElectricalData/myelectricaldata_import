@@ -2,8 +2,8 @@ import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pytest
-from test_jobs import job
 from conftest import contains_logline
+from test_jobs import job  # noqa: F401
 
 
 @pytest.mark.parametrize(
@@ -20,15 +20,15 @@ def test_get_ecowatt(mocker, job, caplog, requests_mock, response, status_code):
     start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
     end = (datetime.now() + relativedelta(days=3)).strftime("%Y-%m-%d")
 
-    m_db_get_ecowatt = mocker.patch("models.database.Database.get_ecowatt")
-    m_db_set_ecowatt = mocker.patch("models.database.Database.set_ecowatt")
+    m_db_get_ecowatt = mocker.patch("database.ecowatt.DatabaseEcowatt.get")
+    m_db_set_ecowatt = mocker.patch("database.ecowatt.DatabaseEcowatt.set")
 
     m_db_get_ecowatt.return_value = []
     requests_mock.get(f"{URL}/rte/ecowatt/{start}/{end}", json=response, status_code=status_code)
 
     job.get_ecowatt()
 
-    assert contains_logline(caplog, "RÉCUPÉRATION DES DONNÉES ECOWATT :", logging.INFO)
+    assert contains_logline(caplog, "RÉCUPÉRATION DES DONNÉES ECOWATT", logging.INFO)
     if status_code != 200:
         assert m_db_get_ecowatt.call_count == 1
         assert m_db_set_ecowatt.call_count == 0

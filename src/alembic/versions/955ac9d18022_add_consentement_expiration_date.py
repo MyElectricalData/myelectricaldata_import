@@ -5,7 +5,6 @@ Revises: 09d887b265a5
 Create Date: 2022-12-01 00:01:47.011642
 
 """
-from datetime import datetime
 
 import sqlalchemy as sa
 

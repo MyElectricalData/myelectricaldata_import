@@ -2,8 +2,8 @@ import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import pytest
-from test_jobs import job
 from conftest import contains_logline
+from test_jobs import job  # noqa: F401
 
 
 @pytest.mark.parametrize("response, status_code", [(None, 200), (None, 500), ({"2099-01-01": "turquoise"}, 200)])
@@ -13,9 +13,9 @@ def test_get_tempo(mocker, job, caplog, requests_mock, response, status_code):
     start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
     end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
 
-    m_db_get_tempo = mocker.patch("models.database.Database.get_tempo")
-    m_db_set_tempo_config = mocker.patch("models.database.Database.set_tempo_config")
-    m_db_set_tempo = mocker.patch("models.database.Database.set_tempo")
+    m_db_get_tempo = mocker.patch("database.tempo.DatabaseTempo.get")
+    m_db_set_tempo_config = mocker.patch("database.tempo.DatabaseTempo.set_config")
+    m_db_set_tempo = mocker.patch("database.tempo.DatabaseTempo.set")
 
     requests_mock.get(f"{URL}/rte/tempo/{start}/{end}", json=response, status_code=status_code)
     requests_mock.get(f"{URL}/edf/tempo/days", json=response, status_code=status_code)
@@ -23,7 +23,7 @@ def test_get_tempo(mocker, job, caplog, requests_mock, response, status_code):
 
     job.get_tempo()
 
-    assert contains_logline(caplog, "RÉCUPÉRATION DES DONNÉES TEMPO :", logging.INFO)
+    assert contains_logline(caplog, "RÉCUPÉRATION DES DONNÉES TEMPO", logging.INFO)
     if status_code != 200:
         assert m_db_get_tempo.call_count == 1
         assert m_db_set_tempo.call_count == 0

@@ -4,7 +4,6 @@ from contextlib import contextmanager
 
 import yaml
 import pytest
-import logging
 
 
 @contextmanager
@@ -49,21 +48,10 @@ def mock_datadir():
         yield data_dir
 
 
-# TODO: Extract as a function in main.py to avoid duplication
 def copied_from_main():
-    from init import CONFIG, DB
+    from config.main import APP_CONFIG as CONFIG
 
-    usage_point_list = []
-    if CONFIG.list_usage_point() is not None:
-        for upi, upi_data in CONFIG.list_usage_point().items():
-            logging.info(f"{upi}")
-            DB.set_usage_point(upi, upi_data)
-            usage_point_list.append(upi)
-            logging.info("  => Success")
-    else:
-        logging.warning("Aucun point de livraison détecté.")
-
-    DB.clean_database(usage_point_list)
+    CONFIG.clean_database()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -71,7 +59,18 @@ def update_paths():
     project_root = os.path.abspath(os.path.join(os.path.realpath(__file__), "..", ".."))
     app_path = os.path.join(project_root, "src")
     with mock_datadir() as data_dir:
-        with setenv(APPLICATION_PATH=app_path, APPLICATION_PATH_DATA=data_dir), mock_config(data_dir):
+        # Create log directory for tests
+        log_dir = os.path.join(data_dir, "log")
+        os.makedirs(log_dir, exist_ok=True)
+
+        with (
+            setenv(
+                APPLICATION_PATH=app_path,
+                APPLICATION_PATH_DATA=data_dir,
+                APPLICATION_PATH_LOG=log_dir,  # ← ADD THIS
+            ),
+            mock_config(data_dir),
+        ):
             copied_from_main()
             yield
 

@@ -3,8 +3,8 @@ import logging
 import pytest
 
 from db_schema import UsagePoints
-from test_jobs import job
 from conftest import contains_logline
+from test_jobs import job  # noqa: F401
 
 
 @pytest.mark.parametrize(
@@ -44,10 +44,10 @@ from conftest import contains_logline
 def test_get_contract(mocker, job, caplog, status_response, status_code, requests_mock):
     from const import URL
 
-    m_set_error_log = mocker.patch("models.database.Database.set_error_log")
-    m_get_contract = mocker.patch("models.database.Database.get_contract")
+    m_set_error_log = mocker.patch("database.usage_points.DatabaseUsagePoints.set_error_log")
+    m_get_contract = mocker.patch("database.contracts.DatabaseContracts.get")
     m_get_contract.return_value = []
-    m_set_contract = mocker.patch("models.database.Database.set_contract")
+    m_set_contract = mocker.patch("database.contracts.DatabaseContracts.set")
     requests_mocks = list()
 
     if job.usage_point_id:
@@ -59,7 +59,7 @@ def test_get_contract(mocker, job, caplog, status_response, status_code, request
         job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
         enabled_usage_points = [job.usage_point_config]
     else:
-        enabled_usage_points = [up for up in job.usage_points if up.enable]
+        enabled_usage_points = [up for up in job.usage_points_all if getattr(up, "enable", False)]
         for u in enabled_usage_points:
             rm = requests_mock.get(
                 f"{URL}/contracts/{u.usage_point_id}/cache", json=status_response, status_code=status_code
@@ -70,7 +70,7 @@ def test_get_contract(mocker, job, caplog, status_response, status_code, request
         job.usage_point_config = usage_point
         res = job.get_contract()
 
-    assert contains_logline(caplog, "[PDL1] RÉCUPÉRATION DES INFORMATIONS CONTRACTUELLES :", logging.INFO)
+    assert contains_logline(caplog, "[PDL1] RÉCUPÉRATION DES INFORMATIONS CONTRACTUELLES", logging.INFO)
     is_truthy_response = 200 <= status_code < 400
     assert 1 == m_get_contract.call_count
 
