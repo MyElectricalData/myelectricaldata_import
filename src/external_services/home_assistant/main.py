@@ -1,4 +1,5 @@
 """This module contains the code for exporting data to Home Assistant."""
+
 import inspect
 import json
 import logging
@@ -62,6 +63,8 @@ class HomeAssistant:  # pylint: disable=R0902
                     logging.critical("=> Export MQTT Désactivée (Echec de connexion)")
             except Exception:
                 traceback.print_exc()
+            finally:
+                self.cleanup()
 
     def sensor(self, **kwargs):
         """Publish sensor data to Home Assistant.
@@ -543,7 +546,7 @@ class HomeAssistant:  # pylint: disable=R0902
                 "current_week_number": yesterday.strftime("%V"),
                 "offpeak_hours_enedis": offpeak_hours_enedis,
                 "offpeak_hours": offpeak_hours,
-                "subscribed_power": getattr(self.contract, "subscribed_power", None)
+                "subscribed_power": getattr(self.contract, "subscribed_power", None),
                 # "info": info
             }
 
@@ -676,9 +679,9 @@ class HomeAssistant:  # pylint: disable=R0902
                     tempo_price[f"{self.tempo_color.lower()}_{measure_type}"].replace(",", ".")
                 )
             attributes = {
-                "days_blue": f'{tempo_days["blue"]} / 300',
-                "days_white": f'{tempo_days["white"]} / 43',
-                "days_red": f'{tempo_days["red"]} / 22',
+                "days_blue": f"{tempo_days['blue']} / 300",
+                "days_white": f"{tempo_days['white']} / 43",
+                "days_red": f"{tempo_days['red']} / 22",
                 "price_blue_hp": convert_price(tempo_price["blue_hp"]),
                 "price_blue_hc": convert_price(tempo_price["blue_hc"]),
                 "price_white_hp": convert_price(tempo_price["white_hp"]),
@@ -785,7 +788,7 @@ class HomeAssistant:  # pylint: disable=R0902
                     day_value = data.value
                     for date, value in json.loads(data.detail.replace("'", '"')).items():
                         date_datetime = datetime.strptime(date, self.date_format_detail).replace(tzinfo=TIMEZONE)
-                        forecast[f'{date_datetime.strftime("%H")} h'] = value
+                        forecast[f"{date_datetime.strftime('%H')} h"] = value
                 attributes = {
                     "date": current_date.strftime(self.date_format),
                     "forecast": forecast,
@@ -800,3 +803,12 @@ class HomeAssistant:  # pylint: disable=R0902
                     attributes=attributes,
                     state=day_value,
                 )
+
+    def cleanup(self):
+        """Cleanup MQTT connection."""
+        if hasattr(self, "mqtt"):
+            self.mqtt.disconnect()
+
+    def __del__(self):
+        """Destructor to ensure cleanup."""
+        self.cleanup()

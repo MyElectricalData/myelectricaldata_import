@@ -45,6 +45,31 @@ class Mqtt:
 """
                 )
 
+    def disconnect(self) -> None:
+        """Disconnect from MQTT broker and cleanup resources."""
+        if self.valid and hasattr(self, "client") and isinstance(self.client, mqtt.Client):
+            try:
+                logging.info("Disconnecting from MQTT broker")
+                self.client.loop_stop()  # Stop the background thread
+                self.client.disconnect()  # Close the connection
+                self.valid = False
+                logging.info(" => Disconnected successfully")
+            except Exception as e:
+                logging.warning(f"Error during MQTT disconnect: {e}")
+
+    def __del__(self):
+        """Destructor to ensure cleanup of MQTT resources."""
+        self.disconnect()
+
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensures cleanup."""
+        self.disconnect()
+        return False  # Don't suppress exceptions
+
     def publish(self, topic, msg, prefix=None):
         """Publish one message."""
         with APP_CONFIG.tracer.start_as_current_span(f"{__name__}.{inspect.currentframe().f_code.co_name}"):

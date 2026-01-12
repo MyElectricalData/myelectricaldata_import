@@ -35,7 +35,7 @@ class ExportMqtt:
         self.bootstrap()
 
     def bootstrap(self):
-        """Bootstrap apps."""
+        """Bootstrap apps with cleanup."""
         try:
             if self.mqtt_client.valid:
                 self.run()
@@ -43,6 +43,8 @@ class ExportMqtt:
                 logging.critical("=> Export MQTT Désactivée (Echec de connexion)")
         except Exception:
             traceback.print_exc()
+        finally:
+            self.cleanup()
 
     def run(self):
         """Run jobs."""
@@ -578,3 +580,12 @@ class ExportMqtt:
                 logging.info(" => OK")
             else:
                 logging.info(" => Pas de donnée")
+
+    def cleanup(self):
+        """Cleanup MQTT connection."""
+        if hasattr(self, "mqtt_client"):
+            self.mqtt_client.disconnect()
+
+    def __del__(self):
+        """Destructor to ensure cleanup."""
+        self.cleanup()
