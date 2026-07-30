@@ -480,6 +480,9 @@ class Job:
             cost_simulation_config = self.config.cost_simulation_config()
             if cost_simulation_config and "enable" in cost_simulation_config and cost_simulation_config["enable"]:
                 export_influxdb.cost_simulation()
+            contract_export_config = self.config.contract_export_config()
+            if contract_export_config and "enable" in contract_export_config and contract_export_config["enable"]:
+                export_influxdb.contract()
             export_influxdb.ecowatt()
             export_finish()
 

@@ -330,3 +330,45 @@ class ExportInfluxDB:
                         "Wh": float(period_data["Wh"]),
                     },
                 )
+
+    def contract(self):
+        """Export the contract (measurement "contract").
+
+        A single point in time (timestamp = now), overwritten on every cycle. Source:
+        db.get_contract(), already used by ExportMqtt.contract(). The subscribed power is
+        also converted to a usable VA value (`subscribed_power_va`, e.g. "15 kVA" -> 15000)
+        in addition to the original string.
+        """
+        measurement = "contract"
+        logging.info('Envoi des données "CONTRACT" dans influxdb')
+        contract_data = self.db.get_contract(self.usage_point_id)
+        if hasattr(contract_data, "__table__"):
+            subscribed_power_va = 0
+            if contract_data.subscribed_power:
+                subscribed_power_va = int(contract_data.subscribed_power.split(" ")[0]) * 1000
+            fields = {
+                "subscribed_power": contract_data.subscribed_power or "",
+                "subscribed_power_va": subscribed_power_va,
+                "plan": self.usage_point_config.plan or "",
+                "meter_type": contract_data.meter_type or "",
+                "segment": contract_data.segment or "",
+                "distribution_tariff": contract_data.distribution_tariff or "",
+                "contract_status": contract_data.contract_status or "",
+                "last_activation_date": contract_data.last_activation_date.strftime("%Y-%m-%d")
+                if contract_data.last_activation_date
+                else "",
+            }
+            for i in range(7):
+                value = getattr(contract_data, f"offpeak_hours_{i}", None)
+                fields[f"offpeak_hours_{i}"] = value or ""
+            INFLUXDB.write(
+                measurement=measurement,
+                date=self.tz.localize(datetime.now()),
+                tags={
+                    "usage_point_id": self.usage_point_id,
+                },
+                fields=fields,
+            )
+            logging.info(" => OK")
+        else:
+            logging.info(" => ERREUR")
