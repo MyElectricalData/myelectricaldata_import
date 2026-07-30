@@ -363,7 +363,7 @@ class ExportInfluxDB:
                 fields[f"offpeak_hours_{i}"] = value or ""
             INFLUXDB.write(
                 measurement=measurement,
-                date=self.tz.localize(datetime.now()),
+                date=datetime.now(pytz.utc).astimezone(self.tz),
                 tags={
                     "usage_point_id": self.usage_point_id,
                 },
@@ -387,7 +387,7 @@ class ExportInfluxDB:
         if hasattr(address_data, "__table__"):
             INFLUXDB.write(
                 measurement=measurement,
-                date=self.tz.localize(datetime.now()),
+                date=datetime.now(pytz.utc).astimezone(self.tz),
                 tags={
                     "usage_point_id": self.usage_point_id,
                 },
@@ -436,7 +436,7 @@ class ExportInfluxDB:
                 )
             INFLUXDB.write(
                 measurement=measurement,
-                date=self.tz.localize(datetime.now()),
+                date=datetime.now(pytz.utc).astimezone(self.tz),
                 tags={
                     "usage_point_id": self.usage_point_id,
                 },
