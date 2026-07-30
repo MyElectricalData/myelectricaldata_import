@@ -474,6 +474,9 @@ class Job:
             tempo_config = self.config.tempo_config()
             if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                 export_influxdb.tempo()
+            power_max_config = self.config.power_max_config()
+            if power_max_config and "enable" in power_max_config and power_max_config["enable"]:
+                export_influxdb.max_power()
             export_influxdb.ecowatt()
             export_finish()
 

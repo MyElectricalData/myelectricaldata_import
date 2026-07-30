@@ -100,6 +100,9 @@ class Config:
                 "certfile": None,
                 "keyfile": None,
             },
+            "power_max": {
+                "enable": False,
+            },
         }
 
     def set_db(self, db):
@@ -296,6 +299,16 @@ class Config:
         """
         if "influxdb" in self.config:
             return self.config["influxdb"]
+        return False
+
+    def power_max_config(self):
+        """Return the configuration for the daily max power InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the power_max configuration.
+        """
+        if "power_max" in self.config:
+            return self.config["power_max"]
         return False
 
     def usage_point_id_config(self, usage_point_id):

@@ -201,3 +201,36 @@ class ExportInfluxDB:
             logging.info(" => OK")
         else:
             logging.info(" => Pas de donnée")
+
+    def max_power(self):
+        """Export the daily peak power (measurement "power_max").
+
+        One point per day available in the cache (`consumption_daily_max_power`): the peak
+        power in VA, the exact timestamp of that peak, and the usage percentage against the
+        contract's subscribed power (when known).
+        """
+        measurement = "power_max"
+        logging.info('Envoi des données "POWER MAX" dans influxdb')
+        max_power_data = self.db.get_daily_max_power_all(self.usage_point_id, order="asc")
+        if max_power_data:
+            contract = self.db.get_contract(self.usage_point_id)
+            subscribed_power_va = 0
+            if hasattr(contract, "subscribed_power") and contract.subscribed_power:
+                subscribed_power_va = int(contract.subscribed_power.split(" ")[0]) * 1000
+            for data in max_power_data:
+                fields = {"value": float(data.value)}
+                if data.event_date is not None:
+                    fields["event_timestamp"] = data.event_date.strftime("%Y-%m-%dT%H:%M:%S")
+                if subscribed_power_va:
+                    fields["percentage_usage"] = float(forceRound(100 * data.value / subscribed_power_va, 2))
+                INFLUXDB.write(
+                    measurement=measurement,
+                    date=self.tz.localize(data.date),
+                    tags={
+                        "usage_point_id": self.usage_point_id,
+                    },
+                    fields=fields,
+                )
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")
