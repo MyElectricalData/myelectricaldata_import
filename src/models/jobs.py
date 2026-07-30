@@ -477,6 +477,9 @@ class Job:
             power_max_config = self.config.power_max_config()
             if power_max_config and "enable" in power_max_config and power_max_config["enable"]:
                 export_influxdb.max_power()
+            cost_simulation_config = self.config.cost_simulation_config()
+            if cost_simulation_config and "enable" in cost_simulation_config and cost_simulation_config["enable"]:
+                export_influxdb.cost_simulation()
             export_influxdb.ecowatt()
             export_finish()
 

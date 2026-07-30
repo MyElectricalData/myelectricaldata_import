@@ -103,6 +103,9 @@ class Config:
             "power_max": {
                 "enable": False,
             },
+            "cost_simulation": {
+                "enable": False,
+            },
         }
 
     def set_db(self, db):
@@ -309,6 +312,16 @@ class Config:
         """
         if "power_max" in self.config:
             return self.config["power_max"]
+        return False
+
+    def cost_simulation_config(self):
+        """Return the configuration for the simulated cost InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the cost_simulation configuration.
+        """
+        if "cost_simulation" in self.config:
+            return self.config["cost_simulation"]
         return False
 
     def usage_point_id_config(self, usage_point_id):

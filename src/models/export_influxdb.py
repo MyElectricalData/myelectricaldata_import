@@ -257,3 +257,76 @@ class ExportInfluxDB:
             logging.info(" => OK")
         else:
             logging.info(" => Pas de donnée")
+
+    def cost_simulation(self):
+        """Export simulated costs (measurement "cost_simulation").
+
+        Source: statistic/price_consumption, a nested JSON {year: {month: {offer:
+        {euro,kWh,Wh}}}} with offer among BASE, HC, HP (direct amounts) and TEMPO (amounts
+        per sub-period BLUE_HC/BLUE_HP/WHITE_HC/WHITE_HP/RED_HC/RED_HP). One point per
+        (year[, month], offer[, TEMPO period]).
+
+        Tag model designed to sum by offer and by year WITHOUT a cartesian product:
+        - `granularity` = "year" or "month" distinguishes the yearly total from its 12
+          monthly components; summing without filtering on `granularity` would double count.
+        - `offer` = BASE / HC / HP / TEMPO; `period` = ALL except for offer=TEMPO where it
+          holds the sub-period (BLUE_HC, ...).
+        A `sum(euro) group by (year) where granularity="year"` query gives the yearly total
+        per offer without having to exclude the monthly rows by hand.
+        """
+        logging.info('Envoi des données "COST SIMULATION" dans influxdb')
+        stat_data = self.db.get_stat(self.usage_point_id, "price_consumption")
+        if stat_data:
+            price_consumption = ast.literal_eval(stat_data[0].value)
+            for year, year_data in price_consumption.items():
+                year_int = int(year)
+                self._cost_simulation_write(year_int, "00", "year", year_data)
+                for month, month_data in year_data.get("month", {}).items():
+                    self._cost_simulation_write(year_int, month, "month", month_data)
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")
+
+    def _cost_simulation_write(self, year, month, granularity, data):
+        measurement = "cost_simulation"
+        date = datetime(year, 1 if granularity == "year" else int(month), 1)
+        for offer in ("BASE", "HC", "HP"):
+            offer_data = data.get(offer)
+            if offer_data:
+                INFLUXDB.write(
+                    measurement=measurement,
+                    date=self.tz.localize(date),
+                    tags={
+                        "usage_point_id": self.usage_point_id,
+                        "year": str(year),
+                        "month": month,
+                        "granularity": granularity,
+                        "offer": offer,
+                        "period": "ALL",
+                    },
+                    fields={
+                        "euro": float(offer_data["euro"]),
+                        "kWh": float(offer_data["kWh"]),
+                        "Wh": float(offer_data["Wh"]),
+                    },
+                )
+        tempo_data = data.get("TEMPO")
+        if tempo_data:
+            for period, period_data in tempo_data.items():
+                INFLUXDB.write(
+                    measurement=measurement,
+                    date=self.tz.localize(date),
+                    tags={
+                        "usage_point_id": self.usage_point_id,
+                        "year": str(year),
+                        "month": month,
+                        "granularity": granularity,
+                        "offer": "TEMPO",
+                        "period": period,
+                    },
+                    fields={
+                        "euro": float(period_data["euro"]),
+                        "kWh": float(period_data["kWh"]),
+                        "Wh": float(period_data["Wh"]),
+                    },
+                )
