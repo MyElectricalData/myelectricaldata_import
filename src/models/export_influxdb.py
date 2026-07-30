@@ -1,6 +1,6 @@
 import ast
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 
@@ -156,18 +156,41 @@ class ExportInfluxDB:
             logging.info(f" => Aucune donnée")
 
     def tempo(self):
+        """Export Tempo (measurement "tempo").
+
+        One point per day known in the cache: the `color` field (as before). On the current
+        day's point only, extra fields are added (same measurement/tags/timestamp: InfluxDB
+        merges the fields): `color_tomorrow` (tomorrow's color), `price_<color>` (the 6
+        prices, EUR/kWh, from `tempo_config.price`) and `days_<color>` (days consumed per
+        color counter, from `tempo_config.days`).
+        """
         measurement = "tempo"
         logging.info('Envoi des données "TEMPO" dans influxdb')
         tempo_data = self.db.get_tempo()
         if tempo_data:
+            today = datetime.combine(datetime.now(), datetime.min.time())
             for data in tempo_data:
+                fields = {"color": data.color}
+                if data.date == today:
+                    tempo_price = self.db.get_tempo_config("price")
+                    if tempo_price:
+                        for color, price in tempo_price.items():
+                            fields[f"price_{color}"] = float(price)
+                    tempo_days = self.db.get_tempo_config("days")
+                    if tempo_days:
+                        for color, days in tempo_days.items():
+                            fields[f"days_{color}"] = int(days)
+                    tomorrow = today + timedelta(days=1)
+                    tempo_tomorrow = self.db.get_tempo_range(tomorrow, tomorrow)
+                    if tempo_tomorrow:
+                        fields["color_tomorrow"] = tempo_tomorrow[0].color
                 INFLUXDB.write(
                     measurement=measurement,
                     date=self.tz.localize(data.date),
                     tags={
                         "usage_point_id": self.usage_point_id,
                     },
-                    fields={"color": data.color},
+                    fields=fields,
                 )
             logging.info(" => OK")
         else:
