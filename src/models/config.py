@@ -100,6 +100,21 @@ class Config:
                 "certfile": None,
                 "keyfile": None,
             },
+            "power_max": {
+                "enable": False,
+            },
+            "cost_simulation": {
+                "enable": False,
+            },
+            "contract_export": {
+                "enable": False,
+            },
+            "address_export": {
+                "enable": False,
+            },
+            "health_export": {
+                "enable": False,
+            },
         }
 
     def set_db(self, db):
@@ -296,6 +311,56 @@ class Config:
         """
         if "influxdb" in self.config:
             return self.config["influxdb"]
+        return False
+
+    def power_max_config(self):
+        """Return the configuration for the daily max power InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the power_max configuration.
+        """
+        if "power_max" in self.config:
+            return self.config["power_max"]
+        return False
+
+    def cost_simulation_config(self):
+        """Return the configuration for the simulated cost InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the cost_simulation configuration.
+        """
+        if "cost_simulation" in self.config:
+            return self.config["cost_simulation"]
+        return False
+
+    def contract_export_config(self):
+        """Return the configuration for the contract InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the contract_export configuration.
+        """
+        if "contract_export" in self.config:
+            return self.config["contract_export"]
+        return False
+
+    def address_export_config(self):
+        """Return the configuration for the address InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the address_export configuration.
+        """
+        if "address_export" in self.config:
+            return self.config["address_export"]
+        return False
+
+    def health_export_config(self):
+        """Return the configuration for the collection health InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the health_export configuration.
+        """
+        if "health_export" in self.config:
+            return self.config["health_export"]
         return False
 
     def usage_point_id_config(self, usage_point_id):

@@ -474,6 +474,21 @@ class Job:
             tempo_config = self.config.tempo_config()
             if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                 export_influxdb.tempo()
+            power_max_config = self.config.power_max_config()
+            if power_max_config and "enable" in power_max_config and power_max_config["enable"]:
+                export_influxdb.max_power()
+            cost_simulation_config = self.config.cost_simulation_config()
+            if cost_simulation_config and "enable" in cost_simulation_config and cost_simulation_config["enable"]:
+                export_influxdb.cost_simulation()
+            contract_export_config = self.config.contract_export_config()
+            if contract_export_config and "enable" in contract_export_config and contract_export_config["enable"]:
+                export_influxdb.contract()
+            address_export_config = self.config.address_export_config()
+            if address_export_config and "enable" in address_export_config and address_export_config["enable"]:
+                export_influxdb.address()
+            health_export_config = self.config.health_export_config()
+            if health_export_config and "enable" in health_export_config and health_export_config["enable"]:
+                export_influxdb.health()
             export_influxdb.ecowatt()
             export_finish()
 

@@ -1,6 +1,6 @@
 import ast
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 
@@ -156,18 +156,41 @@ class ExportInfluxDB:
             logging.info(f" => Aucune donnée")
 
     def tempo(self):
+        """Export Tempo (measurement "tempo").
+
+        One point per day known in the cache: the `color` field (as before). On the current
+        day's point only, extra fields are added (same measurement/tags/timestamp: InfluxDB
+        merges the fields): `color_tomorrow` (tomorrow's color), `price_<color>` (the 6
+        prices, EUR/kWh, from `tempo_config.price`) and `days_<color>` (days consumed per
+        color counter, from `tempo_config.days`).
+        """
         measurement = "tempo"
         logging.info('Envoi des données "TEMPO" dans influxdb')
         tempo_data = self.db.get_tempo()
         if tempo_data:
+            today = datetime.combine(datetime.now(), datetime.min.time())
             for data in tempo_data:
+                fields = {"color": data.color}
+                if data.date == today:
+                    tempo_price = self.db.get_tempo_config("price")
+                    if tempo_price:
+                        for color, price in tempo_price.items():
+                            fields[f"price_{color}"] = float(price)
+                    tempo_days = self.db.get_tempo_config("days")
+                    if tempo_days:
+                        for color, days in tempo_days.items():
+                            fields[f"days_{color}"] = int(days)
+                    tomorrow = today + timedelta(days=1)
+                    tempo_tomorrow = self.db.get_tempo_range(tomorrow, tomorrow)
+                    if tempo_tomorrow:
+                        fields["color_tomorrow"] = tempo_tomorrow[0].color
                 INFLUXDB.write(
                     measurement=measurement,
                     date=self.tz.localize(data.date),
                     tags={
                         "usage_point_id": self.usage_point_id,
                     },
-                    fields={"color": data.color},
+                    fields=fields,
                 )
             logging.info(" => OK")
         else:
@@ -201,3 +224,224 @@ class ExportInfluxDB:
             logging.info(" => OK")
         else:
             logging.info(" => Pas de donnée")
+
+    def max_power(self):
+        """Export the daily peak power (measurement "power_max").
+
+        One point per day available in the cache (`consumption_daily_max_power`): the peak
+        power in VA, the exact timestamp of that peak, and the usage percentage against the
+        contract's subscribed power (when known).
+        """
+        measurement = "power_max"
+        logging.info('Envoi des données "POWER MAX" dans influxdb')
+        max_power_data = self.db.get_daily_max_power_all(self.usage_point_id, order="asc")
+        if max_power_data:
+            contract = self.db.get_contract(self.usage_point_id)
+            subscribed_power_va = 0
+            if hasattr(contract, "subscribed_power") and contract.subscribed_power:
+                subscribed_power_va = int(contract.subscribed_power.split(" ")[0]) * 1000
+            for data in max_power_data:
+                fields = {"value": float(data.value)}
+                if data.event_date is not None:
+                    fields["event_timestamp"] = data.event_date.strftime("%Y-%m-%dT%H:%M:%S")
+                if subscribed_power_va:
+                    fields["percentage_usage"] = float(forceRound(100 * data.value / subscribed_power_va, 2))
+                INFLUXDB.write(
+                    measurement=measurement,
+                    date=self.tz.localize(data.date),
+                    tags={
+                        "usage_point_id": self.usage_point_id,
+                    },
+                    fields=fields,
+                )
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")
+
+    def cost_simulation(self):
+        """Export simulated costs (measurement "cost_simulation").
+
+        Source: statistic/price_consumption, a nested JSON {year: {month: {offer:
+        {euro,kWh,Wh}}}} with offer among BASE, HC, HP (direct amounts) and TEMPO (amounts
+        per sub-period BLUE_HC/BLUE_HP/WHITE_HC/WHITE_HP/RED_HC/RED_HP). One point per
+        (year[, month], offer[, TEMPO period]).
+
+        Tag model designed to sum by offer and by year WITHOUT a cartesian product:
+        - `granularity` = "year" or "month" distinguishes the yearly total from its 12
+          monthly components; summing without filtering on `granularity` would double count.
+        - `offer` = BASE / HC / HP / TEMPO; `period` = ALL except for offer=TEMPO where it
+          holds the sub-period (BLUE_HC, ...).
+        A `sum(euro) group by (year) where granularity="year"` query gives the yearly total
+        per offer without having to exclude the monthly rows by hand.
+        """
+        logging.info('Envoi des données "COST SIMULATION" dans influxdb')
+        stat_data = self.db.get_stat(self.usage_point_id, "price_consumption")
+        if stat_data:
+            price_consumption = ast.literal_eval(stat_data[0].value)
+            for year, year_data in price_consumption.items():
+                year_int = int(year)
+                self._cost_simulation_write(year_int, "00", "year", year_data)
+                for month, month_data in year_data.get("month", {}).items():
+                    self._cost_simulation_write(year_int, month, "month", month_data)
+            logging.info(" => OK")
+        else:
+            logging.info(" => Pas de donnée")
+
+    def _cost_simulation_write(self, year, month, granularity, data):
+        measurement = "cost_simulation"
+        date = datetime(year, 1 if granularity == "year" else int(month), 1)
+        for offer in ("BASE", "HC", "HP"):
+            offer_data = data.get(offer)
+            if offer_data:
+                INFLUXDB.write(
+                    measurement=measurement,
+                    date=self.tz.localize(date),
+                    tags={
+                        "usage_point_id": self.usage_point_id,
+                        "year": str(year),
+                        "month": month,
+                        "granularity": granularity,
+                        "offer": offer,
+                        "period": "ALL",
+                    },
+                    fields={
+                        "euro": float(offer_data["euro"]),
+                        "kWh": float(offer_data["kWh"]),
+                        "Wh": float(offer_data["Wh"]),
+                    },
+                )
+        tempo_data = data.get("TEMPO")
+        if tempo_data:
+            for period, period_data in tempo_data.items():
+                INFLUXDB.write(
+                    measurement=measurement,
+                    date=self.tz.localize(date),
+                    tags={
+                        "usage_point_id": self.usage_point_id,
+                        "year": str(year),
+                        "month": month,
+                        "granularity": granularity,
+                        "offer": "TEMPO",
+                        "period": period,
+                    },
+                    fields={
+                        "euro": float(period_data["euro"]),
+                        "kWh": float(period_data["kWh"]),
+                        "Wh": float(period_data["Wh"]),
+                    },
+                )
+
+    def contract(self):
+        """Export the contract (measurement "contract").
+
+        A single point in time (timestamp = now), overwritten on every cycle. Source:
+        db.get_contract(), already used by ExportMqtt.contract(). The subscribed power is
+        also converted to a usable VA value (`subscribed_power_va`, e.g. "15 kVA" -> 15000)
+        in addition to the original string.
+        """
+        measurement = "contract"
+        logging.info('Envoi des données "CONTRACT" dans influxdb')
+        contract_data = self.db.get_contract(self.usage_point_id)
+        if hasattr(contract_data, "__table__"):
+            subscribed_power_va = 0
+            if contract_data.subscribed_power:
+                subscribed_power_va = int(contract_data.subscribed_power.split(" ")[0]) * 1000
+            fields = {
+                "subscribed_power": contract_data.subscribed_power or "",
+                "subscribed_power_va": subscribed_power_va,
+                "plan": self.usage_point_config.plan or "",
+                "meter_type": contract_data.meter_type or "",
+                "segment": contract_data.segment or "",
+                "distribution_tariff": contract_data.distribution_tariff or "",
+                "contract_status": contract_data.contract_status or "",
+                "last_activation_date": contract_data.last_activation_date.strftime("%Y-%m-%d")
+                if contract_data.last_activation_date
+                else "",
+            }
+            for i in range(7):
+                value = getattr(contract_data, f"offpeak_hours_{i}", None)
+                fields[f"offpeak_hours_{i}"] = value or ""
+            INFLUXDB.write(
+                measurement=measurement,
+                date=datetime.now(pytz.utc).astimezone(self.tz),
+                tags={
+                    "usage_point_id": self.usage_point_id,
+                },
+                fields=fields,
+            )
+            logging.info(" => OK")
+        else:
+            logging.info(" => ERREUR")
+
+    def address(self):
+        """Export the delivery point address (measurement "address").
+
+        A single point in time (timestamp = now), overwritten on every cycle. Source:
+        db.get_addresse(), already used by ExportMqtt.address(). Text fields only (street,
+        postal code, city, INSEE code): no high-cardinality value as a tag, so no tag other
+        than usage_point_id.
+        """
+        measurement = "address"
+        logging.info('Envoi des données "ADDRESS" dans influxdb')
+        address_data = self.db.get_addresse(self.usage_point_id)
+        if hasattr(address_data, "__table__"):
+            INFLUXDB.write(
+                measurement=measurement,
+                date=datetime.now(pytz.utc).astimezone(self.tz),
+                tags={
+                    "usage_point_id": self.usage_point_id,
+                },
+                fields={
+                    "street": address_data.street or "",
+                    "postal_code": address_data.postal_code or "",
+                    "city": address_data.city or "",
+                    "insee_code": address_data.insee_code or "",
+                },
+            )
+            logging.info(" => OK")
+        else:
+            logging.info(" => ERREUR")
+
+    def health(self):
+        """Export the collection health (measurement "collect_health").
+
+        A single point in time (timestamp = now), overwritten on every cycle. Source:
+        db.get_usage_point(), already used by ExportMqtt.status(). API call quota used and
+        limit, timestamp of the last call, last error, and most importantly
+        consentement_days_left: number of days left before the Enedis consent expires (can be
+        negative if already expired), computed here so it can be alerted on directly from
+        InfluxDB/Grafana without recomputing it on the dashboard side.
+        """
+        measurement = "collect_health"
+        logging.info('Envoi des données "HEALTH" dans influxdb')
+        usage_point_data = self.db.get_usage_point(self.usage_point_id)
+        if hasattr(usage_point_data, "__table__"):
+            fields = {"last_error": usage_point_data.last_error or ""}
+            if usage_point_data.quota_limit is not None:
+                fields["quota_limit"] = int(usage_point_data.quota_limit)
+            if usage_point_data.call_number is not None:
+                fields["call_number"] = int(usage_point_data.call_number)
+            if usage_point_data.quota_reached is not None:
+                fields["quota_reached"] = bool(usage_point_data.quota_reached)
+            if usage_point_data.ban is not None:
+                fields["ban"] = bool(usage_point_data.ban)
+            if usage_point_data.last_call is not None:
+                fields["last_call"] = usage_point_data.last_call.strftime("%Y-%m-%dT%H:%M:%S")
+            if usage_point_data.consentement_expiration is not None:
+                fields["consentement_expiration"] = usage_point_data.consentement_expiration.strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                )
+                fields["consentement_days_left"] = int(
+                    (usage_point_data.consentement_expiration - datetime.now()).days
+                )
+            INFLUXDB.write(
+                measurement=measurement,
+                date=datetime.now(pytz.utc).astimezone(self.tz),
+                tags={
+                    "usage_point_id": self.usage_point_id,
+                },
+                fields=fields,
+            )
+            logging.info(" => OK")
+        else:
+            logging.info(" => ERREUR")
