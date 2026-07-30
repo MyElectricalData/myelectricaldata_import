@@ -109,6 +109,9 @@ class Config:
             "contract_export": {
                 "enable": False,
             },
+            "address_export": {
+                "enable": False,
+            },
         }
 
     def set_db(self, db):
@@ -335,6 +338,16 @@ class Config:
         """
         if "contract_export" in self.config:
             return self.config["contract_export"]
+        return False
+
+    def address_export_config(self):
+        """Return the configuration for the address InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the address_export configuration.
+        """
+        if "address_export" in self.config:
+            return self.config["address_export"]
         return False
 
     def usage_point_id_config(self, usage_point_id):

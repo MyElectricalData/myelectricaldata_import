@@ -483,6 +483,9 @@ class Job:
             contract_export_config = self.config.contract_export_config()
             if contract_export_config and "enable" in contract_export_config and contract_export_config["enable"]:
                 export_influxdb.contract()
+            address_export_config = self.config.address_export_config()
+            if address_export_config and "enable" in address_export_config and address_export_config["enable"]:
+                export_influxdb.address()
             export_influxdb.ecowatt()
             export_finish()
 

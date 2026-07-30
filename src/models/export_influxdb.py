@@ -372,3 +372,32 @@ class ExportInfluxDB:
             logging.info(" => OK")
         else:
             logging.info(" => ERREUR")
+
+    def address(self):
+        """Export the delivery point address (measurement "address").
+
+        A single point in time (timestamp = now), overwritten on every cycle. Source:
+        db.get_addresse(), already used by ExportMqtt.address(). Text fields only (street,
+        postal code, city, INSEE code): no high-cardinality value as a tag, so no tag other
+        than usage_point_id.
+        """
+        measurement = "address"
+        logging.info('Envoi des données "ADDRESS" dans influxdb')
+        address_data = self.db.get_addresse(self.usage_point_id)
+        if hasattr(address_data, "__table__"):
+            INFLUXDB.write(
+                measurement=measurement,
+                date=self.tz.localize(datetime.now()),
+                tags={
+                    "usage_point_id": self.usage_point_id,
+                },
+                fields={
+                    "street": address_data.street or "",
+                    "postal_code": address_data.postal_code or "",
+                    "city": address_data.city or "",
+                    "insee_code": address_data.insee_code or "",
+                },
+            )
+            logging.info(" => OK")
+        else:
+            logging.info(" => ERREUR")
