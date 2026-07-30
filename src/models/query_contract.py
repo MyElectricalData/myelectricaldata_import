@@ -78,6 +78,23 @@ class Contract:
                         "last_distribution_tariff_change_date": last_distribution_tariff_change_date,
                     },
                 )
+                if offpeak_hours:
+                    # Also propagate the offpeak hours to usage_points, the only table read by
+                    # Stat.get_mesure_type() to classify a measure as offpeak/peak. Without this,
+                    # the "force offpeak hours" configuration field is the only remaining source,
+                    # and classification silently fails whenever it has not been filled in by hand.
+                    self.db.set_usage_point(
+                        self.usage_point_id,
+                        {
+                            "offpeak_hours_0": offpeak_hours,
+                            "offpeak_hours_1": offpeak_hours,
+                            "offpeak_hours_2": offpeak_hours,
+                            "offpeak_hours_3": offpeak_hours,
+                            "offpeak_hours_4": offpeak_hours,
+                            "offpeak_hours_5": offpeak_hours,
+                            "offpeak_hours_6": offpeak_hours,
+                        },
+                    )
             except Exception as e:
                 logging.error(e)
                 traceback.print_exc()
