@@ -401,3 +401,47 @@ class ExportInfluxDB:
             logging.info(" => OK")
         else:
             logging.info(" => ERREUR")
+
+    def health(self):
+        """Export the collection health (measurement "collect_health").
+
+        A single point in time (timestamp = now), overwritten on every cycle. Source:
+        db.get_usage_point(), already used by ExportMqtt.status(). API call quota used and
+        limit, timestamp of the last call, last error, and most importantly
+        consentement_days_left: number of days left before the Enedis consent expires (can be
+        negative if already expired), computed here so it can be alerted on directly from
+        InfluxDB/Grafana without recomputing it on the dashboard side.
+        """
+        measurement = "collect_health"
+        logging.info('Envoi des données "HEALTH" dans influxdb')
+        usage_point_data = self.db.get_usage_point(self.usage_point_id)
+        if hasattr(usage_point_data, "__table__"):
+            fields = {"last_error": usage_point_data.last_error or ""}
+            if usage_point_data.quota_limit is not None:
+                fields["quota_limit"] = int(usage_point_data.quota_limit)
+            if usage_point_data.call_number is not None:
+                fields["call_number"] = int(usage_point_data.call_number)
+            if usage_point_data.quota_reached is not None:
+                fields["quota_reached"] = bool(usage_point_data.quota_reached)
+            if usage_point_data.ban is not None:
+                fields["ban"] = bool(usage_point_data.ban)
+            if usage_point_data.last_call is not None:
+                fields["last_call"] = usage_point_data.last_call.strftime("%Y-%m-%dT%H:%M:%S")
+            if usage_point_data.consentement_expiration is not None:
+                fields["consentement_expiration"] = usage_point_data.consentement_expiration.strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                )
+                fields["consentement_days_left"] = int(
+                    (usage_point_data.consentement_expiration - datetime.now()).days
+                )
+            INFLUXDB.write(
+                measurement=measurement,
+                date=self.tz.localize(datetime.now()),
+                tags={
+                    "usage_point_id": self.usage_point_id,
+                },
+                fields=fields,
+            )
+            logging.info(" => OK")
+        else:
+            logging.info(" => ERREUR")

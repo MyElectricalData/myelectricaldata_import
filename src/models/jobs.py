@@ -486,6 +486,9 @@ class Job:
             address_export_config = self.config.address_export_config()
             if address_export_config and "enable" in address_export_config and address_export_config["enable"]:
                 export_influxdb.address()
+            health_export_config = self.config.health_export_config()
+            if health_export_config and "enable" in health_export_config and health_export_config["enable"]:
+                export_influxdb.health()
             export_influxdb.ecowatt()
             export_finish()
 

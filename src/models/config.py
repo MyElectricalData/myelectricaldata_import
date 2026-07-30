@@ -112,6 +112,9 @@ class Config:
             "address_export": {
                 "enable": False,
             },
+            "health_export": {
+                "enable": False,
+            },
         }
 
     def set_db(self, db):
@@ -348,6 +351,16 @@ class Config:
         """
         if "address_export" in self.config:
             return self.config["address_export"]
+        return False
+
+    def health_export_config(self):
+        """Return the configuration for the collection health InfluxDB export.
+
+        Returns:
+            dict: A dictionary containing the health_export configuration.
+        """
+        if "health_export" in self.config:
+            return self.config["health_export"]
         return False
 
     def usage_point_id_config(self, usage_point_id):
