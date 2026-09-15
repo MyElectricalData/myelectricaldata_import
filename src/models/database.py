@@ -320,6 +320,8 @@ class Database:
                 usage_points.consumption_price_base = data["consumption_price_base"]
             if "consumption_price_hc" in data and data["consumption_price_hc"] is not None:
                 usage_points.consumption_price_hc = data["consumption_price_hc"]
+            if "annual_period_start" in data and data["annual_period_start"] is not None:
+                usage_points.annual_period_start = data["annual_period_start"]
             if "consumption_price_hp" in data and data["consumption_price_hp"] is not None:
                 usage_points.consumption_price_hp = data["consumption_price_hp"]
             if "offpeak_hours_0" in data and data["offpeak_hours_0"] is not None:
@@ -457,6 +459,10 @@ class Database:
                 consumption_price_hp = data["consumption_price_hp"]
             else:
                 consumption_price_hp = 0
+            if "annual_period_start" in data and data["annual_period_start"] is not None and data["annual_period_start"] != "":
+                annual_period_start = data["annual_period_start"]
+            else:
+                annual_period_start = "01-01"
             if "offpeak_hours_0" in data and data["offpeak_hours_0"] is not None:
                 offpeak_hours_0 = data["offpeak_hours_0"]
             else:
@@ -586,6 +592,7 @@ class Database:
                     consumption_price_base=consumption_price_base,
                     consumption_price_hc=consumption_price_hc,
                     consumption_price_hp=consumption_price_hp,
+                    annual_period_start=annual_period_start,
                     offpeak_hours_0=offpeak_hours_0,
                     offpeak_hours_1=offpeak_hours_1,
                     offpeak_hours_2=offpeak_hours_2,

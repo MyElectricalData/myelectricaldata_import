@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import ssl
 import traceback
 from datetime import datetime, timedelta
@@ -37,6 +38,7 @@ class HomeAssistantWs:
         self.purge = False
         self.purge_force = True
         self.batch_size = 1000
+        self.ha_version = None
         self.current_stats = []
         if self.load_config():
             if self.connect():
@@ -100,6 +102,7 @@ class HomeAssistantWs:
             output = json.loads(self.websocket.recv())
             if "type" in output and output["type"] == "auth_required":
                 logging.info("Authentification requise")
+                self.ha_version = output.get("ha_version")
                 return self.authentificate()
             return True
         except Exception as _e:
@@ -142,6 +145,18 @@ class HomeAssistantWs:
                 logging.error(output)
         return output
 
+    def _ha_supports_new_stat_metadata(self):
+        # HA Core a ajouté unit_class/mean_type dans la 2025.11
+        if not self.ha_version:
+            return False
+        segments = self.ha_version.split(".")[:3]
+        parts = []
+        for segment in segments:
+            match = re.match(r"\d+", segment)
+            if not match:
+                return False
+            parts.append(int(match.group()))
+        return tuple(parts) >= (2025, 11, 0)
     def list_data(self):
         """List the data already cached in Home Assistant.
 
@@ -241,23 +256,24 @@ class HomeAssistantWs:
                     last_year = year
                     last_month = month
                     hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
+                    direction_fr_ws = "Consommation" if measurement_direction == "consumption" else "Production"
                     name = f"MyElectricalData - {self.usage_point_id}"
                     statistic_id = f"myelectricaldata:{self.usage_point_id}"
                     value = data.value / (60 / data.interval)
                     if plan == "BASE":
-                        name = f"{name} {plan} {measurement_direction}"
+                        name = f"{name} Base {direction_fr_ws}"
                         statistic_id = f"{statistic_id}_{plan.lower()}_{measurement_direction}"
                         cost = value * self.usage_point_id_config.consumption_price_base / 1000
                         tag = "base"
                     elif plan == "HC/HP":
                         measure_type = stats.get_mesure_type(data.date)
                         if measure_type == "HC":
-                            name = f"{name} HC {measurement_direction}"
+                            name = f"{name} HC {direction_fr_ws}"
                             statistic_id = f"{statistic_id}_hc_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hc / 1000
                             tag = "hc"
                         else:
-                            name = f"{name} HP {measurement_direction}"
+                            name = f"{name} HP {direction_fr_ws}"
                             statistic_id = f"{statistic_id}_hp_{measurement_direction}"
                             cost = value * self.usage_point_id_config.consumption_price_hp / 1000
                             tag = "hp"
@@ -279,7 +295,9 @@ class HomeAssistantWs:
                             tempo_color_price_key = f"{day_color.lower()}_{hour_type.lower()}"
                             tempo_price = float(db_tempo_price[tempo_color_price_key])
                             cost = value / 1000 * tempo_price
-                            name = f"{name} {tempo_color} {measurement_direction}"
+                            color_fr_ws = {"BLUE": "Bleu", "WHITE": "Blanc", "RED": "Rouge"}.get(day_color.upper(), day_color.capitalize())
+                            tempo_color_display = f"{color_fr_ws} {hour_type}"
+                            name = f"{name} {tempo_color_display} {direction_fr_ws}"
                             statistic_id = f"{statistic_id}_{tempo_color.lower()}_{measurement_direction}"
                             tag = tempo_color.lower()
                     else:
@@ -309,7 +327,7 @@ class HomeAssistantWs:
                     statistic_id = f"{statistic_id}_cost"
                     if statistic_id not in stats_euro:
                         stats_euro[statistic_id] = {
-                            "name": f"{name} Cost",
+                            "name": f"{name} Coût",
                             "sum": 0,
                             "data": {},
                         }
@@ -342,8 +360,13 @@ class HomeAssistantWs:
                         "source": "myelectricaldata",
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "kWh",
+                        "unit_class": "energy",
+                        "mean_type": 0,
                     }
 
+                    if not self._ha_supports_new_stat_metadata():
+                        del metadata["unit_class"]
+                        del metadata["mean_type"]
 
                     chunks = list(chunks_list(list(data["data"].values()), self.batch_size))
                     chunks_len = len(chunks)
@@ -362,10 +385,23 @@ class HomeAssistantWs:
                             "stats": chunk,
                         })
 
+                    tag_display_names_fr = {
+                        "base": "Base",
+                        "hc": "HC",
+                        "hp": "HP",
+                        "bluehc": "HC Bleu",
+                        "bluehp": "HP Bleu",
+                        "whitehc": "HC Blanc",
+                        "whitehp": "HP Blanc",
+                        "redhc": "HC Rouge",
+                        "redhp": "HP Rouge",
+                    }
+                    direction_fr = "Consommation" if measurement_direction == "consumption" else "Production"
+                    display_tag = tag_display_names_fr.get(data["tag"], data["tag"])
                     if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
                         HomeAssistant(self.usage_point_id).sensor(
                             topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_energy",
-                            name=f"{data["tag"]} {measurement_direction}",
+                            name=f"{direction_fr} {display_tag}",
                             device_name=f"Linky {self.usage_point_id}",
                             device_model=f"linky {self.usage_point_id}",
                             device_identifiers=f"{self.usage_point_id}",
@@ -384,7 +420,14 @@ class HomeAssistantWs:
                         "source": "myelectricaldata",
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "EURO",
+                        "unit_class": None,
+                        "mean_type": 0,
                     }
+
+                    if not self._ha_supports_new_stat_metadata():
+                        del metadata["unit_class"]
+                        del metadata["mean_type"]
+
                     chunks = list(chunks_list(list(data["data"].values()), self.batch_size))
                     chunks_len = len(chunks)
                     for i, chunk in enumerate(chunks):
@@ -401,10 +444,23 @@ class HomeAssistantWs:
                             "metadata": metadata,
                             "stats": list(chunk),
                         })
+                    tag_display_names_cost_fr = {
+                        "base": "Base",
+                        "hc": "HC",
+                        "hp": "HP",
+                        "bluehc": "HC Bleu",
+                        "bluehp": "HP Bleu",
+                        "whitehc": "HC Blanc",
+                        "whitehp": "HP Blanc",
+                        "redhc": "HC Rouge",
+                        "redhp": "HP Rouge",
+                    }
+                    direction_fr_cost = "consommation" if measurement_direction == "consumption" else "production"
+                    display_tag_cost = tag_display_names_cost_fr.get(data["tag"], data["tag"])
                     if self.mqtt and "enable" in self.mqtt and str2bool(self.mqtt["enable"]):
                         HomeAssistant(self.usage_point_id).sensor(
                             topic=f"myelectricaldata_{data["tag"]}_{measurement_direction}/{self.usage_point_id}_cost",
-                            name=f"{data["tag"]} {measurement_direction} cost",
+                            name=f"Coût {direction_fr_cost} {display_tag_cost}",
                             device_name=f"Linky {self.usage_point_id}",
                             device_model=f"linky {self.usage_point_id}",
                             device_identifiers=f"{self.usage_point_id}",
@@ -448,7 +504,8 @@ class HomeAssistantWs:
                     last_year = year
                     last_month = month
                     hour_minute = int(f'{data.date.strftime("%H")}{data.date.strftime("%M")}')
-                    name = f"MyElectricalData - {self.usage_point_id} {measurement_direction}"
+                    direction_fr_ws_prod = "Consommation" if measurement_direction == "consumption" else "Production"
+                    name = f"MyElectricalData - {self.usage_point_id} {direction_fr_ws_prod}"
                     statistic_id = f"myelectricaldata:{self.usage_point_id}_{measurement_direction}"
                     value = data.value / (60 / data.interval)
                     cost = value * self.usage_point_id_config.production_price / 1000
@@ -475,7 +532,7 @@ class HomeAssistantWs:
                     statistic_id = f"{statistic_id}_revenue"
                     if statistic_id not in stats_euro:
                         stats_euro[statistic_id] = {
-                            "name": f"{name} Revenue",
+                            "name": f"{name} Revenu",
                             "sum": 0,
                             "data": {},
                         }
@@ -504,7 +561,14 @@ class HomeAssistantWs:
                         "source": "myelectricaldata",
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "kWh",
+                        "unit_class": "energy",
+                        "mean_type": 0,
                     }
+
+                    if not self._ha_supports_new_stat_metadata():
+                        del metadata["unit_class"]
+                        del metadata["mean_type"]
+
                     import_statistics = {
                         "id": self.id,
                         "type": "recorder/import_statistics",
@@ -533,7 +597,14 @@ class HomeAssistantWs:
                         "source": "myelectricaldata",
                         "statistic_id": statistic_id,
                         "unit_of_measurement": "EURO",
+                        "unit_class": None,
+                        "mean_type": 0,
                     }
+
+                    if not self._ha_supports_new_stat_metadata():
+                        del metadata["unit_class"]
+                        del metadata["mean_type"]
+
                     import_statistics = {
                         "id": self.id,
                         "type": "recorder/import_statistics",

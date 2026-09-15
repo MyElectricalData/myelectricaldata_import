@@ -62,6 +62,15 @@ class Configuration:
                     "type": True,
                     "default": False,
                 },
+                "annual_period_start": {
+                    "title": "Début de période annuelle",
+                    "help": "Permet de personnaliser la date de début de l'année de référence utilisée pour "
+                    "les statistiques annuelles (consommation annuelle, comparaison N/N-1, exports).<br><br>"
+                    "Format : MM-JJ (exemple : 09-01 pour le 1er septembre).<br><br>"
+                    "Par défaut : 01-01 (année civile classique).",
+                    "type": "",
+                    "default": "01-01",
+                },
             },
             "Consommation": {
                 "consumption": {

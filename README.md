@@ -2,6 +2,54 @@
 
 ![Supports aarch64 Architecture][aarch64-shield] ![Supports amd64 Architecture][amd64-shield] ![Supports armhf Architecture][armhf-shield] ![Supports armv7 Architecture][armv7-shield]
 
+---
+
+## ⚠️ Fork personnel (Marlboro62) — patch beta
+
+Ce fork ajoute les fonctionnalités suivantes en attendant leur intégration éventuelle dans le projet officiel :
+
+### 1. Date de début de période annuelle personnalisée (`annual_period_start`)
+
+- Nouvelle option de configuration par point de livraison, format `MM-JJ` (ex. `09-01` pour le 1er septembre), configurable directement dans le formulaire web du PDL (section "Global").
+- Par défaut : `01-01` (comportement identique à l'original, année civile).
+- Impacte :
+  - Le calcul de consommation/production annuelle (`Stat.current_year`, `last_year`, `get_year`)
+  - Le tableau récapitulatif "Annuel" (affiché en plage de dates explicite, ex. `10/2025 - 09/2026`)
+  - Les graphiques mensuels (réordonnés pour commencer au mois de la période choisie)
+  - Les statistiques tarifaires Tempo (`generate_price`)
+  - Les exports MQTT (labels `current` cohérents avec la période choisie)
+- Référence : [issue #621](https://github.com/MyElectricalData/myelectricaldata_import/issues/621), [PR #637](https://github.com/MyElectricalData/myelectricaldata_import/pull/637)
+
+### 2. Répartition Tempo à 6 catégories (Bleu/Blanc/Rouge × HC/HP)
+
+- Le camembert "Ratio HC/HP" de l'interface web affiche désormais 6 parts pour les points de livraison en plan Tempo (au lieu de 2 parts HC/HP génériques), aligné sur la période annuelle personnalisée.
+- Nouveaux capteurs Home Assistant : pourcentage de chaque catégorie Tempo pour l'année en cours (`Pourcentage Bleu HC`, `Pourcentage Rouge HP`, etc.).
+- La production (`recap()`) a été basculée sur la même logique que la consommation (`recapv2()`) pour plus de cohérence et moins de code dupliqué.
+
+### 3. Noms de capteurs Home Assistant traduits en français
+
+- Les capteurs MQTT/discovery (Linky, EDF Tempo, RTE Tempo) affichent désormais des noms français lisibles : `Consommation HC Bleu`, `Coût consommation HP Rouge`, `Historique Consommation`, `Aujourd'hui`/`Demain`, `Jours Bleu`, `Prix Rouge HP`, etc.
+- La valeur d'état des capteurs RTE Tempo (`Aujourd'hui`/`Demain`) affiche `Bleu`/`Blanc`/`Rouge` au lieu de `BLUE`/`WHITE`/`RED` (uniquement l'affichage, la logique interne reste inchangée).
+- Les statistiques long terme du tableau de bord Énergie de Home Assistant (`recorder/import_statistics`) sont également traduites : `Bleu HC Consommation`, `Rouge HP Consommation`, `Coût`/`Revenu` au lieu de `Cost`/`Revenue`, etc. Home Assistant régénère automatiquement les métadonnées (quelques minutes) sans perte d'historique.
+
+### Fichiers modifiés
+
+- `src/models/config.py`, `src/db_schema.py`, `src/models/database.py` — stockage de `annual_period_start`
+- `src/alembic/versions/d4f21c9a8b6e_add_annual_period_start.py` — migration DB
+- `src/templates/models/configuration.py` — champ dans le formulaire web
+- `src/models/stat.py` — calculs alignés sur la période perso
+- `src/templates/usage_point.py` — graphiques, tableau annuel, camembert Tempo
+- `src/models/export_home_assistant.py`, `src/models/export_home_assistant_ws.py` — traductions + capteurs pourcentage
+- `src/models/export_mqtt.py` — cohérence du label `current`
+- `src/__version__.py` — version interne synchronisée
+
+### Utilisation
+
+Ce fork est disponible comme addon Home Assistant via [Marlboro62/hassio-addons](https://github.com/Marlboro62/hassio-addons), construit à partir de l'image Docker [`marlboro62/myelectricaldata:patched`](https://hub.docker.com/r/marlboro62/myelectricaldata).
+
+---
+
+
 ## Francais
 
 ### IMPORTANT

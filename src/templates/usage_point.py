@@ -24,7 +24,6 @@ class UsagePoint:
         self.db.refresh_object()
         self.application_path = APPLICATION_PATH
         self.usage_point_id = usage_point_id
-        self.current_years = int(datetime.now().strftime("%Y"))
         self.max_history = 4
         self.max_history_chart = 6
         if self.usage_point_id is not None:
@@ -38,6 +37,16 @@ class UsagePoint:
                 }
             else:
                 self.headers = None
+        period_month, period_day = self._period_month_day()
+        now_date_local = datetime.now()
+        if (now_date_local.month, now_date_local.day) >= (period_month, period_day):
+            current_start_year = now_date_local.year
+        else:
+            current_start_year = now_date_local.year - 1
+        if period_month == 1 and period_day == 1:
+            self.current_years = current_start_year
+        else:
+            self.current_years = current_start_year + 1
         self.usage_point_select = UsagePointSelect(self.config, self.db, usage_point_id)
         self.side_menu = SideMenu()
         menu = {}
@@ -330,7 +339,7 @@ class UsagePoint:
             if hasattr(self.usage_point_config, "production") and self.usage_point_config.production:
                 self.generate_data("production")
                 self.production()
-                recap_production = self.recap(data=self.recap_production_data)
+                recap_production = self.recapv2(measurement_direction="production")
                 body += "<h2>Production</h2>"
                 body += str(recap_production)
                 body += '<div id="chart_daily_production"></div>'
@@ -644,6 +653,17 @@ class UsagePoint:
         else:
             return None
 
+    def _period_month_day(self):
+        period_start = None
+        if getattr(self, "usage_point_config", None):
+            period_start = getattr(self.usage_point_config, "annual_period_start", None)
+        period_start = period_start or "01-01"
+        try:
+            month, day = (int(x) for x in str(period_start).split("-"))
+        except (ValueError, AttributeError):
+            month, day = 1, 1
+        return month, day
+
     def consumption(self):
         if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
             if self.recap_consumption_data:
@@ -656,10 +676,12 @@ class UsagePoint:
                 format_table = {}
                 years_array = ""
                 max_history = self.current_years - self.max_history_chart
+                period_month, _period_day = self._period_month_day()
+                month_order = [(period_month - 1 + i) % 12 + 1 for i in range(12)]
                 for years, data in self.recap_consumption_data.items():
                     if years > str(max_history):
                         years_array += f"'{years}', "
-                        for month in range(1, 13):
+                        for month in month_order:
                             month_2digit = "{:02d}".format(month)
                             if month not in format_table:
                                 format_table[month] = []
@@ -701,10 +723,12 @@ class UsagePoint:
                 format_table = {}
                 years_array = ""
                 max_history = self.current_years - self.max_history_chart
+                period_month, _period_day = self._period_month_day()
+                month_order = [(period_month - 1 + i) % 12 + 1 for i in range(12)]
                 for years, data in self.recap_production_data.items():
                     if years > str(max_history):
                         years_array += f"'{years}', "
-                        for month in range(1, 13):
+                        for month in month_order:
                             month_2digit = "{:02d}".format(month)
                             if month not in format_table:
                                 format_table[month] = []
@@ -803,6 +827,7 @@ class UsagePoint:
 
     def generate_chart_hc_hp(self):
         price_consumption = self.db.get_stat(self.usage_point_id, "price_consumption")
+        is_tempo = getattr(self.usage_point_config, "plan", None) == "Tempo"
         if price_consumption and hasattr(price_consumption[0], "value"):
             recap = ast.literal_eval(price_consumption[0].value)
             for year, data in sorted(recap.items(), reverse=True):
@@ -814,20 +839,40 @@ class UsagePoint:
                 self.javascript += "google.charts.load('current', {'packages':['corechart']});"
                 self.javascript += f"google.charts.setOnLoadCallback(piChart{year});"
                 self.javascript += f"function piChart{year}() " + "{"
-                self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
-                self.javascript += f"['HC',     {data['HC']['Wh']}],"
-                self.javascript += f"['HP',     {data['HP']['Wh']}],"
-                # self.javascript += f"['BASE',     {data['BASE']['Wh']}],"
-                self.javascript += (
-                    """
-                    ]);
+                if is_tempo and "TEMPO" in data:
+                    tempo = data["TEMPO"]
+                    self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
+                    self.javascript += f"['Bleu HC',  {tempo['BLUE_HC']['Wh']}],"
+                    self.javascript += f"['Bleu HP',  {tempo['BLUE_HP']['Wh']}],"
+                    self.javascript += f"['Blanc HC', {tempo['WHITE_HC']['Wh']}],"
+                    self.javascript += f"['Blanc HP', {tempo['WHITE_HP']['Wh']}],"
+                    self.javascript += f"['Rouge HC', {tempo['RED_HC']['Wh']}],"
+                    self.javascript += f"['Rouge HP', {tempo['RED_HP']['Wh']}],"
+                    self.javascript += (
+                        """
+                        ]);
 
-                    var options = {
-                        title: '"""
-                    + year
-                    + """',
-                    };"""
-                )
+                        var options = {
+                            title: '"""
+                        + year
+                        + """',
+                            colors: ['#0d47a1', '#5c9bd5', '#b0b0b0', '#e8e8e8', '#c0392b', '#e74c3c'],
+                        };"""
+                    )
+                else:
+                    self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
+                    self.javascript += f"['HC',     {data['HC']['Wh']}],"
+                    self.javascript += f"['HP',     {data['HP']['Wh']}],"
+                    self.javascript += (
+                        """
+                        ]);
+
+                        var options = {
+                            title: '"""
+                        + year
+                        + """',
+                        };"""
+                    )
                 self.javascript += (
                     f"var chart = new google.visualization.PieChart(document.getElementById('piChart{year}'));"
                 )
@@ -839,9 +884,18 @@ class UsagePoint:
     def generate_data(self, measurement_direction):
         data = self.db.get_daily_all(self.usage_point_id, measurement_direction)
         result = {}
+        period_month, period_day = self._period_month_day()
         for item in data:
-            year = item.date.strftime("%Y")
-            month = item.date.strftime("%m")
+            item_date = item.date
+            if (item_date.month, item_date.day) >= (period_month, period_day):
+                start_year = item_date.year
+            else:
+                start_year = item_date.year - 1
+            if period_month == 1 and period_day == 1:
+                year = str(start_year)
+            else:
+                year = str(start_year + 1)
+            month = item_date.strftime("%m")
             if year not in result:
                 result[year] = {"value": 0, "month": {}}
             if month not in result[year]["month"]:
@@ -1015,20 +1069,31 @@ class UsagePoint:
             if linear_data["value"] == 0:
                 finish = True
             else:
-                year = linear_data["end"].split("-")[0]
+                end_date_obj = datetime.strptime(linear_data["end"], "%Y-%m-%d")
+                year = str(Stat(self.usage_point_id, measurement_direction).get_period_end_year_label(end_date_obj))
                 year_data = Stat(self.usage_point_id, measurement_direction).get_year(int(year))
-                output_data["years"][year] = year_data["value"]
+                output_data["years"][year] = {
+                    "value": year_data["value"],
+                    "begin": year_data["begin"],
+                    "end": year_data["end"],
+                }
                 output_data["linear"][year] = {
                     "begin": linear_data["begin"],
                     "end": linear_data["end"],
                     "value": linear_data["value"],
                 }
 
-        for year, value in output_data["years"].items():
+        for year, year_info in output_data["years"].items():
+            begin_dt = datetime.strptime(year_info["begin"], "%Y-%m-%d")
+            end_dt = datetime.strptime(year_info["end"], "%Y-%m-%d")
+            if begin_dt.month == 1 and begin_dt.day == 1:
+                year_label = end_dt.strftime("%Y")
+            else:
+                year_label = f"{begin_dt.strftime('%m/%Y')} - {end_dt.strftime('%m/%Y')}"
             body_year += f"""
             <td class="table_recap_data">
-                <div class='recap_years_title'>{year}</div>
-                <div class='recap_years_value'>{round(value / 1000)} kWh</div>
+                <div class='recap_years_title'>{year_label}</div>
+                <div class='recap_years_value'>{round(year_info["value"] / 1000)} kWh</div>
             </td>
             """
         for year, data in output_data["linear"].items():

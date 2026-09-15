@@ -534,10 +534,22 @@ class Stat:  # pylint: disable=R0902,R0904
         logging.debug(f" monthly_evolution => {self.value_monthly_evolution}")
         return self.value_monthly_evolution
 
+    def get_annual_period_start(self, reference_date):
+        """Return the beginning (naive datetime) of the custom annual period containing reference_date."""
+        period_start = getattr(self.usage_point_id_config, "annual_period_start", None) or "01-01"
+        try:
+            month, day = (int(x) for x in str(period_start).split("-"))
+        except (ValueError, AttributeError):
+            month, day = 1, 1
+        candidate = reference_date.replace(month=month, day=day, hour=0, minute=0, second=0, microsecond=0)
+        if reference_date < candidate:
+            candidate = candidate.replace(year=candidate.year - 1)
+        return datetime.combine(candidate, datetime.min.time())
+
     def current_year(self):
         now_date = datetime.now(timezone.utc)
         yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
-        begin = datetime.combine(now_date.replace(month=1, day=1), datetime.min.time())
+        begin = self.get_annual_period_start(now_date)
         end = yesterday_date
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_year = self.value_current_year + day.value
@@ -551,10 +563,7 @@ class Stat:  # pylint: disable=R0902,R0904
     def current_year_last_year(self):
         now_date = datetime.now(timezone.utc)
         yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
-        begin = datetime.combine(
-            datetime.combine(now_date.replace(month=1, day=1), datetime.min.time()) - relativedelta(years=1),
-            datetime.min.time(),
-        )
+        begin = self.get_annual_period_start(now_date) - relativedelta(years=1)
         end = yesterday_date - relativedelta(years=1)
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_current_year_last_year = self.value_current_year_last_year + day.value
@@ -567,12 +576,9 @@ class Stat:  # pylint: disable=R0902,R0904
 
     def last_year(self):
         now_date = datetime.now(timezone.utc)
-        begin = datetime.combine(
-            now_date.replace(month=1, day=1) - relativedelta(years=1),
-            datetime.min.time(),
-        )
-        last_day_of_month = calendar.monthrange(int(begin.strftime("%Y")), 12)[1]
-        end = datetime.combine(begin.replace(month=1, day=last_day_of_month), datetime.max.time())
+        period_start = self.get_annual_period_start(now_date)
+        begin = period_start - relativedelta(years=1)
+        end = datetime.combine((period_start - relativedelta(days=1)).date(), datetime.max.time())
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_year = self.value_last_year + day.value
         logging.debug(f" last_year => {self.value_last_year}")
@@ -633,12 +639,18 @@ class Stat:  # pylint: disable=R0902,R0904
     # STAT V2
     def get_year(self, year, measure_type=None):
         now_date = datetime.now(timezone.utc)
-        begin = datetime.combine(now_date.replace(year=year, month=1, day=1), datetime.min.time())
-        last_day_of_month = calendar.monthrange(year, 12)[1]
-        end = datetime.combine(
-            now_date.replace(year=year, month=12, day=last_day_of_month),
-            datetime.max.time(),
-        )
+        period_start = getattr(self.usage_point_id_config, "annual_period_start", None) or "01-01"
+        try:
+            period_month, period_day = (int(x) for x in str(period_start).split("-"))
+        except (ValueError, AttributeError):
+            period_month, period_day = 1, 1
+        if period_month == 1 and period_day == 1:
+            start_year = year
+        else:
+            start_year = year - 1
+        begin = datetime.combine(now_date.replace(year=start_year, month=period_month, day=period_day), datetime.min.time())
+        end_date = (begin + relativedelta(years=1) - relativedelta(days=1)).date()
+        end = datetime.combine(end_date, datetime.max.time())
         value = 0
         if measure_type is None:
             for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
@@ -653,6 +665,34 @@ class Stat:  # pylint: disable=R0902,R0904
             "begin": begin.strftime(self.date_format),
             "end": end.strftime(self.date_format),
         }
+
+    def get_period_end_year_label(self, date_obj):
+        period_start = getattr(self.usage_point_id_config, "annual_period_start", None) or "01-01"
+        try:
+            period_month, period_day = (int(x) for x in str(period_start).split("-"))
+        except (ValueError, AttributeError):
+            period_month, period_day = 1, 1
+        if (date_obj.month, date_obj.day) >= (period_month, period_day):
+            start_year = date_obj.year
+        else:
+            start_year = date_obj.year - 1
+        if period_month == 1 and period_day == 1:
+            return start_year
+        return start_year + 1
+
+    def _period_year_label(self, date_obj):
+        period_start = getattr(self.usage_point_id_config, "annual_period_start", None) or "01-01"
+        try:
+            period_month, period_day = (int(x) for x in str(period_start).split("-"))
+        except (ValueError, AttributeError):
+            period_month, period_day = 1, 1
+        if (date_obj.month, date_obj.day) >= (period_month, period_day):
+            start_year = date_obj.year
+        else:
+            start_year = date_obj.year - 1
+        if period_month == 1 and period_day == 1:
+            return str(start_year)
+        return str(start_year + 1)
 
     def get_year_linear(self, idx, measure_type=None):
         now_date = datetime.now(timezone.utc)
@@ -843,7 +883,7 @@ class Stat:  # pylint: disable=R0902,R0904
             tempo_config = self.db.get_tempo_config("price")
             tempo_data = self.db.get_tempo_range(data[0].date, data[-1].date)
             for item in data:
-                year = item.date.strftime("%Y")
+                year = self._period_year_label(item.date)
                 month = item.date.strftime("%m")
                 if month != last_month:
                     logging.info(f" - {year} / {month}")
