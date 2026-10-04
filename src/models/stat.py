@@ -456,12 +456,11 @@ class Stat:  # pylint: disable=R0902,R0904
 
     def last_month(self):
         now_date = datetime.now(timezone.utc)
-        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
         begin = datetime.combine(
             (now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
             datetime.min.time(),
         )
-        end = datetime.combine(yesterday_date.replace(day=1) - timedelta(days=1), datetime.max.time())
+        end = datetime.combine(now_date.replace(day=1) - timedelta(days=1), datetime.max.time())
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
             self.value_last_month = self.value_last_month + day.value
         logging.debug(f" last_month => {self.value_last_month}")
@@ -509,12 +508,11 @@ class Stat:  # pylint: disable=R0902,R0904
 
     def last_month_last_year(self):
         now_date = datetime.now(timezone.utc)
-        yesterday_date = datetime.combine(now_date - relativedelta(days=1), datetime.max.time())
         begin = datetime.combine(
             (now_date.replace(day=1) - timedelta(days=1)).replace(day=1),
             datetime.min.time(),
         ) - relativedelta(years=1)
-        end = datetime.combine(yesterday_date.replace(day=1) - timedelta(days=1), datetime.max.time()) - relativedelta(
+        end = datetime.combine(now_date.replace(day=1) - timedelta(days=1), datetime.max.time()) - relativedelta(
             years=1
         )
         for day in self.db.get_daily_range(self.usage_point_id, begin, end, self.measurement_direction):
